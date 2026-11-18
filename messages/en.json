@@ -536,5 +536,21 @@
       "lovers": "💘 The Lovers win",
       "draw": "Draw — nobody survived"
     }
+  },
+  "privacy": {
+    "title": "Privacy policy",
+    "updated": "Last updated: November 18, 2026",
+    "link": "Privacy",
+    "intro": "Werewolf Online is a free web app for running live Werewolf games. This page explains what data we collect and how we use it.",
+    "h1": "What we collect",
+    "p1": "Without signing in: your display name, emoji, the name style and frame you pick, and game data (roles, votes). Guest profiles are only stored in your browser.",
+    "p2": "With Google sign-in: we only receive your Google account identifier, your name and your public profile photo. We never receive your password and never read your email, contacts or any other Google data.",
+    "p3": "Profile photos you upload are resized and stored on our server so they can be shown in games.",
+    "h2": "How we use it",
+    "p4": "Your data is only used to show your name, photo and profile to the players in your room. We don’t sell it, share it with third parties or use it for advertising.",
+    "h3": "Storage and deletion",
+    "p5": "Game rooms are deleted automatically after 12 hours of inactivity. You can remove an uploaded photo on the Profile page at any time. To delete your account entirely, send a request on the GitHub project page below.",
+    "h4": "Contact",
+    "p6": "Questions or data deletion requests:"
   }
 }

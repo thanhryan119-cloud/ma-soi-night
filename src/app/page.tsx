@@ -104,6 +104,11 @@ export default function Home() {
           ))}
         </ol>
       </section>
+      <footer className="mt-10 text-center text-sm text-white/40">
+        <Link href="/privacy" className="hover:text-white">
+          {t("privacy.link")}
+        </Link>
+      </footer>
     </main>
   );
 }

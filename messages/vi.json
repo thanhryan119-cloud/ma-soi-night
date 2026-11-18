@@ -536,5 +536,21 @@
       "lovers": "💘 Cặp đôi chiến thắng",
       "draw": "Hòa — không ai sống sót"
     }
+  },
+  "privacy": {
+    "title": "Chính sách quyền riêng tư",
+    "updated": "Cập nhật: 18/11/2026",
+    "link": "Quyền riêng tư",
+    "intro": "Ma Sói Online là web app miễn phí giúp tổ chức trò chơi Ma Sói trực tiếp. Trang này giải thích chúng tôi thu thập và sử dụng dữ liệu nào.",
+    "h1": "Dữ liệu chúng tôi thu thập",
+    "p1": "Khi chơi không đăng nhập: tên hiển thị, emoji, kiểu chữ/khung bạn chọn và dữ liệu ván chơi (vai, phiếu bầu). Hồ sơ khách chỉ được lưu trên trình duyệt của bạn.",
+    "p2": "Khi đăng nhập bằng Google: chúng tôi chỉ nhận mã định danh tài khoản Google, tên và ảnh hồ sơ công khai. Chúng tôi không nhận mật khẩu, không đọc email, danh bạ hay dữ liệu Google nào khác.",
+    "p3": "Ảnh đại diện bạn tự tải lên được thu nhỏ và lưu trên máy chủ của chúng tôi để hiển thị trong trò chơi.",
+    "h2": "Cách sử dụng",
+    "p4": "Dữ liệu chỉ dùng để hiển thị tên, ảnh và hồ sơ của bạn cho những người chơi cùng phòng. Chúng tôi không bán, không chia sẻ cho bên thứ ba và không dùng cho quảng cáo.",
+    "h3": "Lưu trữ và xóa",
+    "p5": "Dữ liệu phòng chơi tự xóa sau 12 giờ không hoạt động. Bạn có thể xóa ảnh đã tải lên trong trang Hồ sơ bất kỳ lúc nào. Để xóa hẳn tài khoản, hãy gửi yêu cầu tại trang dự án trên GitHub bên dưới.",
+    "h4": "Liên hệ",
+    "p6": "Câu hỏi hoặc yêu cầu xóa dữ liệu:"
   }
 }
