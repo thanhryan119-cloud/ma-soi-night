@@ -5,6 +5,7 @@ import { NIGHT_STEP_ROLE, ROLES, ROLE_IDS } from "@shared/roles";
 import type { NightStepId, RoleId, Winner } from "@shared/types";
 import type { ClientState, PlayerView } from "@shared/views";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
+import { VoteBreakdown } from "@/components/VoteBreakdown";
 import { Avatar, RoleBadge, TimerDisplay } from "@/components/ui";
 import { formatLog, useT } from "@/lib/i18n";
 import { nameOf, scriptLines, useHostAction } from "./common";
@@ -69,7 +70,7 @@ export function HostGame({ state, offset, hideRoles }: Props) {
 
 // ---------------------------------------------------------------------------
 
-const DAY_FLOW = ["dawn", "discussion", "nominate", "defense", "verdict", "verdictResult"] as const;
+const DAY_FLOW = ["dawn", "discussion", "nominate", "nominateResult", "defense", "verdict", "verdictResult"] as const;
 
 function PhaseBar({ state }: { state: ClientState }) {
   const t = useT();
@@ -317,7 +318,9 @@ function PhasePanel({ state, hideRoles }: { state: ClientState; hideRoles: boole
       return <HunterPanel state={state} />;
     case "nominate":
     case "verdict":
-      return <VotePanel state={state} />;
+      return <VotePanel state={state} hideRoles={hideRoles} />;
+    case "nominateResult":
+      return <NominationBreakdownPanel state={state} />;
     case "defense":
       return <NominationResult state={state} />;
     case "verdictResult":
@@ -506,7 +509,21 @@ function HunterPanel({ state }: { state: ClientState }) {
   );
 }
 
-function VotePanel({ state }: { state: ClientState }) {
+function NominationBreakdownPanel({ state }: { state: ClientState }) {
+  const t = useT();
+  const act = useHostAction();
+  return (
+    <section className="card">
+      <VoteBreakdown state={state} t={t} />
+      <button className="btn-ghost btn-sm mt-3" onClick={() => act({ type: "override", action: { kind: "revote" } })}>
+        {t("host.revote")}
+      </button>
+    </section>
+  );
+}
+
+/** Live vote monitor. Ballots stay secret on screen while "hide roles" is on (projecting). */
+function VotePanel({ state, hideRoles }: { state: ClientState; hideRoles: boolean }) {
   const t = useT();
   const act = useHostAction();
   const v = state.vote;
@@ -532,7 +549,7 @@ function VotePanel({ state }: { state: ClientState }) {
       <div className="mb-2 h-2 overflow-hidden rounded-full bg-white/10">
         <div className="h-full bg-gold transition-[width]" style={{ width: `${v.eligible ? (v.voted / v.eligible) * 100 : 0}%` }} />
       </div>
-      <div className="mb-2 flex flex-wrap gap-1.5">
+      {!hideRoles && <div className="mb-2 flex flex-wrap gap-1.5">
         {Object.entries(counts)
           .sort((a, b) => b[1] - a[1])
           .map(([c, n]) => (
@@ -540,14 +557,14 @@ function VotePanel({ state }: { state: ClientState }) {
               {label(c)}: {n}
             </span>
           ))}
-      </div>
-      <ul className="grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
+      </div>}
+      {!hideRoles && <ul className="grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
         {Object.entries(ballots).map(([voter, c]) => (
           <li key={voter} className="truncate text-white/70">
             {nameOf(state, voter)} → <span className="text-white">{label(c)}</span>
           </li>
         ))}
-      </ul>
+      </ul>}
       {notVoted.length > 0 && (
         <p className="mt-2 text-xs text-white/50">
           {t("host.notVoted")} {notVoted.map((p) => p.name).join(", ")}
@@ -613,6 +630,9 @@ function VerdictResultPanel({ state }: { state: ClientState }) {
       <p className="mt-1 text-sm text-white/70">
         🪢 {r.execute} · 🕊️ {r.spare} · — {r.abstain}
       </p>
+      <div className="mt-3">
+        <VoteBreakdown state={state} t={t} />
+      </div>
       <button className="btn-ghost btn-sm mt-3" onClick={() => act({ type: "override", action: { kind: "revote" } })}>
         {t("host.revote")}
       </button>

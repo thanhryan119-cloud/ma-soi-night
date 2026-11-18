@@ -92,6 +92,7 @@
     "hunter": "Hunter’s shot",
     "discussion": "Discussion",
     "nominate": "Nomination vote",
+    "nominateResult": "Nomination results",
     "defense": "Defense",
     "verdict": "Execute or spare",
     "verdictResult": "Result",
@@ -117,6 +118,9 @@
     "hunterMissed": "The Hunter lowers the gun and shoots no one.",
     "discussion": "Villagers, discuss and find the Werewolves. Who is the most suspicious?",
     "nominate": "Time to vote. Everyone, choose one player to put on trial — or skip.",
+    "nominateResultDefense": "The votes are in! {names} must stand trial.",
+    "nominateResultNone": "The votes are in. Nobody goes on trial — night is about to fall again…",
+    "nominateResultRevote": "It’s a tie between {names}! The village will vote again between them.",
     "defense": "{names} stand on trial. Defend yourselves!",
     "verdict": "Village, decide the fate of {name}: EXECUTE or SPARE?",
     "verdictExecuted": "With {execute} votes to execute and {spare} to spare, {name} has been executed.",
@@ -268,6 +272,14 @@
     "hunter": "Shot by the Hunter",
     "execution": "Executed",
     "host": "Removed by the Host"
+  },
+  "vote": {
+    "title": "Who voted for what",
+    "skip": "Skipped",
+    "noVote": "Didn’t vote",
+    "empty": "No votes were cast.",
+    "anonymousNote": "Anonymous vote — only the totals are shown.",
+    "votes": "{count, plural, one {# vote} other {# votes}}"
   },
   "player": {
     "joinTitle": "Join room {code}",

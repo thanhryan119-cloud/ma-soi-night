@@ -67,7 +67,10 @@ describe("engine flow", () => {
     next(room); // -> dawn (no bite)
     next(room); // -> discussion
     next(room); // -> nominate
-    next(room); // -> nobody nominated -> night 2
+    next(room); // -> nomination results (nobody)
+    expect(room.phase.kind).toBe("nominateResult");
+    expect(room.game!.nominationOutcome).toBe("none");
+    next(room); // -> night 2
     expect(room.phase.kind).toBe("night");
     expect(room.phase.night).toBe(2);
     expect(playerAction(room, guard, { type: "night", targets: [v1] }).error).toBe("err.invalidTarget");
@@ -89,6 +92,16 @@ describe("engine flow", () => {
     playerAction(room, c, { type: "vote", choice: w });
     playerAction(room, d, { type: "vote", choice: "skip" });
     playerAction(room, w, { type: "vote", choice: b });
+    // While the vote is open, players and the screen only see the progress.
+    expect(buildView(room, "player", c).vote?.ballots).toBeUndefined();
+    expect(buildView(room, "screen").vote?.ballots).toBeUndefined();
+    expect(buildView(room, "screen").vote?.voted).toBe(4);
+    next(room); // results revealed
+    expect(room.phase.kind).toBe("nominateResult");
+    // Ballots were secret while voting, and are public once closed.
+    const villagerView = buildView(room, "player", c);
+    expect(villagerView.vote?.closed).toBe(true);
+    expect(villagerView.vote?.ballots).toEqual({ [b]: w, [c]: w, [d]: "skip", [w]: b });
     next(room); // defense
     expect(room.phase.kind).toBe("defense");
     expect(room.game!.nominees).toEqual([w]);
@@ -136,12 +149,15 @@ describe("engine flow", () => {
     next(room); // nominate
     playerAction(room, w, { type: "vote", choice: a });
     playerAction(room, a, { type: "vote", choice: b });
-    next(room); // tie -> revote
+    next(room); // tie -> results
+    expect(room.game!.nominationOutcome).toBe("revote");
+    next(room); // -> revote
     expect(room.phase.kind).toBe("nominate");
     expect(room.game!.vote!.candidates!.sort()).toEqual([a, b].sort());
     expect(playerAction(room, c, { type: "vote", choice: d }).error).toBe("err.invalidTarget");
     playerAction(room, c, { type: "vote", choice: a });
     playerAction(room, e, { type: "vote", choice: a });
+    next(room); // results
     next(room);
     expect(room.phase.kind).toBe("defense");
     expect(room.game!.nominees).toEqual([a]);

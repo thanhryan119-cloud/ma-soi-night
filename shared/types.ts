@@ -25,6 +25,7 @@ export type PhaseKind =
   | "hunter"
   | "discussion"
   | "nominate"
+  | "nominateResult"
   | "defense"
   | "verdict"
   | "verdictResult"
@@ -170,6 +171,8 @@ export interface Game {
   lastDeaths: Death[];
   nominees: string[];
   nomination: NominationTally | null;
+  /** What happens after the nomination results are shown. */
+  nominationOutcome: "defense" | "revote" | "none" | null;
   vote: VoteState | null;
   verdicts: VerdictRecord[];
   pendingHunters: string[];

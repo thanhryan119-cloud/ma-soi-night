@@ -5,6 +5,7 @@ import { ROLES } from "@shared/roles";
 import type { ClientState, MeView, PlayerView } from "@shared/views";
 import { Avatar, ConnectionDot, RoleBadge, TimerDisplay, useErrorToast } from "@/components/ui";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
+import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
 import { useT } from "@/lib/i18n";
 import { emitAck } from "@/lib/socket";
 
@@ -132,6 +133,8 @@ function PhaseBody({
       );
     case "verdict":
       return <Verdict state={state} me={me} players={players} />;
+    case "nominateResult":
+      return <NominateResult state={state} />;
     case "verdictResult":
       return <VerdictResult state={state} players={players} />;
     case "gameOver":
@@ -731,6 +734,19 @@ function VerdictResult({ state, players }: { state: ClientState; players: Map<st
         .map((d) => (
           <p key={d.playerId} className="text-pink-300">💔 {players.get(d.playerId)?.name}</p>
         ))}
+      <VoteBreakdown state={state} t={t} />
+    </section>
+  );
+}
+
+function NominateResult({ state }: { state: ClientState }) {
+  const t = useT();
+  const outcome = nominationOutcomeLine(state);
+  return (
+    <section className="flex flex-col items-center gap-4 py-4 text-center">
+      <h2 className="text-2xl font-bold">🗳️ {t("phase.nominateResult")}</h2>
+      {outcome && <p className="text-lg font-semibold text-gold">{t(outcome.k, outcome.params)}</p>}
+      <VoteBreakdown state={state} t={t} />
     </section>
   );
 }

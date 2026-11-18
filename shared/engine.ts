@@ -223,6 +223,7 @@ export function startGame(room: Room): ActionResult {
     lastDeaths: [],
     nominees: [],
     nomination: null,
+    nominationOutcome: null,
     vote: null,
     verdicts: [],
     pendingHunters: [],
@@ -289,6 +290,7 @@ function startNight(room: Room) {
   game.vote = null;
   game.nominees = [];
   game.nomination = null;
+  game.nominationOutcome = null;
   game.verdicts = [];
   room.phase = {
     ...room.phase,
@@ -413,16 +415,16 @@ function closeNomination(room: Room): "defense" | "revote" | "none" {
   game.nomination = tally;
   if (tally.tie && rules.tie === "revote" && rules.mode === "top1" && !isRevote) {
     log(room, "log.nominateTieRevote", { names: tally.tiedIds.map((id) => nameOf(room, id)).join(", ") }, true);
-    openNomination(room, tally.tiedIds);
-    return "revote";
+    game.nominees = [];
+    return (game.nominationOutcome = "revote");
   }
   game.nominees = tally.nominees;
   if (!tally.nominees.length) {
     log(room, "log.nominateNone", {}, true);
-    return "none";
+    return (game.nominationOutcome = "none");
   }
   log(room, "log.nominated", { names: tally.nominees.map((id) => nameOf(room, id)).join(", ") }, true);
-  return "defense";
+  return (game.nominationOutcome = "defense");
 }
 
 function closeVerdict(room: Room) {
@@ -509,10 +511,19 @@ export function advance(room: Room): ActionResult {
       resetTimer(room);
       openNomination(room);
       return ok;
-    case "nominate": {
-      const r = closeNomination(room);
-      if (r === "defense") enterTimed(room, "defense");
-      else if (r === "none") startNight(room);
+    case "nominate":
+      // Close the (secret) vote and reveal who voted for whom.
+      closeNomination(room);
+      room.phase = { ...room.phase, kind: "nominateResult" };
+      return ok;
+    case "nominateResult": {
+      const outcome = game.nominationOutcome;
+      game.nominationOutcome = null;
+      if (outcome === "revote") {
+        room.phase = { ...room.phase, kind: "nominate" };
+        openNomination(room, game.nomination?.tiedIds ?? null);
+      } else if (outcome === "defense") enterTimed(room, "defense");
+      else startNight(room);
       return ok;
     }
     case "defense":
@@ -818,11 +829,12 @@ function override(room: Room, o: OverrideAction): ActionResult {
       const kind = room.phase.kind;
       if (kind === "nominate") {
         openNomination(room, game.vote?.candidates ?? null);
-      } else if (kind === "defense") {
+      } else if (kind === "defense" || kind === "nominateResult") {
         room.phase = { ...room.phase, kind: "nominate" };
         resetTimer(room);
         game.nominees = [];
         game.nomination = null;
+        game.nominationOutcome = null;
         openNomination(room);
       } else if (kind === "verdict") {
         game.vote!.ballots = {};

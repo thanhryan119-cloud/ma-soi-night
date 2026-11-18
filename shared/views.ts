@@ -131,6 +131,7 @@ export interface ClientState {
   vote: VoteView | null;
   nominees: string[];
   nomination: NominationTally | null;
+  nominationOutcome: "defense" | "revote" | "none" | null;
   verdicts: (Omit<VerdictRecord, "ballots" | "deaths"> & { ballots?: Record<string, string>; deaths: Death[] })[];
   lastDeaths: PublicDeath[];
   hunterId: string | null;
@@ -360,6 +361,7 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
     nomination: game?.nomination
       ? { ...game.nomination, counts: { ...game.nomination.counts } }
       : null,
+    nominationOutcome: game?.nominationOutcome ?? null,
     verdicts: (game?.verdicts ?? []).map((r) => ({
       nomineeId: r.nomineeId,
       execute: r.execute,

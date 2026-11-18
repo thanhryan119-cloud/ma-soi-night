@@ -92,6 +92,7 @@
     "hunter": "Thợ săn bắn",
     "discussion": "Thảo luận",
     "nominate": "Vote lên dàn",
+    "nominateResult": "Kết quả vote lên dàn",
     "defense": "Biện hộ",
     "verdict": "Vote sống/chết",
     "verdictResult": "Kết quả",
@@ -117,6 +118,9 @@
     "hunterMissed": "Thợ săn hạ súng, không bắn ai.",
     "discussion": "Cả làng hãy cùng thảo luận để tìm ra Ma Sói. Ai đáng nghi nhất?",
     "nominate": "Đã đến lúc bỏ phiếu. Mỗi người hãy chọn một người để đưa lên dàn, hoặc bỏ qua.",
+    "nominateResultDefense": "Kết quả bỏ phiếu đã có! {names} sẽ phải lên dàn.",
+    "nominateResultNone": "Kết quả bỏ phiếu đã có. Không ai bị đưa lên dàn — màn đêm lại sắp buông xuống…",
+    "nominateResultRevote": "Hòa phiếu giữa {names}! Cả làng sẽ vote lại giữa những người này.",
     "defense": "{names} đang đứng trên dàn. Hãy biện hộ cho bản thân!",
     "verdict": "Cả làng hãy quyết định số phận của {name}: TREO CỔ hay THA?",
     "verdictExecuted": "Với {execute} phiếu treo cổ và {spare} phiếu tha, {name} đã bị treo cổ.",
@@ -268,6 +272,14 @@
     "hunter": "Bị Thợ săn bắn",
     "execution": "Bị treo cổ",
     "host": "Quản trò loại"
+  },
+  "vote": {
+    "title": "Ai đã vote gì",
+    "skip": "Bỏ qua",
+    "noVote": "Không vote",
+    "empty": "Không có phiếu nào.",
+    "anonymousNote": "Vote ẩn danh — chỉ công bố số phiếu.",
+    "votes": "{count} phiếu"
   },
   "player": {
     "joinTitle": "Vào phòng {code}",

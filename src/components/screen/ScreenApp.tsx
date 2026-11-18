@@ -7,6 +7,7 @@ import type { Locale } from "@shared/types";
 import type { ClientState, PlayerView } from "@shared/views";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { useJoinUrl } from "@/components/host/HostLobby";
+import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
 import { Avatar, LangSwitch, Spinner, TimerDisplay } from "@/components/ui";
 import { translatorFor, useLocale, useT, type T } from "@/lib/i18n";
 import { emitAck } from "@/lib/socket";
@@ -187,6 +188,16 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
           <Bi k="screen.waitingVotes" className="text-2xl text-white/50" />
         </div>
       );
+    case "nominateResult": {
+      const outcome = nominationOutcomeLine(state);
+      return (
+        <div className="flex w-full flex-col items-center gap-8">
+          <Bi k="phase.nominateResult" className={title} />
+          {outcome && <Bi k={outcome.k} params={outcome.params} className="max-w-5xl text-3xl font-bold text-gold" />}
+          <VoteBreakdown state={state} t={t} size="lg" />
+        </div>
+      );
+    }
     case "defense":
       return (
         <div className="flex w-full max-w-5xl flex-col items-center gap-8">
@@ -224,7 +235,7 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
             <span className="text-blood-light">🪢 {r.execute}</span>
             <span className="text-emerald-300">🕊️ {r.spare}</span>
           </div>
-          {r.ballots && <Ballots ballots={r.ballots} players={players} />}
+          <VoteBreakdown state={state} t={t} size="lg" />
           {r.deaths
             .filter((d) => d.playerId !== r.nomineeId)
             .map((d) => (
@@ -317,23 +328,8 @@ function NominationBars({ state, players }: { state: ClientState; players: Map<s
           </div>
         );
       })}
-      {state.vote?.ballots && <Ballots ballots={state.vote.ballots} players={players} />}
     </div>
   );
 }
 
-function Ballots({ ballots, players }: { ballots: Record<string, string>; players: Map<string, PlayerView> }) {
-  const t = useT();
-  const label = (c: string) =>
-    c === "skip" ? t("player.skip") : c === "execute" ? "🪢" : c === "spare" ? "🕊️" : players.get(c)?.name ?? "?";
-  return (
-    <div className="mt-4 flex flex-wrap justify-center gap-2 text-lg">
-      {Object.entries(ballots).map(([voter, c]) => (
-        <span key={voter} className="chip px-3 py-1 text-base">
-          {players.get(voter)?.avatar} {players.get(voter)?.name} → {label(c)}
-        </span>
-      ))}
-    </div>
-  );
-}
 

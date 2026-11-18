@@ -1,6 +1,7 @@
 "use client";
 
 import { stepActorsAlive } from "./scriptHelpers";
+import { nominationOutcomeLine } from "@/components/VoteBreakdown";
 import type { HostAction } from "@shared/types";
 import type { ClientState } from "@shared/views";
 import { useErrorToast } from "@/components/ui";
@@ -50,6 +51,10 @@ export function scriptLines(state: ClientState, t: T): string[] {
       return [t("script.discussion")];
     case "nominate":
       return [t("script.nominate")];
+    case "nominateResult": {
+      const o = nominationOutcomeLine(state);
+      return o ? [t(o.k, o.params)] : [];
+    }
     case "defense":
       return [t("script.defense", { names: names(state.nominees) })];
     case "verdict":
