@@ -1,5 +1,9 @@
 "use client";
 
+// Player screen, designed to fit a phone in ONE frame: the page itself never
+// scrolls. Grids shrink to fit any player count; long content (vote details,
+// end-of-game timeline) lives in a panel that scrolls on its own.
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ROLES } from "@shared/roles";
 import type { ClientState, MeView, PlayerView } from "@shared/views";
@@ -10,6 +14,7 @@ import { useT } from "@/lib/i18n";
 import { emitAck } from "@/lib/socket";
 
 type Props = { state: ClientState; offset: number; connected: boolean };
+type Ctx = { state: ClientState; me: MeView; players: Map<string, PlayerView> };
 
 function usePlayerAction() {
   const showError = useErrorToast();
@@ -25,14 +30,17 @@ export function phaseLabel(t: ReturnType<typeof useT>, state: ClientState) {
   return t(`phase.${k}`);
 }
 
+// ---------------------------------------------------------------------------
+// Frame
+// ---------------------------------------------------------------------------
+
 export function PlayerGame({ state, offset, connected }: Props) {
   const t = useT();
   const me = state.me!;
   const players = byId(state);
   const self = players.get(me.id)!;
   const kind = state.phase.kind;
-  const isNight = kind === "night";
-  const [showRole, setShowRole] = useState(false);
+  const [sheet, setSheet] = useState<null | "role" | "roles" | "timeline">(null);
 
   // Vibrate when it becomes my turn to do something.
   const myTurn = !!(me.turn && !me.turn.done) || me.canVote || !!me.hunter?.canShoot;
@@ -42,140 +50,187 @@ export function PlayerGame({ state, offset, connected }: Props) {
     prevTurn.current = myTurn;
   }, [myTurn]);
 
+  const canSeeRoles = !me.alive && kind !== "gameOver" && state.players.some((p) => p.id !== me.id && p.roleId);
+  const showRoleButton = !!me.roleId && kind !== "gameOver" && kind !== "roleReveal";
+
   return (
-    <div className={`min-h-dvh transition-colors duration-700 ${isNight ? "bg-black" : ""}`}>
-      <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-white/5 bg-night-950/90 px-4 py-2 pr-28 backdrop-blur">
+    <div className={`fixed inset-0 flex flex-col overflow-hidden transition-colors duration-700 ${kind === "night" ? "bg-black" : ""}`}>
+      <header className="flex shrink-0 items-center gap-2.5 border-b border-white/5 px-3 py-2 pr-28">
         <Avatar p={self} size="sm" />
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-bold"><StyledName p={self} /></div>
+        <div className="min-w-0 flex-1 leading-tight">
+          <div className="truncate text-sm font-bold">
+            <StyledName p={self} />
+          </div>
           <div className="truncate text-xs text-white/50">{phaseLabel(t, state)}</div>
         </div>
         {!connected && <ConnectionDot connected={false} />}
       </header>
 
-      <main className="mx-auto flex max-w-md flex-col gap-4 px-4 pt-4 pb-28">
-        {!me.alive && kind !== "gameOver" && (
-          <div className="rounded-xl border border-blood/40 bg-blood/15 p-3 text-center text-sm">💀 {t("player.spectator")}</div>
-        )}
-        <PhaseBody state={state} me={me} offset={offset} players={players} />
-        {!me.alive && kind !== "gameOver" && state.players.some((p) => p.id !== me.id && p.roleId) && (
-          <section className="card">
-            <h3 className="mb-2 font-bold">{t("player.allRoles")}</h3>
-            <RolesGrid state={state} compact />
-          </section>
-        )}
+      {!me.alive && kind !== "gameOver" && (
+        <div className="flex shrink-0 items-center gap-2 border-b border-blood/30 bg-blood/10 px-3 py-1.5 text-xs">
+          <span className="min-w-0 flex-1 truncate">💀 {t("player.spectator")}</span>
+          {canSeeRoles && (
+            <button className="btn-ghost btn-sm shrink-0" onClick={() => setSheet("roles")}>
+              {t("player.allRoles")}
+            </button>
+          )}
+        </div>
+      )}
+
+      <main className="relative mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-3 px-3 py-3">
+        <PhaseBody state={state} me={me} offset={offset} players={players} onTimeline={() => setSheet("timeline")} />
       </main>
 
-      {me.roleId && kind !== "gameOver" && kind !== "roleReveal" && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-night-950 p-4">
-          <div className="mx-auto max-w-md">
-            {showRole ? (
-              <RoleSheet state={state} me={me} players={players} onClose={() => setShowRole(false)} />
-            ) : (
-              <button className="btn-ghost w-full" onClick={() => setShowRole(true)}>
-                🂠 {t("player.showRole")}
-              </button>
-            )}
-          </div>
-        </div>
+      {showRoleButton && (
+        <footer className="mx-auto w-full max-w-md shrink-0 border-t border-white/10 px-3 py-2">
+          <button className="btn-ghost w-full" onClick={() => setSheet("role")}>
+            🂠 {t("player.showRole")}
+          </button>
+        </footer>
+      )}
+
+      {sheet === "role" && (
+        <Sheet onClose={() => setSheet(null)}>
+          <RoleSheet state={state} me={me} players={players} />
+        </Sheet>
+      )}
+      {sheet === "roles" && (
+        <Sheet title={t("player.allRoles")} onClose={() => setSheet(null)}>
+          <RolesGrid state={state} compact />
+        </Sheet>
+      )}
+      {sheet === "timeline" && state.log && (
+        <Sheet title={t("screen.timeline")} onClose={() => setSheet(null)}>
+          <Timeline log={state.log} t={t} />
+        </Sheet>
       )}
     </div>
   );
 }
+
+/** Full-screen overlay; only its body scrolls. */
+function Sheet({ title, onClose, children }: { title?: string; onClose: () => void; children: React.ReactNode }) {
+  const t = useT();
+  return (
+    <div className="rise absolute inset-0 z-50 flex flex-col bg-night-950">
+      <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-2">
+        <h3 className="min-w-0 flex-1 truncate font-bold">{title}</h3>
+        <button className="btn-ghost btn-sm" onClick={onClose}>
+          ✕ {t("common.close")}
+        </button>
+      </div>
+      <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-3 overflow-y-auto px-3 py-3">{children}</div>
+    </div>
+  );
+}
+
+/** A full-height column that fills the free space. */
+const Fill = ({ children, center = false }: { children: React.ReactNode; center?: boolean }) => (
+  <section className={`flex min-h-0 flex-1 flex-col gap-3 ${center ? "items-center justify-center text-center" : ""}`}>
+    {children}
+  </section>
+);
 
 function PhaseBody({
   state,
   me,
   offset,
   players,
-}: {
-  state: ClientState;
-  me: MeView;
-  offset: number;
-  players: Map<string, PlayerView>;
-}) {
+  onTimeline,
+}: Ctx & { offset: number; onTimeline: () => void }) {
   const t = useT();
+  const ctx = { state, me, players };
   switch (state.phase.kind) {
     case "lobby":
       return <Lobby state={state} />;
     case "roleReveal":
       return (
-        <>
-          <h2 className="text-center font-display text-2xl font-bold text-moon">{t("player.yourRole")}</h2>
-          <HoldCard state={state} me={me} players={players} />
-        </>
+        <Fill>
+          <h2 className="shrink-0 text-center font-display text-2xl font-bold text-moon">{t("player.yourRole")}</h2>
+          <HoldCard {...ctx} />
+        </Fill>
       );
     case "night":
-      return <Night state={state} me={me} players={players} />;
+      return <Night {...ctx} />;
     case "dawn":
-      return <Dawn state={state} me={me} players={players} />;
+      return <Dawn {...ctx} />;
     case "hunter":
-      return <Hunter state={state} me={me} players={players} />;
+      return <Hunter {...ctx} />;
     case "discussion":
       return (
-        <section className="card flex flex-col items-center gap-4 py-8 text-center">
+        <Fill center>
           <div className="text-5xl">🗣️</div>
           <h2 className="text-2xl font-bold">{t("player.discussion")}</h2>
-          <TimerDisplay timer={state.timer} offset={offset} className="text-6xl" />
+          <div className="w-full">
+            <TimerDisplay timer={state.timer} offset={offset} className="text-6xl" />
+          </div>
           <AliveStrip state={state} />
-        </section>
+        </Fill>
       );
     case "nominate":
-      return <Nominate state={state} me={me} players={players} />;
-    case "defense":
-      return (
-        <section className="card flex flex-col items-center gap-4 py-6 text-center">
-          <h2 className="text-2xl font-bold">⚖️ {t("player.defenseTitle")}</h2>
-          {me.onStand && <p className="rounded-xl bg-gold/20 px-4 py-2 font-bold text-gold">{t("player.onStandYou")}</p>}
-          <Nominees state={state} players={players} />
-          <TimerDisplay timer={state.timer} offset={offset} className="text-5xl" />
-        </section>
-      );
-    case "verdict":
-      return <Verdict state={state} me={me} players={players} />;
+      return <Nominate {...ctx} />;
     case "nominateResult":
       return <NominateResult state={state} />;
+    case "defense":
+      return (
+        <Fill center>
+          <h2 className="text-2xl font-bold">⚖️ {t("player.defenseTitle")}</h2>
+          {me.onStand && <p className="rounded-lg bg-gold/20 px-4 py-2 font-bold text-gold">{t("player.onStandYou")}</p>}
+          <Nominees state={state} players={players} />
+          <div className="w-full">
+            <TimerDisplay timer={state.timer} offset={offset} className="text-5xl" />
+          </div>
+        </Fill>
+      );
+    case "verdict":
+      return <Verdict {...ctx} />;
     case "verdictResult":
       return <VerdictResult state={state} players={players} />;
     case "gameOver":
       return (
-        <>
-          <section className="card py-8">
+        <Fill>
+          <div className="shrink-0">
             <WinnerBanner state={state} t={t} />
-          </section>
-          <section className="card">
-            <h3 className="mb-3 font-bold">{t("screen.rolesReveal")}</h3>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-white/10 p-2">
             <RolesGrid state={state} compact />
-          </section>
-          {state.log && (
-            <section className="card">
-              <h3 className="mb-3 font-bold">{t("screen.timeline")}</h3>
-              <Timeline log={state.log} t={t} />
-            </section>
-          )}
-          <p className="text-center text-white/50">{t("player.wait")}</p>
-        </>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            {state.log && (
+              <button className="btn-ghost flex-1" onClick={onTimeline}>
+                📜 {t("screen.timeline")}
+              </button>
+            )}
+          </div>
+          <p className="shrink-0 text-center text-xs text-white/50">{t("player.wait")}</p>
+        </Fill>
       );
   }
 }
 
 // ---------------------------------------------------------------------------
+// Lobby & role card
+// ---------------------------------------------------------------------------
 
 function Lobby({ state }: { state: ClientState }) {
   const t = useT();
   return (
-    <section className="flex flex-col items-center gap-6 py-10 text-center">
-      <div className="moon h-24 w-24 rounded-full flicker" aria-hidden />
-      <h2 className="text-2xl font-bold">{t("player.waitingHost")}</h2>
-      <p className="text-white/60">{t("player.inLobby", { count: state.players.length })}</p>
-      <div className="flex flex-wrap justify-center gap-2">
-        {state.players.map((p) => (
-          <span key={p.id} className={`chip text-sm ${p.id === state.me?.id ? "border-gold text-gold" : ""}`}>
-            <Avatar p={p} size="sm" /> <StyledName p={p} />
-          </span>
-        ))}
+    <Fill>
+      <div className="flex shrink-0 flex-col items-center gap-3 pt-4 text-center">
+        <div className="moon h-16 w-16 rounded-full flicker" aria-hidden />
+        <h2 className="text-2xl font-bold">{t("player.waitingHost")}</h2>
+        <p className="text-sm text-white/60">{t("player.inLobby", { count: state.players.length })}</p>
       </div>
-    </section>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="flex flex-wrap justify-center gap-2">
+          {state.players.map((p) => (
+            <span key={p.id} className={`chip text-sm ${p.id === state.me?.id ? "border-white" : ""}`}>
+              <Avatar p={p} size="sm" /> <StyledName p={p} />
+            </span>
+          ))}
+        </div>
+      </div>
+    </Fill>
   );
 }
 
@@ -191,8 +246,8 @@ function AliveStrip({ state }: { state: ClientState }) {
   );
 }
 
-/** Hold to reveal, release to hide — protects against peeking. */
-function HoldCard({ state, me, players }: { state: ClientState; me: MeView; players: Map<string, PlayerView> }) {
+/** Hold to reveal, release to hide — protects against peeking. Shrinks to the free height. */
+function HoldCard({ me, players }: Ctx) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const role = me.roleId ? ROLES[me.roleId] : null;
@@ -202,104 +257,94 @@ function HoldCard({ state, me, players }: { state: ClientState; me: MeView; play
   };
   const hide = () => setOpen(false);
   return (
-    <div className="flex flex-col items-center gap-4">
-      <button
-        type="button"
-        className="no-select relative aspect-[3/4] w-full max-w-xs touch-none rounded-xl"
-        style={{ perspective: "1000px" }}
-        onPointerDown={show}
-        onPointerUp={hide}
-        onPointerLeave={hide}
-        onPointerCancel={hide}
-        onContextMenu={(e) => e.preventDefault()}
-        onKeyDown={(e) => (e.key === " " || e.key === "Enter") && show()}
-        onKeyUp={hide}
-        onBlur={hide}
-        aria-label={t("player.holdToReveal")}
-      >
-        <div
-          className="absolute inset-0 transition-transform duration-300"
-          style={{ transformStyle: "preserve-3d", transform: open ? "rotateY(180deg)" : "none" }}
+    <div className="flex min-h-0 flex-1 flex-col items-center gap-2">
+      <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+        <button
+          type="button"
+          className="no-select relative h-full max-h-[480px] max-w-full touch-none rounded-xl"
+          style={{ perspective: "1000px", aspectRatio: "3 / 4" }}
+          onPointerDown={show}
+          onPointerUp={hide}
+          onPointerLeave={hide}
+          onPointerCancel={hide}
+          onContextMenu={(e) => e.preventDefault()}
+          onKeyDown={(e) => (e.key === " " || e.key === "Enter") && show()}
+          onKeyUp={hide}
+          onBlur={hide}
+          aria-label={t("player.holdToReveal")}
         >
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-xl border border-white/20 bg-night-800"
-            style={{ backfaceVisibility: "hidden" }}
+            className="absolute inset-0 transition-transform duration-300"
+            style={{ transformStyle: "preserve-3d", transform: open ? "rotateY(180deg)" : "none" }}
           >
-            <div className="moon h-20 w-20 rounded-full" />
-            <span className="px-4 font-bold text-gold">{t("player.holdToReveal")}</span>
-          </div>
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-xl border-2 p-5 text-center"
-            style={{
-              backfaceVisibility: "hidden",
-              transform: "rotateY(180deg)",
-              borderColor: role?.color,
-              background: "#111111",
-            }}
-          >
-            {role && open && (
-              <>
-                <div className="text-7xl">{role.emoji}</div>
-                <div className="font-display text-3xl font-black" style={{ color: role.color }}>
-                  {t(`roles.${role.id}.name`)}
-                </div>
-                <div className="text-xs font-semibold tracking-wider text-white/60 uppercase">{t(`teams.${role.team}`)}</div>
-                <p className="text-sm text-white/85">{t(`roles.${role.id}.desc`)}</p>
-                {role.team === "wolves" && (
-                  <div className="text-sm">
-                    <div className="font-bold text-blood-light">{t("player.teammates")}</div>
-                    {me.teammates.length
-                      ? me.teammates.map((id) => players.get(id)?.name).join(", ")
-                      : t("player.noTeammates")}
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-xl border border-white/20 bg-night-800"
+              style={{ backfaceVisibility: "hidden" }}
+            >
+              <div className="moon h-16 w-16 rounded-full" />
+              <span className="px-4 font-bold text-gold">{t("player.holdToReveal")}</span>
+            </div>
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border-2 p-4 text-center"
+              style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)", borderColor: role?.color, background: "#111111" }}
+            >
+              {role && open && (
+                <>
+                  <div className="text-6xl">{role.emoji}</div>
+                  <div className="font-display text-2xl font-black" style={{ color: role.color }}>
+                    {t(`roles.${role.id}.name`)}
                   </div>
-                )}
-                {me.loverId && <div className="text-sm text-pink-300">{t("player.yourLover", { name: players.get(me.loverId)?.name ?? "?" })}</div>}
-              </>
-            )}
+                  <div className="text-[11px] font-semibold tracking-wider text-white/60 uppercase">{t(`teams.${role.team}`)}</div>
+                  <p className="text-xs leading-snug text-white/85">{t(`roles.${role.id}.desc`)}</p>
+                  {role.team === "wolves" && (
+                    <div className="text-xs">
+                      <div className="font-bold text-blood-light">{t("player.teammates")}</div>
+                      {me.teammates.length
+                        ? me.teammates.map((id) => players.get(id)?.name).join(", ")
+                        : t("player.noTeammates")}
+                    </div>
+                  )}
+                  {me.loverId && (
+                    <div className="text-xs text-pink-300">{t("player.yourLover", { name: players.get(me.loverId)?.name ?? "?" })}</div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </button>
-      <p className="text-sm text-white/50">{open ? t("player.releaseToHide") : t("player.holdToReveal")}</p>
+        </button>
+      </div>
+      <p className="shrink-0 text-sm text-white/50">{open ? t("player.releaseToHide") : t("player.holdToReveal")}</p>
     </div>
   );
 }
 
-function RoleSheet({
-  state,
-  me,
-  players,
-  onClose,
-}: {
-  state: ClientState;
-  me: MeView;
-  players: Map<string, PlayerView>;
-  onClose: () => void;
-}) {
+function RoleSheet(ctx: Ctx) {
   const t = useT();
+  const { me, players } = ctx;
   return (
-    <div className="card rise max-h-[80dvh] overflow-y-auto">
-      <HoldCard state={state} me={me} players={players} />
+    <>
+      <div className="flex h-[min(60dvh,480px)] shrink-0 flex-col">
+        <HoldCard {...ctx} />
+      </div>
       {me.seerResults.length > 0 && (
-        <div className="mt-4">
+        <div>
           <h4 className="mb-1 text-sm font-bold">🔮 {t("player.seerHistory")}</h4>
           <ul className="space-y-1 text-sm">
             {me.seerResults.map((r, i) => (
               <li key={i} className={r.isWolf ? "text-blood-light" : "text-emerald-300"}>
-                {t("phase.night", { n: r.night })}: {t(r.isWolf ? "player.seerIsWolf" : "player.seerNotWolf", { name: players.get(r.targetId)?.name ?? "?" })}
+                {t("phase.night", { n: r.night })}:{" "}
+                {t(r.isWolf ? "player.seerIsWolf" : "player.seerNotWolf", { name: players.get(r.targetId)?.name ?? "?" })}
               </li>
             ))}
           </ul>
         </div>
       )}
-      <button className="btn-ghost mt-4 w-full" onClick={onClose}>
-        {t("common.close")}
-      </button>
-    </div>
+    </>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Target grid
+// Target grid — always fits the free height, whatever the player count.
 // ---------------------------------------------------------------------------
 
 function TargetGrid({
@@ -317,8 +362,18 @@ function TargetGrid({
   marks?: Record<string, React.ReactNode>;
   disabled?: boolean;
 }) {
+  const n = ids.length;
+  const cols = n <= 4 ? 2 : n <= 9 ? 3 : 4;
+  const rows = Math.max(1, Math.ceil(n / cols));
+  const dense = n > 9;
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+    <div
+      className="grid min-h-0 flex-1 content-start gap-1.5"
+      style={{
+        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+        gridTemplateRows: `repeat(${rows}, minmax(0, ${dense ? 84 : 104}px))`,
+      }}
+    >
       {ids.map((id) => {
         const p = players.get(id);
         if (!p) return null;
@@ -329,14 +384,16 @@ function TargetGrid({
             type="button"
             disabled={disabled}
             onClick={() => onPick(id)}
-            className={`relative flex min-h-20 flex-col items-center justify-center gap-1 rounded-lg border p-2 text-center transition active:scale-95 ${
-              sel ? "border-gold bg-gold/20" : "border-white/10 bg-white/5 hover:bg-white/10"
+            className={`relative flex min-h-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg border px-1 text-center transition active:scale-95 ${
+              sel ? "border-white bg-white/15" : "border-white/10 bg-white/5 hover:bg-white/10"
             } disabled:opacity-60`}
             aria-pressed={sel}
           >
-            <span className="text-3xl">{p.avatar}</span>
-            <span className="line-clamp-2 text-sm leading-tight font-semibold"><StyledName p={p} /></span>
-            {marks?.[id] && <span className="absolute top-1 right-1 text-xs">{marks[id]}</span>}
+            <Avatar p={p} size={dense ? "sm" : "md"} />
+            <span className={`line-clamp-1 w-full leading-tight font-semibold ${dense ? "text-[11px]" : "text-xs"}`}>
+              <StyledName p={p} />
+            </span>
+            {marks?.[id] && <span className="absolute top-0.5 right-0.5 text-[10px]">{marks[id]}</span>}
           </button>
         );
       })}
@@ -344,48 +401,72 @@ function TargetGrid({
   );
 }
 
+/** Bottom action row (one or two buttons side by side). */
+const Actions = ({ children }: { children: React.ReactNode }) => <div className="flex shrink-0 gap-2">{children}</div>;
+
 // ---------------------------------------------------------------------------
 // Night
 // ---------------------------------------------------------------------------
 
-function Night({ state, me, players }: { state: ClientState; me: MeView; players: Map<string, PlayerView> }) {
+function Night(ctx: Ctx) {
   const t = useT();
+  const { state, me } = ctx;
   const stepKey = `${state.phase.night}-${state.phase.stepIndex}`;
-  const header = (
-    <div className="flex flex-col items-center gap-2 pt-4 text-center">
-      <div className="moon h-14 w-14 rounded-full opacity-80" aria-hidden />
-      <h2 className="font-display text-2xl font-bold text-moon">{t("phase.night", { n: state.phase.night })}</h2>
-    </div>
-  );
-  if (me.turn) return (<>{header}<NightTurn key={stepKey} state={state} me={me} players={players} /></>);
-  if (me.decoy) return (<>{header}<Decoy key={stepKey} state={state} me={me} players={players} /></>);
+  if (me.turn) return <NightTurn key={stepKey} {...ctx} />;
+  if (me.decoy) return <Decoy key={stepKey} {...ctx} />;
   return (
-    <section className="flex flex-col items-center gap-4 py-24 text-center">
+    <Fill center>
       <div className="text-6xl">😴</div>
       <h2 className="font-display text-3xl font-bold text-moon">{t("player.closeEyes")}</h2>
       <p className="text-white/50">{t("player.nightFalls")}</p>
-    </section>
+    </Fill>
   );
 }
 
-function Decoy({ state, me, players }: { state: ClientState; me: MeView; players: Map<string, PlayerView> }) {
+function NightTitle({ night }: { night: number }) {
+  const t = useT();
+  return (
+    <div className="flex shrink-0 items-center justify-center gap-2">
+      <div className="moon h-6 w-6 rounded-full opacity-80" aria-hidden />
+      <h2 className="font-display text-xl font-bold text-moon">{t("phase.night", { n: night })}</h2>
+    </div>
+  );
+}
+
+function Decoy({ state, me, players }: Ctx) {
   const t = useT();
   const [sel, setSel] = useState<string[]>([]);
   const [done, setDone] = useState(false);
   const ids = state.players.filter((p) => p.alive && p.id !== me.id).map((p) => p.id);
   return (
-    <section className="flex flex-col gap-4">
-      <p className="text-center font-semibold">{done ? t("player.decoyDone") : t("player.decoyTitle")}</p>
+    <Fill>
+      <NightTitle night={state.phase.night} />
+      <p className="shrink-0 text-center text-sm font-semibold">{done ? t("player.decoyDone") : t("player.decoyTitle")}</p>
       <TargetGrid players={players} ids={ids} selected={sel} onPick={(id) => setSel([id])} disabled={done} />
-      <button className="btn-primary py-4 text-lg" disabled={!sel.length || done} onClick={() => setDone(true)}>
-        {t("player.confirm")}
-      </button>
-      <p className="text-center text-xs text-white/40">{t("player.decoyHint")}</p>
-    </section>
+      <Actions>
+        <button className="btn-primary flex-1 py-3" disabled={!sel.length || done} onClick={() => setDone(true)}>
+          {t("player.confirm")}
+        </button>
+      </Actions>
+      <p className="shrink-0 text-center text-[11px] text-white/40">{t("player.decoyHint")}</p>
+    </Fill>
   );
 }
 
-function NightTurn({ state, me, players }: { state: ClientState; me: MeView; players: Map<string, PlayerView> }) {
+function TurnBanner({ roleId, extra }: { roleId: NonNullable<MeView["roleId"]>; extra?: React.ReactNode }) {
+  const t = useT();
+  return (
+    <div className="pulse-ring shrink-0 rounded-lg border border-blood/50 bg-blood/10 px-3 py-2 text-center">
+      <div className="flex items-center justify-center gap-2 text-xs font-bold text-blood-light">
+        {t("player.yourTurn")} <RoleBadge roleId={roleId} />
+      </div>
+      <p className="mt-1 text-base font-semibold leading-snug">{t(`roles.${roleId}.action`)}</p>
+      {extra}
+    </div>
+  );
+}
+
+function NightTurn({ state, me, players }: Ctx) {
   const t = useT();
   const act = usePlayerAction();
   const turn = me.turn!;
@@ -394,30 +475,23 @@ function NightTurn({ state, me, players }: { state: ClientState; me: MeView; pla
   const [save, setSave] = useState(false);
   const roleId = me.roleId!;
 
-  const intro = (
-    <div className="pulse-ring rounded-lg border border-gold/50 bg-gold/10 p-3 text-center">
-      <div className="text-sm font-bold text-gold">{t("player.yourTurn")}</div>
-      <div className="mt-1 flex items-center justify-center gap-2">
-        <RoleBadge roleId={roleId} size="md" />
-      </div>
-      <p className="mt-2 text-lg font-semibold">{t(`roles.${roleId}.action`)}</p>
-    </div>
-  );
-
-  // Seer result is shown right after acting.
   if (turn.done) {
     const last = turn.step === "seer" ? me.seerResults[me.seerResults.length - 1] : null;
     return (
-      <section className="flex flex-col items-center gap-4 py-10 text-center">
+      <Fill center>
         {last && last.night === state.phase.night && (
-          <div className={`rise rounded-lg border p-5 text-xl font-bold ${last.isWolf ? "border-blood bg-blood/20 text-blood-light" : "border-emerald-500 bg-emerald-500/15 text-emerald-300"}`}>
+          <div
+            className={`rise rounded-lg border p-5 text-xl font-bold ${
+              last.isWolf ? "border-blood bg-blood/20 text-blood-light" : "border-emerald-500 bg-emerald-500/15 text-emerald-300"
+            }`}
+          >
             {t(last.isWolf ? "player.seerIsWolf" : "player.seerNotWolf", { name: players.get(last.targetId)?.name ?? "?" })}
           </div>
         )}
         {turn.step === "werewolf" && <div className="text-lg font-bold text-emerald-300">✓ {t("player.packAgree")}</div>}
         <div className="text-5xl">😴</div>
         <p className="text-lg">{t("player.done")}</p>
-      </section>
+      </Fill>
     );
   }
 
@@ -426,55 +500,55 @@ function NightTurn({ state, me, players }: { state: ClientState; me: MeView; pla
     const victim = w.victimId ? players.get(w.victimId) : null;
     const canSave = w.heal && !!victim && (w.canSelfSave || w.victimId !== me.id);
     return (
-      <section className="flex flex-col gap-4">
-        {intro}
-        <div className="card text-center">
+      <Fill>
+        <TurnBanner roleId={roleId} />
+        <div className="flex shrink-0 items-center gap-2 rounded-lg border border-white/10 p-2">
           {victim ? (
-            <div className="flex flex-col items-center gap-2">
-              <Avatar p={victim} size="lg" />
-              <p className="font-semibold">{t("player.witchVictim", { name: victim.name })}</p>
-            </div>
-          ) : (
-            <p>{t("player.witchNoVictim")}</p>
-          )}
-          {victim && (
-            <button
-              className={`btn mt-3 w-full ${save ? "bg-emerald-500 text-night-950" : "btn-ghost"}`}
-              disabled={!canSave}
-              onClick={() => {
-                setSave(!save);
-                if (!save && !w.bothAllowed) setPoison(null);
-              }}
-            >
-              💚 {w.heal ? t("player.witchSave", { name: victim.name }) : t("player.potionUsed")}
-            </button>
-          )}
-        </div>
-        <div className="card">
-          <p className="mb-2 font-semibold">☠️ {t("player.witchPoison")}</p>
-          {w.poison ? (
             <>
-              <TargetGrid
-                players={players}
-                ids={turn.targets}
-                selected={poison ? [poison] : []}
-                onPick={(id) => {
-                  setPoison(poison === id ? null : id);
-                  if (!w.bothAllowed) setSave(false);
+              <Avatar p={victim} size="md" />
+              <p className="min-w-0 flex-1 text-sm leading-snug">{t("player.witchVictim", { name: victim.name })}</p>
+              <button
+                className={`btn btn-sm shrink-0 ${save ? "bg-emerald-500 text-night-950" : "btn-ghost"}`}
+                disabled={!canSave}
+                onClick={() => {
+                  setSave(!save);
+                  if (!save && !w.bothAllowed) setPoison(null);
                 }}
-              />
-              <button className="btn-ghost btn-sm mt-2 w-full" onClick={() => setPoison(null)}>
-                {t("player.witchNoPoison")}
+              >
+                💚 {w.heal ? `${save ? "✓ " : ""}${t("player.heal")}` : t("player.potionUsed")}
               </button>
             </>
           ) : (
-            <p className="text-white/50">{t("player.potionUsed")}</p>
+            <p className="text-sm">{t("player.witchNoVictim")}</p>
           )}
         </div>
-        <button className="btn-primary py-4 text-lg" onClick={() => act({ type: "night", save, poisonId: poison })}>
-          {t("player.confirm")}
-        </button>
-      </section>
+        <p className="shrink-0 text-sm font-semibold">
+          ☠️ {t("player.witchPoison")} {!w.poison && <span className="font-normal text-white/50">{t("player.potionUsed")}</span>}
+        </p>
+        {w.poison ? (
+          <TargetGrid
+            players={players}
+            ids={turn.targets}
+            selected={poison ? [poison] : []}
+            onPick={(id) => {
+              setPoison(poison === id ? null : id);
+              if (!w.bothAllowed) setSave(false);
+            }}
+          />
+        ) : (
+          <div className="flex-1" />
+        )}
+        <Actions>
+          {w.poison && (
+            <button className="btn-ghost flex-1" onClick={() => setPoison(null)}>
+              {t("player.witchNoPoison")}
+            </button>
+          )}
+          <button className="btn-primary flex-1 py-3" onClick={() => act({ type: "night", save, poisonId: poison })}>
+            {t("player.confirm")}
+          </button>
+        </Actions>
+      </Fill>
     );
   }
 
@@ -484,29 +558,24 @@ function NightTurn({ state, me, players }: { state: ClientState; me: MeView; pla
     for (const [wolfId, target] of Object.entries(pack)) (byTarget[target] ??= []).push(wolfId);
     const marks: Record<string, React.ReactNode> = {};
     for (const [target, wolves] of Object.entries(byTarget))
-      marks[target] = <span className="rounded-full bg-blood/80 px-1.5 py-0.5">🐺 {wolves.map((w) => players.get(w)?.avatar).join("")}</span>;
+      marks[target] = <span className="rounded bg-blood/90 px-1 py-0.5">🐺{wolves.length}</span>;
     const agreed = Object.keys(pack).length > 0 && new Set(Object.values(pack)).size === 1;
     return (
-      <section className="flex flex-col gap-4">
-        {intro}
-        <div className="text-center text-sm">
-          <span className="font-semibold text-white/70">{t("player.packPicks")}: </span>
-          {Object.entries(pack).map(([w, target]) => (
-            <span key={w} className="chip mx-0.5">
-              {players.get(w)?.avatar} → {players.get(target)?.name}
-            </span>
-          ))}
-          {!agreed && Object.keys(pack).length > 0 && <p className="mt-1 text-gold">{t("player.packDisagree")}</p>}
-          {state.settings.wolvesMustBite !== false && <p className="mt-1 text-xs text-blood-light">{t("player.mustBite")}</p>}
-        </div>
-        <TargetGrid
-          players={players}
-          ids={turn.targets}
-          selected={turn.selected}
-          marks={marks}
-          onPick={(id) => act({ type: "night", targets: [id] })}
+      <Fill>
+        <TurnBanner
+          roleId={roleId}
+          extra={
+            <p className="mt-0.5 text-[11px] text-white/70">
+              {Object.keys(pack).length > 0 && !agreed
+                ? t("player.packDisagree")
+                : state.settings.wolvesMustBite !== false
+                  ? t("player.mustBite")
+                  : t("player.packPicks")}
+            </p>
+          }
         />
-      </section>
+        <TargetGrid players={players} ids={turn.targets} selected={turn.selected} marks={marks} onPick={(id) => act({ type: "night", targets: [id] })} />
+      </Fill>
     );
   }
 
@@ -514,18 +583,15 @@ function NightTurn({ state, me, players }: { state: ClientState; me: MeView; pla
   const toggle = (id: string) =>
     setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : max === 1 ? [id] : [...s, id].slice(-max)));
   return (
-    <section className="flex flex-col gap-4">
-      {intro}
-      {max > 1 && <p className="text-center text-sm text-white/60">{t("player.pickTwo")}</p>}
+    <Fill>
+      <TurnBanner roleId={roleId} extra={max > 1 ? <p className="text-[11px] text-white/70">{t("player.pickTwo")}</p> : null} />
       <TargetGrid players={players} ids={turn.targets} selected={sel} onPick={toggle} />
-      <button
-        className="btn-primary py-4 text-lg"
-        disabled={sel.length !== max}
-        onClick={() => act({ type: "night", targets: sel })}
-      >
-        {t("player.confirm")}
-      </button>
-    </section>
+      <Actions>
+        <button className="btn-primary flex-1 py-3" disabled={sel.length !== max} onClick={() => act({ type: "night", targets: sel })}>
+          {t("player.confirm")}
+        </button>
+      </Actions>
+    </Fill>
   );
 }
 
@@ -533,15 +599,15 @@ function NightTurn({ state, me, players }: { state: ClientState; me: MeView; pla
 // Day
 // ---------------------------------------------------------------------------
 
-function Dawn({ state, me, players }: { state: ClientState; me: MeView; players: Map<string, PlayerView> }) {
+function Dawn({ state, me, players }: Ctx) {
   const t = useT();
   const deaths = state.lastDeaths;
   const iDied = deaths.some((d) => d.playerId === me.id);
   return (
-    <section className="flex flex-col items-center gap-5 py-8 text-center">
-      <div className="text-6xl">🌅</div>
+    <Fill center>
+      <div className="text-5xl">🌅</div>
       <h2 className="font-display text-3xl font-bold text-moon">{t("player.dawn")}</h2>
-      {iDied && <p className="rounded-xl bg-blood/25 px-4 py-2 text-xl font-bold text-blood-light">{t("player.youDied")}</p>}
+      {iDied && <p className="rounded-lg bg-blood/25 px-4 py-2 text-xl font-bold text-blood-light">{t("player.youDied")}</p>}
       {deaths.length ? (
         <>
           <p className="text-white/70">{t("player.diedLastNight")}</p>
@@ -551,7 +617,9 @@ function Dawn({ state, me, players }: { state: ClientState; me: MeView; players:
               return p ? (
                 <div key={d.playerId} className="flex flex-col items-center gap-1">
                   <Avatar p={p} size="lg" />
-                  <span className="font-semibold"><StyledName p={p} /></span>
+                  <span className="font-semibold">
+                    <StyledName p={p} />
+                  </span>
                   {p.roleId && <RoleBadge roleId={p.roleId} />}
                 </div>
               ) : null;
@@ -562,33 +630,34 @@ function Dawn({ state, me, players }: { state: ClientState; me: MeView; players:
         <p className="text-xl text-emerald-300">{t("player.peacefulNight")}</p>
       )}
       <p className="text-sm text-white/40">{t("player.lookUp")}</p>
-    </section>
+    </Fill>
   );
 }
 
-function Hunter({ state, me, players }: { state: ClientState; me: MeView; players: Map<string, PlayerView> }) {
+function Hunter({ state, me, players }: Ctx) {
   const t = useT();
   const act = usePlayerAction();
   const [sel, setSel] = useState<string | null>(null);
   if (me.hunter?.canShoot)
     return (
-      <section className="flex flex-col gap-4">
-        <div className="pulse-ring rounded-lg border border-gold/50 bg-gold/10 p-4 text-center">
-          <div className="text-4xl">🏹</div>
-          <p className="mt-2 text-lg font-bold">{t("player.hunterYou")}</p>
+      <Fill>
+        <div className="pulse-ring shrink-0 rounded-lg border border-blood/50 bg-blood/10 p-3 text-center">
+          <p className="font-bold">🏹 {t("player.hunterYou")}</p>
         </div>
         <TargetGrid players={players} ids={me.hunter.targets} selected={sel ? [sel] : []} onPick={setSel} />
-        <button className="btn-primary py-4 text-lg" disabled={!sel} onClick={() => act({ type: "hunterShot", targetId: sel })}>
-          {t("player.confirm")}
-        </button>
-        <button className="btn-ghost" onClick={() => act({ type: "hunterShot", targetId: null })}>
-          {t("player.hunterNoShot")}
-        </button>
-      </section>
+        <Actions>
+          <button className="btn-ghost flex-1" onClick={() => act({ type: "hunterShot", targetId: null })}>
+            {t("player.hunterNoShot")}
+          </button>
+          <button className="btn-primary flex-1 py-3" disabled={!sel} onClick={() => act({ type: "hunterShot", targetId: sel })}>
+            {t("player.confirm")}
+          </button>
+        </Actions>
+      </Fill>
     );
   const shotName = state.hunterShot ? players.get(state.hunterShot)?.name : null;
   return (
-    <section className="flex flex-col items-center gap-4 py-16 text-center">
+    <Fill center>
       <div className="text-6xl">🏹</div>
       <p className="text-xl font-bold">
         {state.hunterShot === null
@@ -597,7 +666,7 @@ function Hunter({ state, me, players }: { state: ClientState; me: MeView; player
             ? t("script.hunterShot", { name: shotName })
             : t("script.hunterMissed")}
       </p>
-    </section>
+    </Fill>
   );
 }
 
@@ -607,16 +676,16 @@ function VoteProgress({ state }: { state: ClientState }) {
   if (!v) return null;
   const pct = v.eligible ? (v.voted / v.eligible) * 100 : 0;
   return (
-    <div>
-      <div className="mb-1 text-center text-sm text-white/60">{t("player.voteProgress", { voted: v.voted, eligible: v.eligible })}</div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+    <div className="w-full shrink-0">
+      <div className="mb-1 text-center text-xs text-white/60">{t("player.voteProgress", { voted: v.voted, eligible: v.eligible })}</div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
         <div className="h-full bg-gold transition-[width]" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
 }
 
-function Nominate({ state, me, players }: { state: ClientState; me: MeView; players: Map<string, PlayerView> }) {
+function Nominate({ state, me, players }: Ctx) {
   const t = useT();
   const act = usePlayerAction();
   const [sel, setSel] = useState<string | null>(null);
@@ -626,42 +695,39 @@ function Nominate({ state, me, players }: { state: ClientState; me: MeView; play
     [v?.candidates, state.players, me.id],
   );
   const title = v?.candidates ? t("player.revoteTitle") : t("player.nominateTitle");
-  if (me.myVote)
+  if (me.myVote || !me.canVote)
     return (
-      <section className="flex flex-col items-center gap-4 py-12 text-center">
+      <Fill center>
         <div className="text-5xl">🗳️</div>
         <p className="text-xl font-bold">
-          {me.myVote === "skip" ? t("player.votedSkip") : t("player.votedFor", { name: players.get(me.myVote)?.name ?? "?" })}
+          {!me.myVote
+            ? title
+            : me.myVote === "skip"
+              ? t("player.votedSkip")
+              : t("player.votedFor", { name: players.get(me.myVote)?.name ?? "?" })}
         </p>
-        <div className="w-full">
-          <VoteProgress state={state} />
-        </div>
-      </section>
-    );
-  if (!me.canVote)
-    return (
-      <section className="flex flex-col items-center gap-4 py-12 text-center">
-        <h2 className="text-2xl font-bold">{title}</h2>
-        <div className="w-full">
-          <VoteProgress state={state} />
-        </div>
-      </section>
+        <VoteProgress state={state} />
+      </Fill>
     );
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-center text-2xl font-bold">{title}</h2>
-      {state.settings.mandatoryVote && <p className="text-center text-sm text-blood-light">{t("player.mustVote")}</p>}
+    <Fill>
+      <div className="shrink-0 text-center">
+        <h2 className="text-xl font-bold">{title}</h2>
+        {state.settings.mandatoryVote && <p className="text-xs text-blood-light">{t("player.mustVote")}</p>}
+      </div>
       <TargetGrid players={players} ids={ids} selected={sel ? [sel] : []} onPick={setSel} />
-      <button className="btn-primary py-4 text-lg" disabled={!sel} onClick={() => sel && act({ type: "vote", choice: sel })}>
-        {t("player.confirm")}
-      </button>
-      {!state.settings.mandatoryVote && (
-        <button className="btn-ghost" onClick={() => act({ type: "vote", choice: "skip" })}>
-          {t("player.skip")}
+      <Actions>
+        {!state.settings.mandatoryVote && (
+          <button className="btn-ghost flex-1" onClick={() => act({ type: "vote", choice: "skip" })}>
+            {t("player.skip")}
+          </button>
+        )}
+        <button className="btn-primary flex-1 py-3" disabled={!sel} onClick={() => sel && act({ type: "vote", choice: sel })}>
+          {t("player.confirm")}
         </button>
-      )}
+      </Actions>
       <VoteProgress state={state} />
-    </section>
+    </Fill>
   );
 }
 
@@ -675,7 +741,9 @@ function Nominees({ state, players }: { state: ClientState; players: Map<string,
         return p ? (
           <div key={id} className="flex flex-col items-center gap-1">
             <Avatar p={p} size="lg" />
-            <span className="font-bold"><StyledName p={p} /></span>
+            <span className="font-bold">
+              <StyledName p={p} />
+            </span>
             {state.nomination && <span className="text-xs text-white/50">{state.nomination.counts[id] ?? 0} 🗳️</span>}
           </div>
         ) : null;
@@ -684,38 +752,42 @@ function Nominees({ state, players }: { state: ClientState; players: Map<string,
   );
 }
 
-function Verdict({ state, me, players }: { state: ClientState; me: MeView; players: Map<string, PlayerView> }) {
+function Verdict({ state, me, players }: Ctx) {
   const t = useT();
   const act = usePlayerAction();
   const nominee = state.vote?.nomineeId ? players.get(state.vote.nomineeId) : null;
   return (
-    <section className="flex flex-col items-center gap-5 text-center">
+    <Fill>
       {nominee && (
-        <>
+        <div className="flex shrink-0 flex-col items-center gap-2 text-center">
           <Avatar p={nominee} size="xl" />
-          <h2 className="text-2xl font-bold">{t("player.verdictTitle", { name: nominee.name })}</h2>
-        </>
+          <h2 className="text-xl font-bold">{t("player.verdictTitle", { name: nominee.name })}</h2>
+        </div>
       )}
       {me.onStand ? (
-        <p className="rounded-xl bg-gold/20 px-4 py-3 font-bold text-gold">{t("player.onStandNoVote")}</p>
+        <div className="flex flex-1 items-center justify-center">
+          <p className="rounded-lg bg-gold/20 px-4 py-3 text-center font-bold text-gold">{t("player.onStandNoVote")}</p>
+        </div>
       ) : me.myVote ? (
-        <p className="text-xl font-bold">{me.myVote === "execute" ? t("player.votedExecute") : t("player.votedSpare")}</p>
+        <div className="flex flex-1 items-center justify-center">
+          <p className="text-xl font-bold">{me.myVote === "execute" ? t("player.votedExecute") : t("player.votedSpare")}</p>
+        </div>
       ) : me.canVote ? (
-        <div className="grid w-full grid-cols-2 gap-3">
-          <button className="btn h-36 flex-col bg-blood text-2xl font-black text-white" onClick={() => act({ type: "vote", choice: "execute" })}>
+        <div className="grid min-h-0 flex-1 grid-cols-2 gap-3" style={{ maxHeight: 220 }}>
+          <button className="btn h-full flex-col bg-blood text-2xl font-black text-white" onClick={() => act({ type: "vote", choice: "execute" })}>
             <span className="text-4xl">🪢</span>
             {t("player.execute")}
           </button>
-          <button className="btn h-36 flex-col bg-emerald-500 text-2xl font-black text-night-950" onClick={() => act({ type: "vote", choice: "spare" })}>
+          <button className="btn h-full flex-col bg-emerald-500 text-2xl font-black text-night-950" onClick={() => act({ type: "vote", choice: "spare" })}>
             <span className="text-4xl">🕊️</span>
             {t("player.spare")}
           </button>
         </div>
-      ) : null}
-      <div className="w-full">
-        <VoteProgress state={state} />
-      </div>
-    </section>
+      ) : (
+        <div className="flex-1" />
+      )}
+      <VoteProgress state={state} />
+    </Fill>
   );
 }
 
@@ -725,21 +797,29 @@ function VerdictResult({ state, players }: { state: ClientState; players: Map<st
   if (!r) return null;
   const p = players.get(r.nomineeId);
   return (
-    <section className="flex flex-col items-center gap-4 py-8 text-center">
-      {p && <Avatar p={p} size="xl" />}
-      <h2 className={`font-display text-4xl font-black ${r.executed ? "text-blood-light" : "text-emerald-300"}`}>
-        {r.executed ? t("screen.executed") : t("screen.spared")}
-      </h2>
-      <p className="text-lg">
-        {t(r.executed ? "script.verdictExecuted" : "script.verdictSpared", { name: p?.name ?? "?", execute: r.execute, spare: r.spare })}
-      </p>
-      {r.deaths
-        .filter((d) => d.playerId !== r.nomineeId)
-        .map((d) => (
-          <p key={d.playerId} className="text-pink-300">💔 {players.get(d.playerId)?.name}</p>
-        ))}
-      <VoteBreakdown state={state} t={t} />
-    </section>
+    <Fill>
+      <div className="flex shrink-0 items-center gap-3">
+        {p && <Avatar p={p} size="lg" />}
+        <div className="min-w-0 flex-1">
+          <h2 className={`font-display text-2xl font-black ${r.executed ? "text-blood-light" : "text-emerald-300"}`}>
+            {r.executed ? t("screen.executed") : t("screen.spared")}
+          </h2>
+          <p className="text-sm leading-snug">
+            {t(r.executed ? "script.verdictExecuted" : "script.verdictSpared", { name: p?.name ?? "?", execute: r.execute, spare: r.spare })}
+          </p>
+          {r.deaths
+            .filter((d) => d.playerId !== r.nomineeId)
+            .map((d) => (
+              <p key={d.playerId} className="text-sm text-pink-300">
+                💔 {players.get(d.playerId)?.name}
+              </p>
+            ))}
+        </div>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <VoteBreakdown state={state} t={t} />
+      </div>
+    </Fill>
   );
 }
 
@@ -747,10 +827,14 @@ function NominateResult({ state }: { state: ClientState }) {
   const t = useT();
   const outcome = nominationOutcomeLine(state);
   return (
-    <section className="flex flex-col items-center gap-4 py-4 text-center">
-      <h2 className="text-2xl font-bold">🗳️ {t("phase.nominateResult")}</h2>
-      {outcome && <p className="text-lg font-semibold text-gold">{t(outcome.k, outcome.params)}</p>}
-      <VoteBreakdown state={state} t={t} />
-    </section>
+    <Fill>
+      <div className="shrink-0 text-center">
+        <h2 className="text-xl font-bold">🗳️ {t("phase.nominateResult")}</h2>
+        {outcome && <p className="text-sm font-semibold text-gold">{t(outcome.k, outcome.params)}</p>}
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <VoteBreakdown state={state} t={t} />
+      </div>
+    </Fill>
   );
 }

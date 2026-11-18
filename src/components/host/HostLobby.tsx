@@ -14,10 +14,14 @@ import { RulesCard } from "./RulesCard";
 
 export function HostLobby({ state }: { state: ClientState }) {
   return (
-    <main className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.2fr)]">
-      <JoinCard state={state} />
-      <PlayersCard state={state} />
-      <div className="flex flex-col gap-4 lg:col-span-2 xl:col-span-1">
+    <main className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.2fr)]">
+      <div className="xl:min-h-0 xl:overflow-y-auto">
+        <JoinCard state={state} />
+      </div>
+      <div className="xl:min-h-0 xl:overflow-y-auto">
+        <PlayersCard state={state} />
+      </div>
+      <div className="flex flex-col gap-4 lg:col-span-2 xl:col-span-1 xl:min-h-0 xl:overflow-y-auto">
         <RoleConfig state={state} />
         <RulesCard state={state} />
       </div>

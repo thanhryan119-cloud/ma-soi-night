@@ -150,9 +150,10 @@ function JoinForm({
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-4 pt-16 pb-8">
-      <h1 className="text-center font-display text-3xl font-black text-moon">{t("player.joinTitle", { code })}</h1>
-      <form onSubmit={submit} className="mt-8 flex flex-1 flex-col gap-6">
+    <main className="fixed inset-0 mx-auto flex max-w-md flex-col px-4 pt-14 pb-4">
+      <h1 className="shrink-0 text-center font-display text-2xl font-black text-moon">{t("player.joinTitle", { code })}</h1>
+      <form onSubmit={submit} className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
         {profile && <ProfileEditor value={profile} onChange={setProfile} compact />}
         <div>
           <span className="ui-label">{t("lang.label")}</span>
@@ -169,7 +170,8 @@ function JoinForm({
             ))}
           </div>
         </div>
-        <button className="btn-primary mt-auto py-4 text-xl" disabled={busy || !profile?.name.trim()}>
+        </div>
+        <button className="btn-primary shrink-0 py-4 text-xl" disabled={busy || !profile?.name.trim()}>
           {busy ? t("player.joining") : t("player.join")}
         </button>
       </form>

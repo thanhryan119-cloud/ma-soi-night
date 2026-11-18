@@ -355,7 +355,8 @@
     "wait": "Waiting for the Host…",
     "lookUp": "Look at the shared screen",
     "mustBite": "You must attack someone.",
-    "mustVote": "Voting is mandatory."
+    "mustVote": "Voting is mandatory.",
+    "heal": "Heal"
   },
   "profile": {
     "title": "Your profile",

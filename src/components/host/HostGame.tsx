@@ -20,8 +20,8 @@ export function HostGame({ state, offset, hideRoles }: Props) {
 
   if (kind === "gameOver")
     return (
-      <main className="mx-auto grid max-w-6xl gap-4 p-4 lg:grid-cols-[1.3fr_1fr]">
-        <section className="card flex flex-col gap-6 py-8">
+      <main className="mx-auto grid max-w-6xl gap-4 p-4 lg:grid-cols-[1.3fr_1fr] xl:h-full xl:min-h-0">
+        <section className="card flex flex-col gap-6 py-8 xl:min-h-0 xl:overflow-y-auto">
           <WinnerBanner state={state} t={t} />
           <RolesGrid state={state} />
           <button
@@ -31,7 +31,7 @@ export function HostGame({ state, offset, hideRoles }: Props) {
             🔁 {t("host.newGame")}
           </button>
         </section>
-        <section className="card max-h-[80dvh] overflow-y-auto">
+        <section className="card max-h-[80dvh] overflow-y-auto xl:max-h-none xl:min-h-0">
           <h3 className="mb-3 text-lg font-bold">{t("screen.timeline")}</h3>
           <Timeline log={(state.log ?? []).filter((e) => e.public)} t={t} />
           <details className="mt-4">
@@ -43,19 +43,23 @@ export function HostGame({ state, offset, hideRoles }: Props) {
     );
 
   return (
-    <main className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.4fr)_minmax(0,0.9fr)]">
-      <div className="order-2 flex flex-col gap-4 xl:order-1">
+    <main className="grid gap-4 p-4 xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.4fr)_minmax(0,0.9fr)]">
+      <div className="order-2 flex flex-col gap-4 xl:order-1 xl:min-h-0 xl:overflow-y-auto">
         <PlayersTable state={state} hideRoles={hideRoles} />
       </div>
-      <div className="order-1 flex flex-col gap-4 xl:order-2">
-        <PhaseBar state={state} />
-        {state.pendingWin && <WinPending state={state} winner={state.pendingWin} />}
-        <ScriptCard state={state} />
-        <PhasePanel state={state} hideRoles={hideRoles} />
-        <Controls state={state} offset={offset} />
+      <div className="order-1 flex flex-col gap-4 xl:order-2 xl:min-h-0">
+        <div className="flex flex-col gap-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
+          <PhaseBar state={state} />
+          {state.pendingWin && <WinPending state={state} winner={state.pendingWin} />}
+          <ScriptCard state={state} />
+          <PhasePanel state={state} hideRoles={hideRoles} />
+        </div>
+        <div className="shrink-0">
+          <Controls state={state} offset={offset} />
+        </div>
       </div>
-      <div className="order-3 flex flex-col gap-4">
-        <section className="card flex max-h-[60dvh] flex-col">
+      <div className="order-3 flex flex-col gap-4 xl:min-h-0 xl:overflow-y-auto">
+        <section className="card flex max-h-[60dvh] flex-col xl:max-h-none xl:min-h-[240px] xl:flex-1">
           <h3 className="mb-2 font-bold">📜 {t("host.log")}</h3>
           <div className="min-h-0 flex-1 overflow-y-auto">
             <LogList state={state} hideRoles={hideRoles} />

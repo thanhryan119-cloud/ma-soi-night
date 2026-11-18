@@ -75,8 +75,8 @@ export default function HostApp({ code }: { code: string }) {
     );
 
   return (
-    <div className="min-h-dvh">
-      <header className="sticky top-0 z-40 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-white/10 bg-night-950/90 px-4 py-2 backdrop-blur">
+    <div className="min-h-dvh xl:flex xl:h-dvh xl:flex-col xl:overflow-hidden">
+      <header className="sticky top-0 z-40 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-white/10 bg-night-950/90 px-4 py-2 backdrop-blur">
         <Link href="/" className="font-display text-xl font-black text-moon">
           {t("app.name")}
         </Link>
@@ -97,6 +97,7 @@ export default function HostApp({ code }: { code: string }) {
           <LangSwitch className="relative" />
         </div>
       </header>
+      <div className="xl:min-h-0 xl:flex-1">
       {!state || state.viewer !== "host" ? (
         <Spinner label={t("common.loading")} />
       ) : state.phase.kind === "lobby" ? (
@@ -104,6 +105,7 @@ export default function HostApp({ code }: { code: string }) {
       ) : (
         <HostGame state={state} offset={offset} hideRoles={hideRoles} />
       )}
+      </div>
     </div>
   );
 }
