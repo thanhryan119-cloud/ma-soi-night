@@ -6,7 +6,7 @@ import { MIN_PLAYERS } from "@shared/engine";
 import { ROLES, ROLE_IDS, totalRoles } from "@shared/roles";
 import type { Locale, RoleId } from "@shared/types";
 import type { ClientState } from "@shared/views";
-import { Avatar, RoleBadge } from "@/components/ui";
+import { Avatar, RoleBadge, StyledName } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { socketUrl, storage } from "@/lib/socket";
 import { useHostAction } from "./common";
@@ -125,7 +125,7 @@ function PlayersCard({ state }: { state: ClientState }) {
           <li key={p.id} className="rise flex flex-wrap items-center gap-2 rounded-xl bg-white/5 p-2">
             <Avatar p={p} size="sm" />
             <div className="min-w-0 flex-1">
-              <div className="truncate font-semibold">{p.name}</div>
+              <div className="truncate font-semibold"><StyledName p={p} /></div>
               <div className="flex flex-wrap gap-1 text-[11px] text-white/50">
                 <span className="chip py-0">{p.locale.toUpperCase()}</span>
                 {p.isBot && <span className="chip py-0">🤖 {t("common.bot")}</span>}

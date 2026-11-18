@@ -2,6 +2,7 @@
 // Players NEVER receive other players' roles unless the rules allow it
 // (wolf teammates, being dead with "dead see roles", or the game is over).
 
+import { DEFAULT_STYLE, type PlayerStyle } from "./cosmetics";
 import { NIGHT_STEP_ROLE, ROLES, isWolf, suggestRoles } from "./roles";
 import {
   aliveIds,
@@ -51,6 +52,8 @@ export interface PlayerView {
   id: string;
   name: string;
   avatar: string;
+  avatarUrl: string | null;
+  style: PlayerStyle;
   alive: boolean;
   connected: boolean;
   locale: Locale;
@@ -281,6 +284,8 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
       id: p.id,
       name: p.name,
       avatar: p.avatar,
+      avatarUrl: p.avatarUrl ?? null,
+      style: p.style ?? DEFAULT_STYLE,
       alive: p.alive,
       connected: p.connected,
       locale: p.locale,

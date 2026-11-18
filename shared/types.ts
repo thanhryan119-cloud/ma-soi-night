@@ -1,3 +1,5 @@
+import type { PlayerStyle } from "./cosmetics";
+
 // Shared domain types for Ma Sói Online (server is the single source of truth).
 
 export type Locale = "vi" | "en";
@@ -46,6 +48,11 @@ export interface Player {
   token: string;
   name: string;
   avatar: string;
+  /** Uploaded/Google photo (validated server-side); falls back to the emoji avatar. */
+  avatarUrl?: string | null;
+  style?: PlayerStyle;
+  /** Linked account, if the player signed in. */
+  userId?: string | null;
   locale: Locale;
   isBot: boolean;
   connected: boolean;
@@ -218,7 +225,7 @@ export type PlayerAction =
   | { type: "night"; targets?: string[]; save?: boolean; poisonId?: string | null }
   | { type: "vote"; choice: string }
   | { type: "hunterShot"; targetId: string | null }
-  | { type: "updateProfile"; name?: string; avatar?: string };
+  | { type: "updateProfile"; name?: string; avatar?: string; style?: Partial<PlayerStyle> };
 
 export type OverrideAction =
   | { kind: "kill"; playerId: string }

@@ -8,7 +8,7 @@ import type { ClientState, PlayerView } from "@shared/views";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { useJoinUrl } from "@/components/host/HostLobby";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
-import { Avatar, LangSwitch, Spinner, TimerDisplay } from "@/components/ui";
+import { Avatar, LangSwitch, Spinner, StyledName, TimerDisplay } from "@/components/ui";
 import { translatorFor, useLocale, useT, type T } from "@/lib/i18n";
 import { emitAck } from "@/lib/socket";
 import { useRoomState } from "@/lib/useRoom";
@@ -87,7 +87,7 @@ function PlayerBubble({ p, size = "lg" }: { p: PlayerView; size?: "lg" | "xl" })
   return (
     <div className="rise flex w-28 flex-col items-center gap-1">
       <Avatar p={p} size={size} />
-      <span className={`line-clamp-2 text-lg leading-tight font-semibold ${p.alive ? "" : "text-white/40"}`}>{p.name}</span>
+      <span className={`line-clamp-2 text-lg leading-tight font-semibold ${p.alive ? "" : "text-white/40"}`}><StyledName p={p} /></span>
     </div>
   );
 }
@@ -299,7 +299,7 @@ function AliveRow({ state }: { state: ClientState }) {
       {state.players.map((p) => (
         <div key={p.id} className="flex w-20 flex-col items-center gap-1">
           <Avatar p={p} size="md" />
-          <span className={`w-full truncate text-center text-sm ${p.alive ? "" : "text-white/30 line-through"}`}>{p.name}</span>
+          <span className={`w-full truncate text-center text-sm ${p.alive ? "" : "text-white/30 line-through"}`}><StyledName p={p} /></span>
         </div>
       ))}
     </div>
@@ -319,7 +319,7 @@ function NominationBars({ state, players }: { state: ClientState; players: Map<s
         return (
           <div key={id} className="flex items-center gap-4">
             <span className={`w-48 truncate text-right text-2xl font-semibold ${up ? "text-gold" : "text-white/60"}`}>
-              {p?.avatar} {p?.name}
+              {p && <StyledName p={p} />}
             </span>
             <div className="h-8 flex-1 overflow-hidden rounded-lg bg-white/5">
               <div className={`h-full ${up ? "bg-gold" : "bg-white/20"}`} style={{ width: `${(c / max) * 100}%` }} />

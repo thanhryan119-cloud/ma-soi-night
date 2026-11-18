@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AVATARS } from "@shared/engine";
 import type { Locale } from "@shared/types";
 import { LangSwitch, Spinner, useErrorToast } from "@/components/ui";
 import { useLocale, useT } from "@/lib/i18n";
+import { getAuth, loadLocalProfile, saveLocalProfile, type LocalProfile } from "@/lib/account";
+import { ProfileEditor } from "@/components/ProfileEditor";
 import { emitAck, getSocket, playerKey, storage, type PlayerSession } from "@/lib/socket";
 import { useRoomState } from "@/lib/useRoom";
 import { PlayerGame } from "./PlayerGame";
@@ -125,30 +126,26 @@ function JoinForm({
 }) {
   const t = useT();
   const { locale, setLocale } = useLocale();
-  const [name, setName] = useState("");
-  const [avatar, setAvatar] = useState(() => AVATARS[Math.floor(Math.random() * AVATARS.length)]);
+  const [profile, setProfile] = useState<LocalProfile | null>(null);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    const last = storage.get<{ name: string; avatar: string }>("msn:profile");
-    if (last) {
-      setName(last.name);
-      if (AVATARS.includes(last.avatar)) setAvatar(last.avatar);
-    }
-  }, []);
+  useEffect(() => setProfile(loadLocalProfile()), []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!profile) return;
     setBusy(true);
     const res = await emitAck<{ ok: boolean; playerId: string; token: string }>("player:join", {
       code,
-      name,
-      avatar,
+      name: profile.name,
+      avatar: profile.avatar,
+      style: profile.style,
+      authToken: getAuth()?.token,
       locale,
     });
     setBusy(false);
     if (!showError(res) || !res.playerId || !res.token) return;
-    storage.set("msn:profile", { name, avatar });
+    saveLocalProfile(profile);
     onJoined({ playerId: res.playerId, token: res.token });
   }
 
@@ -156,41 +153,7 @@ function JoinForm({
     <main className="mx-auto flex min-h-dvh max-w-md flex-col px-4 pt-16 pb-8">
       <h1 className="text-center font-display text-3xl font-black text-moon">{t("player.joinTitle", { code })}</h1>
       <form onSubmit={submit} className="mt-8 flex flex-1 flex-col gap-6">
-        <div>
-          <label className="ui-label" htmlFor="name">
-            {t("player.yourName")}
-          </label>
-          <div className="flex items-center gap-3">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-night-700 text-4xl">{avatar}</span>
-            <input
-              id="name"
-              className="ui-input"
-              value={name}
-              maxLength={24}
-              autoComplete="nickname"
-              placeholder={t("player.namePlaceholder")}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-        </div>
-        <div>
-          <span className="ui-label">{t("player.chooseAvatar")}</span>
-          <div className="grid grid-cols-8 gap-1.5">
-            {AVATARS.map((a) => (
-              <button
-                key={a}
-                type="button"
-                onClick={() => setAvatar(a)}
-                className={`aspect-square rounded-xl text-2xl transition ${
-                  a === avatar ? "bg-gold/30 ring-2 ring-gold" : "bg-white/5 hover:bg-white/10"
-                }`}
-                aria-pressed={a === avatar}
-              >
-                {a}
-              </button>
-            ))}
-          </div>
-        </div>
+        {profile && <ProfileEditor value={profile} onChange={setProfile} compact />}
         <div>
           <span className="ui-label">{t("lang.label")}</span>
           <div className="flex gap-2">
@@ -199,14 +162,14 @@ function JoinForm({
                 key={l}
                 type="button"
                 onClick={() => setLocale(l)}
-                className={`btn flex-1 ${locale === l ? "bg-gold text-night-950" : "btn-ghost"}`}
+                className={`btn flex-1 ${locale === l ? "bg-white text-black" : "btn-ghost"}`}
               >
                 {t(`lang.${l}`)}
               </button>
             ))}
           </div>
         </div>
-        <button className="btn-primary mt-auto py-4 text-xl" disabled={busy || !name.trim()}>
+        <button className="btn-primary mt-auto py-4 text-xl" disabled={busy || !profile?.name.trim()}>
           {busy ? t("player.joining") : t("player.join")}
         </button>
       </form>

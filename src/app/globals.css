@@ -102,3 +102,62 @@ body {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
+
+/* ------------------------------------------------------------------------ */
+/* Profile cosmetics (ids in shared/cosmetics.ts)                            */
+/* ------------------------------------------------------------------------ */
+.nf-serif { font-family: var(--font-nf-serif), Georgia, serif; letter-spacing: 0; }
+.nf-script { font-family: var(--font-nf-script), cursive; letter-spacing: 0; font-size: 1.15em; }
+.nf-condensed { font-family: var(--font-nf-condensed), sans-serif; text-transform: uppercase; letter-spacing: 0.04em; }
+.nf-mono { font-family: var(--font-nf-mono), monospace; letter-spacing: 0; }
+.nf-brush { font-family: var(--font-nf-brush), cursive; letter-spacing: 0; }
+
+.ne-glow { text-shadow: 0 0 6px rgba(255, 255, 255, 0.75), 0 0 16px rgba(255, 255, 255, 0.35); }
+.ne-blood { color: #ff5a5f; text-shadow: 0 0 8px rgba(229, 56, 59, 0.75), 0 2px 0 #5a0d0f; }
+.ne-flicker { animation: name-flicker 2.6s infinite; }
+.ne-shimmer {
+  background: linear-gradient(100deg, #8a8a8a 20%, #ffffff 45%, #8a8a8a 70%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: name-shimmer 2.8s linear infinite;
+}
+.ne-glitch { text-shadow: 2px 0 #e5383b, -2px 0 #4cc9f0; animation: name-glitch 2.2s infinite steps(1); }
+
+@keyframes name-flicker {
+  0%, 18%, 22%, 62%, 64%, 100% { opacity: 1; }
+  20%, 63% { opacity: 0.25; }
+}
+@keyframes name-shimmer {
+  from { background-position: 120% 0; }
+  to { background-position: -120% 0; }
+}
+@keyframes name-glitch {
+  0%, 86%, 100% { transform: none; text-shadow: 2px 0 #e5383b, -2px 0 #4cc9f0; }
+  88% { transform: translateX(-2px) skewX(-6deg); text-shadow: -3px 0 #e5383b, 3px 0 #4cc9f0; }
+  92% { transform: translateX(2px); text-shadow: 3px 1px #e5383b, -3px -1px #4cc9f0; }
+}
+
+.af-ring { box-shadow: 0 0 0 2px #f2f2f2; }
+.af-blood { box-shadow: 0 0 0 2px #e5383b, 0 0 14px rgba(229, 56, 59, 0.65); }
+.af-double { box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px #f2f2f2, 0 0 0 6px #0a0a0a, 0 0 0 7px #e5383b; }
+.af-thorns { outline: 2px dashed #e5383b; outline-offset: 3px; }
+.af-pulse { animation: frame-pulse 1.6s ease-out infinite; }
+.af-moon { box-shadow: 0 0 0 2px #cfcfcf; }
+.af-moon::before {
+  content: "";
+  position: absolute;
+  top: -8%;
+  right: -8%;
+  width: 38%;
+  height: 38%;
+  border-radius: 9999px;
+  background: #f2f2f2;
+  box-shadow: inset -4px -2px 0 0 #bdbdbd;
+  z-index: 2;
+}
+@keyframes frame-pulse {
+  0% { box-shadow: 0 0 0 2px #e5383b, 0 0 0 2px rgba(229, 56, 59, 0.6); }
+  100% { box-shadow: 0 0 0 2px #e5383b, 0 0 0 12px rgba(229, 56, 59, 0); }
+}

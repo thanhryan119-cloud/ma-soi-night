@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ROLES } from "@shared/roles";
 import type { ClientState, MeView, PlayerView } from "@shared/views";
-import { Avatar, ConnectionDot, RoleBadge, TimerDisplay, useErrorToast } from "@/components/ui";
+import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, useErrorToast } from "@/components/ui";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
 import { useT } from "@/lib/i18n";
@@ -47,7 +47,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
       <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-white/5 bg-night-950/90 px-4 py-2 pr-28 backdrop-blur">
         <Avatar p={self} size="sm" />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-bold">{self.name}</div>
+          <div className="truncate text-sm font-bold"><StyledName p={self} /></div>
           <div className="truncate text-xs text-white/50">{phaseLabel(t, state)}</div>
         </div>
         {!connected && <ConnectionDot connected={false} />}
@@ -171,7 +171,7 @@ function Lobby({ state }: { state: ClientState }) {
       <div className="flex flex-wrap justify-center gap-2">
         {state.players.map((p) => (
           <span key={p.id} className={`chip text-sm ${p.id === state.me?.id ? "border-gold text-gold" : ""}`}>
-            {p.avatar} {p.name}
+            <Avatar p={p} size="sm" /> <StyledName p={p} />
           </span>
         ))}
       </div>
@@ -335,7 +335,7 @@ function TargetGrid({
             aria-pressed={sel}
           >
             <span className="text-3xl">{p.avatar}</span>
-            <span className="line-clamp-2 text-sm leading-tight font-semibold">{p.name}</span>
+            <span className="line-clamp-2 text-sm leading-tight font-semibold"><StyledName p={p} /></span>
             {marks?.[id] && <span className="absolute top-1 right-1 text-xs">{marks[id]}</span>}
           </button>
         );
@@ -550,7 +550,7 @@ function Dawn({ state, me, players }: { state: ClientState; me: MeView; players:
               return p ? (
                 <div key={d.playerId} className="flex flex-col items-center gap-1">
                   <Avatar p={p} size="lg" />
-                  <span className="font-semibold">{p.name}</span>
+                  <span className="font-semibold"><StyledName p={p} /></span>
                   {p.roleId && <RoleBadge roleId={p.roleId} />}
                 </div>
               ) : null;
@@ -671,7 +671,7 @@ function Nominees({ state, players }: { state: ClientState; players: Map<string,
         return p ? (
           <div key={id} className="flex flex-col items-center gap-1">
             <Avatar p={p} size="lg" />
-            <span className="font-bold">{p.name}</span>
+            <span className="font-bold"><StyledName p={p} /></span>
             {state.nomination && <span className="text-xs text-white/50">{state.nomination.counts[id] ?? 0} 🗳️</span>}
           </div>
         ) : null;

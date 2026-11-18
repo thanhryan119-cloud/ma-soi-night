@@ -351,6 +351,55 @@
     "wait": "Chờ quản trò…",
     "lookUp": "Hãy nhìn lên màn hình chung"
   },
+  "profile": {
+    "title": "Hồ sơ của bạn",
+    "open": "Hồ sơ",
+    "preview": "Xem trước",
+    "name": "Tên hiển thị",
+    "photo": "Ảnh đại diện",
+    "uploadPhoto": "Tải ảnh lên",
+    "changePhoto": "Đổi ảnh",
+    "removePhoto": "Bỏ ảnh, dùng emoji",
+    "uploading": "Đang tải ảnh…",
+    "photoNeedsLogin": "Đăng nhập Google để dùng ảnh của riêng bạn.",
+    "emoji": "Hoặc chọn emoji",
+    "nameFont": "Font tên",
+    "nameEffect": "Hiệu ứng tên",
+    "avatarFrame": "Khung avatar",
+    "account": "Tài khoản",
+    "signInHint": "Đăng nhập (không bắt buộc) để lưu hồ sơ trên mọi thiết bị và tải ảnh lên.",
+    "signedInAs": "Đã đăng nhập: {name}",
+    "signOut": "Đăng xuất",
+    "save": "Lưu hồ sơ",
+    "saved": "Đã lưu hồ sơ",
+    "authUnavailable": "Đăng nhập Google chưa được bật trên máy chủ này.",
+    "customize": "Tùy chỉnh tên và avatar",
+    "font": {
+      "default": "Mặc định",
+      "serif": "Cổ điển",
+      "script": "Viết tay",
+      "condensed": "Mạnh mẽ",
+      "mono": "Máy chữ",
+      "brush": "Bút lông"
+    },
+    "effect": {
+      "none": "Không",
+      "glow": "Phát sáng",
+      "blood": "Máu",
+      "flicker": "Chập chờn",
+      "shimmer": "Ánh bạc",
+      "glitch": "Nhiễu sóng"
+    },
+    "frame": {
+      "none": "Không",
+      "ring": "Viền trắng",
+      "blood": "Viền máu",
+      "double": "Viền kép",
+      "moon": "Trăng khuyết",
+      "thorns": "Gai",
+      "pulse": "Nhịp tim"
+    }
+  },
   "screen": {
     "waitingPlayers": "Đang chờ người chơi…",
     "joinAt": "Vào tại",
@@ -420,7 +469,11 @@
     "notHost": "Bạn không phải quản trò.",
     "sessionExpired": "Phiên cũ đã hết hạn, hãy vào lại.",
     "server": "Lỗi máy chủ, thử lại sau.",
-    "disconnected": "Mất kết nối tới máy chủ."
+    "disconnected": "Mất kết nối tới máy chủ.",
+    "authDisabled": "Đăng nhập Google chưa được bật.",
+    "authFailed": "Đăng nhập thất bại, thử lại.",
+    "imageTooLarge": "Ảnh quá lớn.",
+    "imageInvalid": "File không phải ảnh hợp lệ (JPG, PNG, WebP)."
   },
   "log": {
     "join": "{name} vào phòng",

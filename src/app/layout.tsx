@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Be_Vietnam_Pro } from "next/font/google";
+import { Be_Vietnam_Pro, Dancing_Script, JetBrains_Mono, Oswald, Pacifico, Playfair_Display } from "next/font/google";
 import { I18nProvider } from "@/lib/i18n";
 import { ToastHost } from "@/components/ui";
 import "./globals.css";
@@ -9,6 +9,13 @@ const body = Be_Vietnam_Pro({
   weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-body",
 });
+// Fonts players can pick for their name (all include Vietnamese glyphs).
+const nfSerif = Playfair_Display({ subsets: ["latin", "vietnamese"], weight: ["700"], variable: "--font-nf-serif" });
+const nfScript = Dancing_Script({ subsets: ["latin", "vietnamese"], weight: ["700"], variable: "--font-nf-script" });
+const nfCondensed = Oswald({ subsets: ["latin", "vietnamese"], weight: ["600"], variable: "--font-nf-condensed" });
+const nfMono = JetBrains_Mono({ subsets: ["latin", "vietnamese"], weight: ["700"], variable: "--font-nf-mono" });
+const nfBrush = Pacifico({ subsets: ["latin", "vietnamese"], weight: ["400"], variable: "--font-nf-brush" });
+const fontVars = [body, nfSerif, nfScript, nfCondensed, nfMono, nfBrush].map((f) => f.variable).join(" ");
 
 export const metadata: Metadata = {
   title: "Ma Sói Online · Werewolf Online",
@@ -24,7 +31,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className={body.variable}>
+    <html lang="vi" className={fontVars}>
       <body className="font-sans antialiased">
         <I18nProvider>
           {children}

@@ -6,7 +6,7 @@ import type { NightStepId, RoleId, Winner } from "@shared/types";
 import type { ClientState, PlayerView } from "@shared/views";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown } from "@/components/VoteBreakdown";
-import { Avatar, RoleBadge, TimerDisplay } from "@/components/ui";
+import { Avatar, RoleBadge, StyledName, TimerDisplay } from "@/components/ui";
 import { formatLog, useT } from "@/lib/i18n";
 import { nameOf, scriptLines, useHostAction } from "./common";
 import { RulesCard } from "./RulesCard";
@@ -243,7 +243,7 @@ function PlayerRow({
         <Avatar p={p} size="sm" />
         <div className="min-w-0 flex-1">
           <div className={`flex items-center gap-1 truncate text-sm font-semibold ${p.alive ? "" : "text-white/40 line-through"}`}>
-            {p.name}
+            <StyledName p={p} />
             {p.isBot && <span className="text-xs">🤖</span>}
             {!p.connected && !p.isBot && <span className="text-xs text-blood-light">●</span>}
           </div>
@@ -456,7 +456,7 @@ function DawnPanel({ state, hideRoles }: { state: ClientState; hideRoles: boolea
             return p ? (
               <li key={d.playerId} className="flex items-center gap-2 rounded-xl bg-white/5 p-2">
                 <Avatar p={p} size="sm" />
-                <span className="font-semibold">{p.name}</span>
+                <span className="font-semibold"><StyledName p={p} /></span>
                 {!hideRoles && p.roleId && <RoleBadge roleId={p.roleId} />}
                 {!hideRoles && d.cause && <span className="chip">{t(`cause.${d.cause}`)}</span>}
               </li>
@@ -595,7 +595,7 @@ function NominationResult({ state }: { state: ClientState }) {
           return p ? (
             <div key={id} className="flex items-center gap-2 rounded-xl bg-gold/10 p-2">
               <Avatar p={p} size="sm" />
-              <span className="font-bold">{p.name}</span>
+              <span className="font-bold"><StyledName p={p} /></span>
               <span className="chip">{t("host.votesFor", { count: nom?.counts[id] ?? 0 })}</span>
             </div>
           ) : null;

@@ -17,6 +17,7 @@ import {
   playerAction,
 } from "../shared/engine";
 import { botDecide } from "../shared/bots";
+import { createAccounts } from "./accounts";
 import { buildView, type Viewer } from "../shared/views";
 import type { ActionResult, HostAction, Locale, PlayerAction, Room } from "../shared/types";
 
@@ -70,6 +71,8 @@ function loadRooms() {
   }
 }
 loadRooms();
+const accounts = createAccounts(dirname(DATA_FILE), CORS_ORIGIN);
+if (!accounts.enabled) console.log("[accounts] GOOGLE_CLIENT_ID not set: Google sign-in disabled");
 
 interface SocketData {
   code?: string;
@@ -88,7 +91,8 @@ function lanAddresses(): string[] {
   return out;
 }
 
-const httpServer = createServer((req, res) => {
+const httpServer = createServer(async (req, res) => {
+  if (await accounts.handle(req, res)) return;
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Content-Type", "application/json");
   if (req.url === "/health") return res.end(JSON.stringify({ ok: true, rooms: rooms.size }));
@@ -219,10 +223,15 @@ io.on("connection", (raw) => {
     guard(() => {
       const room = rooms.get(normCode(p.code));
       if (!room) return { ok: false, error: "err.roomNotFound" };
+      // Signed-in players get their photo from the account (never trusted from the client).
+      const user = accounts.userForToken(p.authToken);
       const res = addPlayer(room, {
-        name: String(p.name ?? ""),
+        name: String(p.name ?? "") || user?.name || "",
         avatar: String(p.avatar ?? ""),
         locale: p.locale === "en" ? "en" : "vi",
+        avatarUrl: user?.avatarUrl ?? null,
+        style: p.style,
+        userId: user?.id ?? null,
       });
       if (!res.ok || !res.player) return { ok: false, error: res.error, params: res.params };
       res.player.connected = true;

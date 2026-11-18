@@ -351,6 +351,55 @@
     "wait": "Waiting for the Host…",
     "lookUp": "Look at the shared screen"
   },
+  "profile": {
+    "title": "Your profile",
+    "open": "Profile",
+    "preview": "Preview",
+    "name": "Display name",
+    "photo": "Profile photo",
+    "uploadPhoto": "Upload photo",
+    "changePhoto": "Change photo",
+    "removePhoto": "Remove photo, use emoji",
+    "uploading": "Uploading…",
+    "photoNeedsLogin": "Sign in with Google to use your own photo.",
+    "emoji": "Or pick an emoji",
+    "nameFont": "Name font",
+    "nameEffect": "Name effect",
+    "avatarFrame": "Avatar frame",
+    "account": "Account",
+    "signInHint": "Sign in (optional) to keep your profile on every device and upload a photo.",
+    "signedInAs": "Signed in as {name}",
+    "signOut": "Sign out",
+    "save": "Save profile",
+    "saved": "Profile saved",
+    "authUnavailable": "Google sign-in isn’t enabled on this server yet.",
+    "customize": "Customize name and avatar",
+    "font": {
+      "default": "Default",
+      "serif": "Classic",
+      "script": "Handwritten",
+      "condensed": "Bold",
+      "mono": "Typewriter",
+      "brush": "Brush"
+    },
+    "effect": {
+      "none": "None",
+      "glow": "Glow",
+      "blood": "Blood",
+      "flicker": "Flicker",
+      "shimmer": "Silver shimmer",
+      "glitch": "Glitch"
+    },
+    "frame": {
+      "none": "None",
+      "ring": "White ring",
+      "blood": "Blood ring",
+      "double": "Double ring",
+      "moon": "Crescent moon",
+      "thorns": "Thorns",
+      "pulse": "Heartbeat"
+    }
+  },
   "screen": {
     "waitingPlayers": "Waiting for players…",
     "joinAt": "Join at",
@@ -420,7 +469,11 @@
     "notHost": "You are not the Host.",
     "sessionExpired": "Your previous session expired — please join again.",
     "server": "Server error, please try again.",
-    "disconnected": "Lost connection to the server."
+    "disconnected": "Lost connection to the server.",
+    "authDisabled": "Google sign-in isn’t enabled.",
+    "authFailed": "Sign-in failed, try again.",
+    "imageTooLarge": "That image is too large.",
+    "imageInvalid": "That file isn’t a valid image (JPG, PNG, WebP)."
   },
   "log": {
     "join": "{name} joined",

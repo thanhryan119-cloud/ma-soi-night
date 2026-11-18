@@ -6,6 +6,7 @@ import type { Locale, RoleId, TimerState } from "@shared/types";
 import type { PlayerView } from "@shared/views";
 import { useLocale, useT } from "@/lib/i18n";
 import { useNow } from "@/lib/useRoom";
+import { resolveAvatarUrl } from "@/lib/account";
 
 // ---------------------------------------------------------------------------
 // Language switch — always visible in a corner
@@ -104,18 +105,44 @@ export function useErrorToast() {
 // Players & roles
 // ---------------------------------------------------------------------------
 
-export function Avatar({ p, size = "md" }: { p: Pick<PlayerView, "avatar" | "alive">; size?: "sm" | "md" | "lg" | "xl" }) {
+type AvatarLike = Pick<PlayerView, "avatar" | "alive"> & Partial<Pick<PlayerView, "avatarUrl" | "style">>;
+
+/** Emoji or photo avatar with the player's chosen frame. */
+export function Avatar({ p, size = "md" }: { p: AvatarLike; size?: "sm" | "md" | "lg" | "xl" }) {
   const cls = { sm: "h-7 w-7 text-base", md: "h-10 w-10 text-2xl", lg: "h-14 w-14 text-3xl", xl: "h-24 w-24 text-6xl" }[size];
+  const photo = resolveAvatarUrl(p.avatarUrl);
+  const frame = p.style?.frame && p.style.frame !== "none" ? `af-${p.style.frame}` : "ring-1 ring-white/10";
   return (
-    <span
-      className={`${cls} relative inline-flex shrink-0 items-center justify-center rounded-full bg-night-700 ring-1 ring-white/10 ${
-        p.alive ? "" : "grayscale opacity-50"
-      }`}
-    >
-      {p.avatar}
-      {!p.alive && <span className="absolute -right-1 -bottom-1 text-[0.6em]">💀</span>}
+    <span className={`${cls} ${frame} relative inline-flex shrink-0 items-center justify-center rounded-full bg-night-700`}>
+      <span
+        className={`flex h-full w-full items-center justify-center overflow-hidden rounded-full ${
+          p.alive ? "" : "grayscale opacity-50"
+        }`}
+      >
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photo} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" draggable={false} />
+        ) : (
+          p.avatar
+        )}
+      </span>
+      {!p.alive && <span className="absolute -right-1 -bottom-1 z-[3] text-[0.6em]">💀</span>}
     </span>
   );
+}
+
+/** A player name rendered with their chosen font and effect. */
+export function StyledName({
+  p,
+  className = "",
+}: {
+  p: Pick<PlayerView, "name"> & Partial<Pick<PlayerView, "style" | "alive">>;
+  className?: string;
+}) {
+  const s = p.style;
+  const font = s && s.font !== "default" ? `nf-${s.font}` : "";
+  const effect = s && s.effect !== "none" && p.alive !== false ? `ne-${s.effect}` : "";
+  return <span className={`${font} ${effect} ${className}`}>{p.name}</span>;
 }
 
 export function RoleBadge({ roleId, size = "sm" }: { roleId: RoleId; size?: "sm" | "md" }) {

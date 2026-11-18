@@ -2,6 +2,7 @@
 
 import type { ClientState, PlayerView } from "@shared/views";
 import type { T } from "@/lib/i18n";
+import { Avatar, StyledName } from "./ui";
 
 type Size = "sm" | "lg";
 
@@ -111,8 +112,8 @@ function Row({
     <div className={`rise rounded-xl border p-2 ${TONES[tone]} ${lg ? "p-3" : ""}`}>
       <div className={`flex items-center gap-2 font-bold ${lg ? "text-2xl" : "text-sm"}`}>
         {target ? (
-          <span className="min-w-0 truncate">
-            {target.avatar} {target.name}
+          <span className="flex min-w-0 items-center gap-2 truncate">
+            <Avatar p={target} size={lg ? "md" : "sm"} /> <StyledName p={target} />
           </span>
         ) : (
           <span>{label}</span>
@@ -127,7 +128,7 @@ function Row({
             const p = players.get(id);
             return (
               <span key={id} className={`chip ${lg ? "px-3 py-1 text-lg" : ""}`}>
-                {p?.avatar} {p?.name ?? "?"}
+                {p ? <Avatar p={p} size="sm" /> : null} {p ? <StyledName p={p} /> : "?"}
               </span>
             );
           })}

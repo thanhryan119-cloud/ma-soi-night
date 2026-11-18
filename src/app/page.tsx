@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Locale } from "@shared/types";
@@ -36,6 +37,9 @@ export default function Home() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-5xl flex-col px-4 py-10 sm:py-16">
       <LangSwitch />
+      <Link href="/profile" className="btn-ghost btn-sm fixed top-3 left-3 z-50">
+        👤 {t("profile.open")}
+      </Link>
       <header className="mb-10 flex flex-col items-center text-center">
         <div className="moon mb-6 h-12 w-12 rounded-full" aria-hidden />
         <h1 className="font-display text-5xl font-black tracking-tight text-moon sm:text-6xl">{t("app.name")}</h1>

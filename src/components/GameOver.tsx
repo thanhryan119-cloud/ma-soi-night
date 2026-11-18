@@ -4,7 +4,7 @@ import { ROLES } from "@shared/roles";
 import type { LogEntry } from "@shared/types";
 import type { ClientState } from "@shared/views";
 import { formatLog, type T } from "@/lib/i18n";
-import { Avatar, RoleBadge } from "./ui";
+import { Avatar, RoleBadge, StyledName } from "./ui";
 
 const WIN_EMOJI = { wolves: "🐺", village: "🏡", lovers: "💘", draw: "🕯️" } as const;
 
@@ -33,7 +33,7 @@ export function RolesGrid({ state, compact = false }: { state: ClientState; comp
           <Avatar p={p} />
           <div className="min-w-0 flex-1">
             <div className={`truncate font-semibold ${p.alive ? "" : "text-white/50 line-through"}`}>
-              {p.name} {lovers.has(p.id) && "💘"}
+              <StyledName p={p} /> {lovers.has(p.id) && "💘"}
             </div>
             {p.roleId && <RoleBadge roleId={p.roleId} />}
           </div>

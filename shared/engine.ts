@@ -1,6 +1,7 @@
 // Game engine: mutates a Room in response to validated host/player actions.
 // Every action is checked here (phase, role, alive, valid target, double vote).
 
+import { AVATAR_FRAMES, NAME_EFFECTS, NAME_FONTS, sanitizeAvatarUrl, sanitizeStyle } from "./cosmetics";
 import {
   NIGHT_STEP_ROLE,
   ROLES,
@@ -121,7 +122,15 @@ export function sanitizeName(name: unknown): string {
 
 export function addPlayer(
   room: Room,
-  input: { name: string; avatar?: string; locale?: Locale; isBot?: boolean },
+  input: {
+    name: string;
+    avatar?: string;
+    locale?: Locale;
+    isBot?: boolean;
+    avatarUrl?: string | null;
+    style?: unknown;
+    userId?: string | null;
+  },
   now = Date.now(),
 ): ActionResult & { player?: Player } {
   if (room.phase.kind !== "lobby") return fail("err.gameInProgress");
@@ -135,6 +144,9 @@ export function addPlayer(
     token: randomToken(),
     name,
     avatar: AVATARS.includes(input.avatar ?? "") ? input.avatar! : AVATARS[room.players.length % AVATARS.length],
+    avatarUrl: sanitizeAvatarUrl(input.avatarUrl),
+    style: sanitizeStyle(input.style),
+    userId: input.userId ?? null,
     locale: input.locale === "en" ? "en" : "vi",
     isBot: !!input.isBot,
     connected: !!input.isBot,
@@ -555,6 +567,7 @@ export function playerAction(room: Room, playerId: string, action: PlayerAction)
     case "updateProfile": {
       if (room.phase.kind !== "lobby") return fail("err.wrongPhase");
       if (action.avatar && AVATARS.includes(action.avatar)) player.avatar = action.avatar;
+      if (action.style) player.style = sanitizeStyle({ ...player.style, ...action.style });
       if (action.name !== undefined) {
         const name = sanitizeName(action.name);
         if (!name) return fail("err.nameRequired");
@@ -916,7 +929,14 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       let n = 1;
       for (let i = 0; i < count; i++) {
         while (room.players.some((p) => p.name === `Bot ${n}`)) n++;
-        addPlayer(room, { name: `Bot ${n}`, avatar: AVATARS[(room.players.length * 7) % AVATARS.length], locale: room.locale, isBot: true });
+        const rnd = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)];
+        addPlayer(room, {
+          name: `Bot ${n}`,
+          avatar: AVATARS[(room.players.length * 7) % AVATARS.length],
+          locale: room.locale,
+          isBot: true,
+          style: { font: rnd(NAME_FONTS), effect: rnd(NAME_EFFECTS), frame: rnd(AVATAR_FRAMES) },
+        });
       }
       return ok;
     }
