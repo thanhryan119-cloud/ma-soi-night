@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AVATARS } from "@shared/engine";
-import { AVATAR_FRAMES, NAME_EFFECTS, NAME_FONTS, type PlayerStyle } from "@shared/cosmetics";
+import { AVATAR_FRAMES, DEFAULT_STYLE, NAME_EFFECTS, NAME_FONTS, type PlayerStyle } from "@shared/cosmetics";
 import {
   GOOGLE_CLIENT_ID,
   signInWithGoogle,
@@ -139,7 +139,13 @@ export function ProfileEditor({
   useEffect(() => {
     if (user && adopted.current !== user.id) {
       adopted.current = user.id;
-      onChange({ ...value, name: value.name || user.name, style: user.style });
+      const accountIsDefault = JSON.stringify(user.style) === JSON.stringify(DEFAULT_STYLE);
+      const localIsDefault = JSON.stringify(value.style) === JSON.stringify(DEFAULT_STYLE);
+      if (accountIsDefault && !localIsDefault) {
+        // First sign-in: keep what the player picked as a guest and save it to the account.
+        updateAccount({ style: value.style });
+        onChange({ ...value, name: value.name || user.name });
+      } else onChange({ ...value, name: value.name || user.name, style: user.style });
     }
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
