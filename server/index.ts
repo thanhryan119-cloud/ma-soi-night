@@ -1,4 +1,4 @@
-// Ma Sói Night — authoritative realtime server (Socket.IO).
+// Ma Sói Online — authoritative realtime server (Socket.IO).
 // Holds every room in memory, validates every action through the shared engine,
 // and sends each socket only the view it is allowed to see.
 
@@ -305,7 +305,7 @@ setInterval(() => {
 for (const room of rooms.values()) scheduleBots(room);
 
 httpServer.listen(PORT, "0.0.0.0", () => {
-  console.log(`🐺 Ma Sói Night socket server on :${PORT}`);
+  console.log(`🐺 Ma Sói Online socket server on :${PORT}`);
   const lan = lanAddresses();
   if (lan.length) console.log(`   LAN: ${lan.map((a) => `http://${a}:${PORT}`).join("  ")}`);
 });

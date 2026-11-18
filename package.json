@@ -2,7 +2,7 @@
   "name": "ma-soi-night",
   "version": "1.0.0",
   "private": true,
-  "description": "Ma Sói Night — realtime Werewolf host & player app",
+  "description": "Ma Sói Online — realtime Werewolf host & player app",
   "scripts": {
     "dev": "concurrently -n web,server -c magenta,cyan \"npm:dev:web\" \"npm:dev:server\"",
     "dev:web": "next dev -H 0.0.0.0 -p 3000",

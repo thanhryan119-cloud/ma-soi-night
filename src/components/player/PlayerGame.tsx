@@ -67,7 +67,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
       </main>
 
       {me.roleId && kind !== "gameOver" && kind !== "roleReveal" && (
-        <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-night-950 via-night-950/90 to-transparent p-4 pt-8">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-night-950 p-4">
           <div className="mx-auto max-w-md">
             {showRole ? (
               <RoleSheet state={state} me={me} players={players} onClose={() => setShowRole(false)} />
@@ -205,7 +205,7 @@ function HoldCard({ state, me, players }: { state: ClientState; me: MeView; play
     <div className="flex flex-col items-center gap-4">
       <button
         type="button"
-        className="no-select relative aspect-[3/4] w-full max-w-xs touch-none rounded-3xl"
+        className="no-select relative aspect-[3/4] w-full max-w-xs touch-none rounded-xl"
         style={{ perspective: "1000px" }}
         onPointerDown={show}
         onPointerUp={hide}
@@ -222,19 +222,19 @@ function HoldCard({ state, me, players }: { state: ClientState; me: MeView; play
           style={{ transformStyle: "preserve-3d", transform: open ? "rotateY(180deg)" : "none" }}
         >
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-3xl border-2 border-gold/40 bg-gradient-to-br from-night-700 to-night-900 shadow-2xl"
+            className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-xl border border-white/20 bg-night-800"
             style={{ backfaceVisibility: "hidden" }}
           >
             <div className="moon h-20 w-20 rounded-full" />
             <span className="px-4 font-bold text-gold">{t("player.holdToReveal")}</span>
           </div>
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-3xl border-2 p-5 text-center shadow-2xl"
+            className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-xl border-2 p-5 text-center"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
               borderColor: role?.color,
-              background: `linear-gradient(160deg, ${role?.color}33, #0a0c18 70%)`,
+              background: "#111111",
             }}
           >
             {role && open && (
@@ -329,7 +329,7 @@ function TargetGrid({
             type="button"
             disabled={disabled}
             onClick={() => onPick(id)}
-            className={`relative flex min-h-20 flex-col items-center justify-center gap-1 rounded-2xl border p-2 text-center transition active:scale-95 ${
+            className={`relative flex min-h-20 flex-col items-center justify-center gap-1 rounded-lg border p-2 text-center transition active:scale-95 ${
               sel ? "border-gold bg-gold/20" : "border-white/10 bg-white/5 hover:bg-white/10"
             } disabled:opacity-60`}
             aria-pressed={sel}
@@ -395,7 +395,7 @@ function NightTurn({ state, me, players }: { state: ClientState; me: MeView; pla
   const roleId = me.roleId!;
 
   const intro = (
-    <div className="pulse-ring rounded-2xl border border-gold/50 bg-gold/10 p-3 text-center">
+    <div className="pulse-ring rounded-lg border border-gold/50 bg-gold/10 p-3 text-center">
       <div className="text-sm font-bold text-gold">{t("player.yourTurn")}</div>
       <div className="mt-1 flex items-center justify-center gap-2">
         <RoleBadge roleId={roleId} size="md" />
@@ -410,7 +410,7 @@ function NightTurn({ state, me, players }: { state: ClientState; me: MeView; pla
     return (
       <section className="flex flex-col items-center gap-4 py-10 text-center">
         {last && last.night === state.phase.night && (
-          <div className={`rise rounded-2xl border p-5 text-xl font-bold ${last.isWolf ? "border-blood bg-blood/20 text-blood-light" : "border-emerald-500 bg-emerald-500/15 text-emerald-300"}`}>
+          <div className={`rise rounded-lg border p-5 text-xl font-bold ${last.isWolf ? "border-blood bg-blood/20 text-blood-light" : "border-emerald-500 bg-emerald-500/15 text-emerald-300"}`}>
             {t(last.isWolf ? "player.seerIsWolf" : "player.seerNotWolf", { name: players.get(last.targetId)?.name ?? "?" })}
           </div>
         )}
@@ -572,7 +572,7 @@ function Hunter({ state, me, players }: { state: ClientState; me: MeView; player
   if (me.hunter?.canShoot)
     return (
       <section className="flex flex-col gap-4">
-        <div className="pulse-ring rounded-2xl border border-gold/50 bg-gold/10 p-4 text-center">
+        <div className="pulse-ring rounded-lg border border-gold/50 bg-gold/10 p-4 text-center">
           <div className="text-4xl">🏹</div>
           <p className="mt-2 text-lg font-bold">{t("player.hunterYou")}</p>
         </div>

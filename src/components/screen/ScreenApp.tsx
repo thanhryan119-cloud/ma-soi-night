@@ -67,7 +67,7 @@ export default function ScreenApp({ code }: { code: string }) {
     <div className="flex min-h-dvh flex-col">
       <LangSwitch />
       <div className="fixed top-3 left-4 z-40 font-display text-lg font-black text-moon/70">
-        🌙 {t("app.name")} · <span className="font-mono text-gold">{code}</span>
+        {t("app.name")} · <span className="font-mono text-gold">{code}</span>
       </div>
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-20 text-center">
         {notFound ? (
@@ -124,7 +124,7 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
       const role = state.night.stepRole;
       return (
         <div className="flex flex-col items-center gap-8">
-          <div className="moon h-40 w-40 rounded-full flicker" />
+          <div className="moon h-24 w-24 rounded-full flicker" />
           <Bi k="phase.night" params={{ n: state.phase.night }} className={title} />
           {role ? (
             <Bi k="screen.awake" params={{ role }} className="text-4xl text-white/80" />
@@ -213,8 +213,8 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
           {p && <PlayerBubble p={p} size="xl" />}
           {p && <Bi k="player.verdictTitle" params={{ name: p.name }} className={title} />}
           <div className="flex gap-6 text-3xl font-black">
-            <span className="rounded-2xl bg-blood px-6 py-3">🪢 {t("player.execute")}</span>
-            <span className="rounded-2xl bg-emerald-500 px-6 py-3 text-night-950">🕊️ {t("player.spare")}</span>
+            <span className="rounded-lg bg-blood px-6 py-3">🪢 {t("player.execute")}</span>
+            <span className="rounded-lg bg-emerald-500 px-6 py-3 text-night-950">🕊️ {t("player.spare")}</span>
           </div>
           <Progress state={state} />
         </div>
@@ -269,7 +269,7 @@ function LobbyScreen({ state }: { state: ClientState }) {
   return (
     <div className="grid w-full max-w-6xl items-center gap-12 lg:grid-cols-2">
       <div className="flex flex-col items-center gap-6">
-        <div className="rounded-3xl bg-white p-6 shadow-2xl shadow-gold/20">
+        <div className="rounded-xl bg-white p-6">
           {url && <QRCodeSVG value={url} size={340} level="M" marginSize={0} />}
         </div>
         <div className="font-mono text-8xl font-black tracking-[0.2em] text-gold">{state.code}</div>

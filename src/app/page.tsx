@@ -37,7 +37,7 @@ export default function Home() {
     <main className="mx-auto flex min-h-dvh max-w-5xl flex-col px-4 py-10 sm:py-16">
       <LangSwitch />
       <header className="mb-10 flex flex-col items-center text-center">
-        <div className="moon mb-6 h-20 w-20 rounded-full" aria-hidden />
+        <div className="moon mb-6 h-12 w-12 rounded-full" aria-hidden />
         <h1 className="font-display text-5xl font-black tracking-tight text-moon sm:text-6xl">{t("app.name")}</h1>
         <p className="mt-3 max-w-xl text-lg text-white/70">{t("app.tagline")}</p>
       </header>

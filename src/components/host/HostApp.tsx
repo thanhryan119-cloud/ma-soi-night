@@ -78,7 +78,7 @@ export default function HostApp({ code }: { code: string }) {
     <div className="min-h-dvh">
       <header className="sticky top-0 z-40 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-white/10 bg-night-950/90 px-4 py-2 backdrop-blur">
         <Link href="/" className="font-display text-xl font-black text-moon">
-          🌙 {t("app.name")}
+          {t("app.name")}
         </Link>
         <span className="rounded-lg bg-white/10 px-3 py-1 font-mono text-lg font-bold tracking-widest text-gold">{code}</span>
         <ConnectionDot connected={connected} />

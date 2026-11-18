@@ -1,17 +1,19 @@
 @import "tailwindcss";
 
+/* Noir minimal: near-black surfaces, white type, a single blood-red accent. */
 @theme {
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-title), Georgia, serif;
-  --color-night-950: #05060d;
-  --color-night-900: #0a0c18;
-  --color-night-800: #121528;
-  --color-night-700: #1b1f3a;
-  --color-night-600: #2a2f55;
-  --color-moon: #f4e9c8;
-  --color-blood: #c81e3a;
-  --color-blood-light: #ef4565;
-  --color-gold: #e9b949;
+  --font-display: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --color-night-950: #0a0a0a;
+  --color-night-900: #101010;
+  --color-night-800: #151515;
+  --color-night-700: #1e1e1e;
+  --color-night-600: #2a2a2a;
+  --color-moon: #f2f2f2;
+  --color-blood: #e5383b;
+  --color-blood-light: #ff5a5f;
+  /* "gold" is the secondary emphasis: plain white in the noir theme. */
+  --color-gold: #ededed;
 }
 
 :root {
@@ -21,54 +23,54 @@
 html,
 body {
   background: var(--color-night-950);
-  color: #e7e5f0;
+  color: #e8e8e8;
   min-height: 100%;
 }
 
 body {
-  background-image:
-    radial-gradient(1200px 600px at 85% -10%, rgba(244, 233, 200, 0.08), transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, rgba(200, 30, 58, 0.1), transparent 60%);
-  background-attachment: fixed;
   -webkit-tap-highlight-color: transparent;
   overflow-wrap: anywhere;
 }
 
+.font-display {
+  letter-spacing: -0.03em;
+}
+
 /* Reusable building blocks */
 @utility card {
-  @apply rounded-2xl border border-white/10 bg-night-800/80 p-4 shadow-xl shadow-black/30 backdrop-blur;
+  @apply rounded-lg border border-white/10 bg-night-800 p-4;
 }
 @utility btn {
-  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 font-semibold transition select-none active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40;
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 py-2 font-bold tracking-wide transition select-none active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40;
 }
 @utility btn-primary {
   @apply btn bg-blood text-white hover:bg-blood-light;
 }
 @utility btn-gold {
-  @apply btn bg-gold text-night-950 hover:brightness-110;
+  @apply btn bg-white text-black hover:bg-white/85;
 }
 @utility btn-ghost {
-  @apply btn border border-white/15 bg-white/5 text-white hover:bg-white/10;
+  @apply btn border border-white/20 bg-transparent text-white hover:border-white/40 hover:bg-white/5;
 }
 @utility btn-sm {
-  @apply min-h-8 rounded-lg px-2.5 py-1 text-sm;
+  @apply min-h-8 rounded px-2.5 py-1 text-sm;
 }
 @utility ui-input {
-  @apply w-full rounded-xl border border-white/15 bg-night-900 px-4 py-3 text-lg text-white outline-none placeholder:text-white/30 focus:border-gold;
+  @apply w-full rounded-md border border-white/15 bg-night-900 px-4 py-3 text-lg text-white outline-none placeholder:text-white/30 focus:border-gold;
 }
 @utility ui-select {
-  @apply rounded-lg border border-white/15 bg-night-900 px-2 py-1.5 text-sm text-white outline-none focus:border-gold;
+  @apply rounded border border-white/15 bg-night-900 px-2 py-1.5 text-sm text-white outline-none focus:border-gold;
 }
 @utility ui-label {
   @apply mb-1 block text-xs font-semibold tracking-wider text-white/50 uppercase;
 }
 @utility chip {
-  @apply inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs;
+  @apply inline-flex items-center gap-1 rounded border border-white/10 bg-white/[0.03] px-2 py-0.5 text-xs;
 }
 
 .moon {
-  background: radial-gradient(circle at 35% 35%, #fffbea, #f4e9c8 45%, #c9b98a 80%);
-  box-shadow: 0 0 80px 20px rgba(244, 233, 200, 0.25);
+  background: #f2f2f2;
+  box-shadow: inset -14px -6px 0 0 #d6d6d6;
 }
 
 @keyframes flicker {
@@ -88,8 +90,8 @@ body {
 }
 
 @keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(233, 185, 73, 0.6); }
-  100% { box-shadow: 0 0 0 18px rgba(233, 185, 73, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(229, 56, 59, 0.55); }
+  100% { box-shadow: 0 0 0 18px rgba(229, 56, 59, 0); }
 }
 .pulse-ring {
   animation: pulse-ring 1.4s ease-out infinite;

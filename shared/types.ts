@@ -1,4 +1,4 @@
-// Shared domain types for Ma Sói Night (server is the single source of truth).
+// Shared domain types for Ma Sói Online (server is the single source of truth).
 
 export type Locale = "vi" | "en";
 export const LOCALES: Locale[] = ["vi", "en"];

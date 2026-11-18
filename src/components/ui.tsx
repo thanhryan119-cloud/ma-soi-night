@@ -22,7 +22,7 @@ export function LangSwitch({
   const t = useT();
   return (
     <div
-      className={`${className} flex overflow-hidden rounded-full border border-white/15 bg-night-900/90 text-xs font-bold shadow-lg backdrop-blur`}
+      className={`${className} flex overflow-hidden rounded-md border border-white/15 bg-night-900 text-xs font-bold`}
       role="group"
       aria-label={t("lang.label")}
     >
@@ -74,7 +74,7 @@ export function ToastHost() {
         <div
           key={m.id}
           role="status"
-          className={`rise max-w-md rounded-xl px-4 py-3 text-center text-sm font-semibold shadow-2xl ${
+          className={`rise max-w-md rounded-xl px-4 py-3 text-center text-sm font-semibold ${
             m.tone === "error" ? "bg-blood text-white" : "bg-gold text-night-950"
           }`}
         >
@@ -123,11 +123,11 @@ export function RoleBadge({ roleId, size = "sm" }: { roleId: RoleId; size?: "sm"
   const def = ROLES[roleId];
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border font-semibold whitespace-nowrap ${
+      className={`inline-flex items-center gap-1.5 rounded border border-white/15 bg-white/[0.03] font-semibold whitespace-nowrap text-white/90 ${
         size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm"
       }`}
-      style={{ borderColor: `${def.color}66`, background: `${def.color}22`, color: def.color }}
     >
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: def.color }} aria-hidden />
       <span aria-hidden>{def.emoji}</span>
       {t(`roles.${roleId}.name`)}
     </span>

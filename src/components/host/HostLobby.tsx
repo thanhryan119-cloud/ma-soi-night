@@ -65,7 +65,7 @@ function JoinCard({ state }: { state: ClientState }) {
   return (
     <section className="card flex flex-col items-center gap-4 text-center">
       <h2 className="text-lg font-bold text-white/80">{t("host.scanToJoin")}</h2>
-      <div className="rounded-2xl bg-white p-4 shadow-2xl shadow-gold/10">
+      <div className="rounded-lg bg-white p-4">
         {url ? <QRCodeSVG value={url} size={260} level="M" marginSize={0} /> : <div className="h-[260px] w-[260px]" />}
       </div>
       <div>

@@ -1,4 +1,4 @@
-# Kiến trúc — Ma Sói Night
+# Kiến trúc — Ma Sói Online
 
 ## 1. Tổng quan
 
