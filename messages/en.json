@@ -220,7 +220,9 @@
     "verdictFor": "Judging: {name}",
     "nextNominee": "Next nominee",
     "resultExecuted": "{name} was executed",
-    "resultSpared": "{name} was spared"
+    "resultSpared": "{name} was spared",
+    "mustVoteNote": "Mandatory vote: waiting for {count} more.",
+    "wolvesMustBiteNote": "Werewolves must attack — can’t move on yet."
   },
   "settings": {
     "nightOrder": "Night wake-up order",
@@ -253,7 +255,9 @@
     "decoyActions": "Decoy night buttons (all phones look the same)",
     "discussionSeconds": "Discussion time (seconds)",
     "defenseSeconds": "Defense time (seconds)",
-    "bilingualScreen": "Bilingual projector screen"
+    "bilingualScreen": "Bilingual projector screen",
+    "wolvesMustBite": "Werewolves must attack every night",
+    "mandatoryVote": "Everyone must vote (no skipping)"
   },
   "effects": {
     "protected": "Protected",
@@ -349,7 +353,9 @@
     "nominees": "On trial:",
     "noNominees": "Nobody was put on trial.",
     "wait": "Waiting for the Host…",
-    "lookUp": "Look at the shared screen"
+    "lookUp": "Look at the shared screen",
+    "mustBite": "You must attack someone.",
+    "mustVote": "Voting is mandatory."
   },
   "profile": {
     "title": "Your profile",
@@ -473,7 +479,10 @@
     "authDisabled": "Google sign-in isn’t enabled.",
     "authFailed": "Sign-in failed, try again.",
     "imageTooLarge": "That image is too large.",
-    "imageInvalid": "That file isn’t a valid image (JPG, PNG, WebP)."
+    "imageInvalid": "That file isn’t a valid image (JPG, PNG, WebP).",
+    "wolvesMustBite": "The Werewolves haven’t picked anyone — they must attack someone.",
+    "votesMissing": "{count, plural, one {# player hasn’t} other {# players haven’t}} voted yet (mandatory voting is on).",
+    "skipNotAllowed": "Voting is mandatory — you can’t skip."
   },
   "log": {
     "join": "{name} joined",
@@ -535,7 +544,8 @@
       "village": "🏡 The Village wins",
       "lovers": "💘 The Lovers win",
       "draw": "Draw — nobody survived"
-    }
+    },
+    "wolfAutoTarget": "The Werewolves are offline — {target} was picked at random"
   },
   "privacy": {
     "title": "Privacy policy",

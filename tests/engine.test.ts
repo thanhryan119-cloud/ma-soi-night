@@ -61,6 +61,7 @@ describe("engine flow", () => {
   it("bodyguard cannot protect the same player two nights in a row", () => {
     const { room, ids } = setupRoom(["werewolf", "bodyguard", "villager", "villager", "villager"]);
     const [, guard, v1] = ids;
+    hostAction(room, { type: "updateSettings", settings: { wolvesMustBite: false } });
     next(room);
     playerAction(room, guard, { type: "night", targets: [v1] });
     next(room); // -> werewolf
@@ -141,7 +142,7 @@ describe("engine flow", () => {
 
   it("revote on a top-1 tie restricts candidates", () => {
     const { room, ids } = setupRoom(["werewolf", "villager", "villager", "villager", "villager", "villager"]);
-    hostAction(room, { type: "updateSettings", settings: { nomination: { mode: "top1", n: 1, threshold: 2, tie: "revote" } } });
+    hostAction(room, { type: "updateSettings", settings: { wolvesMustBite: false, nomination: { mode: "top1", n: 1, threshold: 2, tie: "revote" } } });
     const [w, a, b, c, d, e] = ids;
     next(room); // night
     next(room); // dawn (no bite)
@@ -218,6 +219,74 @@ describe("bot simulation", () => {
       expect(["wolves", "village", "lovers", "draw"]).toContain(room.game!.winner);
       // All roles are public at the end.
       expect(buildView(room, "screen").players.every((p) => p.roleId)).toBe(true);
+    }
+  });
+});
+
+describe("mandatory rules", () => {
+  it("wolves must bite: the host can't skip the werewolf step without a pick", () => {
+    const { room, ids } = setupRoom(["werewolf", "villager", "villager", "villager"]);
+    const [w, a] = ids;
+    room.players.find((p) => p.id === w)!.connected = true;
+    next(room); // night 1, werewolf step
+    expect(room.phase.steps).toEqual(["werewolf"]);
+    expect(next(room).error).toBe("err.wolvesMustBite");
+    playerAction(room, w, { type: "night", targets: [a] });
+    expect(next(room).ok).toBe(true);
+    expect(room.players.find((p) => p.id === a)!.alive).toBe(false);
+  });
+
+  it("offline wolves get a random victim so the game can go on", () => {
+    const { room } = setupRoom(["werewolf", "villager", "villager", "villager"]);
+    next(room);
+    expect(next(room).ok).toBe(true); // all wolves offline -> auto pick
+    expect(room.game!.lastDeaths).toHaveLength(1);
+  });
+
+  it("mandatory vote: no skipping and the host waits for connected voters", () => {
+    const { room, ids } = setupRoom(["werewolf", "villager", "villager", "villager", "villager"]);
+    const [w, a, b, c, d] = ids;
+    hostAction(room, { type: "updateSettings", settings: { mandatoryVote: true, wolvesMustBite: false } });
+    for (const p of room.players) p.connected = true;
+    next(room); // night
+    next(room); // dawn
+    next(room); // discussion
+    next(room); // nominate
+    expect(playerAction(room, a, { type: "vote", choice: "skip" }).error).toBe("err.skipNotAllowed");
+    playerAction(room, a, { type: "vote", choice: w });
+    playerAction(room, b, { type: "vote", choice: w });
+    const res = next(room);
+    expect(res.error).toBe("err.votesMissing");
+    expect(res.params).toEqual({ count: 3 });
+    // An offline player doesn't block the vote.
+    room.players.find((p) => p.id === d)!.connected = false;
+    playerAction(room, c, { type: "vote", choice: w });
+    playerAction(room, w, { type: "vote", choice: a });
+    expect(next(room).ok).toBe(true);
+    expect(room.phase.kind).toBe("nominateResult");
+  });
+
+  it("bots never skip when voting is mandatory", () => {
+    for (let g = 0; g < 10; g++) {
+      const room = createRoom("MAND", "en");
+      hostAction(room, { type: "addBots", count: 8 });
+      hostAction(room, { type: "updateSettings", settings: { mandatoryVote: true } });
+      hostAction(room, { type: "useSuggested" });
+      hostAction(room, { type: "assignRandom" });
+      hostAction(room, { type: "start" });
+      let guard = 0;
+      while (room.phase.kind !== "gameOver" && guard++ < 500) {
+        for (let i = 0; i < 12; i++) if (!runBots(room)) break;
+        if (room.game!.vote && !room.game!.vote.closed)
+          expect(Object.values(room.game!.vote.ballots)).not.toContain("skip");
+        if (room.game!.pendingWin) {
+          hostAction(room, { type: "confirmWin" });
+          break;
+        }
+        const r = next(room);
+        expect(r.ok, r.error).toBe(true);
+      }
+      expect(room.phase.kind).toBe("gameOver");
     }
   });
 });

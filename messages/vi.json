@@ -220,7 +220,9 @@
     "verdictFor": "Đang xét: {name}",
     "nextNominee": "Người tiếp theo",
     "resultExecuted": "{name} bị treo cổ",
-    "resultSpared": "{name} được tha"
+    "resultSpared": "{name} được tha",
+    "mustVoteNote": "Bắt buộc vote: chờ {count} người nữa.",
+    "wolvesMustBiteNote": "Sói bắt buộc phải cắn — chưa thể qua lượt."
   },
   "settings": {
     "nightOrder": "Thứ tự gọi ban đêm",
@@ -253,7 +255,9 @@
     "decoyActions": "Nút giả ban đêm (mọi điện thoại giống nhau)",
     "discussionSeconds": "Thời gian thảo luận (giây)",
     "defenseSeconds": "Thời gian biện hộ (giây)",
-    "bilingualScreen": "Màn chiếu hiển thị song ngữ"
+    "bilingualScreen": "Màn chiếu hiển thị song ngữ",
+    "wolvesMustBite": "Sói bắt buộc phải cắn mỗi đêm",
+    "mandatoryVote": "Bắt buộc mọi người phải vote (không được bỏ qua)"
   },
   "effects": {
     "protected": "Được bảo vệ",
@@ -349,7 +353,9 @@
     "nominees": "Trên dàn:",
     "noNominees": "Không ai bị đưa lên dàn.",
     "wait": "Chờ quản trò…",
-    "lookUp": "Hãy nhìn lên màn hình chung"
+    "lookUp": "Hãy nhìn lên màn hình chung",
+    "mustBite": "Bắt buộc phải cắn một người.",
+    "mustVote": "Bắt buộc phải vote."
   },
   "profile": {
     "title": "Hồ sơ của bạn",
@@ -473,7 +479,10 @@
     "authDisabled": "Đăng nhập Google chưa được bật.",
     "authFailed": "Đăng nhập thất bại, thử lại.",
     "imageTooLarge": "Ảnh quá lớn.",
-    "imageInvalid": "File không phải ảnh hợp lệ (JPG, PNG, WebP)."
+    "imageInvalid": "File không phải ảnh hợp lệ (JPG, PNG, WebP).",
+    "wolvesMustBite": "Sói chưa chọn ai — Sói bắt buộc phải cắn một người.",
+    "votesMissing": "Còn {count} người chưa vote (đang bật bắt buộc vote).",
+    "skipNotAllowed": "Bắt buộc phải vote, không được bỏ qua."
   },
   "log": {
     "join": "{name} vào phòng",
@@ -535,7 +544,8 @@
       "village": "🏡 Dân làng chiến thắng",
       "lovers": "💘 Cặp đôi chiến thắng",
       "draw": "Hòa — không ai sống sót"
-    }
+    },
+    "wolfAutoTarget": "Sói mất kết nối — hệ thống chọn ngẫu nhiên {target}"
   },
   "privacy": {
     "title": "Chính sách quyền riêng tư",

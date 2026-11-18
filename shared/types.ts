@@ -87,6 +87,10 @@ export interface Settings {
   revealRoleOnDeath: boolean;
   deadSeeRoles: boolean;
   decoyActions: boolean;
+  /** The pack must pick a victim every night (no "no bite"). */
+  wolvesMustBite: boolean;
+  /** Everyone alive must vote: no skipping, the host can't close until all have voted. */
+  mandatoryVote: boolean;
   discussionSeconds: number;
   defenseSeconds: number;
   bilingualScreen: boolean;

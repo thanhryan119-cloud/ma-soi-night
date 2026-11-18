@@ -9,6 +9,8 @@ import { useT } from "@/lib/i18n";
 import { useHostAction } from "./common";
 
 const BOOLS = [
+  "wolvesMustBite",
+  "mandatoryVote",
   "decoyActions",
   "bilingualScreen",
   "deadSeeRoles",

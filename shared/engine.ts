@@ -479,6 +479,41 @@ function enterTimed(room: Room, kind: "discussion" | "defense") {
   timerOp(room, "start", secs);
 }
 
+/** Players who still have to vote when voting is mandatory (offline players don't block). */
+export function pendingVoters(room: Room): Player[] {
+  const vote = room.game?.vote;
+  if (!vote || vote.closed) return [];
+  return voteEligible(room)
+    .filter((id) => !(id in vote.ballots))
+    .map((id) => getPlayer(room, id)!)
+    .filter((p) => p && (p.connected || p.isBot));
+}
+
+function missingVoters(room: Room): ActionResult | null {
+  if (!room.settings.mandatoryVote) return null;
+  const pending = pendingVoters(room);
+  return pending.length ? fail("err.votesMissing", { count: pending.length }) : null;
+}
+
+/**
+ * Wolves must bite: the host can't move on until the pack has picked someone.
+ * If every living wolf is offline, a random valid victim is chosen so the game goes on.
+ */
+function enforceWolfBite(room: Room): ActionResult | null {
+  if (room.settings.wolvesMustBite === false) return null;
+  const ns = room.game!.nightState;
+  if (ns.wolfFinalized) return null;
+  const wolves = stepActors(room, "werewolf");
+  if (!wolves.length || wolves.some((w) => ns.wolfVotes[w.id])) return null;
+  if (wolves.some((w) => w.connected || w.isBot)) return fail("err.wolvesMustBite");
+  const targets = validTargets(room, wolves[0], "werewolf");
+  if (!targets.length) return null;
+  const target = targets[Math.floor(Math.random() * targets.length)];
+  ns.wolfVotes[wolves[0].id] = target;
+  log(room, "log.wolfAutoTarget", { target: nameOf(room, target) });
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Phase machine — host presses "Next"
 // ---------------------------------------------------------------------------
@@ -495,6 +530,10 @@ export function advance(room: Room): ActionResult {
       startNight(room);
       return ok;
     case "night": {
+      if (currentStep(room) === "werewolf") {
+        const blocked = enforceWolfBite(room);
+        if (blocked) return blocked;
+      }
       leaveStep(room, currentStep(room));
       if (room.phase.stepIndex < room.phase.steps.length - 1) {
         room.phase = { ...room.phase, stepIndex: room.phase.stepIndex + 1 };
@@ -523,11 +562,14 @@ export function advance(room: Room): ActionResult {
       resetTimer(room);
       openNomination(room);
       return ok;
-    case "nominate":
+    case "nominate": {
+      const missing = missingVoters(room);
+      if (missing) return missing;
       // Close the (secret) vote and reveal who voted for whom.
       closeNomination(room);
       room.phase = { ...room.phase, kind: "nominateResult" };
       return ok;
+    }
     case "nominateResult": {
       const outcome = game.nominationOutcome;
       game.nominationOutcome = null;
@@ -541,9 +583,12 @@ export function advance(room: Room): ActionResult {
     case "defense":
       openVerdict(room, 0);
       return ok;
-    case "verdict":
+    case "verdict": {
+      const missing = missingVoters(room);
+      if (missing) return missing;
       closeVerdict(room);
       return ok;
+    }
     case "verdictResult":
       if (game.pendingHunters.length) room.phase = { ...room.phase, kind: "hunter" };
       else afterVerdict(room);
@@ -675,6 +720,7 @@ function castVote(room: Room, voter: Player, choice: string): ActionResult {
   if (!voter.alive) return fail("err.dead");
   if (voter.id in vote.ballots) return fail("err.alreadyVoted");
   if (vote.kind === "nominate") {
+    if (choice === SKIP && room.settings.mandatoryVote) return fail("err.skipNotAllowed");
     if (choice !== SKIP) {
       const target = getPlayer(room, choice);
       if (!target || !target.alive || target.id === voter.id) return fail("err.invalidTarget");
@@ -768,6 +814,8 @@ function mergeSettings(room: Room, patch: Partial<Settings>): ActionResult {
       "revealRoleOnDeath",
       "deadSeeRoles",
       "decoyActions",
+      "wolvesMustBite",
+      "mandatoryVote",
       "bilingualScreen",
     ] as const
   ).forEach(bool);

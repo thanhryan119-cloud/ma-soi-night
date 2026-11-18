@@ -357,6 +357,13 @@ function NightPanel({ state, hideRoles }: { state: ClientState; hideRoles: boole
               </div>
               {current && !hideRoles && <StepDetail state={state} step={s.step} />}
               {current && !s.done && <ActFor state={state} step={s.step} actors={s.actors} />}
+              {current &&
+                s.step === "werewolf" &&
+                state.settings.wolvesMustBite !== false &&
+                s.actors.length > 0 &&
+                !Object.keys(state.night.wolfVotes ?? {}).length && (
+                  <p className="mt-1 pl-7 text-xs font-semibold text-blood-light">{t("host.wolvesMustBiteNote")}</p>
+                )}
             </li>
           );
         })}
@@ -565,6 +572,9 @@ function VotePanel({ state, hideRoles }: { state: ClientState; hideRoles: boolea
           </li>
         ))}
       </ul>}
+      {state.settings.mandatoryVote && notVoted.length > 0 && (
+        <p className="mt-2 text-sm font-semibold text-blood-light">{t("host.mustVoteNote", { count: notVoted.length })}</p>
+      )}
       {notVoted.length > 0 && (
         <p className="mt-2 text-xs text-white/50">
           {t("host.notVoted")} {notVoted.map((p) => p.name).join(", ")}

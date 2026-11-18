@@ -202,6 +202,8 @@ export function defaultSettings(playerCount = 8): Settings {
     revealRoleOnDeath: false,
     deadSeeRoles: true,
     decoyActions: true,
+    wolvesMustBite: true,
+    mandatoryVote: false,
     discussionSeconds: 180,
     defenseSeconds: 60,
     bilingualScreen: false,

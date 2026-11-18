@@ -497,6 +497,7 @@ function NightTurn({ state, me, players }: { state: ClientState; me: MeView; pla
             </span>
           ))}
           {!agreed && Object.keys(pack).length > 0 && <p className="mt-1 text-gold">{t("player.packDisagree")}</p>}
+          {state.settings.wolvesMustBite !== false && <p className="mt-1 text-xs text-blood-light">{t("player.mustBite")}</p>}
         </div>
         <TargetGrid
           players={players}
@@ -649,13 +650,16 @@ function Nominate({ state, me, players }: { state: ClientState; me: MeView; play
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-center text-2xl font-bold">{title}</h2>
+      {state.settings.mandatoryVote && <p className="text-center text-sm text-blood-light">{t("player.mustVote")}</p>}
       <TargetGrid players={players} ids={ids} selected={sel ? [sel] : []} onPick={setSel} />
       <button className="btn-primary py-4 text-lg" disabled={!sel} onClick={() => sel && act({ type: "vote", choice: sel })}>
         {t("player.confirm")}
       </button>
-      <button className="btn-ghost" onClick={() => act({ type: "vote", choice: "skip" })}>
-        {t("player.skip")}
-      </button>
+      {!state.settings.mandatoryVote && (
+        <button className="btn-ghost" onClick={() => act({ type: "vote", choice: "skip" })}>
+          {t("player.skip")}
+        </button>
+      )}
       <VoteProgress state={state} />
     </section>
   );

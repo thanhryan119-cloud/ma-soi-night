@@ -60,6 +60,10 @@ export function botDecide(room: Room, botId: string): PlayerAction | null {
       const options = (game.vote.candidates ?? room.players.filter((p) => p.alive).map((p) => p.id)).filter(
         (id) => id !== bot.id && !(isWolf(role) && isWolf(game.roles[id])),
       );
+      if (room.settings.mandatoryVote) {
+        const any = (game.vote.candidates ?? room.players.filter((p) => p.alive).map((p) => p.id)).filter((id) => id !== bot.id);
+        return { type: "vote", choice: pick(options.length ? options : any) ?? "skip" };
+      }
       if (!options.length || Math.random() < 0.15) return { type: "vote", choice: "skip" };
       return { type: "vote", choice: pick(options)! };
     }
