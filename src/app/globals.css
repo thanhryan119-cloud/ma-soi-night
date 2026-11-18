@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-title), Georgia, serif;
+  --color-night-950: #05060d;
+  --color-night-900: #0a0c18;
+  --color-night-800: #121528;
+  --color-night-700: #1b1f3a;
+  --color-night-600: #2a2f55;
+  --color-moon: #f4e9c8;
+  --color-blood: #c81e3a;
+  --color-blood-light: #ef4565;
+  --color-gold: #e9b949;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-night-950);
+  color: #e7e5f0;
+  min-height: 100%;
+}
+
+body {
+  background-image:
+    radial-gradient(1200px 600px at 85% -10%, rgba(244, 233, 200, 0.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(200, 30, 58, 0.1), transparent 60%);
+  background-attachment: fixed;
+  -webkit-tap-highlight-color: transparent;
+  overflow-wrap: anywhere;
+}
+
+/* Reusable building blocks */
+@utility card {
+  @apply rounded-2xl border border-white/10 bg-night-800/80 p-4 shadow-xl shadow-black/30 backdrop-blur;
+}
+@utility btn {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 font-semibold transition select-none active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40;
+}
+@utility btn-primary {
+  @apply btn bg-blood text-white hover:bg-blood-light;
+}
+@utility btn-gold {
+  @apply btn bg-gold text-night-950 hover:brightness-110;
+}
+@utility btn-ghost {
+  @apply btn border border-white/15 bg-white/5 text-white hover:bg-white/10;
+}
+@utility btn-sm {
+  @apply min-h-8 rounded-lg px-2.5 py-1 text-sm;
+}
+@utility ui-input {
+  @apply w-full rounded-xl border border-white/15 bg-night-900 px-4 py-3 text-lg text-white outline-none placeholder:text-white/30 focus:border-gold;
+}
+@utility ui-select {
+  @apply rounded-lg border border-white/15 bg-night-900 px-2 py-1.5 text-sm text-white outline-none focus:border-gold;
+}
+@utility ui-label {
+  @apply mb-1 block text-xs font-semibold tracking-wider text-white/50 uppercase;
+}
+@utility chip {
+  @apply inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs;
+}
+
+.moon {
+  background: radial-gradient(circle at 35% 35%, #fffbea, #f4e9c8 45%, #c9b98a 80%);
+  box-shadow: 0 0 80px 20px rgba(244, 233, 200, 0.25);
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+.flicker {
+  animation: flicker 3s ease-in-out infinite;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.rise {
+  animation: rise 0.45s ease-out both;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(233, 185, 73, 0.6); }
+  100% { box-shadow: 0 0 0 18px rgba(233, 185, 73, 0); }
+}
+.pulse-ring {
+  animation: pulse-ring 1.4s ease-out infinite;
+}
+
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
