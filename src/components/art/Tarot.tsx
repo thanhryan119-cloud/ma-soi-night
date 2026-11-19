@@ -668,3 +668,35 @@ export function NarratorCard({ className = "" }: { className?: string }) {
     </svg>
   );
 }
+
+/** Just the illustrated panel of a role card (no frame), cropped to fill its box. */
+export function RoleArtPanel({ role, className = "" }: { role: RoleId; className?: string }) {
+  const id = `p${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+  return (
+    <svg viewBox="9 22 102 144" preserveAspectRatio="xMidYMid slice" className={className} aria-hidden>
+      <Patterns id={id} />
+      <rect x="9" y="22" width="102" height="144" fill={INK} />
+      <g clipPath={`url(#${id}c)`}>{ART[role]({ hatch: `url(#${id}h)`, dots: `url(#${id}d)` })}</g>
+    </svg>
+  );
+}
+
+/**
+ * A whole tarot card for the role reveal: numeral, illustration, the role's
+ * explanation printed inside the card, and the name plaque at the bottom.
+ */
+export function RoleCardFull({ role, children, className = "" }: { role: RoleId; children?: React.ReactNode; className?: string }) {
+  const t = useT();
+  return (
+    <div className={`flex flex-col rounded-[14px] border-2 border-white bg-black p-[3.5%] text-white ${className}`}>
+      <div className="flex min-h-0 flex-1 flex-col gap-2 rounded-[10px] border border-white p-2">
+        <div className="mx-auto shrink-0 rounded-full bg-white px-3 font-serif text-sm leading-5 font-bold text-black">{NUMERAL[role]}</div>
+        <div className="min-h-0 flex-1 overflow-hidden rounded-md border border-white">
+          <RoleArtPanel role={role} className="h-full w-full" />
+        </div>
+        {children && <div className="shrink-0 border-y border-white/70 px-1 py-1.5 text-center">{children}</div>}
+        <div className="shrink-0 rounded-md bg-white py-1 text-center font-display text-xl leading-7 text-black">{t(`roles.${role}.name`)}</div>
+      </div>
+    </div>
+  );
+}

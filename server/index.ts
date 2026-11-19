@@ -10,13 +10,17 @@ import { Server, type Socket } from "socket.io";
 import {
   ROOM_TTL_MS,
   addPlayer,
+  advance,
+  autoReady,
   createRoom,
   getPlayer,
   hostAction,
   makeRoomCode,
   playerAction,
+  stepKey,
 } from "../shared/engine";
 import { botDecide } from "../shared/bots";
+import { botChatLine, newBotChatMemory, type BotChatMemory } from "../shared/botChat";
 import { createAccounts } from "./accounts";
 import { createSocial } from "./social";
 import { buildView, type Viewer } from "../shared/views";
@@ -33,6 +37,11 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN?.split(",").map((s) => s.trim()) ?? 
 
 const rooms = new Map<string, Room>();
 const botTimers = new Map<string, NodeJS.Timeout>();
+const autoTimers = new Map<string, { key: string; timer: NodeJS.Timeout }>();
+const AUTO_DELAY_MS = 3000;
+const botChatTimers = new Map<string, NodeJS.Timeout>();
+const botChatMemory = new Map<string, BotChatMemory>();
+const BOT_LINES_PER_DAY = 3;
 
 // ---------------------------------------------------------------------------
 // Persistence: rooms are snapshotted to a JSON file so a server restart
@@ -126,10 +135,74 @@ function broadcast(room: Room) {
 
 function touch(room: Room) {
   room.lastActivity = Date.now();
+  scheduleAuto(room);
   broadcast(room);
   social.afterChange(room);
   scheduleBots(room);
+  scheduleBotChat(room);
   saveSoon();
+}
+
+/**
+ * During the day discussion, bots talk in the chat: one line every few
+ * seconds from a random living bot, at most a few lines each per day.
+ */
+function scheduleBotChat(room: Room) {
+  if (room.phase.kind !== "discussion" || !room.game) {
+    const t = botChatTimers.get(room.code);
+    if (t) clearTimeout(t);
+    botChatTimers.delete(room.code);
+    return;
+  }
+  if (botChatTimers.has(room.code)) return;
+  let mem = botChatMemory.get(room.code);
+  if (!mem || mem.day !== room.phase.day) {
+    const claims = mem?.claims ?? {};
+    mem = { ...newBotChatMemory(), claims, day: room.phase.day };
+    botChatMemory.set(room.code, mem);
+  }
+  const m = mem;
+  const talkers = room.players.filter((p) => p.isBot && p.alive && (m.said[p.id] ?? 0) < BOT_LINES_PER_DAY);
+  if (!talkers.length) return;
+  botChatTimers.set(
+    room.code,
+    setTimeout(() => {
+      botChatTimers.delete(room.code);
+      if (rooms.get(room.code) !== room || room.phase.kind !== "discussion") return;
+      const bot = talkers[Math.floor(Math.random() * talkers.length)];
+      const line = botChatLine(room, bot, m);
+      if (line) social.postAs(room, bot.id, line);
+      scheduleBotChat(room);
+    }, 2500 + Math.random() * 4500),
+  );
+}
+
+/**
+ * Auto narrator: when the host turned it on and the current step has been
+ * confirmed, move on by itself after a 3-second pause. Any change of step
+ * (including the host pressing Next) cancels the pending move.
+ */
+function scheduleAuto(room: Room) {
+  const pending = autoTimers.get(room.code);
+  const ready = room.settings.autoAdvance && autoReady(room);
+  const key = stepKey(room);
+  if (pending && (!ready || pending.key !== key)) {
+    clearTimeout(pending.timer);
+    autoTimers.delete(room.code);
+    room.autoAt = null;
+  }
+  if (!ready || autoTimers.has(room.code)) return;
+  room.autoAt = Date.now() + AUTO_DELAY_MS;
+  autoTimers.set(room.code, {
+    key,
+    timer: setTimeout(() => {
+      autoTimers.delete(room.code);
+      room.autoAt = null;
+      if (rooms.get(room.code) !== room) return;
+      if (room.settings.autoAdvance && autoReady(room) && stepKey(room) === key && advance(room).ok) touch(room);
+      else broadcast(room);
+    }, AUTO_DELAY_MS),
+  });
 }
 
 /** One bot acts per tick, with a human-ish delay, until no bot has anything to do. */

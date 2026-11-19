@@ -68,6 +68,7 @@ describe("engine flow", () => {
     next(room); // -> dawn (no bite)
     next(room); // -> discussion
     next(room); // -> nominate
+    for (const id of ids) playerAction(room, id, { type: "vote", choice: "skip" });
     next(room); // -> nomination results (nobody)
     expect(room.phase.kind).toBe("nominateResult");
     expect(room.game!.nominationOutcome).toBe("none");
@@ -150,6 +151,7 @@ describe("engine flow", () => {
     next(room); // nominate
     playerAction(room, w, { type: "vote", choice: a });
     playerAction(room, a, { type: "vote", choice: b });
+    for (const id of [b, c, d, e]) playerAction(room, id, { type: "vote", choice: "skip" });
     next(room); // tie -> results
     expect(room.game!.nominationOutcome).toBe("revote");
     next(room); // -> revote
@@ -158,10 +160,27 @@ describe("engine flow", () => {
     expect(playerAction(room, c, { type: "vote", choice: d }).error).toBe("err.invalidTarget");
     playerAction(room, c, { type: "vote", choice: a });
     playerAction(room, e, { type: "vote", choice: a });
+    for (const id of [w, a, b, d]) playerAction(room, id, { type: "vote", choice: "skip" });
     next(room); // results
     next(room);
     expect(room.phase.kind).toBe("defense");
     expect(room.game!.nominees).toEqual([a]);
+  });
+});
+
+describe("missed votes", () => {
+  it("anyone who didn't vote counts as a random vote for someone else", () => {
+    const { room, ids } = setupRoom(["werewolf", "villager", "villager", "villager", "villager"]);
+    hostAction(room, { type: "updateSettings", settings: { wolvesMustBite: false } });
+    next(room); // night
+    next(room); // dawn
+    next(room); // discussion
+    next(room); // nominate
+    playerAction(room, ids[1], { type: "vote", choice: ids[0] });
+    next(room); // close: the other four get random ballots
+    const ballots = room.game!.vote!.ballots;
+    expect(Object.keys(ballots).sort()).toEqual([...ids].sort());
+    for (const [voter, target] of Object.entries(ballots)) expect(target).not.toBe(voter);
   });
 });
 

@@ -489,8 +489,38 @@ export function pendingVoters(room: Room): Player[] {
     .filter((p) => p && (p.connected || p.isBot));
 }
 
+/** True when the host ran a countdown for this vote and it has hit zero. */
+function voteTimeUp(room: Room, now = Date.now()): boolean {
+  const t = room.timer;
+  if (!t.durationMs) return false;
+  return t.running ? !!t.endsAt && t.endsAt <= now : t.remainingMs <= 0;
+}
+
+/**
+ * Anyone who didn't vote in time is counted as voting at random: for another
+ * living player (one of the candidates in a revote) in the nomination, and
+ * for execute or spare in the verdict.
+ */
+function fillMissingBallots(room: Room) {
+  const game = room.game!;
+  const vote = game.vote;
+  if (!vote || vote.closed) return;
+  for (const id of voteEligible(room)) {
+    if (id in vote.ballots) continue;
+    let choice: string | null = null;
+    if (vote.kind === "verdict") choice = Math.random() < 0.5 ? "execute" : "spare";
+    else {
+      const pool = (vote.candidates ?? aliveIds(room)).filter((c) => c !== id && getPlayer(room, c)?.alive);
+      if (pool.length) choice = pool[Math.floor(Math.random() * pool.length)];
+    }
+    if (!choice) continue;
+    vote.ballots[id] = choice;
+    log(room, "log.voteRandom", { actor: nameOf(room, id), target: vote.kind === "verdict" ? choice : nameOf(room, choice) });
+  }
+}
+
 function missingVoters(room: Room): ActionResult | null {
-  if (!room.settings.mandatoryVote) return null;
+  if (!room.settings.mandatoryVote || voteTimeUp(room)) return null;
   const pending = pendingVoters(room);
   return pending.length ? fail("err.votesMissing", { count: pending.length }) : null;
 }
@@ -512,6 +542,40 @@ function enforceWolfBite(room: Room): ActionResult | null {
   ns.wolfVotes[wolves[0].id] = target;
   log(room, "log.wolfAutoTarget", { target: nameOf(room, target) });
   return null;
+}
+
+/**
+ * True when the current step has been confirmed and nothing is left to wait
+ * for, so the auto narrator may move on: a night role has acted (or has nobody
+ * alive to act), the hunter has fired, or every voter has voted.
+ */
+export function autoReady(room: Room): boolean {
+  const game = room.game;
+  if (!game || game.pendingWin) return false;
+  switch (room.phase.kind) {
+    case "night": {
+      const step = currentStep(room);
+      return !!step && isStepDone(room, step);
+    }
+    case "hunter": {
+      const h = game.pendingHunters[0];
+      return !!h && h in game.hunterShots;
+    }
+    case "nominate":
+    case "verdict": {
+      const vote = game.vote;
+      if (!vote || vote.closed) return false;
+      return voteEligible(room).every((id) => id in vote.ballots);
+    }
+    default:
+      return false;
+  }
+}
+
+/** A key that changes whenever the game moves to a different step. */
+export function stepKey(room: Room): string {
+  const p = room.phase;
+  return `${p.kind}:${p.night}:${p.day}:${p.stepIndex}:${p.verdictIndex}:${room.game?.pendingHunters[0] ?? ""}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -566,6 +630,7 @@ export function advance(room: Room): ActionResult {
       const missing = missingVoters(room);
       if (missing) return missing;
       // Close the (secret) vote and reveal who voted for whom.
+      fillMissingBallots(room);
       closeNomination(room);
       room.phase = { ...room.phase, kind: "nominateResult" };
       return ok;
@@ -586,6 +651,7 @@ export function advance(room: Room): ActionResult {
     case "verdict": {
       const missing = missingVoters(room);
       if (missing) return missing;
+      fillMissingBallots(room);
       closeVerdict(room);
       return ok;
     }
@@ -817,6 +883,7 @@ function mergeSettings(room: Room, patch: Partial<Settings>): ActionResult {
       "wolvesMustBite",
       "mandatoryVote",
       "voiceChat",
+      "autoAdvance",
       "bilingualScreen",
     ] as const
   ).forEach(bool);

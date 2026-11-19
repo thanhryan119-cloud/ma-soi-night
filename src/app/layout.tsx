@@ -10,7 +10,7 @@ const body = Be_Vietnam_Pro({
   weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-body",
 });
-const title = Grenze_Gotisch({ subsets: ["latin", "vietnamese"], weight: ["500", "600", "700"], variable: "--font-title" });
+const title = Grenze_Gotisch({ subsets: ["latin", "vietnamese"], weight: ["400", "500", "600", "700", "800"], variable: "--font-title" });
 // Fonts players can pick for their name (all include Vietnamese glyphs).
 const nfSerif = Playfair_Display({ subsets: ["latin", "vietnamese"], weight: ["700"], variable: "--font-nf-serif" });
 const nfScript = Dancing_Script({ subsets: ["latin", "vietnamese"], weight: ["700"], variable: "--font-nf-script" });

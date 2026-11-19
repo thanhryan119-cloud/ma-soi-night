@@ -177,9 +177,20 @@ export function createSocial(io: Server, getRoom: (code: string) => Room | undef
     }
   }
 
+  /** Posts a chat line on behalf of a bot (server-side, no socket). */
+  function postAs(room: Room, playerId: string, raw: string) {
+    const text = sanitizeChat(raw);
+    if (!text) return;
+    const s = of(room.code);
+    const msg: ChatMessage = { id: randomId(10), from: playerId, text, t: Date.now() };
+    s.chat.push(msg);
+    if (s.chat.length > CHAT_HISTORY) s.chat.splice(0, s.chat.length - CHAT_HISTORY);
+    io.to(channel(room.code)).emit("chat:new", msg);
+  }
+
   function dispose(code: string) {
     social.delete(code);
   }
 
-  return { register, afterChange, dispose };
+  return { register, afterChange, dispose, postAs };
 }

@@ -124,6 +124,8 @@ export interface NightView {
 export interface ClientState {
   viewer: Viewer;
   serverNow: number;
+  /** When the auto narrator will move on, if it is about to. */
+  autoAt: number | null;
   code: string;
   roomLocale: Locale;
   settings: Settings;
@@ -347,6 +349,7 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
   const state: ClientState = {
     viewer,
     serverNow: Date.now(),
+    autoAt: room.autoAt ?? null,
     code: room.code,
     roomLocale: room.locale,
     settings: room.settings,

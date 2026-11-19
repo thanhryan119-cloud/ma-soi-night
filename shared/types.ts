@@ -93,6 +93,8 @@ export interface Settings {
   mandatoryVote: boolean;
   /** Players may open their mic in the lobby and during the discussion. */
   voiceChat: boolean;
+  /** Auto narrator: once a step is confirmed, move on by itself after a short pause. */
+  autoAdvance: boolean;
   discussionSeconds: number;
   defenseSeconds: number;
   bilingualScreen: boolean;
@@ -220,6 +222,8 @@ export interface Room {
   game: Game | null;
   timer: TimerState;
   log: LogEntry[];
+  /** When the auto narrator will move on (ms epoch), or null. */
+  autoAt?: number | null;
 }
 
 // ---------------------------------------------------------------------------

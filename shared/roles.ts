@@ -205,6 +205,7 @@ export function defaultSettings(playerCount = 8): Settings {
     wolvesMustBite: true,
     mandatoryVote: false,
     voiceChat: true,
+    autoAdvance: false,
     discussionSeconds: 180,
     defenseSeconds: 60,
     bilingualScreen: false,

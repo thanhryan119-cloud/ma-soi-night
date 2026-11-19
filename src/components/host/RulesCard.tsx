@@ -9,6 +9,7 @@ import { useT } from "@/lib/i18n";
 import { useHostAction } from "./common";
 
 const BOOLS = [
+  "autoAdvance",
   "wolvesMustBite",
   "mandatoryVote",
   "voiceChat",

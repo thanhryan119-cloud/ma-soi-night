@@ -2,7 +2,7 @@
 
 /* Tarot gothic: midnight indigo, antique gold frames, cream ink, blood-red accent. */
 @theme {
-  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-title), var(--font-body), Georgia, serif;
   --font-display: var(--font-title), Georgia, serif;
   --color-night-950: #07060f;
   --color-night-900: #141030;

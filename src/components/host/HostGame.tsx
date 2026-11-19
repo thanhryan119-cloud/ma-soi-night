@@ -205,11 +205,26 @@ function Controls({ state, offset }: { state: ClientState; offset: number }) {
           ))}
         </div>
       )}
+      <AutoCountdown autoAt={state.autoAt} offset={offset} />
       <button className="btn-primary py-5 text-xl" disabled={blocked} onClick={() => act({ type: "next" })}>
         {t("host.next")} →
       </button>
     </section>
   );
+}
+
+/** "Moving on in 3s…" while the auto narrator is about to advance. */
+function AutoCountdown({ autoAt, offset }: { autoAt: number | null; offset: number }) {
+  const t = useT();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!autoAt) return;
+    const id = setInterval(() => setNow(Date.now()), 200);
+    return () => clearInterval(id);
+  }, [autoAt]);
+  if (!autoAt) return null;
+  const s = Math.max(1, Math.ceil((autoAt - (now + offset)) / 1000));
+  return <p className="animate-pulse text-center text-sm font-semibold text-gold">⏳ {t("host.autoIn", { s })}</p>;
 }
 
 // ---------------------------------------------------------------------------

@@ -229,7 +229,8 @@
     "readNow": "Read",
     "stopReading": "Stop",
     "noVoice": "This device has no {lang} voice; the browser will use its default voice. On Windows: Settings → Time & language → Speech → add a voice.",
-    "social": "Chat & board"
+    "social": "Chat & board",
+    "autoIn": "Moving on in {s}s…"
   },
   "settings": {
     "nightOrder": "Night wake-up order",
@@ -265,7 +266,8 @@
     "bilingualScreen": "Bilingual projector screen",
     "wolvesMustBite": "Werewolves must attack every night",
     "mandatoryVote": "Everyone must vote (no skipping)",
-    "voiceChat": "Allow open mic (lobby and discussion)"
+    "voiceChat": "Allow open mic (lobby and discussion)",
+    "autoAdvance": "Auto narrator: once a step is confirmed, wait 3 seconds and move on"
   },
   "effects": {
     "protected": "Protected",
@@ -364,7 +366,8 @@
     "lookUp": "Look at the shared screen",
     "mustBite": "You must attack someone.",
     "mustVote": "Voting is mandatory.",
-    "heal": "Heal"
+    "heal": "Heal",
+    "closeEyesNow": "Please close your eyes"
   },
   "profile": {
     "title": "Your profile",
@@ -560,7 +563,8 @@
       "lovers": "💘 The Lovers win",
       "draw": "Draw — nobody survived"
     },
-    "wolfAutoTarget": "The Werewolves are offline — {target} was picked at random"
+    "wolfAutoTarget": "The Werewolves are offline — {target} was picked at random",
+    "voteRandom": "{actor} didn't vote in time → counted as a random vote: {target}"
   },
   "privacy": {
     "title": "Privacy policy",

@@ -12,7 +12,7 @@ import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
 import { SocialPanel } from "@/components/SocialPanel";
 import { SceneArt } from "@/components/art/Woodcut";
-import { CardBack, RoleArt } from "@/components/art/Tarot";
+import { CardBack, RoleCardFull } from "@/components/art/Tarot";
 import { useT } from "@/lib/i18n";
 import { emitAck } from "@/lib/socket";
 
@@ -260,8 +260,8 @@ function HoldCard({ me, players }: Ctx) {
       <div className="flex min-h-0 w-full flex-1 items-center justify-center">
         <button
           type="button"
-          className="no-select relative h-full max-h-[480px] max-w-full touch-none rounded-xl"
-          style={{ perspective: "1000px", aspectRatio: "3 / 4" }}
+          className="no-select relative h-full max-h-[560px] max-w-full touch-none rounded-[14px]"
+          style={{ perspective: "1000px", aspectRatio: "3 / 5" }}
           onPointerDown={show}
           onPointerUp={hide}
           onPointerLeave={hide}
@@ -283,17 +283,13 @@ function HoldCard({ me, players }: Ctx) {
               <CardBack className="absolute inset-0 h-full w-full" />
               <span className="relative mt-[78%] rounded bg-night-950/80 px-3 py-1 text-sm font-bold text-gold">{t("player.holdToReveal")}</span>
             </div>
-            <div
-              className="absolute inset-0 flex flex-col items-center justify-start gap-1.5 overflow-hidden rounded-xl border-2 border-gold/70 bg-night-950 p-3 text-center"
-              style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
-            >
+            <div className="absolute inset-0" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
               {role && open && (
-                <>
-                  <RoleArt role={role.id} className="h-[60%] w-auto shrink-0" />
-                  <div className="text-[11px] font-semibold tracking-wider text-white/60 uppercase">{t(`teams.${role.team}`)}</div>
-                  <p className="text-xs leading-snug text-white/85">{t(`roles.${role.id}.desc`)}</p>
+                <RoleCardFull role={role.id} className="h-full w-full">
+                  <div className="text-[10px] font-semibold tracking-[0.2em] text-white/70 uppercase">{t(`teams.${role.team}`)}</div>
+                  <p className="mt-0.5 text-[12px] leading-snug text-white">{t(`roles.${role.id}.desc`)}</p>
                   {role.team === "wolves" && (
-                    <div className="text-xs">
+                    <div className="mt-1 text-xs">
                       <div className="font-bold text-blood-light">{t("player.teammates")}</div>
                       {me.teammates.length
                         ? me.teammates.map((id) => players.get(id)?.name).join(", ")
@@ -301,9 +297,9 @@ function HoldCard({ me, players }: Ctx) {
                     </div>
                   )}
                   {me.loverId && (
-                    <div className="text-xs text-pink-300">{t("player.yourLover", { name: players.get(me.loverId)?.name ?? "?" })}</div>
+                    <div className="mt-1 text-xs text-pink-300">{t("player.yourLover", { name: players.get(me.loverId)?.name ?? "?" })}</div>
                   )}
-                </>
+                </RoleCardFull>
               )}
             </div>
           </div>
@@ -404,19 +400,37 @@ const Actions = ({ children }: { children: React.ReactNode }) => <div className=
 // Night
 // ---------------------------------------------------------------------------
 
-function Night(ctx: Ctx) {
+/**
+ * "Please close your eyes" filling the phone screen. Shown the moment a player
+ * confirms their night action (and to everyone else at night), so every
+ * phone looks the same from across the table.
+ */
+function CloseEyes({ children }: { children?: React.ReactNode }) {
   const t = useT();
+  const words = t("player.closeEyesNow").split(" ");
+  return (
+    <Fill center>
+      {children}
+      <div className="rise flex min-h-0 w-full flex-1 flex-col items-center justify-center text-center">
+        <span aria-hidden className="mb-3 text-[14vw] leading-none sm:text-6xl">🌙</span>
+        <h2 className="font-display text-[19vw] leading-[0.95] font-bold text-moon sm:text-8xl">
+          {words.map((w, i) => (
+            <span key={i} className="block">
+              {w}
+            </span>
+          ))}
+        </h2>
+      </div>
+    </Fill>
+  );
+}
+
+function Night(ctx: Ctx) {
   const { state, me } = ctx;
   const stepKey = `${state.phase.night}-${state.phase.stepIndex}`;
   if (me.turn) return <NightTurn key={stepKey} {...ctx} />;
   if (me.decoy) return <Decoy key={stepKey} {...ctx} />;
-  return (
-    <Fill center>
-      <SceneArt scene="night" className="w-full max-w-xs" />
-      <h2 className="font-display text-3xl font-bold text-moon">{t("player.closeEyes")}</h2>
-      <p className="text-white/50">{t("player.nightFalls")}</p>
-    </Fill>
-  );
+  return <CloseEyes />;
 }
 
 function NightTitle({ night }: { night: number }) {
@@ -434,6 +448,7 @@ function Decoy({ state, me, players }: Ctx) {
   const [sel, setSel] = useState<string[]>([]);
   const [done, setDone] = useState(false);
   const ids = state.players.filter((p) => p.alive && p.id !== me.id).map((p) => p.id);
+  if (done) return <CloseEyes />;
   return (
     <Fill>
       <NightTitle night={state.phase.night} />
@@ -474,20 +489,18 @@ function NightTurn({ state, me, players }: Ctx) {
   if (turn.done) {
     const last = turn.step === "seer" ? me.seerResults[me.seerResults.length - 1] : null;
     return (
-      <Fill center>
+      <CloseEyes>
         {last && last.night === state.phase.night && (
           <div
-            className={`rise rounded-lg border p-5 text-xl font-bold ${
+            className={`rise shrink-0 rounded-lg border p-4 text-lg font-bold ${
               last.isWolf ? "border-blood bg-blood/20 text-blood-light" : "border-emerald-500 bg-emerald-500/15 text-emerald-300"
             }`}
           >
             {t(last.isWolf ? "player.seerIsWolf" : "player.seerNotWolf", { name: players.get(last.targetId)?.name ?? "?" })}
           </div>
         )}
-        {turn.step === "werewolf" && <div className="text-lg font-bold text-emerald-300">✓ {t("player.packAgree")}</div>}
-        <SceneArt scene="night" className="w-full max-w-[220px]" />
-        <p className="text-lg">{t("player.done")}</p>
-      </Fill>
+        {turn.step === "werewolf" && <div className="shrink-0 text-base font-bold text-emerald-300">✓ {t("player.packAgree")}</div>}
+      </CloseEyes>
     );
   }
 
