@@ -73,6 +73,12 @@ App gồm 2 phần deploy riêng:
   - `DATA_FILE` *(tùy chọn)* — đường dẫn file snapshot, ví dụ `/data/rooms.json` nếu gắn Volume, để phòng sống sót qua lần redeploy.
 - Kiểm tra: `https://<server>/health` trả `{"ok":true}`.
 
+**Cập nhật server sau khi sửa code** (Railway CLI đã đăng nhập một lần bằng `npx @railway/cli login`):
+
+```powershell
+npm run deploy:server
+```
+
 ### 2. Web → Vercel
 
 - Import repo, framework **Next.js** (mặc định).
