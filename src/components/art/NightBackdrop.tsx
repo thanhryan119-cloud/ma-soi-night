@@ -77,10 +77,10 @@ function buildFur() {
   // cheek under the eye, hairs falling down and outward
   add(side, 60, () => [-104 + r() * 58, 14 + r() * 26, 2.0 + (r() - 0.5) * 0.7]);
   // fur between the brows pointing up, the nose bridge pointing down
-  add(centre, 50, () => [-24 + r() * 48, -58 + r() * 34, -1.57 + (r() - 0.5) * 0.7]);
-  add(centre, 70, () => {
+  add(centre, 80, () => [-46 + r() * 92, -60 + r() * 36, -1.57 + (r() - 0.5) * 0.9]);
+  add(centre, 90, () => {
     const y = -26 + r() * 64;
-    const spread = 22 * (1 - (y + 26) / 90);
+    const spread = 32 * (1 - (y + 26) / 90);
     const x = (r() * 2 - 1) * spread;
     return [x, y, 1.57 - x * 0.03 + (r() - 0.5) * 0.5];
   });
@@ -97,8 +97,9 @@ function build() {
     const y = 300 + r() * 470;
     const edge = x < 260 || x > 740 || y > 680;
     if (!edge && r() < 0.85) continue;
-    if (watchers.some((w) => Math.hypot(w.x - x, w.y - y) < 280)) continue;
-    watchers.push({ x, y, s: 0.5 + r() * 0.4, tilt: (r() - 0.5) * 8, delay: r() * 10, dur: 10 + r() * 9 });
+    if (watchers.some((w) => Math.hypot(w.x - x, w.y - y) < 200)) continue;
+    // small, and on a long cycle so each pair surfaces only a third as often
+    watchers.push({ x, y, s: 0.3 + r() * 0.22, tilt: (r() - 0.5) * 8, delay: r() * 45, dur: 30 + r() * 27 });
   }
   return { stars, watchers, fur: buildFur() };
 }
@@ -171,14 +172,14 @@ export function NightBackdrop() {
         {scene?.watchers.map((w, i) => (
           <g key={i} transform={`translate(${w.x.toFixed(1)} ${w.y.toFixed(1)}) rotate(${w.tilt.toFixed(1)}) scale(${w.s.toFixed(3)})`} opacity="0.7">
             <g className="nb-eyes" style={{ animationDelay: `${w.delay}s`, animationDuration: `${w.dur}s` }}>
-              <use href="#nb-fur-half" />
-              <use href="#nb-fur-half" transform="scale(-1 1)" />
+              <use href="#nb-fur-half" transform="translate(-26 0)" />
+              <use href="#nb-fur-half" transform="scale(-1 1) translate(-26 0)" />
               {scene.fur.centre.map((h, j) => (
                 <path key={j} d={h.d} fill={h.c} />
               ))}
               <g className="nb-blink" style={{ animationDelay: `${w.delay}s`, animationDuration: `${w.dur}s` }}>
-                <use href="#nb-eye-left" />
-                <use href="#nb-eye-left" transform="scale(-1 1)" />
+                <use href="#nb-eye-left" transform="translate(-26 0)" />
+                <use href="#nb-eye-left" transform="scale(-1 1) translate(-26 0)" />
               </g>
             </g>
           </g>

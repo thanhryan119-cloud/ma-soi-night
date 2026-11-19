@@ -57,32 +57,41 @@ body {
   animation: nb-blink 12s ease-in-out infinite;
 }
 @keyframes nb-blink {
-  0%, 25%, 28.5%, 100% { transform: scaleY(1); }
-  26.8% { transform: scaleY(0.08); }
+  0%, 8.3%, 9.5%, 100% { transform: scaleY(1); }
+  8.9% { transform: scaleY(0.08); }
 }
-/* Landing page tarot grid */
-.tarot-rise {
-  animation: tarot-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  transition: transform 0.25s ease;
+/* Landing page tarot fan: dealt out on load, dimmed until hovered */
+.tarot-spread-card {
+  transform-origin: 50% 120%;
+  transform: translateX(calc(-50% + var(--dx))) translateY(var(--dy)) rotate(var(--rot));
+  filter: brightness(0.62) grayscale(0.2);
+  transition: transform 0.3s ease, filter 0.3s ease;
+  animation: tarot-deal 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
-.tarot-rise:hover {
-  transform: translateY(-6px) scale(1.03);
+.tarot-spread-card:hover {
+  transform: translateX(calc(-50% + var(--dx))) translateY(calc(var(--dy) - 26px)) rotate(var(--rot)) scale(1.12);
+  filter: brightness(1) drop-shadow(0 0 14px rgba(255, 255, 255, 0.35));
+  z-index: 30 !important;
 }
-@keyframes tarot-rise {
-  from { transform: translateY(18px); opacity: 0; }
-  to { transform: none; opacity: 1; }
+@keyframes tarot-deal {
+  from { transform: translateX(-50%) translateY(30px) rotate(0deg); opacity: 0; }
+  to { transform: translateX(calc(-50% + var(--dx))) translateY(var(--dy)) rotate(var(--rot)); opacity: 1; }
+}
+@media (hover: none) {
+  .tarot-spread-card { filter: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tarot-rise { animation: none; }
+  .tarot-spread-card { animation: none; }
 }
 @keyframes nb-lurk {
-  0%, 12% { opacity: 0; }
-  20% { opacity: 0.95; }
-  34% { opacity: 0.95; }
-  35.5% { opacity: 0.05; }
-  37% { opacity: 0.95; }
-  52% { opacity: 0.8; }
-  62%, 100% { opacity: 0; }
+  /* visible for ~1/6 of a long cycle, so each wolf shows up a third as often */
+  0%, 4% { opacity: 0; }
+  6.7% { opacity: 0.95; }
+  11.3% { opacity: 0.95; }
+  11.8% { opacity: 0.05; }
+  12.3% { opacity: 0.95; }
+  17.3% { opacity: 0.8; }
+  20.7%, 100% { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .nb-star, .nb-eyes, .nb-blink { animation: none; }
