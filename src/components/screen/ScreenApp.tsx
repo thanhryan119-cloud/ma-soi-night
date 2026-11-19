@@ -7,6 +7,7 @@ import type { Locale } from "@shared/types";
 import type { ClientState, PlayerView } from "@shared/views";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { useJoinUrl } from "@/components/host/HostLobby";
+import { CardBack, RoleArt, SceneArt } from "@/components/art/Woodcut";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
 import { Avatar, LangSwitch, Spinner, StyledName, TimerDisplay } from "@/components/ui";
 import { translatorFor, useLocale, useT, type T } from "@/lib/i18n";
@@ -116,7 +117,7 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
     case "roleReveal":
       return (
         <div className="flex flex-col items-center gap-8">
-          <div className="text-8xl">🂠</div>
+          <CardBack className="h-64 w-auto" />
           <Bi k="screen.lookAtRole" className={title} />
         </div>
       );
@@ -124,21 +125,21 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
       const role = state.night.stepRole;
       return (
         <div className="flex flex-col items-center gap-8">
-          <div className="moon h-24 w-24 rounded-full flicker" />
+          <SceneArt scene="night" className="w-full max-w-2xl" />
           <Bi k="phase.night" params={{ n: state.phase.night }} className={title} />
           {role ? (
             <Bi k="screen.awake" params={{ role }} className="text-4xl text-white/80" />
           ) : (
             <Bi k="screen.everyoneSleeps" className="text-4xl text-white/80" />
           )}
-          {role && <div className="text-7xl">{ROLES[role].emoji}</div>}
+          {role && <RoleArt role={role} className="h-48 w-auto" />}
         </div>
       );
     }
     case "dawn":
       return (
         <div className="flex flex-col items-center gap-8">
-          <div className="text-8xl">🌅</div>
+          <SceneArt scene="dawn" className="w-full max-w-xl" />
           <Bi k="phase.dawn" params={{ n: state.phase.day }} className={title} />
           {state.lastDeaths.length ? (
             <>
@@ -157,7 +158,7 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
       const shot = state.hunterShot ? players.get(state.hunterShot) : null;
       return (
         <div className="flex flex-col items-center gap-8">
-          <div className="text-8xl">🏹</div>
+          <SceneArt scene="hunter" className="w-full max-w-md" />
           {hunter && <Bi k="script.hunter" params={{ name: hunter.name }} className="max-w-4xl text-4xl font-bold" />}
           {state.hunterShot === null ? (
             <Bi k="player.hunterWaiting" className="text-3xl text-white/60 flicker" />
@@ -226,10 +227,13 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
       const p = players.get(r.nomineeId);
       return (
         <div className="flex w-full max-w-4xl flex-col items-center gap-6">
-          {p && <PlayerBubble p={p} size="xl" />}
+          <div className="flex items-center gap-6">
+            <SceneArt scene={r.executed ? "execute" : "spare"} className="w-72" />
+            {p && <PlayerBubble p={p} size="xl" />}
+          </div>
           <Bi
             k={r.executed ? "screen.executed" : "screen.spared"}
-            className={`font-display text-8xl font-black ${r.executed ? "text-blood-light" : "text-emerald-300"}`}
+            className={`font-display text-7xl font-black ${r.executed ? "text-blood-light" : "text-emerald-300"}`}
           />
           <div className="flex gap-10 text-5xl font-black">
             <span className="text-blood-light">🪢 {r.execute}</span>

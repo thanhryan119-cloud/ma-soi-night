@@ -5,15 +5,14 @@ import type { LogEntry } from "@shared/types";
 import type { ClientState } from "@shared/views";
 import { formatLog, type T } from "@/lib/i18n";
 import { Avatar, RoleBadge, StyledName } from "./ui";
-
-const WIN_EMOJI = { wolves: "🐺", village: "🏡", lovers: "💘", draw: "🕯️" } as const;
+import { SceneArt } from "./art/Woodcut";
 
 export function WinnerBanner({ state, t, big = false }: { state: ClientState; t: T; big?: boolean }) {
   const w = state.winner;
   if (!w) return null;
   return (
     <div className="rise text-center">
-      <div className={big ? "text-8xl" : "text-6xl"}>{WIN_EMOJI[w]}</div>
+      <SceneArt scene={w === "wolves" ? "wolves" : w === "village" ? "village" : w === "lovers" ? "lovers" : "draw"} className={`mx-auto w-full ${big ? "max-w-xl" : "max-w-xs"}`} />
       <h2 className={`mt-3 font-display font-black text-moon ${big ? "text-6xl" : "text-3xl"}`}>{t(`winner.${w}.title`)}</h2>
       <p className={`mt-2 text-white/70 ${big ? "text-2xl" : ""}`}>{t(`winner.${w}.desc`)}</p>
     </div>

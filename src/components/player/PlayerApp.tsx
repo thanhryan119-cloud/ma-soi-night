@@ -163,7 +163,7 @@ function JoinForm({
                 key={l}
                 type="button"
                 onClick={() => setLocale(l)}
-                className={`btn flex-1 ${locale === l ? "bg-white text-black" : "btn-ghost"}`}
+                className={`btn flex-1 ${locale === l ? "bg-gold text-night-950" : "btn-ghost"}`}
               >
                 {t(`lang.${l}`)}
               </button>

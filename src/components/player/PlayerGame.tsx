@@ -11,6 +11,7 @@ import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, useErrorToa
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
 import { SocialPanel } from "@/components/SocialPanel";
+import { CardBack, RoleArt, SceneArt } from "@/components/art/Woodcut";
 import { useT } from "@/lib/i18n";
 import { emitAck } from "@/lib/socket";
 
@@ -219,7 +220,7 @@ function Lobby({ state }: { state: ClientState }) {
   return (
     <Fill>
       <div className="flex shrink-0 items-center gap-3">
-        <div className="moon h-9 w-9 shrink-0 rounded-full flicker" aria-hidden />
+        <SceneArt scene="night" className="h-12 w-auto shrink-0" />
         <div className="min-w-0">
           <h2 className="truncate font-bold">{t("player.waitingHost")}</h2>
           <p className="text-xs text-white/60">{t("player.inLobby", { count: state.players.length })}</p>
@@ -275,20 +276,20 @@ function HoldCard({ me, players }: Ctx) {
             style={{ transformStyle: "preserve-3d", transform: open ? "rotateY(180deg)" : "none" }}
           >
             <div
-              className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-xl border border-white/20 bg-night-800"
+              className="absolute inset-0 flex flex-col items-center justify-center"
               style={{ backfaceVisibility: "hidden" }}
             >
-              <div className="moon h-16 w-16 rounded-full" />
-              <span className="px-4 font-bold text-gold">{t("player.holdToReveal")}</span>
+              <CardBack className="absolute inset-0 h-full w-full" />
+              <span className="relative mt-[78%] rounded bg-night-950/80 px-3 py-1 text-sm font-bold text-gold">{t("player.holdToReveal")}</span>
             </div>
             <div
-              className="absolute inset-0 flex flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border-2 p-4 text-center"
-              style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)", borderColor: role?.color, background: "#111111" }}
+              className="absolute inset-0 flex flex-col items-center justify-start gap-1.5 overflow-hidden rounded-xl border-2 border-gold/70 bg-night-950 p-3 text-center"
+              style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
             >
               {role && open && (
                 <>
-                  <div className="text-6xl">{role.emoji}</div>
-                  <div className="font-display text-2xl font-black" style={{ color: role.color }}>
+                  <RoleArt role={role.id} className="h-[48%] w-auto shrink-0" />
+                  <div className="font-display text-2xl font-bold text-gold">
                     {t(`roles.${role.id}.name`)}
                   </div>
                   <div className="text-[11px] font-semibold tracking-wider text-white/60 uppercase">{t(`teams.${role.team}`)}</div>
@@ -382,7 +383,7 @@ function TargetGrid({
             disabled={disabled}
             onClick={() => onPick(id)}
             className={`relative flex min-h-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg border px-1 text-center transition active:scale-95 ${
-              sel ? "border-white bg-white/15" : "border-white/10 bg-white/5 hover:bg-white/10"
+              sel ? "border-gold bg-gold/15" : "border-white/10 bg-white/5 hover:bg-white/10"
             } disabled:opacity-60`}
             aria-pressed={sel}
           >
@@ -413,7 +414,7 @@ function Night(ctx: Ctx) {
   if (me.decoy) return <Decoy key={stepKey} {...ctx} />;
   return (
     <Fill center>
-      <div className="text-6xl">😴</div>
+      <SceneArt scene="night" className="w-full max-w-xs" />
       <h2 className="font-display text-3xl font-bold text-moon">{t("player.closeEyes")}</h2>
       <p className="text-white/50">{t("player.nightFalls")}</p>
     </Fill>
@@ -486,7 +487,7 @@ function NightTurn({ state, me, players }: Ctx) {
           </div>
         )}
         {turn.step === "werewolf" && <div className="text-lg font-bold text-emerald-300">✓ {t("player.packAgree")}</div>}
-        <div className="text-5xl">😴</div>
+        <SceneArt scene="night" className="w-full max-w-[220px]" />
         <p className="text-lg">{t("player.done")}</p>
       </Fill>
     );
@@ -602,7 +603,7 @@ function Dawn({ state, me, players }: Ctx) {
   const iDied = deaths.some((d) => d.playerId === me.id);
   return (
     <Fill center>
-      <div className="text-5xl">🌅</div>
+      <SceneArt scene="dawn" className="w-full max-w-[260px]" />
       <h2 className="font-display text-3xl font-bold text-moon">{t("player.dawn")}</h2>
       {iDied && <p className="rounded-lg bg-blood/25 px-4 py-2 text-xl font-bold text-blood-light">{t("player.youDied")}</p>}
       {deaths.length ? (
@@ -655,7 +656,7 @@ function Hunter({ state, me, players }: Ctx) {
   const shotName = state.hunterShot ? players.get(state.hunterShot)?.name : null;
   return (
     <Fill center>
-      <div className="text-6xl">🏹</div>
+      <SceneArt scene="hunter" className="w-full max-w-xs" />
       <p className="text-xl font-bold">
         {state.hunterShot === null
           ? t("player.hunterWaiting")

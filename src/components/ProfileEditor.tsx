@@ -14,6 +14,7 @@ import {
 } from "@/lib/account";
 import { useLocale, useT } from "@/lib/i18n";
 import { Avatar, StyledName, toast, useErrorToast } from "./ui";
+import { AvatarArt } from "./art/Woodcut";
 
 // ---------------------------------------------------------------------------
 // Google Identity Services button
@@ -102,7 +103,7 @@ function Picker<T extends string>({
             onClick={() => onChange(o)}
             aria-pressed={o === value}
             className={`flex min-h-12 items-center justify-center gap-2 rounded-md border px-2 py-2 text-sm transition ${
-              o === value ? "border-white bg-white/10" : "border-white/10 hover:border-white/30"
+              o === value ? "border-gold bg-gold/10" : "border-white/10 hover:border-white/30"
             }`}
           >
             {render(o)}
@@ -234,12 +235,12 @@ export function ProfileEditor({
                     key={a}
                     type="button"
                     onClick={() => onChange({ ...value, avatar: a })}
-                    className={`aspect-square rounded-md text-2xl transition ${
+                    className={`aspect-square overflow-hidden rounded-full p-0.5 transition ${
                       a === value.avatar ? "bg-white/15 ring-2 ring-white" : "bg-white/5 hover:bg-white/10"
                     }`}
                     aria-pressed={a === value.avatar}
                   >
-                    {a}
+                    <AvatarArt emoji={a} className="h-full w-full" />
                   </button>
                 ))}
               </div>

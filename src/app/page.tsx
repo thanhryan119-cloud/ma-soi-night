@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SceneArt } from "@/components/art/Woodcut";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Locale } from "@shared/types";
@@ -41,7 +42,7 @@ export default function Home() {
         👤 {t("profile.open")}
       </Link>
       <header className="mb-10 flex flex-col items-center text-center">
-        <div className="moon mb-6 h-12 w-12 rounded-full" aria-hidden />
+        <SceneArt scene="hero" className="mb-6 w-full max-w-md" />
         <h1 className="font-display text-5xl font-black tracking-tight text-moon sm:text-6xl">{t("app.name")}</h1>
         <p className="mt-3 max-w-xl text-lg text-white/70">{t("app.tagline")}</p>
       </header>

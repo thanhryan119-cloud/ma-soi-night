@@ -7,6 +7,7 @@ import type { PlayerView } from "@shared/views";
 import { useLocale, useT } from "@/lib/i18n";
 import { useNow } from "@/lib/useRoom";
 import { resolveAvatarUrl } from "@/lib/account";
+import { AvatarArt, hasAvatarArt } from "@/components/art/Woodcut";
 
 // ---------------------------------------------------------------------------
 // Language switch — always visible in a corner
@@ -111,7 +112,7 @@ type AvatarLike = Pick<PlayerView, "avatar" | "alive"> & Partial<Pick<PlayerView
 export function Avatar({ p, size = "md" }: { p: AvatarLike; size?: "sm" | "md" | "lg" | "xl" }) {
   const cls = { sm: "h-7 w-7 text-base", md: "h-10 w-10 text-2xl", lg: "h-14 w-14 text-3xl", xl: "h-24 w-24 text-6xl" }[size];
   const photo = resolveAvatarUrl(p.avatarUrl);
-  const frame = p.style?.frame && p.style.frame !== "none" ? `af-${p.style.frame}` : "ring-1 ring-white/10";
+  const frame = p.style?.frame && p.style.frame !== "none" ? `af-${p.style.frame}` : "";
   return (
     <span className={`${cls} ${frame} relative inline-flex shrink-0 items-center justify-center rounded-full bg-night-700`}>
       <span
@@ -122,6 +123,8 @@ export function Avatar({ p, size = "md" }: { p: AvatarLike; size?: "sm" | "md" |
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={photo} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" draggable={false} />
+        ) : hasAvatarArt(p.avatar) ? (
+          <AvatarArt emoji={p.avatar} className="h-full w-full" />
         ) : (
           p.avatar
         )}

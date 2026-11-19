@@ -31,7 +31,7 @@ export function SocialPanel({ state, viewer, className = "" }: { state: ClientSt
             key={k}
             type="button"
             onClick={() => setTab(k)}
-            className={`btn btn-sm flex-1 ${tab === k ? "bg-white text-black" : "btn-ghost border-transparent"}`}
+            className={`btn btn-sm flex-1 ${tab === k ? "bg-gold text-night-950" : "btn-ghost border-transparent"}`}
           >
             {k === "chat" ? `💬 ${t("social.chat")}` : `🎨 ${t("social.board")}`}
           </button>
@@ -165,7 +165,7 @@ function Chat({
               {p ? <Avatar p={p} size="sm" /> : <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blood text-xs">🎙️</span>}
               <div className="min-w-0 max-w-[80%]">
                 <div className="truncate text-[11px] text-white/50">{p ? <StyledName p={p} /> : t("social.host")}</div>
-                <div className={`inline-block rounded-lg px-2.5 py-1.5 text-sm break-words ${mine ? "bg-white text-black" : m.from === "host" ? "bg-blood/30" : "bg-white/10"}`}>
+                <div className={`inline-block rounded-lg px-2.5 py-1.5 text-sm break-words ${mine ? "bg-gold text-night-950" : m.from === "host" ? "bg-blood/30" : "bg-white/10"}`}>
                   {m.text}
                 </div>
               </div>
