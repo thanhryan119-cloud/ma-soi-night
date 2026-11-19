@@ -586,7 +586,8 @@
     "closed": "Chat, drawing and mic are only open in the lobby and during the discussion.",
     "deadReadOnly": "You’re dead, so you can only watch and listen.",
     "host": "Host",
-    "clear": "Clear board"
+    "clear": "Clear board",
+    "title": "The moonlit table"
   },
   "voice": {
     "join": "Join mic",

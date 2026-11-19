@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Be_Vietnam_Pro, Cormorant_Garamond, Dancing_Script, JetBrains_Mono, Oswald, Pacifico, Playfair_Display } from "next/font/google";
+import { Be_Vietnam_Pro, Grenze_Gotisch, Dancing_Script, JetBrains_Mono, Oswald, Pacifico, Playfair_Display } from "next/font/google";
 import { I18nProvider } from "@/lib/i18n";
 import { ToastHost } from "@/components/ui";
+import { NightBackdrop } from "@/components/art/NightBackdrop";
 import "./globals.css";
 
 const body = Be_Vietnam_Pro({
@@ -9,7 +10,7 @@ const body = Be_Vietnam_Pro({
   weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-body",
 });
-const title = Cormorant_Garamond({ subsets: ["latin", "vietnamese"], weight: ["600", "700"], variable: "--font-title" });
+const title = Grenze_Gotisch({ subsets: ["latin", "vietnamese"], weight: ["500", "600", "700"], variable: "--font-title" });
 // Fonts players can pick for their name (all include Vietnamese glyphs).
 const nfSerif = Playfair_Display({ subsets: ["latin", "vietnamese"], weight: ["700"], variable: "--font-nf-serif" });
 const nfScript = Dancing_Script({ subsets: ["latin", "vietnamese"], weight: ["700"], variable: "--font-nf-script" });
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="vi" className={fontVars}>
       <body className="font-sans antialiased">
+        <NightBackdrop />
         <I18nProvider>
           {children}
           <ToastHost />

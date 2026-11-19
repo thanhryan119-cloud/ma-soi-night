@@ -586,7 +586,8 @@
     "closed": "Chat, vẽ và mic chỉ mở trong phòng chờ và lúc thảo luận.",
     "deadReadOnly": "Bạn đã chết nên chỉ được xem và nghe.",
     "host": "Quản trò",
-    "clear": "Xóa bảng"
+    "clear": "Xóa bảng",
+    "title": "Bàn tròn đêm trăng"
   },
   "voice": {
     "join": "Bật mic",

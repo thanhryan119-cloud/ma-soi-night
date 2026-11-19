@@ -8,12 +8,9 @@ import { useSocial } from "@/lib/social";
 import { useVoice } from "@/lib/voice";
 import { Avatar, StyledName, useErrorToast } from "./ui";
 
-type Tab = "chat" | "board";
-
 /** Who is using the panel: the host, or a player id. */
 export function SocialPanel({ state, viewer, className = "" }: { state: ClientState; viewer: "host" | string; className?: string }) {
   const t = useT();
-  const [tab, setTab] = useState<Tab>("chat");
   const social = useSocial(state.code);
   const players = new Map(state.players.map((p) => [p.id, p]));
   const isHost = viewer === "host";
@@ -24,25 +21,19 @@ export function SocialPanel({ state, viewer, className = "" }: { state: ClientSt
   const reason = !phaseOpen ? t("social.closed") : dead ? t("social.deadReadOnly") : null;
 
   return (
-    <div className={`flex min-h-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-night-900 ${className}`}>
-      <div className="flex shrink-0 items-center gap-1 border-b border-white/10 p-1">
-        {(["chat", "board"] as Tab[]).map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setTab(k)}
-            className={`btn btn-sm flex-1 ${tab === k ? "bg-gold text-night-950" : "btn-ghost border-transparent"}`}
-          >
-            {k === "chat" ? `💬 ${t("social.chat")}` : `🎨 ${t("social.board")}`}
-          </button>
-        ))}
+    <div className={`tarot-frame flex min-h-0 flex-col overflow-hidden rounded-lg border border-gold/40 bg-night-900/85 ${className}`}>
+      <div className="flex shrink-0 items-center justify-center gap-2 border-b border-gold/25 px-2 py-1.5">
+        <span className="text-gold/60">✦</span>
+        <h3 className="font-display text-lg leading-none text-gold">{t("social.title")}</h3>
+        <span className="text-gold/60">✦</span>
       </div>
       {state.settings.voiceChat !== false && <VoiceBar state={state} players={players} enabled={phaseOpen} />}
-      {tab === "chat" ? (
+      <div className="flex min-h-0 shrink-0 basis-[44%] flex-col border-b border-gold/25">
+        <Board social={social} canDraw={canSpeak} isHost={isHost} reason={null} />
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col">
         <Chat social={social} players={players} canSpeak={canSpeak} reason={isHost ? null : reason} viewer={viewer} />
-      ) : (
-        <Board social={social} canDraw={canSpeak} isHost={isHost} reason={isHost ? null : reason} />
-      )}
+      </div>
     </div>
   );
 }

@@ -56,7 +56,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
   const showRoleButton = !!me.roleId && kind !== "gameOver" && kind !== "roleReveal";
 
   return (
-    <div className={`fixed inset-0 flex flex-col overflow-hidden transition-colors duration-700 ${kind === "night" ? "bg-black" : ""}`}>
+    <div className={`fixed inset-0 flex flex-col overflow-hidden transition-colors duration-700`}>
       <header className="flex shrink-0 items-center gap-2.5 border-b border-white/5 px-3 py-2 pr-28">
         <Avatar p={self} size="sm" />
         <div className="min-w-0 flex-1 leading-tight">
