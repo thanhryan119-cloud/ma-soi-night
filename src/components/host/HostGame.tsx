@@ -7,7 +7,9 @@ import type { ClientState, PlayerView } from "@shared/views";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown } from "@/components/VoteBreakdown";
 import { Avatar, RoleBadge, StyledName, TimerDisplay } from "@/components/ui";
-import { formatLog, useT } from "@/lib/i18n";
+import { formatLog, useLocale, useT } from "@/lib/i18n";
+import { speak, stopSpeaking, useTtsSupported } from "@/lib/tts";
+import { SocialPanel } from "@/components/SocialPanel";
 import { nameOf, scriptLines, useHostAction } from "./common";
 import { RulesCard } from "./RulesCard";
 
@@ -135,10 +137,24 @@ function WinPending({ winner }: { state: ClientState; winner: Winner }) {
 
 function ScriptCard({ state }: { state: ClientState }) {
   const t = useT();
+  const { locale } = useLocale();
   const lines = scriptLines(state, t);
+  const canSpeakTts = useTtsSupported();
   return (
     <section className="card border-gold/20">
-      <h3 className="ui-label">🎙️ {t("script.title")}</h3>
+      <div className="flex items-center gap-2">
+        <h3 className="ui-label mb-0 flex-1">🎙️ {t("script.title")}</h3>
+        {canSpeakTts && (
+          <>
+            <button className="btn-ghost btn-sm" onClick={() => speak(lines, locale)}>
+              🔊 {t("host.readNow")}
+            </button>
+            <button className="btn-ghost btn-sm" onClick={() => stopSpeaking()}>
+              ⏹ {t("host.stopReading")}
+            </button>
+          </>
+        )}
+      </div>
       <div className="space-y-2 font-display text-xl leading-relaxed text-moon">
         {lines.map((l, i) => (
           <p key={i} className={l.startsWith("(") ? "font-sans text-sm text-white/50" : ""}>
@@ -325,6 +341,8 @@ function PhasePanel({ state, hideRoles }: { state: ClientState; hideRoles: boole
       return <VotePanel state={state} hideRoles={hideRoles} />;
     case "nominateResult":
       return <NominationBreakdownPanel state={state} />;
+    case "discussion":
+      return <SocialPanel state={state} viewer="host" className="h-[460px]" />;
     case "defense":
       return <NominationResult state={state} />;
     case "verdictResult":

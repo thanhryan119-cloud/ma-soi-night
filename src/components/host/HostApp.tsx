@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ConnectionDot, LangSwitch, Spinner } from "@/components/ui";
+import { ConnectionDot, LangSwitch, Spinner, toast } from "@/components/ui";
 import { Ambient } from "@/lib/ambient";
-import { useT } from "@/lib/i18n";
+import { useLocale, useT } from "@/lib/i18n";
+import { hasVoiceFor, speak, stopSpeaking, useTtsSupported, whenVoicesReady } from "@/lib/tts";
+import { scriptLines } from "./common";
 import { emitAck, hostKey, storage } from "@/lib/socket";
 import { useRoomState } from "@/lib/useRoom";
 import { HostGame } from "./HostGame";
@@ -40,6 +42,27 @@ export default function HostApp({ code }: { code: string }) {
   }, [phaseKey, isNight, sound]);
 
   useEffect(() => () => ambient.current?.stop(), []);
+
+  // Voice-over: read the narration aloud whenever it changes.
+  const { locale } = useLocale();
+  const canSpeakTts = useTtsSupported();
+  const [voiceOver, setVoiceOver] = useState(false);
+  useEffect(() => setVoiceOver(storage.get<boolean>("msn:voiceOver") ?? false), []);
+  const lines = state && state.viewer === "host" ? scriptLines(state, t) : [];
+  const linesKey = lines.join("|");
+  useEffect(() => {
+    if (voiceOver && linesKey) speak(lines, locale);
+  }, [linesKey, voiceOver, locale]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => stopSpeaking(), []);
+
+  async function toggleVoiceOver() {
+    const next = !voiceOver;
+    storage.set("msn:voiceOver", next);
+    setVoiceOver(next);
+    if (!next) return stopSpeaking();
+    await whenVoicesReady();
+    if (!hasVoiceFor(locale)) toast(t("host.noVoice", { lang: t(`lang.${locale}`) }), "info");
+  }
 
   function toggleSound() {
     if (sound) {
@@ -89,6 +112,16 @@ export default function HostApp({ code }: { code: string }) {
           {state && state.phase.kind !== "lobby" && (
             <button className="btn-ghost btn-sm" onClick={toggleHide} aria-pressed={hideRoles}>
               {hideRoles ? `🙈 ${t("host.showRoles")}` : `👁️ ${t("host.hideRoles")}`}
+            </button>
+          )}
+          {canSpeakTts && (
+            <button
+              className={`btn-sm btn ${voiceOver ? "bg-gold text-night-950" : "btn-ghost"}`}
+              onClick={toggleVoiceOver}
+              aria-pressed={voiceOver}
+              title={t("host.voiceOverAuto")}
+            >
+              🗣️ {t("host.voiceOver")}
             </button>
           )}
           <button className={`btn-sm btn ${sound ? "bg-gold text-night-950" : "btn-ghost"}`} onClick={toggleSound} aria-pressed={sound}>

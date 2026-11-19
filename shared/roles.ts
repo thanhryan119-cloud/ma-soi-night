@@ -204,6 +204,7 @@ export function defaultSettings(playerCount = 8): Settings {
     decoyActions: true,
     wolvesMustBite: true,
     mandatoryVote: false,
+    voiceChat: true,
     discussionSeconds: 180,
     defenseSeconds: 60,
     bilingualScreen: false,

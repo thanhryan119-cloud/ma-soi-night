@@ -10,6 +10,7 @@ import type { ClientState, MeView, PlayerView } from "@shared/views";
 import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, useErrorToast } from "@/components/ui";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
+import { SocialPanel } from "@/components/SocialPanel";
 import { useT } from "@/lib/i18n";
 import { emitAck } from "@/lib/socket";
 
@@ -158,13 +159,14 @@ function PhaseBody({
       return <Hunter {...ctx} />;
     case "discussion":
       return (
-        <Fill center>
-          <div className="text-5xl">🗣️</div>
-          <h2 className="text-2xl font-bold">{t("player.discussion")}</h2>
-          <div className="w-full">
-            <TimerDisplay timer={state.timer} offset={offset} className="text-6xl" />
+        <Fill>
+          <div className="flex shrink-0 items-center gap-3">
+            <h2 className="shrink-0 text-lg font-bold">🗣️ {t("player.discussion")}</h2>
+            <div className="min-w-0 flex-1">
+              <TimerDisplay timer={state.timer} offset={offset} className="text-3xl" />
+            </div>
           </div>
-          <AliveStrip state={state} />
+          <SocialPanel state={state} viewer={me.id} className="flex-1" />
         </Fill>
       );
     case "nominate":
@@ -216,27 +218,22 @@ function Lobby({ state }: { state: ClientState }) {
   const t = useT();
   return (
     <Fill>
-      <div className="flex shrink-0 flex-col items-center gap-3 pt-4 text-center">
-        <div className="moon h-16 w-16 rounded-full flicker" aria-hidden />
-        <h2 className="text-2xl font-bold">{t("player.waitingHost")}</h2>
-        <p className="text-sm text-white/60">{t("player.inLobby", { count: state.players.length })}</p>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="flex flex-wrap justify-center gap-2">
-          {state.players.map((p) => (
-            <span key={p.id} className={`chip text-sm ${p.id === state.me?.id ? "border-white" : ""}`}>
-              <Avatar p={p} size="sm" /> <StyledName p={p} />
-            </span>
-          ))}
+      <div className="flex shrink-0 items-center gap-3">
+        <div className="moon h-9 w-9 shrink-0 rounded-full flicker" aria-hidden />
+        <div className="min-w-0">
+          <h2 className="truncate font-bold">{t("player.waitingHost")}</h2>
+          <p className="text-xs text-white/60">{t("player.inLobby", { count: state.players.length })}</p>
         </div>
       </div>
+      <AliveStrip state={state} />
+      {state.me && <SocialPanel state={state} viewer={state.me.id} className="flex-1" />}
     </Fill>
   );
 }
 
 function AliveStrip({ state }: { state: ClientState }) {
   return (
-    <div className="flex flex-wrap justify-center gap-1.5">
+    <div className="flex shrink-0 gap-1.5 overflow-x-auto pb-1">
       {state.players.map((p) => (
         <span key={p.id} title={p.name}>
           <Avatar p={p} size="sm" />

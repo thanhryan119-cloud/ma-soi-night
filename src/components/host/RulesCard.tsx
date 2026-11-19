@@ -11,6 +11,7 @@ import { useHostAction } from "./common";
 const BOOLS = [
   "wolvesMustBite",
   "mandatoryVote",
+  "voiceChat",
   "decoyActions",
   "bilingualScreen",
   "deadSeeRoles",

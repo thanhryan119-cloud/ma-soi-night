@@ -816,6 +816,7 @@ function mergeSettings(room: Room, patch: Partial<Settings>): ActionResult {
       "decoyActions",
       "wolvesMustBite",
       "mandatoryVote",
+      "voiceChat",
       "bilingualScreen",
     ] as const
   ).forEach(bool);

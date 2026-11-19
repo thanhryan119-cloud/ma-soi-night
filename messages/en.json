@@ -222,7 +222,13 @@
     "resultExecuted": "{name} was executed",
     "resultSpared": "{name} was spared",
     "mustVoteNote": "Mandatory vote: waiting for {count} more.",
-    "wolvesMustBiteNote": "Werewolves must attack — can’t move on yet."
+    "wolvesMustBiteNote": "Werewolves must attack — can’t move on yet.",
+    "voiceOver": "Read narration",
+    "voiceOverAuto": "Read narration aloud on each phase",
+    "readNow": "Read",
+    "stopReading": "Stop",
+    "noVoice": "This device has no {lang} voice; the browser will use its default voice. On Windows: Settings → Time & language → Speech → add a voice.",
+    "social": "Chat & board"
   },
   "settings": {
     "nightOrder": "Night wake-up order",
@@ -257,7 +263,8 @@
     "defenseSeconds": "Defense time (seconds)",
     "bilingualScreen": "Bilingual projector screen",
     "wolvesMustBite": "Werewolves must attack every night",
-    "mandatoryVote": "Everyone must vote (no skipping)"
+    "mandatoryVote": "Everyone must vote (no skipping)",
+    "voiceChat": "Allow open mic (lobby and discussion)"
   },
   "effects": {
     "protected": "Protected",
@@ -483,7 +490,13 @@
     "imageInvalid": "That file isn’t a valid image (JPG, PNG, WebP).",
     "wolvesMustBite": "The Werewolves haven’t picked anyone — they must attack someone.",
     "votesMissing": "{count, plural, one {# player hasn’t} other {# players haven’t}} voted yet (mandatory voting is on).",
-    "skipNotAllowed": "Voting is mandatory — you can’t skip."
+    "skipNotAllowed": "Voting is mandatory — you can’t skip.",
+    "chatClosed": "Chat, drawing and mic are only open in the lobby and during the discussion.",
+    "deadNoChat": "Dead players can’t chat or draw.",
+    "chatEmpty": "The message is empty.",
+    "tooFast": "Slow down a little.",
+    "voiceDisabled": "The Host has turned the mic off.",
+    "micDenied": "Couldn’t use your microphone — you’re listening only. Allow mic access and try again."
   },
   "log": {
     "join": "{name} joined",
@@ -563,5 +576,24 @@
     "p5": "Game rooms are deleted automatically after 12 hours of inactivity. You can remove an uploaded photo on the Profile page at any time. To delete your account entirely, send a request on the GitHub project page below.",
     "h4": "Contact",
     "p6": "Questions or data deletion requests:"
+  },
+  "social": {
+    "chat": "Chat",
+    "board": "Board",
+    "placeholder": "Type a message…",
+    "send": "Send",
+    "empty": "No messages yet. Say hi!",
+    "closed": "Chat, drawing and mic are only open in the lobby and during the discussion.",
+    "deadReadOnly": "You’re dead, so you can only watch and listen.",
+    "host": "Host",
+    "clear": "Clear board"
+  },
+  "voice": {
+    "join": "Join mic",
+    "leave": "Leave mic",
+    "mute": "Talking",
+    "unmute": "Muted",
+    "listenOnly": "Listening only",
+    "inCall": "{count, plural, one {# on mic} other {# on mic}}"
   }
 }

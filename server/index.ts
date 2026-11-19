@@ -18,6 +18,7 @@ import {
 } from "../shared/engine";
 import { botDecide } from "../shared/bots";
 import { createAccounts } from "./accounts";
+import { createSocial } from "./social";
 import { buildView, type Viewer } from "../shared/views";
 import type { ActionResult, HostAction, Locale, PlayerAction, Room } from "../shared/types";
 
@@ -109,6 +110,7 @@ const io = new Server(httpServer, {
 });
 
 const channel = (code: string) => `room:${code}`;
+const social = createSocial(io, (code) => rooms.get(code), channel);
 const normCode = (code: unknown) => String(code ?? "").trim().toUpperCase().slice(0, 8);
 const safeAck = (ack: unknown): Ack => (typeof ack === "function" ? (ack as Ack) : () => {});
 
@@ -125,6 +127,7 @@ function broadcast(room: Room) {
 function touch(room: Room) {
   room.lastActivity = Date.now();
   broadcast(room);
+  social.afterChange(room);
   scheduleBots(room);
   saveSoon();
 }
@@ -177,6 +180,7 @@ function guard(fn: () => ActionResult & Record<string, unknown>, ack: Ack) {
 
 io.on("connection", (raw) => {
   const socket = raw as AppSocket;
+  social.register(raw);
   const on = (event: string, handler: (payload: Record<string, unknown>, ack: Ack) => void) =>
     socket.on(event, (payload: unknown, ack: unknown) =>
       handler((payload ?? {}) as Record<string, unknown>, safeAck(ack)));
@@ -305,6 +309,7 @@ setInterval(() => {
       clearTimeout(botTimers.get(code));
       botTimers.delete(code);
       rooms.delete(code);
+      social.dispose(code);
       saveSoon();
       console.log(`[room ${code}] expired`);
     }

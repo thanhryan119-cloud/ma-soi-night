@@ -11,6 +11,7 @@ import { useT } from "@/lib/i18n";
 import { socketUrl, storage } from "@/lib/socket";
 import { useHostAction } from "./common";
 import { RulesCard } from "./RulesCard";
+import { SocialPanel } from "@/components/SocialPanel";
 
 export function HostLobby({ state }: { state: ClientState }) {
   return (
@@ -18,8 +19,9 @@ export function HostLobby({ state }: { state: ClientState }) {
       <div className="xl:min-h-0 xl:overflow-y-auto">
         <JoinCard state={state} />
       </div>
-      <div className="xl:min-h-0 xl:overflow-y-auto">
+      <div className="flex flex-col gap-4 xl:min-h-0 xl:overflow-y-auto">
         <PlayersCard state={state} />
+        <SocialPanel state={state} viewer="host" className="h-[420px] shrink-0" />
       </div>
       <div className="flex flex-col gap-4 lg:col-span-2 xl:col-span-1 xl:min-h-0 xl:overflow-y-auto">
         <RoleConfig state={state} />

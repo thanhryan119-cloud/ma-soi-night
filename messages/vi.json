@@ -222,7 +222,13 @@
     "resultExecuted": "{name} bị treo cổ",
     "resultSpared": "{name} được tha",
     "mustVoteNote": "Bắt buộc vote: chờ {count} người nữa.",
-    "wolvesMustBiteNote": "Sói bắt buộc phải cắn — chưa thể qua lượt."
+    "wolvesMustBiteNote": "Sói bắt buộc phải cắn — chưa thể qua lượt.",
+    "voiceOver": "Đọc lời dẫn",
+    "voiceOverAuto": "Tự đọc lời dẫn khi chuyển pha",
+    "readNow": "Đọc",
+    "stopReading": "Dừng",
+    "noVoice": "Máy này chưa có giọng đọc {lang}; trình duyệt sẽ dùng giọng mặc định. Trên Windows: Cài đặt → Thời gian & ngôn ngữ → Giọng nói → thêm giọng.",
+    "social": "Chat & bảng vẽ"
   },
   "settings": {
     "nightOrder": "Thứ tự gọi ban đêm",
@@ -257,7 +263,8 @@
     "defenseSeconds": "Thời gian biện hộ (giây)",
     "bilingualScreen": "Màn chiếu hiển thị song ngữ",
     "wolvesMustBite": "Sói bắt buộc phải cắn mỗi đêm",
-    "mandatoryVote": "Bắt buộc mọi người phải vote (không được bỏ qua)"
+    "mandatoryVote": "Bắt buộc mọi người phải vote (không được bỏ qua)",
+    "voiceChat": "Cho phép mở mic (phòng chờ và lúc thảo luận)"
   },
   "effects": {
     "protected": "Được bảo vệ",
@@ -483,7 +490,13 @@
     "imageInvalid": "File không phải ảnh hợp lệ (JPG, PNG, WebP).",
     "wolvesMustBite": "Sói chưa chọn ai — Sói bắt buộc phải cắn một người.",
     "votesMissing": "Còn {count} người chưa vote (đang bật bắt buộc vote).",
-    "skipNotAllowed": "Bắt buộc phải vote, không được bỏ qua."
+    "skipNotAllowed": "Bắt buộc phải vote, không được bỏ qua.",
+    "chatClosed": "Chat, vẽ và mic chỉ mở trong phòng chờ và lúc thảo luận.",
+    "deadNoChat": "Người chết không được chat hay vẽ.",
+    "chatEmpty": "Tin nhắn trống.",
+    "tooFast": "Gửi chậm lại một chút.",
+    "voiceDisabled": "Quản trò đã tắt mic.",
+    "micDenied": "Không dùng được micro — bạn đang chỉ nghe. Hãy cho phép quyền micro rồi thử lại."
   },
   "log": {
     "join": "{name} vào phòng",
@@ -563,5 +576,24 @@
     "p5": "Dữ liệu phòng chơi tự xóa sau 12 giờ không hoạt động. Bạn có thể xóa ảnh đã tải lên trong trang Hồ sơ bất kỳ lúc nào. Để xóa hẳn tài khoản, hãy gửi yêu cầu tại trang dự án trên GitHub bên dưới.",
     "h4": "Liên hệ",
     "p6": "Câu hỏi hoặc yêu cầu xóa dữ liệu:"
+  },
+  "social": {
+    "chat": "Trò chuyện",
+    "board": "Bảng vẽ",
+    "placeholder": "Nhập tin nhắn…",
+    "send": "Gửi",
+    "empty": "Chưa có tin nhắn nào. Hãy chào mọi người!",
+    "closed": "Chat, vẽ và mic chỉ mở trong phòng chờ và lúc thảo luận.",
+    "deadReadOnly": "Bạn đã chết nên chỉ được xem và nghe.",
+    "host": "Quản trò",
+    "clear": "Xóa bảng"
+  },
+  "voice": {
+    "join": "Bật mic",
+    "leave": "Rời mic",
+    "mute": "Đang nói",
+    "unmute": "Đang tắt tiếng",
+    "listenOnly": "Chỉ nghe",
+    "inCall": "{count} người trong mic"
   }
 }

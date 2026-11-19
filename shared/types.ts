@@ -91,6 +91,8 @@ export interface Settings {
   wolvesMustBite: boolean;
   /** Everyone alive must vote: no skipping, the host can't close until all have voted. */
   mandatoryVote: boolean;
+  /** Players may open their mic in the lobby and during the discussion. */
+  voiceChat: boolean;
   discussionSeconds: number;
   defenseSeconds: number;
   bilingualScreen: boolean;
