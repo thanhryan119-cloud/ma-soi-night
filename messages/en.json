@@ -41,7 +41,8 @@
     "howTitle": "How it works",
     "how1": "The Host opens the app on a laptop or projector and creates a room.",
     "how2": "Everyone scans the QR code and types a name — no account, no app install.",
-    "how3": "Roles are sent secretly to each phone. Act at night, vote by day — all on your phone."
+    "how3": "Roles are sent secretly to each phone. Act at night, vote by day — all on your phone.",
+    "narratorCard": "The Narrator"
   },
   "teams": {
     "wolves": "Werewolf team",

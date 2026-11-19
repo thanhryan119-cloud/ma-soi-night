@@ -60,23 +60,20 @@ body {
   0%, 25%, 28.5%, 100% { transform: scaleY(1); }
   26.8% { transform: scaleY(0.08); }
 }
-/* Landing page tarot fan */
-.tarot-spread-card {
-  transform-origin: 50% 120%;
-  transform: translateX(calc(-50% + var(--dx))) translateY(var(--dy)) rotate(var(--rot));
+/* Landing page tarot grid */
+.tarot-rise {
+  animation: tarot-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   transition: transform 0.25s ease;
-  animation: tarot-deal 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-.tarot-spread-card:hover {
-  transform: translateX(calc(-50% + var(--dx))) translateY(calc(var(--dy) - 22px)) rotate(var(--rot)) scale(1.06);
-  z-index: 20 !important;
+.tarot-rise:hover {
+  transform: translateY(-6px) scale(1.03);
 }
-@keyframes tarot-deal {
-  from { transform: translateX(-50%) translateY(30px) rotate(0deg); opacity: 0; }
-  to { transform: translateX(calc(-50% + var(--dx))) translateY(var(--dy)) rotate(var(--rot)); opacity: 1; }
+@keyframes tarot-rise {
+  from { transform: translateY(18px); opacity: 0; }
+  to { transform: none; opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tarot-spread-card { animation: none; }
+  .tarot-rise { animation: none; }
 }
 @keyframes nb-lurk {
   0%, 12% { opacity: 0; }

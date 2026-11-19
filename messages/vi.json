@@ -41,7 +41,8 @@
     "howTitle": "Cách chơi",
     "how1": "Quản trò mở app trên laptop hoặc máy chiếu và tạo phòng.",
     "how2": "Mọi người quét QR bằng điện thoại, nhập tên là vào được — không cần cài app.",
-    "how3": "Vai được gửi bí mật tới từng điện thoại. Ban đêm thao tác, ban ngày vote — tất cả trên điện thoại."
+    "how3": "Vai được gửi bí mật tới từng điện thoại. Ban đêm thao tác, ban ngày vote — tất cả trên điện thoại.",
+    "narratorCard": "Quản trò"
   },
   "teams": {
     "wolves": "Phe Sói",
