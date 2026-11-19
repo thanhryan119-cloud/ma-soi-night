@@ -4,8 +4,8 @@
 // heavy cream ink lines, diagonal hatching for shade, antique gold frames.
 // Role cards (tarot), phase scenes for the projector, home art and 24 avatars.
 
+import { cosR, sinR } from "./trig";
 import { useId } from "react";
-import type { RoleId } from "@shared/types";
 
 const INK = "#efe3c2";
 const GOLD = "#e8b45a";
@@ -40,160 +40,6 @@ function Defs({ ids }: { ids: ReturnType<typeof useIds> }) {
 }
 
 const ink = { fill: "none", stroke: INK, strokeWidth: 2.4, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-
-// ---------------------------------------------------------------------------
-// Tarot role cards (viewBox 120 x 160)
-// ---------------------------------------------------------------------------
-
-function CardFrame({ children, ids }: { children: React.ReactNode; ids: ReturnType<typeof useIds> }) {
-  return (
-    <>
-      <rect x="1.5" y="1.5" width="117" height="157" rx="7" fill={DEEP} stroke={GOLD} strokeWidth="2" />
-      <path d="M10 150 V36 Q10 12 60 10 Q110 12 110 36 V150 Z" fill={BG} stroke={GOLD} strokeWidth="1" opacity="0.95" />
-      <rect x="10" y="132" width="100" height="18" fill={`url(#${ids.x})`} opacity="0.5" />
-      {children}
-      {[
-        [6, 6],
-        [114, 6],
-        [6, 154],
-        [114, 154],
-      ].map(([x, y]) => (
-        <path key={`${x}-${y}`} d={`M${x} ${y - 3} L${x + 3} ${y} L${x} ${y + 3} L${x - 3} ${y} Z`} fill={GOLD} />
-      ))}
-      <path d="M48 18 L60 12 L72 18" fill="none" stroke={GOLD} strokeWidth="1" />
-    </>
-  );
-}
-
-const ROLE_DRAW: Record<RoleId, (ids: ReturnType<typeof useIds>) => React.ReactNode> = {
-  werewolf: (ids) => (
-    <>
-      <circle cx="62" cy="58" r="30" fill={INK} />
-      <circle cx="62" cy="58" r="30" fill={`url(#${ids.x})`} />
-      <path d="M70 40 a30 30 0 0 1 0 36" fill="none" stroke={DEEP} strokeWidth="1.5" opacity="0.5" />
-      <path
-        d="M30 140 C30 114 36 98 46 88 L42 66 L53 77 C60 70 66 64 72 56 L90 48 L86 59 L79 63 C84 72 82 85 73 93 C80 106 84 122 84 140 Z"
-        fill={DEEP}
-        stroke={INK}
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path d="M64 70 l5 -2" stroke={RED} strokeWidth="2.4" strokeLinecap="round" />
-      <path d="M46 104 l8 6 M44 116 l10 4 M50 126 l8 2" stroke={INK} strokeWidth="1.2" opacity="0.6" />
-    </>
-  ),
-  villager: (ids) => (
-    <>
-      <circle cx="88" cy="40" r="10" fill="none" stroke={GOLD} strokeWidth="1.5" />
-      <path d="M28 92 L58 62 L88 92" {...ink} />
-      <rect x="34" y="92" width="48" height="40" fill={BG} stroke={INK} strokeWidth="2.4" />
-      <rect x="34" y="92" width="48" height="40" fill={`url(#${ids.h})`} />
-      <rect x="52" y="108" width="12" height="24" fill={DEEP} stroke={INK} strokeWidth="2" />
-      <rect x="39" y="100" width="9" height="9" fill={GOLD} stroke={INK} strokeWidth="1.5" />
-      <path d="M43.5 100 v9 M39 104.5 h9" stroke={DEEP} strokeWidth="1" />
-      <path d="M72 72 v-12 h7 v18" {...ink} />
-      <path d="M76 56 q-4 -5 1 -9 q5 -4 1 -9" fill="none" stroke={INK} strokeWidth="1.4" opacity="0.7" />
-      <path d="M96 134 L88 66 M82 68 l2 -8 M88 66 l0 -9 M94 64 l-1 -8 M82 68 Q88 72 94 64" {...ink} strokeWidth={2} />
-    </>
-  ),
-  seer: (ids) => (
-    <>
-      {[...Array(12)].map((_, i) => {
-        const a = (i / 12) * Math.PI * 2;
-        return <line key={i} x1={60 + Math.cos(a) * 32} y1={74 + Math.sin(a) * 32} x2={60 + Math.cos(a) * 40} y2={74 + Math.sin(a) * 40} stroke={GOLD} strokeWidth="1.6" />;
-      })}
-      <circle cx="60" cy="74" r="26" fill={BG} stroke={INK} strokeWidth="2.4" />
-      <path d="M60 48 a26 26 0 0 1 0 52" fill={`url(#${ids.h})`} />
-      <path d="M40 74 Q60 58 80 74 Q60 90 40 74 Z" fill={DEEP} stroke={INK} strokeWidth="2" />
-      <circle cx="60" cy="74" r="6" fill={GOLD} />
-      <circle cx="60" cy="74" r="2.4" fill={DEEP} />
-      <path d="M42 102 L78 102 L84 122 L36 122 Z" fill={DEEP} stroke={INK} strokeWidth="2.2" strokeLinejoin="round" />
-      <path d="M36 122 h48" stroke={GOLD} strokeWidth="2" />
-    </>
-  ),
-  bodyguard: (ids) => (
-    <>
-      <path d="M30 44 L92 126" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-      <path d="M26 50 l10 -10 M86 120 l12 12" stroke={GOLD} strokeWidth="3" strokeLinecap="round" />
-      <path d="M60 46 L90 56 L88 90 C86 110 74 122 60 130 C46 122 34 110 32 90 L30 56 Z" fill={BG} stroke={INK} strokeWidth="2.6" strokeLinejoin="round" />
-      <path d="M60 46 L90 56 L88 90 C86 110 74 122 60 130 Z" fill={`url(#${ids.h})`} />
-      <path d="M60 58 V118 M42 82 H78" stroke={GOLD} strokeWidth="4" strokeLinecap="round" />
-      <path d="M38 62 L60 54 L82 62" fill="none" stroke={INK} strokeWidth="1.2" opacity="0.6" />
-    </>
-  ),
-  witch: (ids) => (
-    <>
-      <path d="M38 82 v-10 h12 v10" {...ink} />
-      <rect x="36" y="66" width="16" height="6" rx="2" fill={GOLD} />
-      <circle cx="44" cy="104" r="22" fill={BG} stroke={INK} strokeWidth="2.4" />
-      <path d="M23 106 a21 21 0 0 0 42 0 Z" fill="#57cc99" opacity="0.85" />
-      <path d="M23 106 a21 21 0 0 0 42 0 Z" fill={`url(#${ids.h})`} />
-      <circle cx="40" cy="96" r="2" fill={INK} />
-      <circle cx="50" cy="90" r="1.5" fill={INK} />
-      <path d="M76 60 h12 v12 l6 10 v42 h-24 v-42 l6 -10 Z" fill={BG} stroke={INK} strokeWidth="2.4" strokeLinejoin="round" />
-      <rect x="74" y="54" width="16" height="6" rx="2" fill={GOLD} />
-      <path d="M71 96 h22 v28 h-22 Z" fill="#7b4fd6" opacity="0.85" />
-      <path d="M71 96 h22 v28 h-22 Z" fill={`url(#${ids.x})`} />
-      <circle cx="82" cy="104" r="4" fill={INK} />
-      <path d="M78 112 l8 6 M86 112 l-8 6" stroke={INK} strokeWidth="1.6" />
-      <path d="M60 40 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 Z" fill={GOLD} />
-    </>
-  ),
-  hunter: (ids) => (
-    <>
-      <circle cx="62" cy="88" r="30" fill="none" stroke={GOLD} strokeWidth="1.2" strokeDasharray="3 4" />
-      <circle cx="62" cy="88" r="14" fill={`url(#${ids.r})`} stroke={RED} strokeWidth="1.5" />
-      <path d="M40 44 C78 62 78 114 40 132" fill="none" stroke={INK} strokeWidth="4" strokeLinecap="round" />
-      <path d="M40 44 L40 132" stroke={INK} strokeWidth="1.3" />
-      <path d="M30 88 H98" stroke={INK} strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M98 88 l-9 -6 v12 Z" fill={GOLD} stroke={INK} strokeWidth="1.5" />
-      <path d="M30 88 l-6 -6 M30 88 l-6 6 M36 88 l-6 -6 M36 88 l-6 6" stroke={INK} strokeWidth="1.6" strokeLinecap="round" />
-    </>
-  ),
-  cupid: (ids) => (
-    <>
-      <path d="M30 70 q-18 -10 -14 8 q4 12 18 6 M90 70 q18 -10 14 8 q-4 12 -18 6" fill="none" stroke={INK} strokeWidth="2" />
-      <path d="M22 72 l8 2 M98 72 l-8 2 M20 80 l10 0 M100 80 l-10 0" stroke={INK} strokeWidth="1.2" opacity="0.7" />
-      <path d="M60 126 C32 104 28 84 34 72 C42 58 56 62 60 74 C64 62 78 58 86 72 C92 84 88 104 60 126 Z" fill={RED} stroke={INK} strokeWidth="2.4" strokeLinejoin="round" />
-      <path d="M60 126 C88 104 92 84 86 72 C80 62 70 62 64 70 Z" fill={`url(#${ids.x})`} />
-      <path d="M26 118 L96 58" stroke={GOLD} strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M96 58 l-10 1 l3 7 Z" fill={GOLD} />
-      <path d="M26 118 l-2 -8 M26 118 l8 2 M31 114 l-2 -8 M31 114 l8 2" stroke={INK} strokeWidth="1.5" strokeLinecap="round" />
-    </>
-  ),
-};
-
-/** A tarot card for a role. */
-export function RoleArt({ role, className = "" }: { role: RoleId; className?: string }) {
-  const ids = useIds();
-  return (
-    <svg viewBox="0 0 120 160" className={className} role="img" aria-hidden>
-      <Defs ids={ids} />
-      <CardFrame ids={ids}>{ROLE_DRAW[role](ids)}</CardFrame>
-    </svg>
-  );
-}
-
-/** The back of a tarot card (hidden role). */
-export function CardBack({ className = "" }: { className?: string }) {
-  const ids = useIds();
-  return (
-    <svg viewBox="0 0 120 160" className={className} role="img" aria-hidden>
-      <Defs ids={ids} />
-      <CardFrame ids={ids}>
-        <rect x="10" y="20" width="100" height="112" fill={`url(#${ids.g})`} opacity="0.25" />
-        {[...Array(16)].map((_, i) => {
-          const a = (i / 16) * Math.PI * 2;
-          return <line key={i} x1={60 + Math.cos(a) * 24} y1={78 + Math.sin(a) * 24} x2={60 + Math.cos(a) * (i % 2 ? 32 : 40)} y2={78 + Math.sin(a) * (i % 2 ? 32 : 40)} stroke={GOLD} strokeWidth="1.6" />;
-        })}
-        <circle cx="60" cy="78" r="20" fill={INK} />
-        <circle cx="68" cy="72" r="18" fill={BG} />
-        <circle cx="60" cy="78" r="20" fill="none" stroke={GOLD} strokeWidth="1.5" />
-        <path d="M60 30 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 Z M60 112 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 Z" fill={GOLD} />
-      </CardFrame>
-    </svg>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Scenes (viewBox 200 x 120)
@@ -268,7 +114,7 @@ const SCENES: Record<Scene, (ids: ReturnType<typeof useIds>) => React.ReactNode>
     <>
       {[...Array(11)].map((_, i) => {
         const a = Math.PI + (i / 10) * Math.PI;
-        return <line key={i} x1={100 + Math.cos(a) * 34} y1={92 + Math.sin(a) * 34} x2={100 + Math.cos(a) * 60} y2={92 + Math.sin(a) * 60} stroke={GOLD} strokeWidth="2" />;
+        return <line key={i} x1={100 + cosR(a) * 34} y1={92 + sinR(a) * 34} x2={100 + cosR(a) * 60} y2={92 + sinR(a) * 60} stroke={GOLD} strokeWidth="2" />;
       })}
       <path d="M70 92 a30 30 0 0 1 60 0 Z" fill={GOLD} stroke={INK} strokeWidth="2" />
       <path d="M70 92 a30 30 0 0 1 60 0 Z" fill={`url(#${ids.h})`} />
@@ -303,7 +149,7 @@ const SCENES: Record<Scene, (ids: ReturnType<typeof useIds>) => React.ReactNode>
     <>
       {[...Array(9)].map((_, i) => {
         const a = (i / 9) * Math.PI * 2;
-        return <line key={i} x1={100 + Math.cos(a) * 40} y1={60 + Math.sin(a) * 40} x2={100 + Math.cos(a) * 52} y2={60 + Math.sin(a) * 52} stroke={GOLD} strokeWidth="1.5" />;
+        return <line key={i} x1={100 + cosR(a) * 40} y1={60 + sinR(a) * 40} x2={100 + cosR(a) * 52} y2={60 + sinR(a) * 52} stroke={GOLD} strokeWidth="1.5" />;
       })}
       <path d="M62 66 C76 46 94 44 104 54 C112 40 134 30 150 34 C138 44 128 56 120 66 C132 66 140 72 144 80 C126 80 110 76 98 72 C88 82 72 82 62 66 Z" fill={INK} stroke={INK} strokeWidth="1.5" strokeLinejoin="round" />
       <path d="M104 54 C112 40 134 30 150 34 C138 44 128 56 120 66 Z" fill={`url(#${ids.x})`} />
@@ -335,7 +181,7 @@ const SCENES: Record<Scene, (ids: ReturnType<typeof useIds>) => React.ReactNode>
     <>
       {[...Array(9)].map((_, i) => {
         const a = Math.PI + (i / 8) * Math.PI;
-        return <line key={i} x1={150 + Math.cos(a) * 20} y1={46 + Math.sin(a) * 20} x2={150 + Math.cos(a) * 32} y2={46 + Math.sin(a) * 32} stroke={GOLD} strokeWidth="2" />;
+        return <line key={i} x1={150 + cosR(a) * 20} y1={46 + sinR(a) * 20} x2={150 + cosR(a) * 32} y2={46 + sinR(a) * 32} stroke={GOLD} strokeWidth="2" />;
       })}
       <circle cx="150" cy="46" r="16" fill={GOLD} stroke={INK} strokeWidth="2" />
       {[40, 84, 120].map((x, i) => (

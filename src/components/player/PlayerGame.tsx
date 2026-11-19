@@ -11,7 +11,8 @@ import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, useErrorToa
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
 import { SocialPanel } from "@/components/SocialPanel";
-import { CardBack, RoleArt, SceneArt } from "@/components/art/Woodcut";
+import { SceneArt } from "@/components/art/Woodcut";
+import { CardBack, RoleArt } from "@/components/art/Tarot";
 import { useT } from "@/lib/i18n";
 import { emitAck } from "@/lib/socket";
 
@@ -288,10 +289,7 @@ function HoldCard({ me, players }: Ctx) {
             >
               {role && open && (
                 <>
-                  <RoleArt role={role.id} className="h-[48%] w-auto shrink-0" />
-                  <div className="font-display text-2xl font-bold text-gold">
-                    {t(`roles.${role.id}.name`)}
-                  </div>
+                  <RoleArt role={role.id} className="h-[60%] w-auto shrink-0" />
                   <div className="text-[11px] font-semibold tracking-wider text-white/60 uppercase">{t(`teams.${role.team}`)}</div>
                   <p className="text-xs leading-snug text-white/85">{t(`roles.${role.id}.desc`)}</p>
                   {role.team === "wolves" && (

@@ -1,19 +1,20 @@
 "use client";
 
 // App-wide backdrop: a black night sky with a moon, twinkling stars, forest
-// silhouettes and pairs of wolf eyes that slowly open, blink and vanish.
-// Purely decorative, fixed behind everything, generated on the client.
+// silhouettes and wolves watching from the dark — amber eyes in a patch of
+// grey-brown fur that slowly emerge, blink and fade away.
 
+import { cosR, sinR } from "./trig";
 import { useEffect, useState } from "react";
 
-interface Eyes {
+interface Watcher {
   x: number;
   y: number;
   s: number;
-  color: string;
+  tilt: number;
   delay: number;
   dur: number;
-  tilt: number;
+  fur: { d: string; c: string; w: number }[];
 }
 interface Star {
   x: number;
@@ -22,8 +23,7 @@ interface Star {
   delay: number;
 }
 
-function rand(seed: number) {
-  // Small deterministic PRNG so the layout stays stable while the page is open.
+function rng(seed: number) {
   let t = seed;
   return () => {
     t = (t * 1664525 + 1013904223) % 4294967296;
@@ -31,33 +31,48 @@ function rand(seed: number) {
   };
 }
 
-function build() {
-  const r = rand(Math.floor(Math.random() * 1e9));
-  const stars: Star[] = Array.from({ length: 90 }, () => ({
-    x: r() * 1000,
-    y: r() * 620,
-    r: 0.6 + r() * 1.6,
-    delay: r() * 6,
-  }));
-  const eyes: Eyes[] = [];
-  // Eyes mostly lurk low, in the treeline and at the edges, away from the centre.
-  while (eyes.length < 26) {
-    const x = 20 + r() * 960;
-    const y = 300 + r() * 500;
-    const edge = x < 260 || x > 740 || y > 680;
-    if (!edge && r() < 0.75) continue;
-    eyes.push({
-      x,
-      y,
-      s: 1.1 + r() * 1.4,
-      color: r() < 0.7 ? "#f2c14e" : "#e0404b",
-      delay: r() * 10,
-      dur: 7 + r() * 9,
-      tilt: (r() - 0.5) * 14,
+const FUR = ["#6e6761", "#8a7864", "#4c4642", "#a39484", "#7a5a3e"];
+
+function furStrokes(r: () => number) {
+  const out: Watcher["fur"] = [];
+  for (let i = 0; i < 70; i++) {
+    // Points inside an ellipse around both eyes, brushed outward from the bridge of the nose.
+    const a = r() * Math.PI * 2;
+    const rad = Math.sqrt(r());
+    const x = Math.cos(a) * rad * 82;
+    const y = Math.sin(a) * rad * 34 - 4;
+    const ang = Math.atan2(y + 30, x) + (r() - 0.5) * 0.6;
+    const len = 5 + r() * 9;
+    const bend = (r() - 0.5) * 4;
+    const x2 = x + Math.cos(ang) * len;
+    const y2 = y + Math.sin(ang) * len;
+    out.push({
+      d: `M${x.toFixed(1)} ${y.toFixed(1)} Q${((x + x2) / 2 + bend).toFixed(1)} ${((y + y2) / 2 - bend).toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`,
+      c: FUR[Math.floor(r() * FUR.length)],
+      w: 0.6 + r() * 0.9,
     });
   }
-  return { stars, eyes };
+  return out;
 }
+
+function build() {
+  const r = rng(Math.floor(Math.random() * 1e9));
+  const stars: Star[] = Array.from({ length: 90 }, () => ({ x: r() * 1000, y: r() * 600, r: 0.6 + r() * 1.6, delay: r() * 6 }));
+  const watchers: Watcher[] = [];
+  let guard = 0;
+  while (watchers.length < 14 && guard++ < 500) {
+    const x = 40 + r() * 920;
+    const y = 300 + r() * 480;
+    const edge = x < 250 || x > 750 || y > 660;
+    if (!edge && r() < 0.8) continue;
+    if (watchers.some((w) => Math.hypot(w.x - x, w.y - y) < 150)) continue;
+    watchers.push({ x, y, s: 0.55 + r() * 0.65, tilt: (r() - 0.5) * 10, delay: r() * 10, dur: 9 + r() * 9, fur: furStrokes(r) });
+  }
+  return { stars, watchers };
+}
+
+// One almond-shaped wolf eye, outer corner slightly raised (local units).
+const ALMOND = "M-20 3 C-12 -9 8 -12 20 -4 C13 7 -8 10 -20 3 Z";
 
 export function NightBackdrop() {
   const [scene, setScene] = useState<ReturnType<typeof build> | null>(null);
@@ -71,19 +86,41 @@ export function NightBackdrop() {
             <stop offset="0%" stopColor="#efe3c2" stopOpacity="0.28" />
             <stop offset="100%" stopColor="#efe3c2" stopOpacity="0" />
           </radialGradient>
-          {[
-            ["gold", "#f2c14e"],
-            ["red", "#e0404b"],
-          ].map(([k, c]) => (
-            <radialGradient key={k} id={`nb-eye-${k}`}>
-              <stop offset="0%" stopColor="#fff6d5" />
-              <stop offset="45%" stopColor={c} />
-              <stop offset="100%" stopColor={c} stopOpacity="0" />
-            </radialGradient>
-          ))}
           <pattern id="nb-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
             <line x1="0" y1="0" x2="0" y2="6" stroke="#efe3c2" strokeWidth="1" opacity="0.18" />
           </pattern>
+          {/* Amber iris: bright gold centre, burnt orange, dark limbal ring */}
+          <radialGradient id="nb-iris" cx="45%" cy="45%" r="55%">
+            <stop offset="0%" stopColor="#ffe08a" />
+            <stop offset="35%" stopColor="#f6b02e" />
+            <stop offset="72%" stopColor="#c46a10" />
+            <stop offset="100%" stopColor="#2a1404" />
+          </radialGradient>
+          {/* Fur patch that fades into the darkness */}
+          <radialGradient id="nb-fur">
+            <stop offset="0%" stopColor="#5b534d" stopOpacity="0.95" />
+            <stop offset="55%" stopColor="#3b3430" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#050409" stopOpacity="0" />
+          </radialGradient>
+          <clipPath id="nb-almond">
+            <path d={ALMOND} />
+          </clipPath>
+          <symbol id="nb-eye" overflow="visible">
+            <path d={ALMOND} transform="scale(1.18)" fill="#0b0806" />
+            <g clipPath="url(#nb-almond)">
+              <rect x="-22" y="-14" width="44" height="28" fill="#2a1606" />
+              <circle cx="1" cy="-1" r="11.5" fill="url(#nb-iris)" />
+              {Array.from({ length: 18 }, (_, i) => {
+                const a = (i / 18) * Math.PI * 2;
+                return <line key={i} x1={1 + cosR(a) * 5} y1={-1 + sinR(a) * 5} x2={1 + cosR(a) * 11} y2={-1 + sinR(a) * 11} stroke="#8a4a08" strokeWidth="0.5" opacity="0.55" />;
+              })}
+              <circle cx="1" cy="-1" r="4.4" fill="#040302" />
+              <path d="M-22 -14 H22 V-5 C10 -10 -8 -10 -22 -1 Z" fill="#000" opacity="0.5" />
+              <ellipse cx="-3.5" cy="-5" rx="2.6" ry="1.7" fill="#fffaf0" opacity="0.92" />
+              <circle cx="5" cy="2.5" r="0.9" fill="#fffaf0" opacity="0.5" />
+            </g>
+            <path d={ALMOND} fill="none" stroke="#000" strokeWidth="1.6" />
+          </symbol>
         </defs>
 
         {/* Moon */}
@@ -108,20 +145,19 @@ export function NightBackdrop() {
         })}
         <rect x="0" y="830" width="1000" height="170" fill="#050409" />
 
-        {/* Lurking eyes */}
-        {scene?.eyes.map((e, i) => (
-          <g
-            key={i}
-            className="nb-eyes"
-            transform={`translate(${e.x} ${e.y}) rotate(${e.tilt}) scale(${e.s})`}
-            style={{ animationDelay: `${e.delay}s`, animationDuration: `${e.dur}s` }}
-          >
-            <ellipse cx="-9" cy="0" rx="10" ry="6" fill={`url(#nb-eye-${e.color === "#e0404b" ? "red" : "gold"})`} opacity="0.6" />
-            <ellipse cx="9" cy="0" rx="10" ry="6" fill={`url(#nb-eye-${e.color === "#e0404b" ? "red" : "gold"})`} opacity="0.6" />
-            <ellipse cx="-9" cy="0" rx="4.2" ry="2.2" fill={e.color} />
-            <ellipse cx="9" cy="0" rx="4.2" ry="2.2" fill={e.color} />
-            <ellipse cx="-9" cy="0" rx="0.9" ry="2" fill="#050409" />
-            <ellipse cx="9" cy="0" rx="0.9" ry="2" fill="#050409" />
+        {/* Wolves watching from the dark */}
+        {scene?.watchers.map((w, i) => (
+          <g key={i} transform={`translate(${w.x} ${w.y}) rotate(${w.tilt}) scale(${w.s})`}>
+            <g className="nb-eyes" style={{ animationDelay: `${w.delay}s`, animationDuration: `${w.dur}s` }}>
+              <ellipse cx="0" cy="-4" rx="95" ry="48" fill="url(#nb-fur)" />
+              {w.fur.map((f, j) => (
+                <path key={j} d={f.d} stroke={f.c} strokeWidth={f.w} fill="none" strokeLinecap="round" opacity="0.6" />
+              ))}
+              <g className="nb-blink" style={{ animationDelay: `${w.delay}s`, animationDuration: `${w.dur}s` }}>
+                <use href="#nb-eye" transform="translate(-30 0) rotate(-6)" />
+                <use href="#nb-eye" transform="translate(30 0) scale(-1 1) rotate(-6)" />
+              </g>
+            </g>
           </g>
         ))}
       </svg>

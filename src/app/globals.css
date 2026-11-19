@@ -51,6 +51,33 @@ body {
   opacity: 0;
   animation: nb-lurk 12s ease-in-out infinite;
 }
+.nb-blink {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nb-blink 12s ease-in-out infinite;
+}
+@keyframes nb-blink {
+  0%, 25%, 28.5%, 100% { transform: scaleY(1); }
+  26.8% { transform: scaleY(0.08); }
+}
+/* Landing page tarot fan */
+.tarot-spread-card {
+  transform-origin: 50% 120%;
+  transform: translateX(calc(-50% + var(--dx))) translateY(var(--dy)) rotate(var(--rot));
+  transition: transform 0.25s ease;
+  animation: tarot-deal 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.tarot-spread-card:hover {
+  transform: translateX(calc(-50% + var(--dx))) translateY(calc(var(--dy) - 22px)) rotate(var(--rot)) scale(1.06);
+  z-index: 20 !important;
+}
+@keyframes tarot-deal {
+  from { transform: translateX(-50%) translateY(30px) rotate(0deg); opacity: 0; }
+  to { transform: translateX(calc(-50% + var(--dx))) translateY(var(--dy)) rotate(var(--rot)); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tarot-spread-card { animation: none; }
+}
 @keyframes nb-lurk {
   0%, 12% { opacity: 0; }
   20% { opacity: 0.95; }
@@ -61,7 +88,7 @@ body {
   62%, 100% { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .nb-star, .nb-eyes { animation: none; }
+  .nb-star, .nb-eyes, .nb-blink { animation: none; }
   .nb-eyes { opacity: 0.35; }
 }
 
