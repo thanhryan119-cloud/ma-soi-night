@@ -100,8 +100,11 @@ let session = 0;
  * tempo rising and falling and natural pauses at commas, full stops and
  * ellipses. A new call (or stopSpeaking) cuts off the previous one.
  */
-export function speak(lines: string[], locale: Locale, rate = 1) {
-  if (!ttsSupported()) return;
+export function speak(lines: string[], locale: Locale, rate = 1, onDone?: () => void) {
+  if (!ttsSupported()) {
+    onDone?.();
+    return;
+  }
   const synth = window.speechSynthesis;
   synth.cancel();
   const my = ++session;
@@ -109,7 +112,11 @@ export function speak(lines: string[], locale: Locale, rate = 1) {
   const deep = voice && MALE.test(voice.name) ? 0.82 : 0.68; // lower still if we only have a female voice
   const phrases = phrasing(lines);
   const next = (k: number) => {
-    if (my !== session || k >= phrases.length) return;
+    if (my !== session) return;
+    if (k >= phrases.length) {
+      onDone?.();
+      return;
+    }
     const p = phrases[k];
     const u = new SpeechSynthesisUtterance(p.text);
     u.lang = locale === "vi" ? "vi-VN" : "en-US";

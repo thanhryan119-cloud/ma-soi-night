@@ -10,10 +10,14 @@ import {
   getPlayer,
   isStepDone,
   stepActors,
+  stepKey,
   validTargets,
   voteEligible,
 } from "./engine";
 import { SKIP } from "./rules";
+
+/** How long a rejoin request waits for the host. */
+export const REJOIN_TTL_MS = 2 * 60 * 1000;
 import type {
   Death,
   DeathCause,
@@ -126,6 +130,10 @@ export interface ClientState {
   serverNow: number;
   /** When the auto narrator will move on, if it is about to. */
   autoAt: number | null;
+  /** Changes whenever the game moves to another step (used to report narration). */
+  stepKey: string;
+  /** Host only: players waiting for approval to rejoin. */
+  rejoinRequests: { playerId: string; name: string }[];
   code: string;
   roomLocale: Locale;
   settings: Settings;
@@ -350,6 +358,13 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
     viewer,
     serverNow: Date.now(),
     autoAt: room.autoAt ?? null,
+    stepKey: stepKey(room),
+    rejoinRequests:
+      viewer === "host"
+        ? (room.rejoinRequests ?? [])
+            .filter((r) => r.t > Date.now() - REJOIN_TTL_MS)
+            .map((r) => ({ playerId: r.playerId, name: getPlayer(room, r.playerId)?.name ?? "?" }))
+        : [],
     code: room.code,
     roomLocale: room.locale,
     settings: room.settings,

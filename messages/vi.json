@@ -230,7 +230,10 @@
     "stopReading": "Dừng",
     "noVoice": "Máy này chưa có giọng đọc {lang}; trình duyệt sẽ dùng giọng mặc định. Trên Windows: Cài đặt → Thời gian & ngôn ngữ → Giọng nói → thêm giọng.",
     "social": "Chat & bảng vẽ",
-    "autoIn": "Tự chuyển sau {s}s…"
+    "autoIn": "Tự chuyển sau {s}s…",
+    "rejoinAsk": "{name} muốn vào lại ván (điện thoại mới)",
+    "rejoinAllow": "Cho phép",
+    "rejoinDeny": "Từ chối"
   },
   "settings": {
     "nightOrder": "Thứ tự gọi ban đêm",
@@ -367,7 +370,12 @@
     "mustBite": "Bắt buộc phải cắn một người.",
     "mustVote": "Bắt buộc phải vote.",
     "heal": "Cứu",
-    "closeEyesNow": "Xin hãy nhắm mắt"
+    "closeEyesNow": "Xin hãy nhắm mắt",
+    "rejoinTitle": "Vào lại ván đang chơi",
+    "rejoinHint": "Ván đã bắt đầu. Chọn tên của bạn để quay lại đúng chỗ, giữ nguyên vai.",
+    "rejoinNone": "Ván đã bắt đầu và không còn ai mất kết nối để vào lại.",
+    "rejoinWaiting": "Đang chờ quản trò cho phép bạn vào lại với tên {name}…",
+    "rejoinDenied": "Quản trò không cho phép vào lại."
   },
   "profile": {
     "title": "Hồ sơ của bạn",
@@ -500,7 +508,8 @@
     "chatEmpty": "Tin nhắn trống.",
     "tooFast": "Gửi chậm lại một chút.",
     "voiceDisabled": "Quản trò đã tắt mic.",
-    "micDenied": "Không dùng được micro — bạn đang chỉ nghe. Hãy cho phép quyền micro rồi thử lại."
+    "micDenied": "Không dùng được micro — bạn đang chỉ nghe. Hãy cho phép quyền micro rồi thử lại.",
+    "seatTaken": "Người chơi này đang online hoặc không thể vào lại."
   },
   "log": {
     "join": "{name} vào phòng",
@@ -592,7 +601,9 @@
     "deadReadOnly": "Bạn đã chết nên chỉ được xem và nghe.",
     "host": "Quản trò",
     "clear": "Xóa bảng",
-    "title": "Bàn tròn đêm trăng"
+    "title": "Bàn tròn đêm trăng",
+    "hideBoard": "Thu bảng vẽ",
+    "showBoard": "Mở bảng vẽ"
   },
   "voice": {
     "join": "Bật mic",

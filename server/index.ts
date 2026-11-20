@@ -17,13 +17,15 @@ import {
   hostAction,
   makeRoomCode,
   playerAction,
+  randomToken,
   stepKey,
 } from "../shared/engine";
 import { botDecide } from "../shared/bots";
 import { botChatLine, newBotChatMemory, type BotChatMemory } from "../shared/botChat";
+import { ingestChat, newChatIntel, type ChatIntel } from "../shared/botIntel";
 import { createAccounts } from "./accounts";
 import { createSocial } from "./social";
-import { buildView, type Viewer } from "../shared/views";
+import { REJOIN_TTL_MS, buildView, type Viewer } from "../shared/views";
 import type { ActionResult, HostAction, Locale, PlayerAction, Room } from "../shared/types";
 
 // Port priority: --port CLI flag (used by `npm run dev`) > SOCKET_PORT > PORT (Railway/Render) > 4000
@@ -119,7 +121,18 @@ const io = new Server(httpServer, {
 });
 
 const channel = (code: string) => `room:${code}`;
-const social = createSocial(io, (code) => rooms.get(code), channel);
+/** What bots have read in the chat, per game (a new game starts fresh). */
+const chatIntel = new WeakMap<object, ChatIntel>();
+function intelFor(room: Room): ChatIntel {
+  const game = room.game;
+  if (!game) return newChatIntel();
+  let i = chatIntel.get(game);
+  if (!i) chatIntel.set(game, (i = newChatIntel()));
+  return i;
+}
+const social = createSocial(io, (code) => rooms.get(code), channel, (room, fromId, text) => {
+  if (room.game) ingestChat(room, intelFor(room), fromId, text);
+});
 const normCode = (code: unknown) => String(code ?? "").trim().toUpperCase().slice(0, 8);
 const safeAck = (ack: unknown): Ack => (typeof ack === "function" ? (ack as Ack) : () => {});
 
@@ -170,7 +183,7 @@ function scheduleBotChat(room: Room) {
       botChatTimers.delete(room.code);
       if (rooms.get(room.code) !== room || room.phase.kind !== "discussion") return;
       const bot = talkers[Math.floor(Math.random() * talkers.length)];
-      const line = botChatLine(room, bot, m);
+      const line = botChatLine(room, bot, m, intelFor(room));
       if (line) social.postAs(room, bot.id, line);
       scheduleBotChat(room);
     }, 2500 + Math.random() * 4500),
@@ -182,17 +195,77 @@ function scheduleBotChat(room: Room) {
  * confirmed, move on by itself after a 3-second pause. Any change of step
  * (including the host pressing Next) cancels the pending move.
  */
-function scheduleAuto(room: Room) {
-  const pending = autoTimers.get(room.code);
-  const ready = room.settings.autoAdvance && autoReady(room);
+interface StepTiming {
+  key: string;
+  startedAt: number;
+  /** Night steps last at least this long, so a fast, slow or dead role sounds the same. */
+  minMs: number;
+  /** When the host finished reading this step's narration (null while still reading). */
+  narratedAt: number | null;
+  confirmedAt: number | null;
+}
+const stepTiming = new Map<string, StepTiming>();
+const NIGHT_MIN_MS: [number, number] = [12_000, 20_000];
+/** If the host never reports the narration (tab closed), assume it took this long. */
+const NARRATION_FALLBACK_MS = 20_000;
+
+function timingFor(room: Room): StepTiming {
   const key = stepKey(room);
-  if (pending && (!ready || pending.key !== key)) {
+  let st = stepTiming.get(room.code);
+  if (!st || st.key !== key) {
+    const [lo, hi] = NIGHT_MIN_MS;
+    st = {
+      key,
+      startedAt: Date.now(),
+      minMs: room.phase.kind === "night" ? lo + Math.random() * (hi - lo) : 0,
+      narratedAt: null,
+      confirmedAt: null,
+    };
+    stepTiming.set(room.code, st);
+  }
+  return st;
+}
+
+/**
+ * Auto narrator. Moves on 3 seconds after ALL of these hold: the step is
+ * confirmed (role acted, hunter fired, everyone voted), the host finished
+ * reading the narration aloud, and — at night — a random minimum time for the
+ * step has passed. That way the table can't tell from the timing whether a
+ * role decided fast or slow, or whether it is still alive. The 3-second
+ * countdown (room.autoAt) only shows once everything else is satisfied.
+ */
+function scheduleAuto(room: Room) {
+  const st = timingFor(room);
+  const pending = autoTimers.get(room.code);
+  if (pending) {
     clearTimeout(pending.timer);
     autoTimers.delete(room.code);
-    room.autoAt = null;
   }
-  if (!ready || autoTimers.has(room.code)) return;
-  room.autoAt = Date.now() + AUTO_DELAY_MS;
+  room.autoAt = null;
+  const ready = room.settings.autoAdvance && autoReady(room);
+  if (!ready) {
+    st.confirmedAt = null;
+    return;
+  }
+  const now = Date.now();
+  st.confirmedAt ??= now;
+  const narrated = st.narratedAt ?? st.startedAt + NARRATION_FALLBACK_MS;
+  const goAt = Math.max(narrated, st.confirmedAt, st.startedAt + st.minMs) + AUTO_DELAY_MS;
+  const key = st.key;
+  if (now < goAt - AUTO_DELAY_MS) {
+    // Not yet: check again when the 3-second countdown should begin.
+    autoTimers.set(room.code, {
+      key,
+      timer: setTimeout(() => {
+        autoTimers.delete(room.code);
+        if (rooms.get(room.code) !== room) return;
+        scheduleAuto(room);
+        broadcast(room);
+      }, goAt - AUTO_DELAY_MS - now),
+    });
+    return;
+  }
+  room.autoAt = goAt;
   autoTimers.set(room.code, {
     key,
     timer: setTimeout(() => {
@@ -201,7 +274,7 @@ function scheduleAuto(room: Room) {
       if (rooms.get(room.code) !== room) return;
       if (room.settings.autoAdvance && autoReady(room) && stepKey(room) === key && advance(room).ok) touch(room);
       else broadcast(room);
-    }, AUTO_DELAY_MS),
+    }, Math.max(0, goAt - now)),
   });
 }
 
@@ -210,7 +283,7 @@ function scheduleBots(room: Room) {
   if (botTimers.has(room.code)) return;
   const bots = room.players.filter((p) => p.isBot);
   if (!bots.length || !room.game) return;
-  const ready = bots.filter((b) => botDecide(room, b.id));
+  const ready = bots.filter((b) => botDecide(room, b.id, intelFor(room)));
   if (!ready.length) return;
   const delay = 600 + Math.random() * 1200;
   botTimers.set(
@@ -219,7 +292,7 @@ function scheduleBots(room: Room) {
       botTimers.delete(room.code);
       if (!rooms.has(room.code)) return;
       const bot = ready[Math.floor(Math.random() * ready.length)];
-      const action = botDecide(room, bot.id);
+      const action = botDecide(room, bot.id, intelFor(room));
       if (action && playerAction(room, bot.id, action).ok) touch(room);
       else scheduleBots(room);
     }, delay),
@@ -242,6 +315,27 @@ function attach(socket: AppSocket, room: Room, kind: Viewer, playerId?: string) 
   socket.join(channel(room.code));
 }
 
+// --- Rejoining a running game ------------------------------------------------
+
+/** Seats someone could come back to: humans who are offline while a game runs. */
+function rejoinable(room: Room) {
+  if (room.phase.kind === "lobby" || !room.game) return [];
+  return room.players.filter((p) => !p.isBot && !p.connected).map((p) => ({ id: p.id, name: p.name, avatar: p.avatar }));
+}
+/** `${code}:${playerId}` -> the socket waiting for the host's answer. */
+const rejoinSockets = new Map<string, string>();
+function dropRejoinRequest(room: Room, playerId: string) {
+  room.rejoinRequests = (room.rejoinRequests ?? []).filter((r) => r.playerId !== playerId && r.t > Date.now() - REJOIN_TTL_MS);
+  rejoinSockets.delete(`${room.code}:${playerId}`);
+}
+/** Gives the seat a fresh token (the old phone's session stops working). */
+function grantSeat(room: Room, playerId: string): string {
+  const p = getPlayer(room, playerId)!;
+  p.token = randomToken();
+  dropRejoinRequest(room, playerId);
+  return p.token;
+}
+
 function guard(fn: () => ActionResult & Record<string, unknown>, ack: Ack) {
   try {
     ack(fn());
@@ -260,7 +354,7 @@ io.on("connection", (raw) => {
 
   on("room:check", (p, ack) => {
     const room = rooms.get(normCode(p.code));
-    ack(room ? { ok: true, phase: room.phase.kind, locale: room.locale } : { ok: false, error: "err.roomNotFound" });
+    ack(room ? { ok: true, phase: room.phase.kind, locale: room.locale, rejoinable: rejoinable(room) } : { ok: false, error: "err.roomNotFound" });
   });
 
   on("host:create", (p, ack) =>
@@ -324,10 +418,51 @@ io.on("connection", (raw) => {
       if (!room) return { ok: false, error: "err.roomNotFound" };
       const player = getPlayer(room, String(p.playerId ?? ""));
       if (!player || player.token !== p.token) return { ok: false, error: "err.sessionExpired" };
+      dropRejoinRequest(room, player.id);
       attach(socket, room, "player", player.id);
       player.connected = true;
       touch(room);
       return { ok: true, playerId: player.id, locale: player.locale };
+    }, ack),
+  );
+
+  // Back into a running game from a new phone/tab: instant for the same Google
+  // account, otherwise the host has to approve.
+  on("player:rejoin", (p, ack) =>
+    guard(() => {
+      const room = rooms.get(normCode(p.code));
+      if (!room) return { ok: false, error: "err.roomNotFound" };
+      const player = getPlayer(room, String(p.playerId ?? ""));
+      if (!player || !rejoinable(room).some((r) => r.id === player.id)) return { ok: false, error: "err.seatTaken" };
+      const user = accounts.userForToken(p.authToken);
+      if (user && player.userId && user.id === player.userId) {
+        const token = grantSeat(room, player.id);
+        touch(room);
+        return { ok: true, playerId: player.id, token };
+      }
+      dropRejoinRequest(room, player.id);
+      room.rejoinRequests = [...(room.rejoinRequests ?? []), { playerId: player.id, t: Date.now() }];
+      rejoinSockets.set(`${room.code}:${player.id}`, socket.id);
+      touch(room);
+      return { ok: true, pending: true };
+    }, ack),
+  );
+
+  on("host:rejoin", (p, ack) =>
+    guard(() => {
+      const { code, kind } = socket.data;
+      const room = code ? rooms.get(code) : undefined;
+      if (!room || kind !== "host") return { ok: false, error: "err.notHost" };
+      const playerId = String(p.playerId ?? "");
+      const waiting = io.sockets.sockets.get(rejoinSockets.get(`${room.code}:${playerId}`) ?? "");
+      const player = getPlayer(room, playerId);
+      if (p.allow && player && !player.connected) waiting?.emit("rejoin:approved", { playerId, token: grantSeat(room, playerId) });
+      else {
+        dropRejoinRequest(room, playerId);
+        waiting?.emit("rejoin:denied");
+      }
+      touch(room);
+      return { ok: true };
     }, ack),
   );
 
@@ -339,6 +474,21 @@ io.on("connection", (raw) => {
       const res = playerAction(room, playerId, p as unknown as PlayerAction);
       if (res.ok) touch(room);
       return res as ActionResult & Record<string, unknown>;
+    }, ack),
+  );
+
+  // The host's voice-over started ({done:false}) or finished ({done:true}) reading the current step.
+  on("host:narration", (p, ack) =>
+    guard(() => {
+      const { code, kind } = socket.data;
+      const room = code ? rooms.get(code) : undefined;
+      if (!room || kind !== "host") return { ok: false, error: "err.notHost" };
+      const st = timingFor(room);
+      if (String(p.key ?? "") !== st.key) return { ok: true };
+      st.narratedAt = p.done ? Date.now() : null;
+      scheduleAuto(room);
+      broadcast(room);
+      return { ok: true };
     }, ack),
   );
 

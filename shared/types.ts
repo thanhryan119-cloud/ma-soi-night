@@ -224,6 +224,8 @@ export interface Room {
   log: LogEntry[];
   /** When the auto narrator will move on (ms epoch), or null. */
   autoAt?: number | null;
+  /** Players asking the host to let them back into the running game. */
+  rejoinRequests?: { playerId: string; t: number }[];
 }
 
 // ---------------------------------------------------------------------------

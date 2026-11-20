@@ -37,7 +37,13 @@ interface Data {
   playerId?: string;
 }
 
-export function createSocial(io: Server, getRoom: (code: string) => Room | undefined, channel: (code: string) => string) {
+export function createSocial(
+  io: Server,
+  getRoom: (code: string) => Room | undefined,
+  channel: (code: string) => string,
+  /** Called for every player/bot chat line (bots learn from the table talk). */
+  onChat: (room: Room, fromId: string, text: string) => void = () => {},
+) {
   const social = new Map<string, RoomSocial>();
   const of = (code: string) => {
     let s = social.get(code);
@@ -99,6 +105,7 @@ export function createSocial(io: Server, getRoom: (code: string) => Room | undef
       c.s.lastChat.set(key, now);
       const msg: ChatMessage = { id: randomId(10), from: key, text, t: now };
       c.s.chat.push(msg);
+      if (c.who.kind === "player") onChat(c.room, key, text);
       if (c.s.chat.length > CHAT_HISTORY) c.s.chat.splice(0, c.s.chat.length - CHAT_HISTORY);
       io.to(channel(c.room.code)).emit("chat:new", msg);
       ack({ ok: true });
@@ -184,6 +191,7 @@ export function createSocial(io: Server, getRoom: (code: string) => Room | undef
     const s = of(room.code);
     const msg: ChatMessage = { id: randomId(10), from: playerId, text, t: Date.now() };
     s.chat.push(msg);
+    onChat(room, playerId, text);
     if (s.chat.length > CHAT_HISTORY) s.chat.splice(0, s.chat.length - CHAT_HISTORY);
     io.to(channel(room.code)).emit("chat:new", msg);
   }

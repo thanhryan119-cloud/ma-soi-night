@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Locale } from "@shared/types";
-import { LangSwitch, Spinner, useErrorToast } from "@/components/ui";
+import { LangSwitch, Spinner, toast, useErrorToast } from "@/components/ui";
 import { useLocale, useT } from "@/lib/i18n";
 import { getAuth, loadLocalProfile, saveLocalProfile, type LocalProfile } from "@/lib/account";
 import { ProfileEditor } from "@/components/ProfileEditor";
@@ -11,13 +11,19 @@ import { emitAck, getSocket, playerKey, storage, type PlayerSession } from "@/li
 import { useRoomState } from "@/lib/useRoom";
 import { PlayerGame } from "./PlayerGame";
 
-type Status = "checking" | "form" | "in" | "kicked" | "closed" | "notFound";
+type Status = "checking" | "form" | "rejoin" | "in" | "kicked" | "closed" | "notFound";
+interface Seat {
+  id: string;
+  name: string;
+  avatar?: string;
+}
 
 export default function PlayerApp({ code }: { code: string }) {
   const t = useT();
   const { locale, suggestLocale, explicit } = useLocale();
   const showError = useErrorToast();
   const [status, setStatus] = useState<Status>("checking");
+  const [seats, setSeats] = useState<Seat[]>([]);
   const statusRef = useRef(status);
   statusRef.current = status;
   const localeRef = useRef(locale);
@@ -39,12 +45,18 @@ export default function PlayerApp({ code }: { code: string }) {
       }
       storage.remove(playerKey(code));
     }
-    const info = await emitAck<{ ok: boolean; locale?: Locale }>("room:check", { code });
+    const info = await emitAck<{ ok: boolean; locale?: Locale; phase?: string; rejoinable?: Seat[] }>("room:check", { code });
     if (!info.ok) {
       setStatus(info.error === "err.disconnected" ? "checking" : "notFound");
       return;
     }
     if (info.locale) suggestLocale(info.locale);
+    // A game is running: offer the offline seats instead of a new-player form.
+    if (info.phase && info.phase !== "lobby") {
+      setSeats(info.rejoinable ?? []);
+      setStatus("rejoin");
+      return;
+    }
     setStatus("form");
   }, [code, suggestLocale]);
 
@@ -93,6 +105,19 @@ export default function PlayerApp({ code }: { code: string }) {
         </div>
       </div>
     );
+  else if (status === "rejoin")
+    body = (
+      <RejoinPicker
+        code={code}
+        seats={seats}
+        onJoined={(s) => {
+          storage.set(playerKey(code), s);
+          setStatus("in");
+          void enter();
+        }}
+        showError={showError}
+      />
+    );
   else if (status === "form")
     body = (
       <JoinForm
@@ -112,6 +137,73 @@ export default function PlayerApp({ code }: { code: string }) {
       <LangSwitch onChange={onLocale} />
       {body}
     </>
+  );
+}
+
+/** Pick your seat to get back into a running game (same account: instant; otherwise the host approves). */
+function RejoinPicker({
+  code,
+  seats,
+  onJoined,
+  showError,
+}: {
+  code: string;
+  seats: Seat[];
+  onJoined: (s: PlayerSession) => void;
+  showError: ReturnType<typeof useErrorToast>;
+}) {
+  const t = useT();
+  const [waiting, setWaiting] = useState<Seat | null>(null);
+
+  useEffect(() => {
+    const s = getSocket();
+    const approved = (p: { playerId: string; token: string }) => onJoined({ playerId: p.playerId, token: p.token });
+    const denied = () => {
+      setWaiting(null);
+      toast(t("player.rejoinDenied"), "error");
+    };
+    s.on("rejoin:approved", approved);
+    s.on("rejoin:denied", denied);
+    return () => {
+      s.off("rejoin:approved", approved);
+      s.off("rejoin:denied", denied);
+    };
+  }, [onJoined, t]);
+
+  async function choose(seat: Seat) {
+    const res = await emitAck<{ ok: boolean; pending?: boolean; playerId?: string; token?: string }>("player:rejoin", {
+      code,
+      playerId: seat.id,
+      authToken: getAuth()?.token,
+    });
+    if (!showError(res)) return;
+    if (res.token && res.playerId) onJoined({ playerId: res.playerId, token: res.token });
+    else if (res.pending) setWaiting(seat);
+  }
+
+  return (
+    <main className="fixed inset-0 mx-auto flex max-w-md flex-col px-4 pt-14 pb-4">
+      <h1 className="shrink-0 text-center font-display text-2xl font-black text-moon">{t("player.rejoinTitle")}</h1>
+      {waiting ? (
+        <div className="card mt-8 text-center">
+          <Spinner label={t("player.rejoinWaiting", { name: waiting.name })} />
+        </div>
+      ) : seats.length ? (
+        <>
+          <p className="mt-2 shrink-0 text-center text-sm text-white/60">{t("player.rejoinHint")}</p>
+          <div className="mt-4 grid min-h-0 flex-1 auto-rows-min grid-cols-2 gap-2 overflow-y-auto">
+            {seats.map((s) => (
+              <button key={s.id} type="button" className="btn-ghost flex items-center gap-2 py-3 text-left" onClick={() => choose(s)}>
+                <span className="text-2xl">{s.avatar || "🙂"}</span>
+                <span className="truncate font-semibold">{s.name}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p className="card mt-8 text-center">{t("player.rejoinNone")}</p>
+      )}
+    </main>
   );
 }
 

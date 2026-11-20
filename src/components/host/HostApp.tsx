@@ -48,11 +48,30 @@ export default function HostApp({ code }: { code: string }) {
   const canSpeakTts = useTtsSupported();
   const [voiceOver, setVoiceOver] = useState(false);
   useEffect(() => setVoiceOver(storage.get<boolean>("msn:voiceOver") ?? false), []);
-  const lines = state && state.viewer === "host" ? scriptLines(state, t) : [];
+  // Never say out loud that a role has nobody left alive: that would tell the table who died.
+  const silent = t("script.stepNobody");
+  const lines = state && state.viewer === "host" ? scriptLines(state, t).filter((l) => l !== silent) : [];
   const linesKey = lines.join("|");
+  const stepKey = state?.stepKey ?? "";
   useEffect(() => {
-    if (voiceOver && linesKey) speak(lines, locale);
-  }, [linesKey, voiceOver, locale]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!stepKey) return;
+    // Tell the server when this step's narration is done, so the auto
+    // narrator only moves on after it. Without voice-over, wait about as long
+    // as reading it would take, so the timing is the same either way.
+    let cancelled = false;
+    const report = (done: boolean) => !cancelled && emitAck("host:narration", { key: stepKey, done });
+    report(false);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (voiceOver && linesKey) speak(lines, locale, 1, () => report(true));
+    else {
+      const words = linesKey.split(/\s+/).filter(Boolean).length;
+      timer = setTimeout(() => report(true), linesKey ? 1500 + words * 350 : 0);
+    }
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [linesKey, stepKey, voiceOver, locale]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => stopSpeaking(), []);
 
   async function toggleVoiceOver() {
@@ -136,9 +155,33 @@ export default function HostApp({ code }: { code: string }) {
       ) : state.phase.kind === "lobby" ? (
         <HostLobby state={state} />
       ) : (
-        <HostGame state={state} offset={offset} hideRoles={hideRoles} />
+        <>
+          <RejoinRequests requests={state.rejoinRequests} />
+          <HostGame state={state} offset={offset} hideRoles={hideRoles} />
+        </>
       )}
       </div>
+    </div>
+  );
+}
+
+/** "X wants to rejoin" — the host lets a player back in from a new phone. */
+function RejoinRequests({ requests }: { requests: { playerId: string; name: string }[] }) {
+  const t = useT();
+  if (!requests.length) return null;
+  return (
+    <div className="mb-3 flex flex-col gap-2">
+      {requests.map((r) => (
+        <div key={r.playerId} className="pulse-ring flex flex-wrap items-center gap-2 rounded-lg border border-gold/60 bg-night-900/90 px-3 py-2">
+          <span className="flex-1 font-semibold">🔄 {t("host.rejoinAsk", { name: r.name })}</span>
+          <button className="btn-primary btn-sm" onClick={() => emitAck("host:rejoin", { playerId: r.playerId, allow: true })}>
+            {t("host.rejoinAllow")}
+          </button>
+          <button className="btn-ghost btn-sm" onClick={() => emitAck("host:rejoin", { playerId: r.playerId, allow: false })}>
+            {t("host.rejoinDeny")}
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

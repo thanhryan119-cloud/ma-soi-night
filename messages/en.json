@@ -230,7 +230,10 @@
     "stopReading": "Stop",
     "noVoice": "This device has no {lang} voice; the browser will use its default voice. On Windows: Settings → Time & language → Speech → add a voice.",
     "social": "Chat & board",
-    "autoIn": "Moving on in {s}s…"
+    "autoIn": "Moving on in {s}s…",
+    "rejoinAsk": "{name} wants to rejoin (new phone)",
+    "rejoinAllow": "Allow",
+    "rejoinDeny": "Deny"
   },
   "settings": {
     "nightOrder": "Night wake-up order",
@@ -367,7 +370,12 @@
     "mustBite": "You must attack someone.",
     "mustVote": "Voting is mandatory.",
     "heal": "Heal",
-    "closeEyesNow": "Please close your eyes"
+    "closeEyesNow": "Please close your eyes",
+    "rejoinTitle": "Rejoin the running game",
+    "rejoinHint": "The game has started. Pick your name to get your seat and role back.",
+    "rejoinNone": "The game has started and nobody is offline to rejoin as.",
+    "rejoinWaiting": "Waiting for the host to let you back in as {name}…",
+    "rejoinDenied": "The host did not let you back in."
   },
   "profile": {
     "title": "Your profile",
@@ -500,7 +508,8 @@
     "chatEmpty": "The message is empty.",
     "tooFast": "Slow down a little.",
     "voiceDisabled": "The Host has turned the mic off.",
-    "micDenied": "Couldn’t use your microphone — you’re listening only. Allow mic access and try again."
+    "micDenied": "Couldn’t use your microphone — you’re listening only. Allow mic access and try again.",
+    "seatTaken": "That player is online or cannot be rejoined."
   },
   "log": {
     "join": "{name} joined",
@@ -592,7 +601,9 @@
     "deadReadOnly": "You’re dead, so you can only watch and listen.",
     "host": "Host",
     "clear": "Clear board",
-    "title": "The moonlit table"
+    "title": "The moonlit table",
+    "hideBoard": "Hide board",
+    "showBoard": "Show board"
   },
   "voice": {
     "join": "Join mic",

@@ -357,7 +357,7 @@ function PhasePanel({ state, hideRoles }: { state: ClientState; hideRoles: boole
     case "nominateResult":
       return <NominationBreakdownPanel state={state} />;
     case "discussion":
-      return <SocialPanel state={state} viewer="host" className="h-[460px]" />;
+      return <SocialPanel state={state} viewer="host" className="h-[560px]" />;
     case "defense":
       return <NominationResult state={state} />;
     case "verdictResult":

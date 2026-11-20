@@ -5,6 +5,7 @@ import { BOARD_COLORS, BRUSH_SIZES, SOCIAL_PHASES, STROKE_MAX_POINTS, type Strok
 import type { ClientState, PlayerView } from "@shared/views";
 import { useT } from "@/lib/i18n";
 import { useSocial } from "@/lib/social";
+import { storage } from "@/lib/socket";
 import { useVoice } from "@/lib/voice";
 import { Avatar, StyledName, useErrorToast } from "./ui";
 
@@ -19,18 +20,31 @@ export function SocialPanel({ state, viewer, className = "" }: { state: ClientSt
   const dead = !!me && state.phase.kind !== "lobby" && !me.alive;
   const canSpeak = isHost || (phaseOpen && !dead);
   const reason = !phaseOpen ? t("social.closed") : dead ? t("social.deadReadOnly") : null;
+  // The board can be folded away so the chat gets the whole panel.
+  const [boardOpen, setBoardOpen] = useState(true);
+  useEffect(() => setBoardOpen(storage.get<boolean>("msn:boardOpen") ?? true), []);
+  const toggleBoard = () => {
+    storage.set("msn:boardOpen", !boardOpen);
+    setBoardOpen(!boardOpen);
+  };
 
   return (
     <div className={`tarot-frame flex min-h-0 flex-col overflow-hidden rounded-lg border border-gold/40 bg-night-900/85 ${className}`}>
       <div className="flex shrink-0 items-center justify-center gap-2 border-b border-gold/25 px-2 py-1.5">
-        <span className="text-gold/60">✦</span>
+        <span className="w-24 shrink-0" aria-hidden />
+        <span className="ml-auto text-gold/60">✦</span>
         <h3 className="font-display text-lg leading-none text-gold">{t("social.title")}</h3>
         <span className="text-gold/60">✦</span>
+        <button type="button" className="btn-ghost btn-sm ml-auto px-2 py-0.5 text-xs" onClick={toggleBoard} aria-expanded={boardOpen}>
+          {boardOpen ? `▴ ${t("social.hideBoard")}` : `▾ ${t("social.showBoard")}`}
+        </button>
       </div>
       {state.settings.voiceChat !== false && <VoiceBar state={state} players={players} enabled={phaseOpen} />}
-      <div className="flex min-h-0 shrink-0 basis-[44%] flex-col border-b border-gold/25">
-        <Board social={social} canDraw={canSpeak} isHost={isHost} reason={null} />
-      </div>
+      {boardOpen && (
+        <div className="flex min-h-0 shrink-0 basis-[30%] flex-col border-b border-gold/25">
+          <Board social={social} canDraw={canSpeak} isHost={isHost} reason={null} />
+        </div>
+      )}
       <div className="flex min-h-0 flex-1 flex-col">
         <Chat social={social} players={players} canSpeak={canSpeak} reason={isHost ? null : reason} viewer={viewer} />
       </div>
@@ -146,17 +160,17 @@ function Chat({
 
   return (
     <>
-      <div ref={listRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
+      <div ref={listRef} className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 py-1.5">
         {!social.chat.length && <p className="py-6 text-center text-sm text-white/40">{t("social.empty")}</p>}
         {social.chat.map((m) => {
           const p = players.get(m.from);
           const mine = m.from === viewer;
           return (
-            <div key={m.id} className={`flex items-start gap-2 ${mine ? "flex-row-reverse text-right" : ""}`}>
+            <div key={m.id} className={`flex items-start gap-1.5 ${mine ? "flex-row-reverse text-right" : ""}`}>
               {p ? <Avatar p={p} size="sm" /> : <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blood text-xs">🎙️</span>}
               <div className="min-w-0 max-w-[80%]">
-                <div className="truncate text-[11px] text-white/50">{p ? <StyledName p={p} /> : t("social.host")}</div>
-                <div className={`inline-block rounded-lg px-2.5 py-1.5 text-sm break-words ${mine ? "bg-gold text-night-950" : m.from === "host" ? "bg-blood/30" : "bg-white/10"}`}>
+                <div className="truncate text-[11px] leading-tight text-white/50">{p ? <StyledName p={p} /> : t("social.host")}</div>
+                <div className={`inline-block rounded-lg px-2 py-1 text-sm leading-snug break-words ${mine ? "bg-gold text-night-950" : m.from === "host" ? "bg-blood/30" : "bg-white/10"}`}>
                   {m.text}
                 </div>
               </div>
