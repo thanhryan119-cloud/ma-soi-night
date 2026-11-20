@@ -95,6 +95,8 @@ export interface Settings {
   voiceChat: boolean;
   /** Auto narrator: once a step is confirmed, move on by itself after a short pause. */
   autoAdvance: boolean;
+  /** Bots answer people in the chat with an AI model (needs GEMINI_API_KEY on the server). */
+  aiBots: boolean;
   discussionSeconds: number;
   defenseSeconds: number;
   bilingualScreen: boolean;

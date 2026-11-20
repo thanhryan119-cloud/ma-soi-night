@@ -10,6 +10,7 @@ import { useHostAction } from "./common";
 
 const BOOLS = [
   "autoAdvance",
+  "aiBots",
   "wolvesMustBite",
   "mandatoryVote",
   "voiceChat",

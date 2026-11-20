@@ -206,6 +206,7 @@ export function defaultSettings(playerCount = 8): Settings {
     mandatoryVote: false,
     voiceChat: true,
     autoAdvance: false,
+    aiBots: true,
     discussionSeconds: 180,
     defenseSeconds: 60,
     bilingualScreen: false,

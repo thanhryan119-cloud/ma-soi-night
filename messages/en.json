@@ -270,7 +270,8 @@
     "wolvesMustBite": "Werewolves must attack every night",
     "mandatoryVote": "Everyone must vote (no skipping)",
     "voiceChat": "Allow open mic (lobby and discussion)",
-    "autoAdvance": "Auto narrator: runs the whole game — reads each step, moves on by itself, closes discussion/votes when time runs out, skips players who don't act"
+    "autoAdvance": "Auto narrator: runs the whole game — reads each step, moves on by itself, closes discussion/votes when time runs out, skips players who don't act",
+    "aiBots": "AI bots answer chat messages (Gemini — needs GEMINI_API_KEY on the server)"
   },
   "effects": {
     "protected": "Protected",

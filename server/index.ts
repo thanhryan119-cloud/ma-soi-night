@@ -25,6 +25,7 @@ import {
 import { botDecide } from "../shared/bots";
 import { botChatLine, newBotChatMemory, type BotChatMemory } from "../shared/botChat";
 import { ingestChat, newChatIntel, type ChatIntel } from "../shared/botIntel";
+import { createAiBots } from "./aiBots";
 import { createAccounts } from "./accounts";
 import { createSocial } from "./social";
 import { REJOIN_TTL_MS, buildView, type Viewer } from "../shared/views";
@@ -40,6 +41,13 @@ const PORT =
 const CORS_ORIGIN = process.env.CORS_ORIGIN?.split(",").map((s) => s.trim()) ?? "*";
 
 const rooms = new Map<string, Room>();
+// Local dev: pick up GEMINI_API_KEY etc. from .env (Node 20.12+); production uses real env vars.
+try {
+  (process as unknown as { loadEnvFile?: (p?: string) => void }).loadEnvFile?.(".env");
+} catch {
+  /* no .env file */
+}
+
 const botTimers = new Map<string, NodeJS.Timeout>();
 const autoTimers = new Map<string, { key: string; timer: NodeJS.Timeout }>();
 const AUTO_DELAY_MS = 3000;
@@ -133,8 +141,19 @@ function intelFor(room: Room): ChatIntel {
   return i;
 }
 const social = createSocial(io, (code) => rooms.get(code), channel, (room, fromId, text) => {
-  if (room.game) ingestChat(room, intelFor(room), fromId, text);
+  if (!room.game) return;
+  ingestChat(room, intelFor(room), fromId, text);
+  ai.onHumanChat(room, fromId, text);
 });
+/** Bots that read the chat and answer with Gemini (only when GEMINI_API_KEY is set). */
+const ai = createAiBots({
+  apiKey: process.env.GEMINI_API_KEY,
+  model: process.env.GEMINI_MODEL || "gemini-3.5-flash-lite",
+  recentChat: (room) => social.recentChat(room.code),
+  post: (room, botId, text) => social.postAs(room, botId, text),
+  canTalk: (room) => room.phase.kind === "discussion" && rooms.get(room.code) === room,
+});
+console.log(`[ai] chat bots ${ai.enabled ? "ON (Gemini)" : "off — set GEMINI_API_KEY to enable"}`);
 const normCode = (code: unknown) => String(code ?? "").trim().toUpperCase().slice(0, 8);
 const safeAck = (ack: unknown): Ack => (typeof ack === "function" ? (ack as Ack) : () => {});
 

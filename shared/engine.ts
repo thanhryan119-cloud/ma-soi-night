@@ -900,6 +900,7 @@ function mergeSettings(room: Room, patch: Partial<Settings>): ActionResult {
       "mandatoryVote",
       "voiceChat",
       "autoAdvance",
+      "aiBots",
       "bilingualScreen",
     ] as const
   ).forEach(bool);

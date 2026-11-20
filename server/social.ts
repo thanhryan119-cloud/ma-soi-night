@@ -200,5 +200,8 @@ export function createSocial(
     social.delete(code);
   }
 
-  return { register, afterChange, dispose, postAs };
+  /** The room's recent chat (for the AI bots' context). */
+  const recentChat = (code: string) => social.get(code)?.chat ?? [];
+
+  return { register, afterChange, dispose, postAs, recentChat };
 }
