@@ -16,7 +16,8 @@ import { SocialPanel } from "@/components/SocialPanel";
 import { SceneArt } from "@/components/art/Woodcut";
 import { CardBack, RoleCardFull } from "@/components/art/Tarot";
 import { useLocale, useT } from "@/lib/i18n";
-import { emitAck, storage } from "@/lib/socket";
+import { emitAck, playerKey, storage } from "@/lib/socket";
+import { useRouter } from "next/navigation";
 import { speak, stopSpeaking, useTtsSupported } from "@/lib/tts";
 import { OwnerBar, OwnerSettings } from "./OwnerPanel";
 
@@ -75,6 +76,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
           <div className="truncate text-xs text-white/50">{phaseLabel(t, state)}</div>
         </div>
         {!connected && <ConnectionDot connected={false} />}
+        <LeaveButton state={state} />
       </header>
 
       {!me.alive && kind !== "gameOver" && (
@@ -135,6 +137,29 @@ export function PlayerGame({ state, offset, connected }: Props) {
         </Sheet>
       )}
     </div>
+  );
+}
+
+/**
+ * Leave the room. During a game it is for good: a bot takes the seat and it
+ * counts as a loss, so it asks first.
+ */
+function LeaveButton({ state }: { state: ClientState }) {
+  const t = useT();
+  const router = useRouter();
+  const showError = useErrorToast();
+  const running = state.phase.kind !== "lobby" && state.phase.kind !== "gameOver";
+  async function leave() {
+    if (!confirm(running ? t("player.leaveConfirmGame") : t("player.leaveConfirm"))) return;
+    const res = await emitAck("player:leave");
+    if (!showError(res)) return;
+    storage.remove(playerKey(state.code));
+    router.push(state.machineHost ? "/lobby" : "/");
+  }
+  return (
+    <button type="button" className="btn-ghost btn-sm shrink-0" onClick={leave} title={running ? t("player.leaveGame") : t("player.leave")}>
+      🚪 {running ? t("player.leaveGame") : t("player.leave")}
+    </button>
   );
 }
 
@@ -561,6 +586,36 @@ function Decoy({ state, me, players }: Ctx) {
   );
 }
 
+/** The wolves always see who their pack is when they wake (and whom each one is going for). */
+function PackStrip({ me, players, pack }: { me: MeView; players: Map<string, PlayerView>; pack: Record<string, string> }) {
+  const t = useT();
+  const mates = me.teammates.map((id) => players.get(id)).filter((p): p is PlayerView => !!p);
+  const alive = mates.filter((p) => p.alive);
+  return (
+    <div className="shrink-0 rounded-lg border border-blood/40 bg-blood/10 px-2 py-1.5">
+      <div className="mb-1 text-[11px] font-bold tracking-wide text-blood-light uppercase">
+        🐺 {t("player.pack")} {!alive.length && <span className="font-normal normal-case text-white/60">· {t("player.lastWolf")}</span>}
+      </div>
+      {mates.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {mates.map((p) => {
+            const target = pack[p.id] ? players.get(pack[p.id]) : null;
+            return (
+              <span key={p.id} className={`flex min-w-0 items-center gap-1.5 rounded-full bg-night-900/70 py-0.5 pr-2 pl-0.5 text-xs ${p.alive ? "" : "opacity-50"}`}>
+                <Avatar p={p} size="sm" />
+                <span className="truncate font-semibold">
+                  <StyledName p={p} />
+                </span>
+                {target && p.alive && <span className="shrink-0 text-white/60">→ {target.name}</span>}
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TurnBanner({ roleId, extra }: { roleId: NonNullable<MeView["roleId"]>; extra?: React.ReactNode }) {
   const t = useT();
   return (
@@ -597,6 +652,7 @@ function NightTurn({ state, me, players }: Ctx) {
           </div>
         )}
         {turn.step === "werewolf" && <div className="shrink-0 text-base font-bold text-emerald-300">✓ {t("player.packAgree")}</div>}
+        {turn.step === "werewolf" && <PackStrip me={me} players={players} pack={turn.packVotes ?? {}} />}
       </CloseEyes>
     );
   }
@@ -680,6 +736,7 @@ function NightTurn({ state, me, players }: Ctx) {
             </p>
           }
         />
+        <PackStrip me={me} players={players} pack={pack} />
         <TargetGrid players={players} ids={turn.targets} selected={turn.selected} marks={marks} onPick={(id) => act({ type: "night", targets: [id] })} />
       </Fill>
     );
@@ -866,24 +923,26 @@ function Verdict({ state, me, players }: Ctx) {
   const t = useT();
   const act = usePlayerAction();
   const nominee = state.vote?.nomineeId ? players.get(state.vote.nomineeId) : null;
+  // Online rooms: the defender can still plead in the chat while everyone votes.
+  const chat = state.machineHost;
   return (
     <Fill>
       {nominee && (
-        <div className="flex shrink-0 flex-col items-center gap-2 text-center">
-          <Avatar p={nominee} size="xl" />
+        <div className={`flex shrink-0 items-center gap-2 text-center ${chat ? "justify-center" : "flex-col"}`}>
+          <Avatar p={nominee} size={chat ? "lg" : "xl"} />
           <h2 className="text-xl font-bold">{t("player.verdictTitle", { name: nominee.name })}</h2>
         </div>
       )}
       {me.onStand ? (
-        <div className="flex flex-1 items-center justify-center">
+        <div className={`flex items-center justify-center ${chat ? "shrink-0" : "flex-1"}`}>
           <p className="rounded-lg bg-gold/20 px-4 py-3 text-center font-bold text-gold">{t("player.onStandNoVote")}</p>
         </div>
       ) : me.myVote ? (
-        <div className="flex flex-1 items-center justify-center">
+        <div className={`flex items-center justify-center ${chat ? "shrink-0" : "flex-1"}`}>
           <p className="text-xl font-bold">{me.myVote === "execute" ? t("player.votedExecute") : t("player.votedSpare")}</p>
         </div>
       ) : me.canVote ? (
-        <div className="grid min-h-0 flex-1 grid-cols-2 gap-3" style={{ maxHeight: 220 }}>
+        <div className={`grid min-h-0 grid-cols-2 gap-3 ${chat ? "shrink-0" : "flex-1"}`} style={{ maxHeight: chat ? 120 : 220, height: chat ? 120 : undefined }}>
           <button className="btn h-full flex-col bg-blood text-2xl font-black text-white" onClick={() => act({ type: "vote", choice: "execute" })}>
             <span className="text-4xl">🪢</span>
             {t("player.execute")}
@@ -894,9 +953,10 @@ function Verdict({ state, me, players }: Ctx) {
           </button>
         </div>
       ) : (
-        <div className="flex-1" />
+        !chat && <div className="flex-1" />
       )}
       <VoteProgress state={state} />
+      {chat && <SocialPanel state={state} viewer={me.id} className="min-h-0 flex-1" />}
     </Fill>
   );
 }

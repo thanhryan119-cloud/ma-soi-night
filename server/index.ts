@@ -23,13 +23,24 @@ import {
   timerOp,
 } from "../shared/engine";
 import { botDecide } from "../shared/bots";
+import { DEFAULT_BOT_SPEED } from "../shared/roles";
 import { botChatLine, botDefenseLine, newBotChatMemory, type BotChatMemory } from "../shared/botChat";
 import { ingestChat, newChatIntel, type ChatIntel } from "../shared/botIntel";
 import { createAiBots } from "./aiBots";
 import { createAccounts } from "./accounts";
 import { createSocial } from "./social";
 import { gameResults, type PublicProfile } from "../shared/stats";
-import { cleanPassword, isOwner, makeMachineRoom, nextOwner, ownerAction } from "../shared/multiplayer";
+import {
+  AWAY_LIMIT_MS,
+  cleanPassword,
+  gameRunning,
+  isOwner,
+  leaveRoom,
+  makeMachineRoom,
+  nextOwner,
+  ownerAction,
+  type LeaveResult,
+} from "../shared/multiplayer";
 import { checkPassword, createLobby, hashPassword } from "./lobby";
 import type { OwnerAction } from "../shared/types";
 import { REJOIN_TTL_MS, buildView, type Viewer } from "../shared/views";
@@ -238,7 +249,7 @@ function scheduleBotDefense(room: Room) {
         social.postAs(room, bot.id, line);
         scheduleBotChat(room);
       } else if (playerAction(room, bot.id, { type: "endDefense" }).ok) touch(room);
-    }, 3000 + Math.random() * 3000),
+    }, botDelay(room, 3000 + Math.random() * 3000)),
   );
 }
 
@@ -273,7 +284,7 @@ function scheduleBotChat(room: Room) {
       const line = botChatLine(room, bot, m, intelFor(room));
       if (line) social.postAs(room, bot.id, line);
       scheduleBotChat(room);
-    }, 2500 + Math.random() * 4500),
+    }, botDelay(room, 2500 + Math.random() * 4500)),
   );
 }
 
@@ -438,6 +449,9 @@ function scheduleAuto(room: Room) {
   });
 }
 
+/** Bot pauses, shortened by the room's bot speed (×2 by default; older rooms without the setting too). */
+const botDelay = (room: Room, ms: number) => ms / (room.settings.botSpeed || DEFAULT_BOT_SPEED);
+
 /** One bot acts per tick, with a human-ish delay, until no bot has anything to do. */
 function scheduleBots(room: Room) {
   if (botTimers.has(room.code)) return;
@@ -445,7 +459,7 @@ function scheduleBots(room: Room) {
   if (!bots.length || !room.game) return;
   const ready = bots.filter((b) => botDecide(room, b.id, intelFor(room)));
   if (!ready.length) return;
-  const delay = 600 + Math.random() * 1200;
+  const delay = botDelay(room, 600 + Math.random() * 1200);
   botTimers.set(
     room.code,
     setTimeout(() => {
@@ -468,6 +482,50 @@ function setConnected(room: Room, playerId: string) {
     broadcast(room);
     lobby.changed();
     if (!online && isOwner(room, p.id)) scheduleOwnerHandover(room, p.id);
+    if (!online) scheduleAwayKick(room, p.id);
+  }
+}
+
+/** One pending "away too long" check per offline player. */
+const awayTimers = new Map<string, NodeJS.Timeout>();
+
+/**
+ * A player went offline during a game: if the room kicks absent players and
+ * they are still gone after 5 minutes, they are out for good and a bot plays
+ * their seat (a loss in their stats).
+ */
+/** How long a player may be offline during a game (AWAY_LIMIT_MS env to change it, e.g. for testing). */
+const AWAY_MS = Number(process.env.AWAY_LIMIT_MS) || AWAY_LIMIT_MS;
+
+function scheduleAwayKick(room: Room, playerId: string, delay = AWAY_MS) {
+  if (!room.settings.autoKickAway || !gameRunning(room)) return;
+  const key = `${room.code}:${playerId}`;
+  clearTimeout(awayTimers.get(key));
+  const game = room.game;
+  awayTimers.set(
+    key,
+    setTimeout(() => {
+      awayTimers.delete(key);
+      const p = getPlayer(room, playerId);
+      if (rooms.get(room.code) !== room || room.game !== game || !p || p.isBot || p.connected) return;
+      if (!room.settings.autoKickAway || !gameRunning(room)) return;
+      const res = leaveRoom(room, playerId, "away");
+      if (!res.ok) return;
+      recordAbandon(res);
+      console.log(`[room ${room.code}] ${p.name} was away too long: a bot takes the seat`);
+      touch(room);
+    }, delay),
+  );
+  awayTimers.get(key)!.unref();
+}
+
+/** Adds a left game to the player's stats as a loss. */
+function recordAbandon(res: LeaveResult) {
+  if (!res.abandon) return;
+  try {
+    accounts.recordGame([res.abandon]);
+  } catch (err) {
+    console.error("[stats] abandon failed", err);
   }
 }
 
@@ -682,6 +740,7 @@ io.on("connection", (raw) => {
       const room = rooms.get(normCode(p.code));
       if (!room) return { ok: false, error: "err.roomNotFound" };
       const player = getPlayer(room, String(p.playerId ?? ""));
+      if (player && room.abandoned?.includes(player.id)) return { ok: false, error: "err.abandoned" };
       if (!player || player.token !== p.token) return { ok: false, error: "err.sessionExpired" };
       dropRejoinRequest(room, player.id);
       attach(socket, room, "player", player.id);
@@ -754,6 +813,23 @@ io.on("connection", (raw) => {
     }, ack),
   );
 
+  // Leave the room. During a game it is for good: a bot takes the seat and it counts as a loss.
+  on("player:leave", (_p, ack) =>
+    guard(() => {
+      const { code, kind, playerId } = socket.data;
+      const room = code ? rooms.get(code) : undefined;
+      if (!room || kind !== "player" || !playerId) return { ok: false, error: "err.notInRoom" };
+      const res = leaveRoom(room, playerId, "left");
+      if (!res.ok) return res as ActionResult & Record<string, unknown>;
+      recordAbandon(res);
+      clearTimeout(awayTimers.get(`${room.code}:${playerId}`));
+      socket.leave(channel(room.code));
+      socket.data = {};
+      touch(room);
+      return { ok: true, abandoned: !!res.abandon || !res.removed };
+    }, ack),
+  );
+
   on("player:action", (p, ack) =>
     guard(() => {
       const { code, kind, playerId } = socket.data;
@@ -820,7 +896,13 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000).unref();
 
-for (const room of rooms.values()) scheduleBots(room);
+for (const room of rooms.values()) {
+  scheduleBots(room);
+  // Restored games with the auto narrator would otherwise wait for a change that never comes.
+  scheduleAuto(room);
+  // After a restart, nobody is connected yet: give everyone the full 5 minutes to come back.
+  for (const p of room.players) if (!p.isBot) scheduleAwayKick(room, p.id);
+}
 
 httpServer.listen(PORT, "0.0.0.0", () => {
   console.log(`🐺 Ma Sói Online socket server on :${PORT}`);

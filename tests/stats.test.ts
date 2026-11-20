@@ -113,6 +113,14 @@ describe("career stats", () => {
     expect(winRate(s)).toBe(1);
   });
 
+  it("quitting a game counts as a loss and breaks the streak", () => {
+    let s = applyResult(undefined, game({ role: "werewolf", winner: "wolves" }));
+    s = applyResult(s, game({ role: "seer", outcome: "abandon", winner: null, survived: false }));
+    expect(s).toMatchObject({ games: 2, wins: 1, losses: 1, abandons: 1, streak: 0, bestStreak: 1, survived: 1 });
+    expect(s.byRole.seer).toEqual({ games: 1, wins: 0 });
+    expect(winRate(s)).toBe(0.5);
+  });
+
   it("does not change the previous record", () => {
     const a = applyResult(undefined, game());
     applyResult(a, game());

@@ -274,7 +274,9 @@
     "voiceChat": "Cho phép mở mic (phòng chờ và lúc thảo luận)",
     "autoAdvance": "Quản trò tự động: tự dẫn cả ván — đọc xong lời dẫn rồi tự chuyển bước, hết giờ thảo luận/vote tự chốt, ai không hành động sẽ bị bỏ qua",
     "aiBots": "Bot AI trả lời tin nhắn trong chat (Gemini — cần GEMINI_API_KEY trên máy chủ)",
-    "noScreen": "Không có màn hình chiếu: hiện lời dẫn và thông tin chung trên điện thoại mọi người"
+    "noScreen": "Không có màn hình chiếu: hiện lời dẫn và thông tin chung trên điện thoại mọi người",
+    "autoKickAway": "Mất kết nối quá 5 phút khi đang chơi thì bị loại (bot chơi thay, tính là thua)",
+    "botSpeed": "Tốc độ bot"
   },
   "effects": {
     "protected": "Được bảo vệ",
@@ -382,7 +384,14 @@
     "rejoinDenied": "Quản trò không cho phép vào lại.",
     "endDefense": "✋ Mình đã nói xong — kết thúc biện hộ",
     "defenseEnded": "Bạn đã kết thúc phần biện hộ.",
-    "narration": "Quản trò"
+    "narration": "Quản trò",
+    "leave": "Rời phòng",
+    "leaveGame": "Thoát",
+    "leaveConfirm": "Rời phòng này?",
+    "leaveConfirmGame": "Thoát ván đang chơi? Bạn sẽ bị tính 1 trận thua (thoát), bot sẽ chơi thay nhân vật của bạn và bạn không vào lại ván này được.",
+    "abandoned": "Bạn đã thoát khỏi ván này (hoặc vắng quá 5 phút). Bot đang chơi thay nhân vật của bạn.",
+    "pack": "Đồng đội",
+    "lastWolf": "Bạn là sói cuối cùng"
   },
   "profile": {
     "title": "Hồ sơ của bạn",
@@ -523,7 +532,8 @@
     "profileNotFound": "Không tìm thấy hồ sơ.",
     "notOwner": "Chỉ trưởng phòng mới làm được việc này.",
     "wrongPassword": "Sai mật khẩu phòng.",
-    "passwordRequired": "Phòng này cần mật khẩu."
+    "passwordRequired": "Phòng này cần mật khẩu.",
+    "abandoned": "Bạn đã thoát khỏi ván này, bot đang chơi thay."
   },
   "log": {
     "join": "{name} vào phòng",
@@ -593,7 +603,10 @@
     "stepNobody": "{step} không còn ai sống — bỏ qua",
     "stepOffline": "{step} mất kết nối, không hành động — bỏ qua",
     "verdictStart": "Vote treo cổ / tha: {name}",
-    "ownerChanged": "{name} giờ là trưởng phòng"
+    "ownerChanged": "{name} giờ là trưởng phòng",
+    "leave": "{name} đã rời phòng",
+    "abandon": "{name} đã thoát khỏi ván, bot chơi thay",
+    "abandonAway": "{name} vắng quá 5 phút nên bị loại, bot chơi thay"
   },
   "privacy": {
     "title": "Chính sách quyền riêng tư",
@@ -671,14 +684,17 @@
     "outcome": {
       "win": "Thắng",
       "loss": "Thua",
-      "draw": "Hòa"
+      "draw": "Hòa",
+      "abandon": "Thoát"
     },
     "mine": "Thống kê của bạn",
     "signInForStats": "Đăng nhập Google để lưu số ván, số lần làm Sói, tỉ lệ thắng… và lên bảng xếp hạng.",
     "countRule": "Chỉ tính các ván có từ {min} người thật trở lên (không kể bot).",
     "noCountedGames": "Chưa có ván nào được tính (cần từ {min} người thật trở lên).",
     "notCounted": "Không tính",
-    "humansCount": "{n} người thật"
+    "humansCount": "{n} người thật",
+    "abandons": "Thoát giữa chừng",
+    "left": "Đã thoát"
   },
   "leaderboard": {
     "title": "Bảng xếp hạng",

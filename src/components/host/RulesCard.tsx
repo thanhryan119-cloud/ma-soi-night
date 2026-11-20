@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { NIGHT_STEP_ROLE } from "@shared/roles";
+import { BOT_SPEEDS, DEFAULT_BOT_SPEED, NIGHT_STEP_ROLE } from "@shared/roles";
 import type { Settings } from "@shared/types";
 import type { ClientState } from "@shared/views";
 import { RoleBadge } from "@/components/ui";
@@ -11,6 +11,7 @@ import { useHostAction } from "./common";
 const BOOLS = [
   "autoAdvance",
   "noScreen",
+  "autoKickAway",
   "aiBots",
   "wolvesMustBite",
   "mandatoryVote",
@@ -145,6 +146,20 @@ export function RulesCard({
 
         <fieldset className="flex flex-col gap-2">
           <NumberField label={t("settings.discussionSeconds")} value={s.discussionSeconds} min={10} max={3600} onCommit={(discussionSeconds) => update({ discussionSeconds })} />
+          <label className="flex items-center justify-between gap-2 text-sm">
+            <span>🤖 {t("settings.botSpeed")}</span>
+            <select
+              className="ui-select w-24 text-right"
+              value={s.botSpeed ?? DEFAULT_BOT_SPEED}
+              onChange={(e) => update({ botSpeed: Number(e.target.value) })}
+            >
+              {BOT_SPEEDS.map((v) => (
+                <option key={v} value={v}>
+                  ×{v}
+                </option>
+              ))}
+            </select>
+          </label>
           <NumberField label={t("settings.defenseSeconds")} value={s.defenseSeconds} min={10} max={3600} onCommit={(defenseSeconds) => update({ defenseSeconds })} />
         </fieldset>
 

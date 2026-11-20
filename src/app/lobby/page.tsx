@@ -127,7 +127,8 @@ function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
       password,
       profile: { name: profile.name, avatar: profile.avatar, style: profile.style },
       authToken: getAuth()?.token,
-      settings: saved ?? undefined,
+      // Online rooms start from the online defaults; a human host keeps their usual rules.
+      settings: machine ? undefined : (saved ?? undefined),
     });
     setBusy(false);
     if (!showError(res) || !res.code) return;

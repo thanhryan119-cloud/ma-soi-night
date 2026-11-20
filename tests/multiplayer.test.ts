@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { addPlayer, createRoom, hostAction } from "../shared/engine";
 import {
   cleanPassword,
+  leaveRoom,
   lobbyPerson,
   makeMachineRoom,
   nextOwner,
@@ -11,6 +12,8 @@ import {
   type RoomSummary,
 } from "../shared/multiplayer";
 import { buildView } from "../shared/views";
+import { gameResults } from "../shared/stats";
+import { canSpeak } from "../shared/social";
 import { checkPassword, hashPassword } from "../server/lobby";
 
 function machineRoom(humans = 4) {
@@ -138,5 +141,98 @@ describe("room passwords", () => {
   it("an empty password means an open room", () => {
     expect(cleanPassword("   ")).toBeNull();
     expect(cleanPassword(" abc ")).toBe("abc");
+  });
+});
+
+describe("leaving", () => {
+  function running(userIds: (string | null)[] = []) {
+    const { room, owner, ids } = machineRoom(4);
+    ids.forEach((id, i) => (room.players.find((p) => p.id === id)!.userId = userIds[i] ?? null));
+    ownerAction(room, owner, { type: "addBots", count: 4 });
+    ownerAction(room, owner, { type: "useSuggested" });
+    expect(ownerAction(room, owner, { type: "start" }).ok).toBe(true);
+    return { room, owner, ids };
+  }
+
+  it("before the game: the player just goes, no stats", () => {
+    const { room, ids } = machineRoom();
+    const res = leaveRoom(room, ids[2], "left");
+    expect(res).toMatchObject({ ok: true, removed: true });
+    expect(res.abandon).toBeUndefined();
+    expect(room.players.some((p) => p.id === ids[2])).toBe(false);
+  });
+
+  it("being away only matters during a game", () => {
+    const { room, ids } = machineRoom();
+    expect(leaveRoom(room, ids[1], "away").ok).toBe(false);
+    expect(room.players).toHaveLength(4);
+  });
+
+  it("during a game: a bot takes the seat (same name and role) and it is a loss for the player", () => {
+    const { room, ids } = running([null, "u-quit"]);
+    const seat = room.players.find((p) => p.id === ids[1])!;
+    const { name, token } = seat;
+    const role = room.game!.roles[ids[1]];
+    const res = leaveRoom(room, ids[1], "left", 77);
+    expect(res.ok).toBe(true);
+    expect(res.abandon).toMatchObject({ userId: "u-quit", game: { t: 77, role, outcome: "abandon", winner: null, survived: false } });
+    expect(seat).toMatchObject({ isBot: true, connected: true, userId: null, name });
+    expect(seat.token).not.toBe(token);
+    expect(room.game!.roles[ids[1]]).toBe(role);
+    expect(room.abandoned).toContain(ids[1]);
+    expect(room.log.some((e) => e.key === "log.abandon" && e.public)).toBe(true);
+    // Leaving twice is not possible: the seat is a bot now.
+    expect(leaveRoom(room, ids[1], "left").ok).toBe(false);
+    // At the end of the game the player is not counted again.
+    hostAction(room, { type: "endGame", winner: "village" });
+    expect(gameResults(room).map((r) => r.userId)).not.toContain("u-quit");
+  });
+
+  it("the owner leaving hands the room to the next player", () => {
+    const { room, owner, ids } = running();
+    leaveRoom(room, owner, "away");
+    expect(room.ownerId).toBe(ids[1]);
+    expect(room.log.some((e) => e.key === "log.abandonAway")).toBe(true);
+  });
+
+  it("guests leave without a stats entry", () => {
+    const { room, ids } = running();
+    expect(leaveRoom(room, ids[3], "left").abandon).toBeNull();
+  });
+});
+
+describe("room settings", () => {
+  it("bots are twice as fast by default; only listed speeds are allowed", () => {
+    const room = createRoom("SPD1", "vi");
+    expect(room.settings.botSpeed).toBe(2);
+    expect(hostAction(room, { type: "updateSettings", settings: { botSpeed: 3 } }).ok).toBe(true);
+    expect(room.settings.botSpeed).toBe(3);
+    expect(hostAction(room, { type: "updateSettings", settings: { botSpeed: 50 } }).ok).toBe(false);
+    expect(room.settings.botSpeed).toBe(3);
+  });
+
+  it("absent players are kicked in online rooms only (by default)", () => {
+    expect(createRoom("OFF1", "vi").settings.autoKickAway).toBe(false);
+    expect(machineRoom().room.settings.autoKickAway).toBe(true);
+  });
+});
+
+describe("online defaults and the defender's chat", () => {
+  it("discussion lasts 2 minutes and the defense 30 seconds by default", () => {
+    expect(createRoom("DEF1", "vi").settings).toMatchObject({ discussionSeconds: 120, defenseSeconds: 30 });
+  });
+
+  it("online rooms: the players on the stand keep the chat during the verdict vote", () => {
+    const { room, owner, ids } = machineRoom();
+    ownerAction(room, owner, { type: "addBots", count: 4 });
+    ownerAction(room, owner, { type: "useSuggested" });
+    ownerAction(room, owner, { type: "start" });
+    room.game!.nominees = [ids[1]];
+    room.phase = { ...room.phase, kind: "verdict" };
+    expect(canSpeak(room, { kind: "player", playerId: ids[1] })).toBeNull();
+    expect(canSpeak(room, { kind: "player", playerId: ids[2] })).toBe("err.onlyNominees");
+    // A room with a human host keeps the chat closed during the vote.
+    room.machineHost = false;
+    expect(canSpeak(room, { kind: "player", playerId: ids[1] })).toBe("err.chatClosed");
   });
 });

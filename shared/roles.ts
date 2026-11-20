@@ -189,6 +189,10 @@ export function totalRoles(counts: Record<RoleId, number>): number {
   return ROLE_IDS.reduce((s, r) => s + (counts[r] || 0), 0);
 }
 
+/** Bot speed choices (multiplier). Bots act twice as fast by default. */
+export const BOT_SPEEDS = [1, 1.5, 2, 3] as const;
+export const DEFAULT_BOT_SPEED = 2;
+
 export function defaultSettings(playerCount = 8): Settings {
   return {
     nightOrder: [...DEFAULT_NIGHT_ORDER],
@@ -208,8 +212,10 @@ export function defaultSettings(playerCount = 8): Settings {
     autoAdvance: false,
     aiBots: true,
     noScreen: false,
-    discussionSeconds: 180,
-    defenseSeconds: 60,
+    autoKickAway: false,
+    botSpeed: DEFAULT_BOT_SPEED,
+    discussionSeconds: 120,
+    defenseSeconds: 30,
     bilingualScreen: false,
   };
 }

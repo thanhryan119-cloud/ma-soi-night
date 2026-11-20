@@ -17,9 +17,11 @@ export function SocialPanel({ state, viewer, className = "" }: { state: ClientSt
   const players = new Map(state.players.map((p) => [p.id, p]));
   const isHost = viewer === "host";
   const me = isHost ? null : players.get(viewer);
-  const phaseOpen = (SOCIAL_PHASES as readonly string[]).includes(state.phase.kind);
+  // Online rooms: the players on the stand keep the chat during the verdict vote.
+  const defenderChat = state.machineHost && state.phase.kind === "verdict";
+  const phaseOpen = (SOCIAL_PHASES as readonly string[]).includes(state.phase.kind) || defenderChat;
   const dead = !!me && state.phase.kind !== "lobby" && !me.alive;
-  const defenseLocked = state.phase.kind === "defense" && !state.me?.onStand;
+  const defenseLocked = (state.phase.kind === "defense" || defenderChat) && !state.me?.onStand;
   const canSpeak = isHost || (phaseOpen && !dead && !defenseLocked);
   const reason = !phaseOpen ? t("social.closed") : dead ? t("social.deadReadOnly") : defenseLocked ? t("social.onlyNominees") : null;
   // The board can be folded away so the chat gets the whole panel.

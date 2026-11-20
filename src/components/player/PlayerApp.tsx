@@ -12,7 +12,7 @@ import { useRoomState } from "@/lib/useRoom";
 import { PlayerGame } from "./PlayerGame";
 import { PASSWORD_MAX } from "@shared/multiplayer";
 
-type Status = "checking" | "form" | "rejoin" | "in" | "kicked" | "closed" | "notFound";
+type Status = "checking" | "form" | "rejoin" | "in" | "kicked" | "closed" | "notFound" | "abandoned";
 interface Seat {
   id: string;
   name: string;
@@ -46,6 +46,8 @@ export default function PlayerApp({ code }: { code: string }) {
         return;
       }
       storage.remove(playerKey(code));
+      // Out of this game for good (left, or away too long): a bot plays the seat now.
+      if (res.error === "err.abandoned") return setStatus("abandoned");
     }
     const info = await emitAck<{ ok: boolean; locale?: Locale; phase?: string; rejoinable?: Seat[]; locked?: boolean }>("room:check", { code });
     if (!info.ok) {
@@ -89,12 +91,18 @@ export default function PlayerApp({ code }: { code: string }) {
 
   let body: React.ReactNode;
   if (status === "checking") body = <Spinner label={t("player.checkingRoom")} />;
-  else if (status === "notFound" || status === "kicked" || status === "closed")
+  else if (status === "notFound" || status === "kicked" || status === "closed" || status === "abandoned")
     body = (
       <div className="card mx-auto mt-20 max-w-sm text-center">
-        <div className="text-5xl">{status === "kicked" ? "🚪" : "🌫️"}</div>
+        <div className="text-5xl">{status === "kicked" || status === "abandoned" ? "🚪" : "🌫️"}</div>
         <p className="mt-4 text-lg">
-          {status === "kicked" ? t("player.kicked") : status === "closed" ? t("player.roomClosed") : t("err.roomNotFound")}
+          {status === "kicked"
+            ? t("player.kicked")
+            : status === "abandoned"
+              ? t("player.abandoned")
+              : status === "closed"
+                ? t("player.roomClosed")
+                : t("err.roomNotFound")}
         </p>
         <div className="mt-6 flex justify-center gap-2">
           {status === "kicked" && (

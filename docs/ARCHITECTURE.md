@@ -53,6 +53,7 @@ Log và thông báo hệ thống lưu **key i18n + tham số**, client tự dị
 | `lobby:enter` | `{ profile: { name, avatar }, authToken? }` → `{ online, rooms }` | Trang sảnh chờ (`/lobby`) |
 | `lobby:leave` | – | Rời trang sảnh chờ |
 | `lobby:createRoom` | `{ machine, locale, withPassword, password, profile, authToken?, settings? }` → `{ code, playerId, token }` (máy dẫn) hoặc `{ code, hostToken }` (người dẫn) | Sảnh chờ |
+| `player:leave` | – → `{ abandoned }` | Người chơi bấm Thoát / Rời phòng |
 | `owner:action` | `OwnerAction` | Trưởng phòng của phòng máy dẫn |
 | `room:setPassword` | `{ withPassword, password }` | Quản trò, hoặc trưởng phòng |
 | `profile:get` | `{ playerId }` → `{ profile: PublicProfile }` | Bất kỳ ai trong phòng (bấm avatar/tên) |
@@ -74,6 +75,11 @@ Log và thông báo hệ thống lưu **key i18n + tham số**, client tự dị
 - **Sảnh chờ** (`/lobby`): ai mở trang này là "đang online" (vào kênh `lobby`). Server gửi `lobby:state { online, rooms }` mỗi khi có người đến/đi hoặc phòng thay đổi (gộp 300 ms, chỉ gửi khi khác). Vào một phòng thì tự rời sảnh. Danh sách phòng chỉ gồm phòng tạo từ sảnh (`room.listed`) mà còn người thật online (hoặc quản trò còn mở bảng điều khiển).
 - **Mật khẩu**: tích "Đặt mật khẩu" mới hiện ô nhập, không tích thì phòng mở. Server lưu `salt:sha256` (`room.passwordHash`, không bao giờ gửi về máy khách); `player:join` kiểm tra mật khẩu. `room:check` trả `locked` để màn vào phòng hiện ô mật khẩu.
 - **Máy làm quản trò** (`room.machineHost`): người tạo vào phòng như người chơi và là trưởng phòng (`room.ownerId`). Máy luôn tự dẫn (`autoAdvance`) và mọi điện thoại hiện lời dẫn (`noScreen`); mỗi bước có 6 giây để đọc. Trưởng phòng chỉ có `OwnerAction`: chỉnh luật, số vai, bot, mời ra (trừ chính mình), mật khẩu, bắt đầu (máy tự chia vai ngẫu nhiên) và ván mới. Không có chia vai tay, can thiệp hay hành động thay người khác, nên trưởng phòng không bao giờ thấy vai người khác. Trưởng phòng offline quá 30 giây thì người ngồi lâu nhất còn online lên thay.
+- **Thoát game** (`leaveRoom`): trước ván hoặc khi ván đã xong thì chỉ rời phòng. Đang chơi thì thoát hẳn: ghế đó thành bot (giữ tên và vai, đổi token nên máy cũ không vào lại được; `player:resume` trả `err.abandoned`), người thoát bị tính 1 trận thua có `outcome: "abandon"` (cộng vào `losses` và `abandons`). Nếu bật `autoKickAway` (mặc định bật ở phòng máy dẫn, tắt ở phòng người dẫn), người mất kết nối quá 5 phút (`AWAY_LIMIT_MS`) khi đang chơi bị loại y như vậy.
+- **Phòng online, ban ngày**: người bị đưa lên giàn được chat cả lúc biện hộ lẫn lúc mọi người bỏ phiếu treo cổ (`defenderChat`); người khác chỉ đọc. Mặc định thảo luận 2 phút, biện hộ 30 giây; phòng online tạo từ sảnh dùng mặc định này, không lấy luật đã lưu của quản trò.
+- **Sói thức dậy**: màn hình sói luôn có dải "Đồng đội" (ai, còn sống không, đang chọn cắn ai).
+- **Khởi động lại server**: các phòng được khôi phục sẽ hẹn lại bộ tự dẫn, bot và hạn 5 phút cho người vắng (đặt `AWAY_LIMIT_MS` để đổi hạn này), nên ván máy dẫn chạy tiếp sau mỗi lần deploy.
+- **Tốc độ bot** (`settings.botSpeed`, ×1 / ×1.5 / ×2 / ×3, mặc định ×2): chia thời gian chờ của bot khi hành động, chat và bào chữa. Thời lượng tối thiểu của mỗi bước đêm không đổi, nên bot nhanh không làm lộ vai.
 
 ### Thống kê & bảng xếp hạng (`shared/stats.ts`)
 

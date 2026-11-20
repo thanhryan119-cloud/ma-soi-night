@@ -213,6 +213,7 @@ export function StatsView({ stats }: { stats: UserStats | null }) {
         <Tile label={t("stats.losses")} value={stats.losses} />
         <Tile label={t("stats.draws")} value={stats.draws} />
         <Tile label={t("stats.survived")} value={`${Math.round((stats.survived / stats.games) * 100)}%`} />
+        {(stats.abandons ?? 0) > 0 && <Tile label={t("stats.abandons")} value={stats.abandons!} />}
       </div>
 
       <section>
@@ -247,7 +248,11 @@ export function StatsView({ stats }: { stats: UserStats | null }) {
             >
               <span
                 className={`w-14 shrink-0 rounded px-1.5 py-0.5 text-center text-xs font-bold ${
-                  g.outcome === "win" ? "bg-emerald-500/20 text-emerald-300" : g.outcome === "loss" ? "bg-blood/25 text-blood-light" : "bg-white/10 text-white/70"
+                  g.outcome === "win"
+                    ? "bg-emerald-500/20 text-emerald-300"
+                    : g.outcome === "loss" || g.outcome === "abandon"
+                      ? "bg-blood/25 text-blood-light"
+                      : "bg-white/10 text-white/70"
                 }`}
               >
                 {t(`stats.outcome.${g.outcome}`)}
@@ -255,7 +260,7 @@ export function StatsView({ stats }: { stats: UserStats | null }) {
               <RoleBadge roleId={g.role} />
               <span className="min-w-0 flex-1 truncate text-xs text-white/50">
                 {g.lover && "💘 "}
-                {g.survived ? t("stats.alive") : `💀 ${t("stats.dead")}`} ·{" "}
+                {g.outcome === "abandon" ? `🚪 ${t("stats.left")}` : g.survived ? t("stats.alive") : `💀 ${t("stats.dead")}`} ·{" "}
                 {g.humans === undefined ? t("stats.playersCount", { n: g.players }) : t("stats.humansCount", { n: g.humans })}
               </span>
               {g.counted === false && (

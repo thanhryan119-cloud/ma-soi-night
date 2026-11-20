@@ -274,7 +274,9 @@
     "voiceChat": "Allow open mic (lobby and discussion)",
     "autoAdvance": "Auto narrator: runs the whole game — reads each step, moves on by itself, closes discussion/votes when time runs out, skips players who don't act",
     "aiBots": "AI bots answer chat messages (Gemini — needs GEMINI_API_KEY on the server)",
-    "noScreen": "No projector: show the narration and public info on everyone's phone"
+    "noScreen": "No projector: show the narration and public info on everyone's phone",
+    "autoKickAway": "Offline for 5 minutes during a game means out (a bot takes over, it counts as a loss)",
+    "botSpeed": "Bot speed"
   },
   "effects": {
     "protected": "Protected",
@@ -382,7 +384,14 @@
     "rejoinDenied": "The host did not let you back in.",
     "endDefense": "✋ I'm done — end my defense",
     "defenseEnded": "You ended your defense.",
-    "narration": "Narrator"
+    "narration": "Narrator",
+    "leave": "Leave room",
+    "leaveGame": "Quit",
+    "leaveConfirm": "Leave this room?",
+    "leaveConfirmGame": "Quit the game? It counts as a loss (quit), a bot will play your character and you can't come back to this game.",
+    "abandoned": "You left this game (or were away for over 5 minutes). A bot is playing your character.",
+    "pack": "Your pack",
+    "lastWolf": "You're the last wolf"
   },
   "profile": {
     "title": "Your profile",
@@ -523,7 +532,8 @@
     "profileNotFound": "Profile not found.",
     "notOwner": "Only the room owner can do that.",
     "wrongPassword": "Wrong room password.",
-    "passwordRequired": "This room needs a password."
+    "passwordRequired": "This room needs a password.",
+    "abandoned": "You left this game; a bot is playing for you."
   },
   "log": {
     "join": "{name} joined",
@@ -593,7 +603,10 @@
     "stepNobody": "{step}: nobody left alive — skipped",
     "stepOffline": "{step} was offline and did not act — skipped",
     "verdictStart": "Hang or spare: {name}",
-    "ownerChanged": "{name} is now the room owner"
+    "ownerChanged": "{name} is now the room owner",
+    "leave": "{name} left the room",
+    "abandon": "{name} quit the game, a bot takes over",
+    "abandonAway": "{name} was away for over 5 minutes and is out, a bot takes over"
   },
   "privacy": {
     "title": "Privacy policy",
@@ -671,14 +684,17 @@
     "outcome": {
       "win": "Win",
       "loss": "Loss",
-      "draw": "Draw"
+      "draw": "Draw",
+      "abandon": "Quit"
     },
     "mine": "Your stats",
     "signInForStats": "Sign in with Google to keep your games, times as Werewolf, win rate… and get on the leaderboard.",
     "countRule": "Only games with at least {min} real people count (bots don't).",
     "noCountedGames": "No counted games yet (they need {min} or more real people).",
     "notCounted": "Not counted",
-    "humansCount": "{n} real people"
+    "humansCount": "{n} real people",
+    "abandons": "Quit mid-game",
+    "left": "Quit"
   },
   "leaderboard": {
     "title": "Leaderboard",

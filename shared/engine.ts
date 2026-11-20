@@ -3,6 +3,7 @@
 
 import { AVATAR_FRAMES, NAME_EFFECTS, NAME_FONTS, sanitizeAvatarUrl, sanitizeStyle } from "./cosmetics";
 import {
+  BOT_SPEEDS,
   NIGHT_STEP_ROLE,
   ROLES,
   ROLE_IDS,
@@ -969,6 +970,7 @@ function mergeSettings(room: Room, patch: Partial<Settings>): ActionResult {
       "autoAdvance",
       "aiBots",
       "noScreen",
+      "autoKickAway",
       "bilingualScreen",
     ] as const
   ).forEach(bool);
@@ -976,6 +978,11 @@ function mergeSettings(room: Room, patch: Partial<Settings>): ActionResult {
     const n = Math.round(Number(v));
     return Number.isFinite(n) && n >= 10 && n <= 3600 ? n : fallback;
   };
+  if ("botSpeed" in patch) {
+    const v = Number(patch.botSpeed);
+    if (!(BOT_SPEEDS as readonly number[]).includes(v)) return fail("err.invalidSettings");
+    s.botSpeed = v;
+  }
   if ("discussionSeconds" in patch) s.discussionSeconds = secs(patch.discussionSeconds, s.discussionSeconds);
   if ("defenseSeconds" in patch) s.defenseSeconds = secs(patch.defenseSeconds, s.defenseSeconds);
   if (patch.nomination) {

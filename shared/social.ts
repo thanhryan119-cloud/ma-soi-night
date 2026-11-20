@@ -34,14 +34,21 @@ export interface Stroke {
 
 export const socialOpen = (room: Room) => (SOCIAL_PHASES as readonly string[]).includes(room.phase.kind);
 
+/**
+ * Online rooms (machine host): the players on the stand keep the chat during
+ * the verdict vote too, so they can plead until the end. Everyone else reads.
+ */
+export const defenderChat = (room: Pick<Room, "machineHost" | "phase">) => !!room.machineHost && room.phase.kind === "verdict";
+
 /** null when the speaker may chat/draw now, otherwise an i18n error key. */
 export function canSpeak(room: Room, who: Speaker): string | null {
   if (who.kind === "host") return null;
   const p = room.players.find((x) => x.id === who.playerId);
   if (!p) return "err.notInRoom";
-  if (!socialOpen(room)) return "err.chatClosed";
+  const defenders = room.phase.kind === "defense" || defenderChat(room);
+  if (!socialOpen(room) && !defenderChat(room)) return "err.chatClosed";
   if (room.game && !p.alive) return "err.deadNoChat";
-  if (room.phase.kind === "defense" && !room.game?.nominees.includes(p.id)) return "err.onlyNominees";
+  if (defenders && !room.game?.nominees.includes(p.id)) return "err.onlyNominees";
   return null;
 }
 

@@ -99,6 +99,10 @@ export interface Settings {
   aiBots: boolean;
   /** No projector: players' phones also show the narration and the public info. */
   noScreen: boolean;
+  /** How fast bots act and talk (1 = normal, 2 = twice as fast). */
+  botSpeed: number;
+  /** A player offline for 5 minutes during a game is out for good (a bot takes the seat, it counts as a loss). */
+  autoKickAway: boolean;
   discussionSeconds: number;
   defenseSeconds: number;
   bilingualScreen: boolean;
@@ -242,6 +246,8 @@ export interface Room {
   machineHost?: boolean;
   /** Machine-host rooms: the player who may change the settings and start the game. */
   ownerId?: string | null;
+  /** Players who left a running game for good (their seat is played by a bot now). */
+  abandoned?: string[];
   /** "salt:sha256" of the room password, or null/absent when the room is open. Never sent to clients. */
   passwordHash?: string | null;
 }

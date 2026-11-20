@@ -6,7 +6,8 @@ import { isWolf } from "./roles";
 import type { PlayerStyle } from "./cosmetics";
 import type { Room, RoleId, Team, Winner } from "./types";
 
-export type Outcome = "win" | "loss" | "draw";
+/** "abandon": left the game (or was away too long) before it ended: a loss. */
+export type Outcome = "win" | "loss" | "draw" | "abandon";
 
 export interface WinCount {
   games: number;
@@ -17,7 +18,8 @@ export interface RecentGame {
   t: number;
   role: RoleId;
   outcome: Outcome;
-  winner: Winner;
+  /** null: the player left before the end. */
+  winner: Winner | null;
   survived: boolean;
   lover: boolean;
   players: number;
@@ -32,6 +34,8 @@ export interface UserStats {
   wins: number;
   losses: number;
   draws: number;
+  /** Games left before the end (also counted in `losses`). Missing on older records. */
+  abandons?: number;
   /** Games the player was still alive at the end. */
   survived: number;
   byRole: Partial<Record<RoleId, WinCount>>;
@@ -79,6 +83,7 @@ export function emptyStats(): UserStats {
     wins: 0,
     losses: 0,
     draws: 0,
+    abandons: 0,
     survived: 0,
     byRole: {},
     byTeam: { wolves: { games: 0, wins: 0 }, village: { games: 0, wins: 0 } },
@@ -139,6 +144,29 @@ export function gameResults(room: Room, t = Date.now()): GameResult[] {
   return out;
 }
 
+/** The result of a player who leaves a running game (signed-in humans only). */
+export function abandonResult(room: Room, playerId: string, t = Date.now()): GameResult | null {
+  const game = room.game;
+  const p = room.players.find((x) => x.id === playerId);
+  const role = game?.roles[playerId];
+  if (!game || !p || p.isBot || !p.userId || !role) return null;
+  const humans = room.players.filter((x) => !x.isBot).length;
+  return {
+    userId: p.userId,
+    game: {
+      t,
+      role,
+      outcome: "abandon",
+      winner: null,
+      survived: false,
+      lover: !!game.lovers?.includes(playerId),
+      players: room.players.length,
+      humans,
+      counted: humans >= MIN_HUMANS_FOR_STATS,
+    },
+  };
+}
+
 const bump = (c: WinCount | undefined, won: boolean): WinCount => ({
   games: (c?.games ?? 0) + 1,
   wins: (c?.wins ?? 0) + (won ? 1 : 0),
@@ -154,8 +182,9 @@ export function applyResult(prev: UserStats | undefined, g: RecentGame): UserSta
   const won = g.outcome === "win";
   s.games++;
   if (won) s.wins++;
-  else if (g.outcome === "loss") s.losses++;
-  else s.draws++;
+  else if (g.outcome === "draw") s.draws++;
+  else s.losses++;
+  if (g.outcome === "abandon") s.abandons = (s.abandons ?? 0) + 1;
   if (g.survived) s.survived++;
   s.byRole[g.role] = bump(s.byRole[g.role], won);
   const team: Team = isWolf(g.role) ? "wolves" : "village";
