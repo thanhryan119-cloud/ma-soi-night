@@ -270,7 +270,7 @@
     "wolvesMustBite": "Werewolves must attack every night",
     "mandatoryVote": "Everyone must vote (no skipping)",
     "voiceChat": "Allow open mic (lobby and discussion)",
-    "autoAdvance": "Auto narrator: once a step is confirmed, wait 3 seconds and move on"
+    "autoAdvance": "Auto narrator: runs the whole game — reads each step, moves on by itself, closes discussion/votes when time runs out, skips players who don't act"
   },
   "effects": {
     "protected": "Protected",

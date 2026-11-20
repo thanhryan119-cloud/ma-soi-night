@@ -12,6 +12,7 @@ import {
   addPlayer,
   advance,
   autoReady,
+  forceWolfBite,
   createRoom,
   getPlayer,
   hostAction,
@@ -19,6 +20,7 @@ import {
   playerAction,
   randomToken,
   stepKey,
+  timerOp,
 } from "../shared/engine";
 import { botDecide } from "../shared/bots";
 import { botChatLine, newBotChatMemory, type BotChatMemory } from "../shared/botChat";
@@ -208,6 +210,14 @@ const stepTiming = new Map<string, StepTiming>();
 const NIGHT_MIN_MS: [number, number] = [12_000, 20_000];
 /** If the host never reports the narration (tab closed), assume it took this long. */
 const NARRATION_FALLBACK_MS = 20_000;
+/** Patience with players who don't act (AFK), so the game never stalls. */
+const NIGHT_TIMEOUT_MS = 45_000;
+const HUNTER_TIMEOUT_MS = 30_000;
+const VOTE_SECONDS = 60;
+/** Time to look at your role card before the first night. */
+const ROLE_REVEAL_MS = 15_000;
+/** Pause after reading a result (dawn, nomination, verdict, winner) before moving on. */
+const AFTER_READING_MS = 2_000;
 
 function timingFor(room: Room): StepTiming {
   const key = stepKey(room);
@@ -222,46 +232,106 @@ function timingFor(room: Room): StepTiming {
       confirmedAt: null,
     };
     stepTiming.set(room.code, st);
+    // Votes get a countdown in auto mode; when it runs out, missing votes count as random.
+    const k = room.phase.kind;
+    if (room.settings.autoAdvance && (k === "nominate" || k === "verdict") && !room.timer.running && !room.timer.durationMs) {
+      timerOp(room, "start", VOTE_SECONDS);
+    }
   }
   return st;
 }
 
+/** When the running timer (discussion, defense, votes) hits zero, or null while paused/none. */
+function timerEndsAt(room: Room, now: number): number | null {
+  const t = room.timer;
+  if (!t.durationMs) return null;
+  if (t.running) return t.endsAt;
+  return t.remainingMs <= 0 ? now : null;
+}
+
 /**
- * Auto narrator. Moves on 3 seconds after ALL of these hold: the step is
- * confirmed (role acted, hunter fired, everyone voted), the host finished
- * reading the narration aloud, and — at night — a random minimum time for the
- * step has passed. That way the table can't tell from the timing whether a
- * role decided fast or slow, or whether it is still alive. The 3-second
- * countdown (room.autoAt) only shows once everything else is satisfied.
+ * When the auto narrator may move on from the current step (before the final
+ * 3-second countdown), or null when it must keep waiting. It always waits for
+ * the narration to be read aloud, then:
+ * - role reveal: a moment to look at your card;
+ * - night: the role confirmed (or a timeout for an AFK player), and never
+ *   sooner than a random minimum, so speed or a dead role can't be heard;
+ * - dawn / results / winner: a short pause after reading;
+ * - discussion / defense: the timer runs out;
+ * - votes: everyone voted, or the vote timer runs out;
+ * - hunter: the shot, or a timeout.
+ */
+function dueAt(room: Room, st: StepTiming, now: number): number | null {
+  const game = room.game;
+  if (!game) return null;
+  const read = st.narratedAt ?? st.startedAt + NARRATION_FALLBACK_MS;
+  const kind = room.phase.kind;
+  if (game.pendingWin && kind !== "night") return read + AFTER_READING_MS;
+  const confirmed = autoReady(room) ? (st.confirmedAt ??= now) : ((st.confirmedAt = null), null);
+  switch (kind) {
+    case "roleReveal":
+      return Math.max(read, st.startedAt + ROLE_REVEAL_MS);
+    case "night":
+      return Math.max(read, confirmed ?? st.startedAt + NIGHT_TIMEOUT_MS, st.startedAt + st.minMs);
+    case "dawn":
+    case "nominateResult":
+    case "verdictResult":
+      return read + AFTER_READING_MS;
+    case "hunter":
+      return Math.max(read, confirmed ?? st.startedAt + HUNTER_TIMEOUT_MS);
+    case "discussion":
+    case "defense": {
+      const end = timerEndsAt(room, now);
+      return end === null ? null : Math.max(read, end);
+    }
+    case "nominate":
+    case "verdict": {
+      const end = confirmed ?? timerEndsAt(room, now);
+      return end === null ? null : Math.max(read, end);
+    }
+    default:
+      return null;
+  }
+}
+
+/** Takes the next step on the host's behalf. */
+function autoStep(room: Room): boolean {
+  const game = room.game;
+  if (!game) return false;
+  if (game.pendingWin && room.phase.kind !== "night") return hostAction(room, { type: "confirmWin" }).ok;
+  if (room.phase.kind === "night") forceWolfBite(room);
+  return advance(room).ok;
+}
+
+/**
+ * Auto narrator: runs the whole game once the host has started it. Each step
+ * moves on 3 seconds after it is due (see dueAt). The 3-second countdown
+ * (room.autoAt) only shows once everything else is satisfied.
  */
 function scheduleAuto(room: Room) {
-  const st = timingFor(room);
   const pending = autoTimers.get(room.code);
   if (pending) {
     clearTimeout(pending.timer);
     autoTimers.delete(room.code);
   }
   room.autoAt = null;
-  const ready = room.settings.autoAdvance && autoReady(room);
-  if (!ready) {
-    st.confirmedAt = null;
-    return;
-  }
+  if (!room.settings.autoAdvance || !room.game || room.phase.kind === "gameOver") return;
+  const st = timingFor(room);
   const now = Date.now();
-  st.confirmedAt ??= now;
-  const narrated = st.narratedAt ?? st.startedAt + NARRATION_FALLBACK_MS;
-  const goAt = Math.max(narrated, st.confirmedAt, st.startedAt + st.minMs) + AUTO_DELAY_MS;
+  const due = dueAt(room, st, now);
+  // Nothing to wait for yet (e.g. a paused timer): look again in a few seconds.
+  const goAt = due === null ? null : due + AUTO_DELAY_MS;
   const key = st.key;
-  if (now < goAt - AUTO_DELAY_MS) {
-    // Not yet: check again when the 3-second countdown should begin.
+  if (goAt === null || now < goAt - AUTO_DELAY_MS) {
+    const wait = goAt === null ? 2_000 : goAt - AUTO_DELAY_MS - now;
     autoTimers.set(room.code, {
       key,
       timer: setTimeout(() => {
         autoTimers.delete(room.code);
         if (rooms.get(room.code) !== room) return;
         scheduleAuto(room);
-        broadcast(room);
-      }, goAt - AUTO_DELAY_MS - now),
+        if (room.autoAt) broadcast(room);
+      }, Math.max(250, wait)),
     });
     return;
   }
@@ -272,8 +342,11 @@ function scheduleAuto(room: Room) {
       autoTimers.delete(room.code);
       room.autoAt = null;
       if (rooms.get(room.code) !== room) return;
-      if (room.settings.autoAdvance && autoReady(room) && stepKey(room) === key && advance(room).ok) touch(room);
-      else broadcast(room);
+      if (room.settings.autoAdvance && stepKey(room) === key && autoStep(room)) touch(room);
+      else {
+        scheduleAuto(room);
+        broadcast(room);
+      }
     }, Math.max(0, goAt - now)),
   });
 }

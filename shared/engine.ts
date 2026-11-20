@@ -572,6 +572,22 @@ export function autoReady(room: Room): boolean {
   }
 }
 
+/**
+ * The auto narrator ran out of patience at night: if the pack hasn't picked
+ * anyone, a random valid victim is chosen so the night can go on (only used
+ * when the wolves must bite).
+ */
+export function forceWolfBite(room: Room) {
+  if (currentStep(room) !== "werewolf" || room.settings.wolvesMustBite === false) return;
+  const ns = room.game!.nightState;
+  const wolves = stepActors(room, "werewolf");
+  if (ns.wolfFinalized || !wolves.length || wolves.some((w) => ns.wolfVotes[w.id])) return;
+  const targets = validTargets(room, wolves[0], "werewolf");
+  if (!targets.length) return;
+  ns.wolfVotes[wolves[0].id] = targets[Math.floor(Math.random() * targets.length)];
+  log(room, "log.wolfAutoTarget", { target: nameOf(room, ns.wolfVotes[wolves[0].id]) });
+}
+
 /** A key that changes whenever the game moves to a different step. */
 export function stepKey(room: Room): string {
   const p = room.phase;

@@ -67,8 +67,8 @@ export default function ScreenApp({ code }: { code: string }) {
   return (
     <BilingualCtx.Provider value={!!state?.settings.bilingualScreen}>
     <div className="flex min-h-dvh flex-col">
-      <LangSwitch />
-      <div className="fixed top-3 left-4 z-40 font-display text-lg font-black text-moon/70">
+      {(!state || state.phase.kind === "lobby") && <LangSwitch />}
+      <div className={`fixed top-3 z-40 font-display text-lg font-black text-moon/70 ${!state || state.phase.kind === "lobby" ? "left-28" : "left-4"}`}>
         {t("app.name")} · <span className="font-mono text-gold">{code}</span>
       </div>
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-20 text-center">

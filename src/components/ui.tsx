@@ -15,7 +15,7 @@ import { AvatarArt, hasAvatarArt } from "@/components/art/Woodcut";
 
 export function LangSwitch({
   onChange,
-  className = "fixed top-3 right-3 z-50",
+  className = "fixed top-3 left-3 z-50",
 }: {
   onChange?: (l: Locale) => void;
   className?: string;

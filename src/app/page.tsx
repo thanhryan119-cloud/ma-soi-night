@@ -38,7 +38,7 @@ export default function Home() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-5xl flex-col px-4 py-10 sm:py-16">
       <LangSwitch />
-      <Link href="/profile" className="btn-ghost btn-sm fixed top-3 left-3 z-50">
+      <Link href="/profile" className="btn-ghost btn-sm fixed top-3 right-3 z-50">
         👤 {t("profile.open")}
       </Link>
       <header className="mb-10 flex flex-col items-center text-center">

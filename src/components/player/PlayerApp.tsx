@@ -134,7 +134,8 @@ export default function PlayerApp({ code }: { code: string }) {
 
   return (
     <>
-      <LangSwitch onChange={onLocale} />
+      {/* Language is picked before joining; it stays out of the way once in the game. */}
+      {status !== "in" && <LangSwitch onChange={onLocale} />}
       {body}
     </>
   );

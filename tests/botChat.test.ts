@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addPlayer, autoReady, createRoom, hostAction, playerAction } from "../shared/engine";
+import { addPlayer, autoReady, createRoom, forceWolfBite, hostAction, playerAction } from "../shared/engine";
 import { botChatLine, newBotChatMemory, truthChance } from "../shared/botChat";
 import { botDecide } from "../shared/bots";
 import { ingestChat, newChatIntel, ranked, suspicion } from "../shared/botIntel";
@@ -116,5 +116,18 @@ describe("bots read the chat", () => {
       if (l) lines.push(l);
     }
     expect(new Set(lines).size).toBe(lines.length);
+  });
+});
+
+describe("auto narrator patience", () => {
+  it("picks a victim when online wolves never bite, so the night can go on", () => {
+    const { room, ids } = setup(["werewolf", "villager", "villager", "villager"]);
+    for (const p of room.players) p.connected = true;
+    hostAction(room, { type: "next" }); // night
+    while (room.phase.steps[room.phase.stepIndex] !== "werewolf") hostAction(room, { type: "next" });
+    expect(hostAction(room, { type: "next" }).error).toBe("err.wolvesMustBite");
+    forceWolfBite(room);
+    expect(Object.values(room.game!.nightState.wolfVotes)[0]).not.toBe(ids[0]);
+    expect(hostAction(room, { type: "next" }).ok).toBe(true);
   });
 });

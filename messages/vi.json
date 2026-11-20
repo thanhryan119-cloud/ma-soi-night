@@ -270,7 +270,7 @@
     "wolvesMustBite": "Sói bắt buộc phải cắn mỗi đêm",
     "mandatoryVote": "Bắt buộc mọi người phải vote (không được bỏ qua)",
     "voiceChat": "Cho phép mở mic (phòng chờ và lúc thảo luận)",
-    "autoAdvance": "Quản trò tự động: khi lệnh đã được xác nhận, chờ 3 giây rồi tự chạy tiếp"
+    "autoAdvance": "Quản trò tự động: tự dẫn cả ván — đọc xong lời dẫn rồi tự chuyển bước, hết giờ thảo luận/vote tự chốt, ai không hành động sẽ bị bỏ qua"
   },
   "effects": {
     "protected": "Được bảo vệ",
