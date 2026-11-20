@@ -42,7 +42,7 @@ export function SocialPanel({ state, viewer, className = "" }: { state: ClientSt
       </div>
       {state.settings.voiceChat !== false && <VoiceBar state={state} players={players} enabled={phaseOpen} />}
       {boardOpen && (
-        <div className="flex min-h-0 shrink-0 basis-[30%] flex-col border-b border-gold/25">
+        <div className="flex min-h-0 shrink-0 basis-[24%] flex-col border-b border-gold/25">
           <Board social={social} canDraw={canSpeak} isHost={isHost} reason={null} />
         </div>
       )}
@@ -147,10 +147,30 @@ function Chat({
   const showError = useErrorToast();
   const [text, setText] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
+  // Only follow new messages when you are already at the bottom (or wrote it
+  // yourself); if you scrolled up to read, stay put and show a "new messages" pill.
+  const atBottom = useRef(true);
+  const [unread, setUnread] = useState(0);
+  const last = social.chat[social.chat.length - 1];
   useEffect(() => {
     const el = listRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [social.chat.length]);
+    if (!el) return;
+    if (atBottom.current || last?.from === viewer) {
+      el.scrollTop = el.scrollHeight;
+      setUnread(0);
+    } else setUnread((n) => n + 1);
+  }, [social.chat.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  const onScroll = () => {
+    const el = listRef.current;
+    if (!el) return;
+    atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+    if (atBottom.current) setUnread(0);
+  };
+  const jumpDown = () => {
+    const el = listRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    setUnread(0);
+  };
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -161,7 +181,8 @@ function Chat({
 
   return (
     <>
-      <div ref={listRef} className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 py-1.5">
+      <div className="relative flex min-h-0 flex-1 flex-col">
+      <div ref={listRef} onScroll={onScroll} className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-2 py-1.5">
         {!social.chat.length && <p className="py-6 text-center text-sm text-white/40">{t("social.empty")}</p>}
         {social.chat.map((m) => {
           const p = players.get(m.from);
@@ -178,6 +199,12 @@ function Chat({
             </div>
           );
         })}
+      </div>
+      {unread > 0 && (
+        <button type="button" onClick={jumpDown} className="btn-primary btn-sm absolute bottom-2 left-1/2 -translate-x-1/2 shadow-lg">
+          ↓ {t("social.newMessages", { n: unread })}
+        </button>
+      )}
       </div>
       {canSpeak ? (
         <form onSubmit={send} className="flex shrink-0 gap-1.5 border-t border-white/10 p-1.5">

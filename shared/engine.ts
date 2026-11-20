@@ -120,6 +120,21 @@ export function sanitizeName(name: unknown): string {
     .slice(0, 24);
 }
 
+/** Short, distinct, easy-to-remember bot names (shuffled, never reusing one in the room). */
+const BOT_NAMES = {
+  vi: ["Mít", "Bơ", "Xoài", "Cốm", "Tôm", "Sóc", "Gấu", "Kem", "Bin", "Tép", "Mận", "Khoai", "Ổi", "Nấm", "Cún", "Lúa", "Bắp", "Dừa", "Đậu", "Sen"],
+  en: ["Ash", "Bella", "Cody", "Daisy", "Eli", "Fern", "Gus", "Hazel", "Iris", "Jack", "Kit", "Luna", "Milo", "Nora", "Otis", "Pip", "Rex", "Sky", "Theo", "Zoe"],
+};
+
+function botName(room: Room): string {
+  const taken = new Set(room.players.map((p) => p.name.toLowerCase()));
+  const free = BOT_NAMES[room.locale === "en" ? "en" : "vi"].filter((n) => !taken.has(n.toLowerCase()));
+  if (free.length) return free[Math.floor(Math.random() * free.length)];
+  let n = 1;
+  while (taken.has(`bot ${n}`)) n++;
+  return `Bot ${n}`;
+}
+
 export function addPlayer(
   room: Room,
   input: {
@@ -1112,12 +1127,10 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
     case "addBots": {
       if (!inLobby) return fail("err.wrongPhase");
       const count = Math.max(1, Math.min(MAX_PLAYERS - room.players.length, Math.round(Number(action.count)) || 1));
-      let n = 1;
+      const rnd = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)];
       for (let i = 0; i < count; i++) {
-        while (room.players.some((p) => p.name === `Bot ${n}`)) n++;
-        const rnd = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)];
         addPlayer(room, {
-          name: `Bot ${n}`,
+          name: botName(room),
           avatar: AVATARS[(room.players.length * 7) % AVATARS.length],
           locale: room.locale,
           isBot: true,

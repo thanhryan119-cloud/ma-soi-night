@@ -21,7 +21,7 @@ export function HostLobby({ state, hideRoles = false }: { state: ClientState; hi
       </div>
       <div className="flex flex-col gap-4 xl:min-h-0 xl:overflow-y-auto">
         <PlayersCard state={state} hideRoles={hideRoles} />
-        <SocialPanel state={state} viewer="host" className="h-[520px] shrink-0" />
+        <SocialPanel state={state} viewer="host" className="h-[min(72dvh,680px)] shrink-0" />
       </div>
       <div className="flex flex-col gap-4 lg:col-span-2 xl:col-span-1 xl:min-h-0 xl:overflow-y-auto">
         <RoleConfig state={state} />

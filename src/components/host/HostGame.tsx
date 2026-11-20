@@ -358,7 +358,7 @@ function PhasePanel({ state, hideRoles }: { state: ClientState; hideRoles: boole
       return <NominationBreakdownPanel state={state} />;
     case "discussion":
     case "defense":
-      return <SocialPanel state={state} viewer="host" className="h-[560px]" />;
+      return <SocialPanel state={state} viewer="host" className="h-[min(78dvh,760px)]" />;
     case "defense":
       return <NominationResult state={state} />;
     case "verdictResult":
@@ -387,15 +387,21 @@ function NightPanel({ state, hideRoles }: { state: ClientState; hideRoles: boole
                 {!hideRoles && s.actors.length > 0 && (
                   <span className="truncate text-xs text-white/50">{s.actors.map((id) => nameOf(state, id)).join(", ")}</span>
                 )}
-                <span
-                  className={`ml-auto text-xs font-bold ${!s.actors.length ? "text-white/40" : s.done ? "text-emerald-300" : current ? "text-gold" : "text-white/40"}`}
-                >
-                  {!s.actors.length ? t("host.stepNobody") : s.done ? `✓ ${t("host.stepDone")}` : current ? t("host.stepWaiting") : ""}
-                </span>
+                {hideRoles ? (
+                  // Roles hidden: no hint of who acted, how fast, or whether the role is still alive.
+                  <span className="ml-auto text-xs font-bold text-gold">{current ? t("host.stepCalling") : ""}</span>
+                ) : (
+                  <span
+                    className={`ml-auto text-xs font-bold ${!s.actors.length ? "text-white/40" : s.done ? "text-emerald-300" : current ? "text-gold" : "text-white/40"}`}
+                  >
+                    {!s.actors.length ? t("host.stepNobody") : s.done ? `✓ ${t("host.stepDone")}` : current ? t("host.stepWaiting") : ""}
+                  </span>
+                )}
               </div>
               {current && !hideRoles && <StepDetail state={state} step={s.step} />}
-              {current && !s.done && <ActFor state={state} step={s.step} actors={s.actors} />}
+              {current && !hideRoles && !s.done && <ActFor state={state} step={s.step} actors={s.actors} />}
               {current &&
+                !hideRoles &&
                 s.step === "werewolf" &&
                 state.settings.wolvesMustBite !== false &&
                 s.actors.length > 0 &&

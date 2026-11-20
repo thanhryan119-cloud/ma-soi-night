@@ -234,7 +234,8 @@
     "rejoinAsk": "{name} muốn vào lại ván (điện thoại mới)",
     "rejoinAllow": "Cho phép",
     "rejoinDeny": "Từ chối",
-    "voiceSpeed": "Tốc độ đọc của quản trò"
+    "voiceSpeed": "Tốc độ đọc của quản trò",
+    "stepCalling": "Đang gọi"
   },
   "settings": {
     "nightOrder": "Thứ tự gọi ban đêm",
@@ -618,7 +619,8 @@
     "title": "Bàn tròn đêm trăng",
     "hideBoard": "Thu bảng vẽ",
     "showBoard": "Mở bảng vẽ",
-    "onlyNominees": "Đang biện hộ — chỉ người lên dàn được nói."
+    "onlyNominees": "Đang biện hộ — chỉ người lên dàn được nói.",
+    "newMessages": "{n} tin nhắn mới"
   },
   "voice": {
     "join": "Bật mic",

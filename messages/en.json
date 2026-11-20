@@ -234,7 +234,8 @@
     "rejoinAsk": "{name} wants to rejoin (new phone)",
     "rejoinAllow": "Allow",
     "rejoinDeny": "Deny",
-    "voiceSpeed": "Narrator reading speed"
+    "voiceSpeed": "Narrator reading speed",
+    "stepCalling": "Calling"
   },
   "settings": {
     "nightOrder": "Night wake-up order",
@@ -618,7 +619,8 @@
     "title": "The moonlit table",
     "hideBoard": "Hide board",
     "showBoard": "Show board",
-    "onlyNominees": "Defense in progress — only the players on the stand may speak."
+    "onlyNominees": "Defense in progress — only the players on the stand may speak.",
+    "newMessages": "{n} new messages"
   },
   "voice": {
     "join": "Join mic",
