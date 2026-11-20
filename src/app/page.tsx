@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Locale } from "@shared/types";
 import { LangSwitch, useErrorToast } from "@/components/ui";
+import { Leaderboard } from "@/components/Leaderboard";
 import { useLocale, useT } from "@/lib/i18n";
 import { emitAck, hostKey, storage } from "@/lib/socket";
 
@@ -51,6 +52,18 @@ export default function Home() {
         <h1 className="font-display text-5xl font-black tracking-tight text-moon sm:text-6xl">{t("app.name")}</h1>
         <p className="mt-3 max-w-xl text-lg text-white/70">{t("app.tagline")}</p>
       </header>
+
+      <Link
+        href="/lobby"
+        className="card mb-6 flex flex-col items-start gap-3 border-gold/40 p-6 transition hover:bg-white/5 sm:flex-row sm:items-center"
+      >
+        <span className="text-4xl">🌐</span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-2xl font-bold text-moon">{t("lobby.homeTitle")}</span>
+          <span className="mt-1 block text-white/60">{t("lobby.homeDesc")}</span>
+        </span>
+        <span className="btn-gold shrink-0 px-6 py-3 text-lg">{t("lobby.homeButton")} →</span>
+      </Link>
 
       <div className="grid gap-6 md:grid-cols-2">
         <section className="card flex flex-col gap-4 p-6">
@@ -110,6 +123,7 @@ export default function Home() {
           ))}
         </ol>
       </section>
+      <Leaderboard />
       <footer className="mt-10 text-center text-sm text-white/40">
         <Link href="/privacy" className="hover:text-white">
           {t("privacy.link")}

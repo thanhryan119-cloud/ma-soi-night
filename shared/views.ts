@@ -138,6 +138,11 @@ export interface ClientState {
   rejoinRequests: { playerId: string; name: string }[];
   code: string;
   roomLocale: Locale;
+  /** The machine narrates; `ownerId` (a player) sets the room up. */
+  machineHost: boolean;
+  ownerId: string | null;
+  /** The room needs a password to join. */
+  locked: boolean;
   settings: Settings;
   phase: { kind: PhaseKind; night: number; day: number; steps: NightStepId[]; stepIndex: number; verdictIndex: number };
   players: PlayerView[];
@@ -371,6 +376,9 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
         : [],
     code: room.code,
     roomLocale: room.locale,
+    machineHost: !!room.machineHost,
+    ownerId: room.machineHost ? room.ownerId ?? null : null,
+    locked: !!room.passwordHash,
     settings: room.settings,
     phase: {
       kind: room.phase.kind,
@@ -407,6 +415,8 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
     lovers: isHost || room.phase.kind === "gameOver" ? game?.lovers ?? null : null,
   };
 
+  // The owner of a machine-host room sets the roles up, so they get the suggestion too.
+  if (!isHost && room.machineHost && meId && room.ownerId === meId) state.suggested = suggestRoles(room.players.length);
   if (isHost) {
     state.pendingWin = game?.pendingWin ?? null;
     state.log = room.log;

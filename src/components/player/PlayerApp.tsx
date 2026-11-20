@@ -10,6 +10,7 @@ import { ProfileEditor } from "@/components/ProfileEditor";
 import { emitAck, getSocket, playerKey, storage, type PlayerSession } from "@/lib/socket";
 import { useRoomState } from "@/lib/useRoom";
 import { PlayerGame } from "./PlayerGame";
+import { PASSWORD_MAX } from "@shared/multiplayer";
 
 type Status = "checking" | "form" | "rejoin" | "in" | "kicked" | "closed" | "notFound";
 interface Seat {
@@ -24,6 +25,7 @@ export default function PlayerApp({ code }: { code: string }) {
   const showError = useErrorToast();
   const [status, setStatus] = useState<Status>("checking");
   const [seats, setSeats] = useState<Seat[]>([]);
+  const [locked, setLocked] = useState(false);
   const statusRef = useRef(status);
   statusRef.current = status;
   const localeRef = useRef(locale);
@@ -45,12 +47,13 @@ export default function PlayerApp({ code }: { code: string }) {
       }
       storage.remove(playerKey(code));
     }
-    const info = await emitAck<{ ok: boolean; locale?: Locale; phase?: string; rejoinable?: Seat[] }>("room:check", { code });
+    const info = await emitAck<{ ok: boolean; locale?: Locale; phase?: string; rejoinable?: Seat[]; locked?: boolean }>("room:check", { code });
     if (!info.ok) {
       setStatus(info.error === "err.disconnected" ? "checking" : "notFound");
       return;
     }
     if (info.locale) suggestLocale(info.locale);
+    setLocked(!!info.locked);
     // A game is running: offer the offline seats instead of a new-player form.
     if (info.phase && info.phase !== "lobby") {
       setSeats(info.rejoinable ?? []);
@@ -122,6 +125,7 @@ export default function PlayerApp({ code }: { code: string }) {
     body = (
       <JoinForm
         code={code}
+        locked={locked}
         onJoined={(s) => {
           storage.set(playerKey(code), s);
           setStatus("in");
@@ -210,10 +214,12 @@ function RejoinPicker({
 
 function JoinForm({
   code,
+  locked,
   onJoined,
   showError,
 }: {
   code: string;
+  locked: boolean;
   onJoined: (s: PlayerSession) => void;
   showError: ReturnType<typeof useErrorToast>;
 }) {
@@ -221,6 +227,7 @@ function JoinForm({
   const { locale, setLocale } = useLocale();
   const [profile, setProfile] = useState<LocalProfile | null>(null);
   const [busy, setBusy] = useState(false);
+  const [password, setPassword] = useState("");
 
   useEffect(() => setProfile(loadLocalProfile()), []);
 
@@ -235,6 +242,7 @@ function JoinForm({
       style: profile.style,
       authToken: getAuth()?.token,
       locale,
+      password,
     });
     setBusy(false);
     if (!showError(res) || !res.playerId || !res.token) return;
@@ -247,6 +255,20 @@ function JoinForm({
       <h1 className="shrink-0 text-center font-display text-2xl font-black text-moon">{t("player.joinTitle", { code })}</h1>
       <form onSubmit={submit} className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+        {locked && (
+          <label className="flex flex-col gap-1">
+            <span className="ui-label">🔒 {t("lobby.password")}</span>
+            <input
+              className="ui-input"
+              type="text"
+              autoComplete="off"
+              maxLength={PASSWORD_MAX}
+              placeholder={t("lobby.passwordPlaceholder")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </label>
+        )}
         {profile && <ProfileEditor value={profile} onChange={setProfile} compact />}
         <div>
           <span className="ui-label">{t("lang.label")}</span>
@@ -264,7 +286,7 @@ function JoinForm({
           </div>
         </div>
         </div>
-        <button className="btn-primary shrink-0 py-4 text-xl" disabled={busy || !profile?.name.trim()}>
+        <button className="btn-primary shrink-0 py-4 text-xl" disabled={busy || !profile?.name.trim() || (locked && !password.trim())}>
           {busy ? t("player.joining") : t("player.join")}
         </button>
       </form>

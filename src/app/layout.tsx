@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro, Grenze_Gotisch, Dancing_Script, JetBrains_Mono, Oswald, Pacifico, Playfair_Display } from "next/font/google";
 import { I18nProvider } from "@/lib/i18n";
 import { ToastHost } from "@/components/ui";
+import { ProfileHost } from "@/components/Profile";
 import { NightBackdrop } from "@/components/art/NightBackdrop";
 import "./globals.css";
 
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NightBackdrop />
         <I18nProvider>
           {children}
+          <ProfileHost />
           <ToastHost />
         </I18nProvider>
       </body>

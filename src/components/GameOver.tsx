@@ -5,6 +5,7 @@ import type { LogEntry } from "@shared/types";
 import type { ClientState } from "@shared/views";
 import { formatLog, type T } from "@/lib/i18n";
 import { Avatar, RoleBadge, StyledName } from "./ui";
+import { ProfileLink } from "./Profile";
 import { SceneArt } from "./art/Woodcut";
 
 export function WinnerBanner({ state, t, big = false }: { state: ClientState; t: T; big?: boolean }) {
@@ -29,10 +30,15 @@ export function RolesGrid({ state, compact = false }: { state: ClientState; comp
           className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-2"
           style={p.roleId ? { borderColor: `${ROLES[p.roleId].color}55` } : undefined}
         >
-          <Avatar p={p} />
+          <ProfileLink playerId={p.id} className="shrink-0">
+            <Avatar p={p} />
+          </ProfileLink>
           <div className="min-w-0 flex-1">
             <div className={`truncate font-semibold ${p.alive ? "" : "text-white/50 line-through"}`}>
-              <StyledName p={p} /> {lovers.has(p.id) && "💘"}
+              <ProfileLink playerId={p.id} className="max-w-full">
+                <StyledName p={p} className="truncate" />
+              </ProfileLink>{" "}
+              {lovers.has(p.id) && "💘"}
             </div>
             {p.roleId && <RoleBadge roleId={p.roleId} />}
           </div>

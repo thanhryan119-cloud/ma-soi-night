@@ -15,6 +15,7 @@ import {
   createRoom,
   getPlayer,
   hostAction,
+  log,
   makeRoomCode,
   playerAction,
   randomToken,
@@ -27,6 +28,10 @@ import { ingestChat, newChatIntel, type ChatIntel } from "../shared/botIntel";
 import { createAiBots } from "./aiBots";
 import { createAccounts } from "./accounts";
 import { createSocial } from "./social";
+import { gameResults, type PublicProfile } from "../shared/stats";
+import { cleanPassword, isOwner, makeMachineRoom, nextOwner, ownerAction } from "../shared/multiplayer";
+import { checkPassword, createLobby, hashPassword } from "./lobby";
+import type { OwnerAction } from "../shared/types";
 import { REJOIN_TTL_MS, buildView, type Viewer } from "../shared/views";
 import type { ActionResult, HostAction, Locale, PlayerAction, Room } from "../shared/types";
 
@@ -130,6 +135,23 @@ const io = new Server(httpServer, {
 });
 
 const channel = (code: string) => `room:${code}`;
+
+/** Sockets currently watching a room. */
+function roomSockets(code: string): AppSocket[] {
+  const ids = io.sockets.adapter.rooms.get(channel(code)) ?? new Set<string>();
+  return [...ids].map((id) => io.sockets.sockets.get(id) as AppSocket | undefined).filter((s): s is AppSocket => !!s);
+}
+
+/** The online lobby: people not in a room yet, and the listed rooms someone is still in. */
+const lobby = createLobby(io, {
+  rooms: () => rooms.values(),
+  isAlive: (room) =>
+    room.players.some((p) => !p.isBot && p.connected) || (!room.machineHost && roomSockets(room.code).some((s) => s.data.kind === "host")),
+  accountFor: (token) => {
+    const u = accounts.userForToken(token);
+    return u ? { id: u.id, avatarUrl: u.avatarUrl } : null;
+  },
+});
 /** What bots have read in the chat, per game (a new game starts fresh). */
 const chatIntel = new WeakMap<object, ChatIntel>();
 function intelFor(room: Room): ChatIntel {
@@ -166,13 +188,27 @@ function broadcast(room: Room) {
   }
 }
 
+/** Adds a finished game to the signed-in players' stats, exactly once per game. */
+function recordStats(room: Room) {
+  const game = room.game;
+  if (!game || game.statsRecorded || room.phase.kind !== "gameOver" || !game.winner) return;
+  game.statsRecorded = true;
+  try {
+    accounts.recordGame(gameResults(room));
+  } catch (err) {
+    console.error("[stats] record failed", err);
+  }
+}
+
 function touch(room: Room) {
   room.lastActivity = Date.now();
+  recordStats(room);
   scheduleAuto(room);
   broadcast(room);
   social.afterChange(room);
   scheduleBots(room);
   scheduleBotChat(room);
+  lobby.changed();
   saveSoon();
 }
 
@@ -264,6 +300,10 @@ const VOTE_SECONDS = 60;
 const ROLE_REVEAL_MS = 15_000;
 /** Pause after reading a result (dawn, nomination, verdict, winner) before moving on. */
 const AFTER_READING_MS = 2_000;
+/** Machine-host rooms: how long the phones get to read each step's narration. */
+const MACHINE_READ_MS = 6_000;
+/** Machine-host rooms: how long the owner may be offline before someone else takes over. */
+const OWNER_GRACE_MS = 30_000;
 
 function timingFor(room: Room): StepTiming {
   const key = stepKey(room);
@@ -274,7 +314,8 @@ function timingFor(room: Room): StepTiming {
       key,
       startedAt: Date.now(),
       minMs: room.phase.kind === "night" ? lo + Math.random() * (hi - lo) : 0,
-      narratedAt: null,
+      // Nobody reads aloud in a machine-host room: give every phone a moment to read the narration.
+      narratedAt: room.machineHost ? Date.now() + MACHINE_READ_MS : null,
       confirmedAt: null,
     };
     stepTiming.set(room.code, st);
@@ -425,10 +466,37 @@ function setConnected(room: Room, playerId: string) {
   if (p && !p.isBot && p.connected !== online) {
     p.connected = online;
     broadcast(room);
+    lobby.changed();
+    if (!online && isOwner(room, p.id)) scheduleOwnerHandover(room, p.id);
+  }
+}
+
+/** The owner of a machine-host room went offline: after a grace period, the next player takes over. */
+function scheduleOwnerHandover(room: Room, ownerId: string) {
+  setTimeout(() => {
+    if (rooms.get(room.code) !== room || room.ownerId !== ownerId) return;
+    if (getPlayer(room, ownerId)?.connected) return;
+    const next = nextOwner(room);
+    if (!next) return;
+    room.ownerId = next;
+    log(room, "log.ownerChanged", { name: getPlayer(room, next)!.name });
+    touch(room);
+  }, OWNER_GRACE_MS).unref();
+}
+
+/** Sends a kicked player's sockets away from the room. */
+function kickSockets(room: Room, playerId: string) {
+  for (const s of roomSockets(room.code)) {
+    if (s.data.playerId === playerId) {
+      s.emit("kicked");
+      s.leave(channel(room.code));
+      s.data = {};
+    }
   }
 }
 
 function attach(socket: AppSocket, room: Room, kind: Viewer, playerId?: string) {
+  lobby.leave(socket);
   if (socket.data.code && socket.data.code !== room.code) socket.leave(channel(socket.data.code));
   socket.data = { code: room.code, kind, playerId };
   socket.join(channel(room.code));
@@ -467,14 +535,90 @@ function guard(fn: () => ActionResult & Record<string, unknown>, ack: Ack) {
 io.on("connection", (raw) => {
   const socket = raw as AppSocket;
   social.register(raw);
+  lobby.register(raw);
   const on = (event: string, handler: (payload: Record<string, unknown>, ack: Ack) => void) =>
     socket.on(event, (payload: unknown, ack: unknown) =>
       handler((payload ?? {}) as Record<string, unknown>, safeAck(ack)));
 
   on("room:check", (p, ack) => {
     const room = rooms.get(normCode(p.code));
-    ack(room ? { ok: true, phase: room.phase.kind, locale: room.locale, rejoinable: rejoinable(room) } : { ok: false, error: "err.roomNotFound" });
+    ack(
+      room
+        ? { ok: true, phase: room.phase.kind, locale: room.locale, rejoinable: rejoinable(room), locked: !!room.passwordHash }
+        : { ok: false, error: "err.roomNotFound" },
+    );
   });
+
+  // Online lobby: make a room. With the machine as host the creator joins as
+  // the room owner; otherwise they become the human host, as on the home page.
+  on("lobby:createRoom", (p, ack) =>
+    guard(() => {
+      const locale: Locale = p.locale === "en" ? "en" : "vi";
+      const profile = (p.profile ?? {}) as Record<string, unknown>;
+      const user = accounts.userForToken(p.authToken);
+      const name = String(profile.name ?? "") || user?.name || "";
+      const room = createRoom(makeRoomCode((c) => rooms.has(c)), locale);
+      room.listed = true;
+      room.title = name.trim().slice(0, 24) || room.code;
+      const password = p.withPassword ? cleanPassword(p.password) : null;
+      room.passwordHash = password ? hashPassword(password) : null;
+      if (p.settings && typeof p.settings === "object") hostAction(room, { type: "updateSettings", settings: p.settings as Partial<Room["settings"]> });
+
+      if (!p.machine) {
+        rooms.set(room.code, room);
+        attach(socket, room, "host");
+        touch(room);
+        console.log(`[room ${room.code}] created from the lobby (human host)`);
+        return { ok: true, code: room.code, hostToken: room.hostToken };
+      }
+      const res = addPlayer(room, {
+        name,
+        avatar: String(profile.avatar ?? ""),
+        locale,
+        avatarUrl: user?.avatarUrl ?? null,
+        style: profile.style,
+        userId: user?.id ?? null,
+      });
+      if (!res.ok || !res.player) return { ok: false, error: res.error, params: res.params };
+      makeMachineRoom(room, res.player.id);
+      res.player.connected = true;
+      rooms.set(room.code, room);
+      attach(socket, room, "player", res.player.id);
+      touch(room);
+      console.log(`[room ${room.code}] created from the lobby (machine host)`);
+      return { ok: true, code: room.code, playerId: res.player.id, token: res.player.token };
+    }, ack),
+  );
+
+  // The owner of a machine-host room sets it up (never sees roles).
+  on("owner:action", (p, ack) =>
+    guard(() => {
+      const { code, kind, playerId } = socket.data;
+      const room = code ? rooms.get(code) : undefined;
+      if (!room || kind !== "player" || !playerId) return { ok: false, error: "err.notInRoom" };
+      const action = p as unknown as OwnerAction;
+      const res = ownerAction(room, playerId, action);
+      if (res.ok && action.type === "kick") kickSockets(room, action.playerId);
+      if (res.ok && action.type === "newGame") social.clearForNewGame(room.code);
+      if (res.ok) touch(room);
+      return res as ActionResult & Record<string, unknown>;
+    }, ack),
+  );
+
+  // Set or remove the room password (the host, or the owner of a machine-host room).
+  on("room:setPassword", (p, ack) =>
+    guard(() => {
+      const { code, kind, playerId } = socket.data;
+      const room = code ? rooms.get(code) : undefined;
+      if (!room) return { ok: false, error: "err.notInRoom" };
+      if (kind !== "host" && !(kind === "player" && isOwner(room, playerId))) return { ok: false, error: "err.notOwner" };
+      const password = p.withPassword ? cleanPassword(p.password) : null;
+      if (p.withPassword && !password) return { ok: false, error: "err.passwordRequired" };
+      room.passwordHash = password ? hashPassword(password) : null;
+      touch(room);
+      return { ok: true };
+    }, ack),
+  );
 
   on("host:create", (p, ack) =>
     guard(() => {
@@ -513,6 +657,8 @@ io.on("connection", (raw) => {
     guard(() => {
       const room = rooms.get(normCode(p.code));
       if (!room) return { ok: false, error: "err.roomNotFound" };
+      if (!checkPassword(room.passwordHash, p.password))
+        return { ok: false, error: p.password ? "err.wrongPassword" : "err.passwordRequired" };
       // Signed-in players get their photo from the account (never trusted from the client).
       const user = accounts.userForToken(p.authToken);
       const res = addPlayer(room, {
@@ -585,6 +731,29 @@ io.on("connection", (raw) => {
     }, ack),
   );
 
+  // Anyone in the room can open a player's profile card (from the avatar or the name).
+  on("profile:get", (p, ack) =>
+    guard(() => {
+      const { code } = socket.data;
+      const room = code ? rooms.get(code) : undefined;
+      const player = room ? getPlayer(room, String(p.playerId ?? "")) : undefined;
+      if (!player) return { ok: false, error: "err.profileNotFound" };
+      const account = player.isBot ? null : accounts.profileOf(player.userId);
+      const profile: PublicProfile = {
+        userId: account?.userId ?? null,
+        // The name and look used in this room, the career from the account.
+        name: player.name,
+        avatar: player.avatar,
+        avatarUrl: player.avatarUrl ?? null,
+        style: player.style ?? null,
+        isBot: player.isBot,
+        memberSince: account?.memberSince ?? null,
+        stats: account?.stats ?? null,
+      };
+      return { ok: true, profile };
+    }, ack),
+  );
+
   on("player:action", (p, ack) =>
     guard(() => {
       const { code, kind, playerId } = socket.data;
@@ -619,16 +788,8 @@ io.on("connection", (raw) => {
       const action = p as unknown as HostAction;
       const kickedId = action.type === "kick" ? action.playerId : null;
       const res = hostAction(room, action);
-      if (res.ok && kickedId) {
-        for (const id of io.sockets.adapter.rooms.get(channel(room.code)) ?? []) {
-          const s = io.sockets.sockets.get(id) as AppSocket | undefined;
-          if (s?.data.playerId === kickedId) {
-            s.emit("kicked");
-            s.leave(channel(room.code));
-            s.data = {};
-          }
-        }
-      }
+      if (res.ok && kickedId) kickSockets(room, kickedId);
+      if (res.ok && action.type === "newGame") social.clearForNewGame(room.code);
       if (res.ok) touch(room);
       return res as ActionResult & Record<string, unknown>;
     }, ack),
@@ -652,6 +813,7 @@ setInterval(() => {
       botTimers.delete(code);
       rooms.delete(code);
       social.dispose(code);
+      lobby.changed();
       saveSoon();
       console.log(`[room ${code}] expired`);
     }

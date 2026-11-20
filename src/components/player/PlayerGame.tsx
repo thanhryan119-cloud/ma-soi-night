@@ -8,14 +8,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ROLES } from "@shared/roles";
 import type { ClientState, MeView, PlayerView } from "@shared/views";
 import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, useErrorToast } from "@/components/ui";
+import { ProfileLink } from "../Profile";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
 import { scriptLines } from "@/components/host/common";
 import { SocialPanel } from "@/components/SocialPanel";
 import { SceneArt } from "@/components/art/Woodcut";
 import { CardBack, RoleCardFull } from "@/components/art/Tarot";
-import { useT } from "@/lib/i18n";
-import { emitAck } from "@/lib/socket";
+import { useLocale, useT } from "@/lib/i18n";
+import { emitAck, storage } from "@/lib/socket";
+import { speak, stopSpeaking, useTtsSupported } from "@/lib/tts";
+import { OwnerBar, OwnerSettings } from "./OwnerPanel";
 
 type Props = { state: ClientState; offset: number; connected: boolean };
 type Ctx = { state: ClientState; me: MeView; players: Map<string, PlayerView> };
@@ -44,7 +47,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
   const players = byId(state);
   const self = players.get(me.id)!;
   const kind = state.phase.kind;
-  const [sheet, setSheet] = useState<null | "role" | "roles" | "timeline">(null);
+  const [sheet, setSheet] = useState<null | "role" | "roles" | "timeline" | "owner">(null);
 
   // Vibrate when it becomes my turn to do something.
   const myTurn = !!(me.turn && !me.turn.done) || me.canVote || !!me.hunter?.canShoot;
@@ -60,10 +63,14 @@ export function PlayerGame({ state, offset, connected }: Props) {
   return (
     <div className={`fixed inset-0 flex flex-col overflow-hidden transition-colors duration-700`}>
       <header className="flex shrink-0 items-center gap-2.5 border-b border-white/5 px-3 py-2 pr-28">
-        <Avatar p={self} size="sm" />
+        <ProfileLink playerId={self.id}>
+          <Avatar p={self} size="sm" />
+        </ProfileLink>
         <div className="min-w-0 flex-1 leading-tight">
           <div className="truncate text-sm font-bold">
-            <StyledName p={self} />
+            <ProfileLink playerId={self.id}>
+              <StyledName p={self} />
+            </ProfileLink>
           </div>
           <div className="truncate text-xs text-white/50">{phaseLabel(t, state)}</div>
         </div>
@@ -89,7 +96,14 @@ export function PlayerGame({ state, offset, connected }: Props) {
       {state.settings.noScreen && <NarrationBanner state={state} />}
 
       <main className="relative mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-3 px-3 py-3">
-        <PhaseBody state={state} me={me} offset={offset} players={players} onTimeline={() => setSheet("timeline")} />
+        <PhaseBody
+          state={state}
+          me={me}
+          offset={offset}
+          players={players}
+          onTimeline={() => setSheet("timeline")}
+          onOwnerSettings={() => setSheet("owner")}
+        />
       </main>
 
       {showRoleButton && (
@@ -110,6 +124,11 @@ export function PlayerGame({ state, offset, connected }: Props) {
           <RolesGrid state={state} compact />
         </Sheet>
       )}
+      {sheet === "owner" && state.machineHost && state.ownerId === me.id && kind === "lobby" && (
+        <Sheet title={t("owner.settings")} onClose={() => setSheet(null)}>
+          <OwnerSettings state={state} />
+        </Sheet>
+      )}
       {sheet === "timeline" && state.log && (
         <Sheet title={t("screen.timeline")} onClose={() => setSheet(null)}>
           <Timeline log={state.log} t={t} />
@@ -125,13 +144,41 @@ export function PlayerGame({ state, offset, connected }: Props) {
  */
 function NarrationBanner({ state }: { state: ClientState }) {
   const t = useT();
-  if (state.phase.kind === "lobby" || state.phase.kind === "gameOver") return null;
+  const { locale } = useLocale();
+  const canTts = useTtsSupported();
+  const [voice, setVoice] = useState(false);
+  useEffect(() => setVoice(storage.get<boolean>("msn:phoneVoice") ?? false), []);
   const silent = t("script.stepNobody");
-  const lines = scriptLines(state, t).filter((l) => l !== silent);
+  const off = state.phase.kind === "lobby" || state.phase.kind === "gameOver";
+  const lines = off ? [] : scriptLines(state, t).filter((l) => l !== silent);
+  const linesKey = lines.join("|");
+  // With the machine as host, each phone can read the narration aloud for its player.
+  useEffect(() => {
+    if (!voice || !state.machineHost || !linesKey) return;
+    speak(linesKey.split("|"), locale);
+    return () => stopSpeaking();
+  }, [voice, linesKey, locale, state.machineHost]);
   if (!lines.length) return null;
+  const toggle = () =>
+    setVoice((v) => {
+      storage.set("msn:phoneVoice", !v);
+      if (v) stopSpeaking();
+      return !v;
+    });
   return (
     <div className="mx-auto w-full max-w-md shrink-0 px-3 pt-2">
       <div className="max-h-28 overflow-y-auto rounded-lg border border-gold/40 bg-night-900/80 px-3 py-2 text-sm leading-snug">
+        {state.machineHost && canTts && (
+          <button
+            type="button"
+            onClick={toggle}
+            className="float-right ml-2 rounded px-1.5 text-base"
+            title={voice ? t("owner.voiceOff") : t("owner.voiceOn")}
+            aria-pressed={voice}
+          >
+            {voice ? "🔊" : "🔇"}
+          </button>
+        )}
         <span className="mr-1 font-bold text-gold">📜 {t("player.narration")}:</span>
         {lines.join(" ")}
       </div>
@@ -168,12 +215,13 @@ function PhaseBody({
   offset,
   players,
   onTimeline,
-}: Ctx & { offset: number; onTimeline: () => void }) {
+  onOwnerSettings,
+}: Ctx & { offset: number; onTimeline: () => void; onOwnerSettings: () => void }) {
   const t = useT();
   const ctx = { state, me, players };
   switch (state.phase.kind) {
     case "lobby":
-      return <Lobby state={state} />;
+      return <Lobby state={state} onOwnerSettings={onOwnerSettings} />;
     case "roleReveal":
       return (
         <Fill>
@@ -218,6 +266,7 @@ function PhaseBody({
           <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-white/10 p-2">
             <RolesGrid state={state} compact />
           </div>
+          <OwnerBar state={state} onSettings={onOwnerSettings} />
           <div className="flex shrink-0 gap-2">
             {state.log && (
               <button className="btn-ghost flex-1" onClick={onTimeline}>
@@ -225,7 +274,7 @@ function PhaseBody({
               </button>
             )}
           </div>
-          <p className="shrink-0 text-center text-xs text-white/50">{t("player.wait")}</p>
+          {!state.machineHost && <p className="shrink-0 text-center text-xs text-white/50">{t("player.wait")}</p>}
         </Fill>
       );
   }
@@ -262,17 +311,19 @@ function Defense({ state, me, players, offset }: Ctx & { offset: number }) {
 // Lobby & role card
 // ---------------------------------------------------------------------------
 
-function Lobby({ state }: { state: ClientState }) {
+function Lobby({ state, onOwnerSettings }: { state: ClientState; onOwnerSettings: () => void }) {
   const t = useT();
+  const iOwn = state.machineHost && state.ownerId === state.me?.id;
   return (
     <Fill>
       <div className="flex shrink-0 items-center gap-3">
         <SceneArt scene="night" className="h-12 w-auto shrink-0" />
         <div className="min-w-0">
-          <h2 className="truncate font-bold">{t("player.waitingHost")}</h2>
+          <h2 className="truncate font-bold">{iOwn ? t("owner.setUp") : state.machineHost ? t("owner.waitingOwner") : t("player.waitingHost")}</h2>
           <p className="text-xs text-white/60">{t("player.inLobby", { count: state.players.length })}</p>
         </div>
       </div>
+      <OwnerBar state={state} onSettings={onOwnerSettings} />
       <AliveStrip state={state} />
       {state.me && <SocialPanel state={state} viewer={state.me.id} className="flex-1" />}
     </Fill>
@@ -283,9 +334,9 @@ function AliveStrip({ state }: { state: ClientState }) {
   return (
     <div className="flex shrink-0 gap-1.5 overflow-x-auto pb-1">
       {state.players.map((p) => (
-        <span key={p.id} title={p.name}>
+        <ProfileLink key={p.id} playerId={p.id} className="shrink-0">
           <Avatar p={p} size="sm" />
-        </span>
+        </ProfileLink>
       ))}
     </div>
   );
@@ -671,10 +722,12 @@ function Dawn({ state, me, players }: Ctx) {
               const p = players.get(d.playerId);
               return p ? (
                 <div key={d.playerId} className="flex flex-col items-center gap-1">
-                  <Avatar p={p} size="lg" />
-                  <span className="font-semibold">
+                  <ProfileLink playerId={p.id}>
+                    <Avatar p={p} size="lg" />
+                  </ProfileLink>
+                  <ProfileLink playerId={p.id} className="font-semibold">
                     <StyledName p={p} />
-                  </span>
+                  </ProfileLink>
                   {p.roleId && <RoleBadge roleId={p.roleId} />}
                 </div>
               ) : null;
@@ -795,10 +848,12 @@ function Nominees({ state, players }: { state: ClientState; players: Map<string,
         const p = players.get(id);
         return p ? (
           <div key={id} className="flex flex-col items-center gap-1">
-            <Avatar p={p} size="lg" />
-            <span className="font-bold">
+            <ProfileLink playerId={p.id}>
+              <Avatar p={p} size="lg" />
+            </ProfileLink>
+            <ProfileLink playerId={p.id} className="font-bold">
               <StyledName p={p} />
-            </span>
+            </ProfileLink>
             {state.nomination && <span className="text-xs text-white/50">{state.nomination.counts[id] ?? 0} 🗳️</span>}
           </div>
         ) : null;

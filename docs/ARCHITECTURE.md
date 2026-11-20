@@ -50,6 +50,12 @@ Log và thông báo hệ thống lưu **key i18n + tham số**, client tự dị
 | `player:join` | `{ code, name, avatar, locale }` → `{ playerId, token }` | Người chơi |
 | `player:resume` | `{ code, playerId, token }` | Người chơi (reconnect) |
 | `player:action` | `PlayerAction` | Người chơi |
+| `lobby:enter` | `{ profile: { name, avatar }, authToken? }` → `{ online, rooms }` | Trang sảnh chờ (`/lobby`) |
+| `lobby:leave` | – | Rời trang sảnh chờ |
+| `lobby:createRoom` | `{ machine, locale, withPassword, password, profile, authToken?, settings? }` → `{ code, playerId, token }` (máy dẫn) hoặc `{ code, hostToken }` (người dẫn) | Sảnh chờ |
+| `owner:action` | `OwnerAction` | Trưởng phòng của phòng máy dẫn |
+| `room:setPassword` | `{ withPassword, password }` | Quản trò, hoặc trưởng phòng |
+| `profile:get` | `{ playerId }` → `{ profile: PublicProfile }` | Bất kỳ ai trong phòng (bấm avatar/tên) |
 
 `HostAction`: `setLocale`, `kick`, `rename`, `updateSettings`, `setRoleCounts`, `useSuggested`, `assignRandom`, `assignManual`, `addBots`, `removeBots`, `start`, `next`, `timer`, `override` (`kill`/`revive`/`changeRole`/`cancelVote`/`revote`), `actAs`, `confirmWin`, `dismissWin`, `endGame`, `newGame`.
 
@@ -62,6 +68,18 @@ Log và thông báo hệ thống lưu **key i18n + tham số**, client tự dị
 | `state` | `ClientState` đã lọc theo người xem (host / player / screen) — gửi lại sau *mỗi* thay đổi |
 | `kicked` | Người chơi bị mời ra |
 | `roomClosed` | Phòng hết hạn (12 giờ không hoạt động) |
+
+### Chơi online (`shared/multiplayer.ts`, `server/lobby.ts`)
+
+- **Sảnh chờ** (`/lobby`): ai mở trang này là "đang online" (vào kênh `lobby`). Server gửi `lobby:state { online, rooms }` mỗi khi có người đến/đi hoặc phòng thay đổi (gộp 300 ms, chỉ gửi khi khác). Vào một phòng thì tự rời sảnh. Danh sách phòng chỉ gồm phòng tạo từ sảnh (`room.listed`) mà còn người thật online (hoặc quản trò còn mở bảng điều khiển).
+- **Mật khẩu**: tích "Đặt mật khẩu" mới hiện ô nhập, không tích thì phòng mở. Server lưu `salt:sha256` (`room.passwordHash`, không bao giờ gửi về máy khách); `player:join` kiểm tra mật khẩu. `room:check` trả `locked` để màn vào phòng hiện ô mật khẩu.
+- **Máy làm quản trò** (`room.machineHost`): người tạo vào phòng như người chơi và là trưởng phòng (`room.ownerId`). Máy luôn tự dẫn (`autoAdvance`) và mọi điện thoại hiện lời dẫn (`noScreen`); mỗi bước có 6 giây để đọc. Trưởng phòng chỉ có `OwnerAction`: chỉnh luật, số vai, bot, mời ra (trừ chính mình), mật khẩu, bắt đầu (máy tự chia vai ngẫu nhiên) và ván mới. Không có chia vai tay, can thiệp hay hành động thay người khác, nên trưởng phòng không bao giờ thấy vai người khác. Trưởng phòng offline quá 30 giây thì người ngồi lâu nhất còn online lên thay.
+
+### Thống kê & bảng xếp hạng (`shared/stats.ts`)
+
+Chỉ người chơi đăng nhập Google mới có thống kê (khách và bot thì không). Khi ván chuyển sang `gameOver`, server cộng ván đó vào `stats.json` (cạnh `users.json`) đúng một lần (`game.statsRecorded`): số ván, thắng/thua/hòa, sống sót, theo vai, theo phe, cặp đôi, chuỗi thắng và 10 ván gần nhất. Thắng/thua tính theo vai cuối cùng: thắng cùng phe của mình, cặp đôi thắng khi `winner = lovers`, hòa không tính là thắng. Chỉ ván có từ `MIN_HUMANS_FOR_STATS` = 6 người thật (không kể bot) mới được cộng vào các con số; ván ít người hơn vẫn hiện trong "ván gần đây" với nhãn "Không tính" nhưng không ảnh hưởng số ván, tỉ lệ thắng hay chuỗi thắng.
+
+HTTP công khai: `GET /leaderboard` (mọi tài khoản; ai đủ `MIN_RANKED_GAMES` = 5 ván mới được xếp hạng, theo tỉ lệ thắng → số ván thắng → số ván; người chưa đủ xếp bên dưới theo số ván đã chơi), `GET /profiles/:userId`. `GET /me` trả thêm `stats` của chính mình.
 
 ## 4. Luật xử lý đêm (`shared/rules.ts › resolveNight`)
 

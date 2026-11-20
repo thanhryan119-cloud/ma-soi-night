@@ -6,11 +6,18 @@ import type { HostAction } from "@shared/types";
 import type { ClientState } from "@shared/views";
 import { useErrorToast } from "@/components/ui";
 import type { T } from "@/lib/i18n";
-import { emitAck } from "@/lib/socket";
+import { createContext, useContext } from "react";
+import { emitAck, type AckResult } from "@/lib/socket";
+
+type Send = (action: HostAction) => Promise<AckResult>;
+const SendCtx = createContext<Send>((action) => emitAck("host:action", action));
+/** Lets the host's setup cards send through another channel (the room owner's "owner:action"). */
+export const HostActionProvider = SendCtx.Provider;
 
 export function useHostAction() {
   const showError = useErrorToast();
-  return async (action: HostAction) => showError(await emitAck("host:action", action));
+  const send = useContext(SendCtx);
+  return async (action: HostAction) => showError(await send(action));
 }
 
 export const nameOf = (state: ClientState, id: string | null | undefined) =>

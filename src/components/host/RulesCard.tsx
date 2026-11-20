@@ -48,7 +48,16 @@ function NumberField({ label, value, onCommit, min, max }: { label: string; valu
   );
 }
 
-export function RulesCard({ state, defaultOpen = true }: { state: ClientState; defaultOpen?: boolean }) {
+export function RulesCard({
+  state,
+  defaultOpen = true,
+  hidden = [],
+}: {
+  state: ClientState;
+  defaultOpen?: boolean;
+  /** Switches that don't apply here (e.g. the ones a machine-host room always keeps on). */
+  hidden?: readonly (keyof Settings)[];
+}) {
   const t = useT();
   const act = useHostAction();
   const s = state.settings;
@@ -140,7 +149,7 @@ export function RulesCard({ state, defaultOpen = true }: { state: ClientState; d
         </fieldset>
 
         <fieldset className="flex flex-col gap-1.5">
-          {BOOLS.map((k) => (
+          {BOOLS.filter((k) => !hidden.includes(k)).map((k) => (
             <label key={k} className="flex items-center gap-2">
               <input
                 type="checkbox"

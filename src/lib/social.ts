@@ -21,7 +21,10 @@ export function useSocial(syncKey: string) {
     const onMsg = (m: ChatMessage) => setChat((xs) => (xs.some((x) => x.id === m.id) ? xs : [...xs.slice(-199), m]));
     const onStroke = (st: Stroke) => setStrokes((xs) => [...xs, st]);
     const onClear = () => setStrokes([]);
+    // The host started a new game: the old game's messages go away.
+    const onChatClear = () => setChat([]);
     s.on("chat:new", onMsg);
+    s.on("chat:clear", onChatClear);
     s.on("board:stroke", onStroke);
     s.on("board:clear", onClear);
     s.on("connect", sync);
@@ -29,6 +32,7 @@ export function useSocial(syncKey: string) {
     return () => {
       alive = false;
       s.off("chat:new", onMsg);
+      s.off("chat:clear", onChatClear);
       s.off("board:stroke", onStroke);
       s.off("board:clear", onClear);
       s.off("connect", sync);

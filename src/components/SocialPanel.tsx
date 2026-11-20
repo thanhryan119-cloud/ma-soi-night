@@ -8,6 +8,7 @@ import { useSocial } from "@/lib/social";
 import { storage } from "@/lib/socket";
 import { useVoice } from "@/lib/voice";
 import { Avatar, StyledName, useErrorToast } from "./ui";
+import { ProfileLink } from "./Profile";
 
 /** Who is using the panel: the host, or a player id. */
 export function SocialPanel({ state, viewer, className = "" }: { state: ClientState; viewer: "host" | string; className?: string }) {
@@ -189,9 +190,23 @@ function Chat({
           const mine = m.from === viewer;
           return (
             <div key={m.id} className={`flex items-start gap-1.5 ${mine ? "flex-row-reverse text-right" : ""}`}>
-              {p ? <Avatar p={p} size="sm" /> : <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blood text-xs">🎙️</span>}
+              {p ? (
+                <ProfileLink playerId={p.id} className="shrink-0">
+                  <Avatar p={p} size="sm" />
+                </ProfileLink>
+              ) : (
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blood text-xs">🎙️</span>
+              )}
               <div className="min-w-0 max-w-[80%]">
-                <div className="truncate text-[11px] leading-tight text-white/50">{p ? <StyledName p={p} /> : t("social.host")}</div>
+                <div className="truncate text-[11px] leading-tight text-white/50">
+                  {p ? (
+                    <ProfileLink playerId={p.id} className="max-w-full">
+                      <StyledName p={p} className="truncate" />
+                    </ProfileLink>
+                  ) : (
+                    t("social.host")
+                  )}
+                </div>
                 <div className={`inline-block rounded-lg px-2 py-1 text-sm leading-snug break-words ${mine ? "bg-gold text-night-950" : m.from === "host" ? "bg-blood/30" : "bg-white/10"}`}>
                   {m.text}
                 </div>

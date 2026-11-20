@@ -8,6 +8,15 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { join } from "node:path";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { DEFAULT_STYLE, sanitizeStyle, type PlayerStyle } from "../shared/cosmetics";
+import {
+  applyResult,
+  rankLeaderboard,
+  winRate,
+  type GameResult,
+  type LeaderboardRow,
+  type PublicProfile,
+  type UserStats,
+} from "../shared/stats";
 
 export interface User {
   id: string;
@@ -46,6 +55,64 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
     writeFileSync(tmp, JSON.stringify(store));
     renameSync(tmp, file);
   };
+
+  // Career stats live in their own file (user id -> stats).
+  const statsFile = join(dataDir, "stats.json");
+  let stats: Record<string, UserStats> = {};
+  try {
+    if (existsSync(statsFile)) stats = JSON.parse(readFileSync(statsFile, "utf8")) as Record<string, UserStats>;
+  } catch (err) {
+    console.error("[stats] load failed", err);
+  }
+  const saveStats = () => {
+    const tmp = `${statsFile}.tmp`;
+    writeFileSync(tmp, JSON.stringify(stats));
+    renameSync(tmp, statsFile);
+  };
+
+  /** Adds a finished game to every signed-in player's stats. */
+  function recordGame(results: GameResult[]) {
+    let changed = false;
+    for (const r of results) {
+      if (!store.users[r.userId]) continue;
+      stats[r.userId] = applyResult(stats[r.userId], r.game);
+      changed = true;
+    }
+    if (changed) saveStats();
+  }
+
+  function profileOf(userId: string | null | undefined): PublicProfile | null {
+    const u = userId ? store.users[userId] : undefined;
+    if (!u) return null;
+    return {
+      userId: u.id,
+      name: u.name,
+      avatar: "",
+      avatarUrl: u.avatarUrl,
+      style: u.style ?? DEFAULT_STYLE,
+      isBot: false,
+      memberSince: u.createdAt,
+      stats: stats[u.id] ?? null,
+    };
+  }
+
+  function leaderboard(): LeaderboardRow[] {
+    return rankLeaderboard(
+      Object.values(store.users).map((u) => {
+        const s = stats[u.id];
+        return {
+          userId: u.id,
+          name: u.name,
+          avatarUrl: u.avatarUrl,
+          style: u.style ?? DEFAULT_STYLE,
+          games: s?.games ?? 0,
+          wins: s?.wins ?? 0,
+          winRate: s ? winRate(s) : 0,
+          wolfGames: s?.byRole.werewolf?.games ?? 0,
+        };
+      }),
+    );
+  }
 
   function userForToken(token: unknown): User | null {
     if (typeof token !== "string" || !token) return null;
@@ -120,12 +187,21 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
       return true;
     }
 
-    if (!path.startsWith("/auth/") && path !== "/me" && path !== "/me/avatar") return false;
+    const publicPath = path === "/leaderboard" || path.startsWith("/profiles/");
+    if (!path.startsWith("/auth/") && path !== "/me" && path !== "/me/avatar" && !publicPath) return false;
     cors(req, res);
     if (req.method === "OPTIONS") {
       res.statusCode = 204;
       res.end();
       return true;
+    }
+
+    // Public: the ranking and anyone's profile card.
+    if (publicPath) {
+      if (req.method !== "GET") return json(res, 405, { ok: false }), true;
+      if (path === "/leaderboard") return json(res, 200, { ok: true, rows: leaderboard() }), true;
+      const profile = profileOf(decodeURIComponent(path.slice("/profiles/".length)));
+      return profile ? json(res, 200, { ok: true, profile }) : json(res, 404, { ok: false, error: "err.profileNotFound" }), true;
     }
 
     try {
@@ -165,7 +241,8 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
       const user = userForToken(bearer(req));
       if (!user) return json(res, 401, { ok: false, error: "err.sessionExpired" }), true;
 
-      if (path === "/me" && req.method === "GET") return json(res, 200, { ok: true, user: publicUser(user) }), true;
+      if (path === "/me" && req.method === "GET")
+        return json(res, 200, { ok: true, user: publicUser(user), stats: stats[user.id] ?? null }), true;
 
       if (path === "/me" && req.method === "PATCH") {
         const body = await readBody(req, 4 * 1024);
@@ -215,5 +292,5 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
     }
   }
 
-  return { handle, userForToken, enabled: !!GOOGLE_CLIENT_ID };
+  return { handle, userForToken, recordGame, profileOf, enabled: !!GOOGLE_CLIENT_ID };
 }

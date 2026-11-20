@@ -203,6 +203,8 @@ export interface Game {
   /** Signature of the alive set when the host chose "keep playing". */
   dismissedWinSig: string | null;
   winner: Winner | null;
+  /** The finished game was added to the players' career stats (server side, once). */
+  statsRecorded?: boolean;
 }
 
 export interface Phase {
@@ -232,7 +234,28 @@ export interface Room {
   autoAt?: number | null;
   /** Players asking the host to let them back into the running game. */
   rejoinRequests?: { playerId: string; t: number }[];
+  /** Shown in the online lobby's room list (rooms made from the lobby). */
+  listed?: boolean;
+  /** Name shown in the room list (the creator's name). */
+  title?: string;
+  /** The machine runs the game: nobody holds the host view, the owner (a player) sets the room up. */
+  machineHost?: boolean;
+  /** Machine-host rooms: the player who may change the settings and start the game. */
+  ownerId?: string | null;
+  /** "salt:sha256" of the room password, or null/absent when the room is open. Never sent to clients. */
+  passwordHash?: string | null;
 }
+
+/** What the room owner of a machine-host room may do (a safe subset of the host's actions). */
+export type OwnerAction =
+  | { type: "updateSettings"; settings: Partial<Settings> }
+  | { type: "setRoleCounts"; roleCounts: Record<RoleId, number> }
+  | { type: "useSuggested" }
+  | { type: "addBots"; count: number }
+  | { type: "removeBots" }
+  | { type: "kick"; playerId: string }
+  | { type: "start" }
+  | { type: "newGame" };
 
 // ---------------------------------------------------------------------------
 // Actions (client -> server)

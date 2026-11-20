@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { LangSwitch, toast } from "@/components/ui";
-import { loadLocalProfile, refreshAccount, saveLocalProfile, type LocalProfile } from "@/lib/account";
+import { loadLocalProfile, refreshAccount, saveLocalProfile, useAccount, type LocalProfile } from "@/lib/account";
+import { StatsView } from "@/components/Profile";
+import { fetchMyStats } from "@/lib/stats";
+import type { UserStats } from "@shared/stats";
 import { useT } from "@/lib/i18n";
 
 export default function ProfilePage() {
@@ -35,6 +38,33 @@ export default function ProfilePage() {
       >
         {t("profile.save")}
       </button>
+      <MyStats />
     </main>
+  );
+}
+
+/** The signed-in player's own career (guests are invited to sign in). */
+function MyStats() {
+  const t = useT();
+  const account = useAccount();
+  const [stats, setStats] = useState<UserStats | null | undefined>(undefined);
+  const userId = account?.user.id;
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    fetchMyStats().then((r) => alive && setStats(r.ok ? r.data : null));
+    return () => {
+      alive = false;
+    };
+  }, [userId]);
+  return (
+    <section className="card flex flex-col gap-3 p-5">
+      <h2 className="text-xl font-bold">📊 {t("stats.mine")}</h2>
+      {!account ? (
+        <p className="text-sm text-white/60">{t("stats.signInForStats")}</p>
+      ) : stats === undefined ? null : (
+        <StatsView stats={stats} />
+      )}
+    </section>
   );
 }

@@ -200,8 +200,19 @@ export function createSocial(
     social.delete(code);
   }
 
+  /** A new game starts with an empty chat and a blank board (the old game's talk stays with it). */
+  function clearForNewGame(code: string) {
+    const s = social.get(code);
+    if (!s) return;
+    s.chat = [];
+    s.strokes = [];
+    s.lastChat.clear();
+    io.to(channel(code)).emit("chat:clear");
+    io.to(channel(code)).emit("board:clear");
+  }
+
   /** The room's recent chat (for the AI bots' context). */
   const recentChat = (code: string) => social.get(code)?.chat ?? [];
 
-  return { register, afterChange, dispose, postAs, recentChat };
+  return { register, afterChange, dispose, postAs, recentChat, clearForNewGame };
 }

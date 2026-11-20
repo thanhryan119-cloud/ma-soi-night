@@ -7,6 +7,7 @@ import type { ClientState, PlayerView } from "@shared/views";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown } from "@/components/VoteBreakdown";
 import { Avatar, RoleBadge, StyledName, TimerDisplay } from "@/components/ui";
+import { ProfileLink } from "../Profile";
 import { formatLog, useLocale, useT } from "@/lib/i18n";
 import { speak, stopSpeaking, useTtsSupported } from "@/lib/tts";
 import { SocialPanel } from "@/components/SocialPanel";
@@ -275,10 +276,14 @@ function PlayerRow({
   return (
     <li className={`rounded-xl ${p.alive ? "bg-white/5" : "bg-black/30"} p-2`}>
       <div className="flex items-center gap-2">
-        <Avatar p={p} size="sm" />
+        <ProfileLink playerId={p.id} className="shrink-0">
+          <Avatar p={p} size="sm" />
+        </ProfileLink>
         <div className="min-w-0 flex-1">
           <div className={`flex items-center gap-1 truncate text-sm font-semibold ${p.alive ? "" : "text-white/40 line-through"}`}>
-            <StyledName p={p} />
+            <ProfileLink playerId={p.id} className="min-w-0">
+              <StyledName p={p} className="truncate" />
+            </ProfileLink>
             {p.isBot && <span className="text-xs">🤖</span>}
             {!p.connected && !p.isBot && <span className="text-xs text-blood-light">●</span>}
           </div>
@@ -506,8 +511,12 @@ function DawnPanel({ state, hideRoles }: { state: ClientState; hideRoles: boolea
             const p = state.players.find((x) => x.id === d.playerId);
             return p ? (
               <li key={d.playerId} className="flex items-center gap-2 rounded-xl bg-white/5 p-2">
-                <Avatar p={p} size="sm" />
-                <span className="font-semibold"><StyledName p={p} /></span>
+                <ProfileLink playerId={p.id}>
+                  <Avatar p={p} size="sm" />
+                </ProfileLink>
+                <ProfileLink playerId={p.id} className="font-semibold">
+                  <StyledName p={p} />
+                </ProfileLink>
                 {!hideRoles && p.roleId && <RoleBadge roleId={p.roleId} />}
                 {!hideRoles && d.cause && <span className="chip">{t(`cause.${d.cause}`)}</span>}
               </li>
@@ -648,8 +657,12 @@ function NominationResult({ state }: { state: ClientState }) {
           const p = state.players.find((x) => x.id === id);
           return p ? (
             <div key={id} className="flex items-center gap-2 rounded-xl bg-gold/10 p-2">
-              <Avatar p={p} size="sm" />
-              <span className="font-bold"><StyledName p={p} /></span>
+              <ProfileLink playerId={p.id}>
+                <Avatar p={p} size="sm" />
+              </ProfileLink>
+              <ProfileLink playerId={p.id} className="font-bold">
+                <StyledName p={p} />
+              </ProfileLink>
               <span className="chip">{t("host.votesFor", { count: nom?.counts[id] ?? 0 })}</span>
             </div>
           ) : null;

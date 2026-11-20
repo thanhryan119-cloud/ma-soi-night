@@ -7,17 +7,22 @@ import { ROLES, ROLE_IDS, totalRoles } from "@shared/roles";
 import type { Locale, RoleId } from "@shared/types";
 import type { ClientState } from "@shared/views";
 import { Avatar, RoleBadge, StyledName } from "@/components/ui";
+import { ProfileLink } from "../Profile";
 import { useT } from "@/lib/i18n";
 import { socketUrl, storage } from "@/lib/socket";
 import { useHostAction } from "./common";
 import { RulesCard } from "./RulesCard";
 import { SocialPanel } from "@/components/SocialPanel";
+import { PasswordCard } from "@/components/PasswordField";
 
 export function HostLobby({ state, hideRoles = false }: { state: ClientState; hideRoles?: boolean }) {
   return (
     <main className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.2fr)]">
       <div className="xl:min-h-0 xl:overflow-y-auto">
         <JoinCard state={state} />
+        <div className="mt-4">
+          <PasswordCard locked={state.locked} />
+        </div>
       </div>
       <div className="flex flex-col gap-4 xl:min-h-0 xl:overflow-y-auto">
         <PlayersCard state={state} hideRoles={hideRoles} />
@@ -129,9 +134,15 @@ function PlayersCard({ state, hideRoles = false }: { state: ClientState; hideRol
       <ul className="flex flex-col gap-1.5">
         {state.players.map((p) => (
           <li key={p.id} className="rise flex flex-wrap items-center gap-2 rounded-xl bg-white/5 p-2">
-            <Avatar p={p} size="sm" />
+            <ProfileLink playerId={p.id} className="shrink-0">
+              <Avatar p={p} size="sm" />
+            </ProfileLink>
             <div className="min-w-0 flex-1">
-              <div className="truncate font-semibold"><StyledName p={p} /></div>
+              <div className="truncate font-semibold">
+                <ProfileLink playerId={p.id} className="max-w-full">
+                  <StyledName p={p} className="truncate" />
+                </ProfileLink>
+              </div>
               <div className="flex flex-wrap gap-1 text-[11px] text-white/50">
                 <span className="chip py-0">{p.locale.toUpperCase()}</span>
                 {p.isBot && <span className="chip py-0">🤖 {t("common.bot")}</span>}
@@ -198,7 +209,8 @@ function PlayersCard({ state, hideRoles = false }: { state: ClientState; hideRol
   );
 }
 
-function RoleConfig({ state }: { state: ClientState }) {
+/** Role counts. `owner`: the room owner of a machine-host room (the machine deals and starts). */
+export function RoleConfig({ state, owner = false }: { state: ClientState; owner?: boolean }) {
   const t = useT();
   const act = useHostAction();
   const counts = state.settings.roleCounts;
@@ -212,7 +224,7 @@ function RoleConfig({ state }: { state: ClientState }) {
   return (
     <section className="card flex flex-col gap-3">
       <h2 className="text-xl font-bold">{t("host.roleConfig")}</h2>
-      <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+      <ul className={`grid grid-cols-1 gap-1.5 ${owner ? "" : "sm:grid-cols-2"}`}>
         {ROLE_IDS.map((r) => (
           <li key={r} className="flex items-center gap-2 rounded-xl bg-white/5 p-2">
             <span className="min-w-0 flex-1">
@@ -249,6 +261,8 @@ function RoleConfig({ state }: { state: ClientState }) {
           </button>
         </div>
       )}
+      {!owner && (
+      <>
       <div className="border-t border-white/10 pt-3">
         <h3 className="mb-2 font-bold">{t("host.assignment")}</h3>
         <button className="btn-gold w-full" disabled={total !== n || n === 0} onClick={() => act({ type: "assignRandom" })}>
@@ -264,6 +278,8 @@ function RoleConfig({ state }: { state: ClientState }) {
         🌙 {t("host.start")}
       </button>
       {n < MIN_PLAYERS && <p className="text-center text-xs text-white/40">{t("err.notEnoughPlayers", { min: MIN_PLAYERS })}</p>}
+      </>
+      )}
     </section>
   );
 }
