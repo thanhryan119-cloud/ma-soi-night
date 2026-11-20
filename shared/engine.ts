@@ -314,6 +314,8 @@ function startNight(room: Room) {
   };
   resetTimer(room);
   log(room, "log.nightStart", { n: night }, true);
+  // The first role called tonight (later ones are logged when the host moves on).
+  if (room.phase.steps.length) log(room, "log.step", { step: room.phase.steps[0] });
 }
 
 function leaveStep(room: Room, step: NightStepId | null) {
@@ -400,6 +402,7 @@ function openVerdict(room: Room, index: number) {
   room.phase = { ...room.phase, kind: "verdict", verdictIndex: index };
   game.vote = { kind: "verdict", ballots: {}, closed: false, candidates: null, nomineeId: game.nominees[index] };
   resetTimer(room);
+  log(room, "log.verdictStart", { name: nameOf(room, game.nominees[index]) });
 }
 
 export function verdictEligible(room: Room): string[] {

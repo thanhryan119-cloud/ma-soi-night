@@ -586,7 +586,8 @@
     "defenseDone": "{actor} ended their defense",
     "nominationTally": "Nomination count: {counts} · skipped {skips}",
     "stepNobody": "{step}: nobody left alive — skipped",
-    "stepOffline": "{step} was offline and did not act — skipped"
+    "stepOffline": "{step} was offline and did not act — skipped",
+    "verdictStart": "Hang or spare: {name}"
   },
   "privacy": {
     "title": "Privacy policy",
@@ -626,5 +627,13 @@
     "unmute": "Muted",
     "listenOnly": "Listening only",
     "inCall": "{count, plural, one {# on mic} other {# on mic}}"
+  },
+  "timeline": {
+    "dawn": "Night's outcome",
+    "nominate": "Nomination vote",
+    "defense": "Defense",
+    "verdict": "Hang or spare vote",
+    "hunter": "Hunter",
+    "host": "Host intervention"
   }
 }

@@ -586,7 +586,8 @@
     "defenseDone": "{actor} kết thúc phần biện hộ",
     "nominationTally": "Kết quả vote lên dàn: {counts} · bỏ qua {skips}",
     "stepNobody": "{step} không còn ai sống — bỏ qua",
-    "stepOffline": "{step} mất kết nối, không hành động — bỏ qua"
+    "stepOffline": "{step} mất kết nối, không hành động — bỏ qua",
+    "verdictStart": "Vote treo cổ / tha: {name}"
   },
   "privacy": {
     "title": "Chính sách quyền riêng tư",
@@ -626,5 +627,13 @@
     "unmute": "Đang tắt tiếng",
     "listenOnly": "Chỉ nghe",
     "inCall": "{count} người trong mic"
+  },
+  "timeline": {
+    "dawn": "Kết quả đêm",
+    "nominate": "Vote lên dàn",
+    "defense": "Biện hộ",
+    "verdict": "Vote treo cổ / tha",
+    "hunter": "Thợ săn",
+    "host": "Quản trò can thiệp"
   }
 }

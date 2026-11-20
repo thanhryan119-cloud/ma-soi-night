@@ -47,7 +47,40 @@ function groupLabel(t: T, e: LogEntry, phaseKey: string) {
   return phaseKey.startsWith("n") ? t("screen.nightLabel", { n: e.night }) : t("screen.dayLabel", { n: e.day });
 }
 
-/** Timeline of nights and days, built from the public log entries. */
+type Section = "step" | "dawn" | "nominate" | "defense" | "verdict" | "hunter" | "host" | "other";
+
+/** Which part of a night or day an entry belongs to (null: stays in the current part). */
+function sectionOf(key: string, inNight: boolean, current: Section | null): Section | null {
+  if (key === "log.step") return "step";
+  if (key === "log.verdictStart") return "verdict";
+  if (/^log\.host\./.test(key)) return current ?? "host";
+  if (inNight && (/^log\.savedBy/.test(key) || /^log\.death\./.test(key) || key === "log.noDeath")) return "dawn";
+  if (key === "log.voteNominate" || key === "log.voteSkip") return "nominate";
+  if (key === "log.nominationTally" || key === "log.nominated" || key === "log.nominateNone" || key === "log.nominateTieRevote") return "nominate";
+  if (key === "log.defenseDone") return "defense";
+  if (/^log\.voteVerdict/.test(key) || key === "log.executed" || key === "log.spared" || key === "log.death.execution") return "verdict";
+  if (key === "log.hunterShot" || key === "log.hunterNoShot" || key === "log.death.hunter") return "hunter";
+  if (key === "log.voteRandom") return current === "verdict" ? "verdict" : "nominate";
+  return current ? null : "other";
+}
+
+const SECTION_ICON: Record<Section, string> = {
+  step: "🔔",
+  dawn: "🌅",
+  nominate: "🗳️",
+  defense: "⚖️",
+  verdict: "🪢",
+  hunter: "🏹",
+  host: "🛠️",
+  other: "•",
+};
+
+/**
+ * The story of the game, night by night and day by day. Inside each, the big
+ * headings are the moments (each role called at night, the night's outcome,
+ * the nomination vote, the defense, the verdict, the hunter) and every action
+ * that happened in that moment is listed indented underneath.
+ */
 export function Timeline({ log, t }: { log: LogEntry[]; t: T }) {
   const groups: { key: string; first: LogEntry; items: LogEntry[] }[] = [];
   for (const e of log) {
@@ -58,23 +91,50 @@ export function Timeline({ log, t }: { log: LogEntry[]; t: T }) {
     else groups.push({ key, first: e, items: [e] });
   }
   return (
-    <ol className="relative space-y-4 border-l border-white/15 pl-5">
-      {groups.map((g, i) => (
-        <li key={`${g.key}-${i}`}>
-          <span className="absolute -left-[7px] mt-1.5 h-3.5 w-3.5 rounded-full border-2 border-night-950 bg-gold" />
-          <h4 className="font-bold text-gold">
-            {g.key.startsWith("n") ? "🌙 " : g.key.startsWith("d") ? "☀️ " : ""}
-            {groupLabel(t, g.first, g.key)}
-          </h4>
-          <ul className="mt-1 space-y-0.5 text-sm text-white/80">
-            {g.items
-              .filter((e) => e.key !== "log.nightStart" && e.key !== "log.dayStart")
-              .map((e, j) => (
-                <li key={j}>{formatLog(t, e)}</li>
+    <ol className="relative space-y-5 border-l border-white/15 pl-5">
+      {groups.map((g, i) => {
+        const inNight = g.key.startsWith("n");
+        const sections: { kind: Section; head: LogEntry | null; items: LogEntry[] }[] = [];
+        for (const e of g.items) {
+          if (e.key === "log.nightStart" || e.key === "log.dayStart") continue;
+          const cur = sections[sections.length - 1];
+          const kind = sectionOf(e.key, inNight, cur?.kind ?? null);
+          // A new heading for each role call, and whenever the kind of moment changes.
+          const headed = e.key === "log.step" || e.key === "log.verdictStart";
+          if (kind && (headed || !cur || cur.kind !== kind || (kind === "nominate" && cur.items.some((x) => x.key === "log.nominateTieRevote")))) {
+            sections.push({ kind, head: headed ? e : null, items: headed ? [] : [e] });
+          } else if (cur) cur.items.push(e);
+          else sections.push({ kind: "other", head: null, items: [e] });
+        }
+        return (
+          <li key={`${g.key}-${i}`}>
+            <span className="absolute -left-[7px] mt-1.5 h-3.5 w-3.5 rounded-full border-2 border-night-950 bg-gold" />
+            <h4 className="font-display text-lg font-bold text-gold">
+              {inNight ? "🌙 " : g.key.startsWith("d") ? "☀️ " : ""}
+              {groupLabel(t, g.first, g.key)}
+            </h4>
+            <div className="mt-1.5 space-y-2">
+              {sections.map((sec, j) => (
+                <div key={j}>
+                  {sec.kind !== "other" && (
+                    <div className="text-sm font-bold text-moon">
+                      {SECTION_ICON[sec.kind]} {sec.head ? formatLog(t, sec.head) : t(`timeline.${sec.kind}`)}
+                    </div>
+                  )}
+                  <ul className={`space-y-0.5 text-sm text-white/80 ${sec.kind !== "other" ? "ml-2 border-l border-white/15 pl-3" : ""}`}>
+                    {sec.items.map((e, k) => (
+                      <li key={k} className={e.public ? "text-white" : undefined}>
+                        {formatLog(t, e)}
+                      </li>
+                    ))}
+                    {sec.kind === "step" && !sec.items.length && <li className="text-white/40">—</li>}
+                  </ul>
+                </div>
               ))}
-          </ul>
-        </li>
-      ))}
+            </div>
+          </li>
+        );
+      })}
     </ol>
   );
 }
