@@ -1,13 +1,13 @@
 "use client";
 
-// Landing-page hero: the cards dealt out into a fan, the Narrator in the
+// Landing-page hero: the cards dealt out into a fan, the sun card back in the
 // middle. Cards sit dimmed in the dark and light up when hovered.
 
 import type { RoleId } from "@shared/types";
 import { CardBack, NarratorCard, RoleArt } from "./Tarot";
 
 type Slot = RoleId | "narrator" | "back";
-const SPREAD: Slot[] = ["villager", "seer", "witch", "werewolf", "narrator", "hunter", "bodyguard", "cupid", "back"];
+const SPREAD: Slot[] = ["villager", "seer", "witch", "werewolf", "back", "hunter", "bodyguard", "cupid", "narrator"];
 
 export function TarotSpread({ className = "" }: { className?: string }) {
   const mid = (SPREAD.length - 1) / 2;
