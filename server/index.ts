@@ -12,7 +12,6 @@ import {
   addPlayer,
   advance,
   autoReady,
-  forceWolfBite,
   createRoom,
   getPlayer,
   hostAction,
@@ -23,7 +22,7 @@ import {
   timerOp,
 } from "../shared/engine";
 import { botDecide } from "../shared/bots";
-import { botChatLine, newBotChatMemory, type BotChatMemory } from "../shared/botChat";
+import { botChatLine, botDefenseLine, newBotChatMemory, type BotChatMemory } from "../shared/botChat";
 import { ingestChat, newChatIntel, type ChatIntel } from "../shared/botIntel";
 import { createAiBots } from "./aiBots";
 import { createAccounts } from "./accounts";
@@ -181,7 +180,37 @@ function touch(room: Room) {
  * During the day discussion, bots talk in the chat: one line every few
  * seconds from a random living bot, at most a few lines each per day.
  */
+/** During the defense only bots on the stand talk: two lines of defence, then they end it. */
+const botDefenseSaid = new Map<string, number>();
+function scheduleBotDefense(room: Room) {
+  const game = room.game!;
+  const done = game.defenseDone ?? [];
+  const speakers = room.players.filter((p) => p.isBot && p.alive && game.nominees.includes(p.id) && !done.includes(p.id));
+  if (!speakers.length) return;
+  botChatTimers.set(
+    room.code,
+    setTimeout(async () => {
+      if (rooms.get(room.code) !== room || room.phase.kind !== "defense") return botChatTimers.delete(room.code);
+      const bot = speakers[0];
+      const key = `${room.code}:${room.phase.day}:${bot.id}`;
+      const said = botDefenseSaid.get(key) ?? 0;
+      const line = said < 2 ? ((await ai.defend(room, bot, said)) ?? botDefenseLine(room, bot, said, intelFor(room))) : null;
+      botChatTimers.delete(room.code);
+      if (rooms.get(room.code) !== room || room.phase.kind !== "defense") return;
+      if (line) {
+        botDefenseSaid.set(key, said + 1);
+        social.postAs(room, bot.id, line);
+        scheduleBotChat(room);
+      } else if (playerAction(room, bot.id, { type: "endDefense" }).ok) touch(room);
+    }, 3000 + Math.random() * 3000),
+  );
+}
+
 function scheduleBotChat(room: Room) {
+  if (room.phase.kind === "defense" && room.game) {
+    if (!botChatTimers.has(room.code)) scheduleBotDefense(room);
+    return;
+  }
   if (room.phase.kind !== "discussion" || !room.game) {
     const t = botChatTimers.get(room.code);
     if (t) clearTimeout(t);
@@ -202,7 +231,8 @@ function scheduleBotChat(room: Room) {
     room.code,
     setTimeout(() => {
       botChatTimers.delete(room.code);
-      if (rooms.get(room.code) !== room || room.phase.kind !== "discussion") return;
+      if (rooms.get(room.code) !== room) return;
+      if (room.phase.kind !== "discussion") return scheduleBotChat(room);
       const bot = talkers[Math.floor(Math.random() * talkers.length)];
       const line = botChatLine(room, bot, m, intelFor(room));
       if (line) social.postAs(room, bot.id, line);
@@ -229,9 +259,6 @@ const stepTiming = new Map<string, StepTiming>();
 const NIGHT_MIN_MS: [number, number] = [12_000, 20_000];
 /** If the host never reports the narration (tab closed), assume it took this long. */
 const NARRATION_FALLBACK_MS = 20_000;
-/** Patience with players who don't act (AFK), so the game never stalls. */
-const NIGHT_TIMEOUT_MS = 45_000;
-const HUNTER_TIMEOUT_MS = 30_000;
 const VOTE_SECONDS = 60;
 /** Time to look at your role card before the first night. */
 const ROLE_REVEAL_MS = 15_000;
@@ -273,12 +300,12 @@ function timerEndsAt(room: Room, now: number): number | null {
  * 3-second countdown), or null when it must keep waiting. It always waits for
  * the narration to be read aloud, then:
  * - role reveal: a moment to look at your card;
- * - night: the role confirmed (or a timeout for an AFK player), and never
- *   sooner than a random minimum, so speed or a dead role can't be heard;
+ * - night: the role confirmed (dead/offline roles count as confirmed), and
+ *   never sooner than a random minimum, so speed or a dead role can't be heard;
  * - dawn / results / winner: a short pause after reading;
  * - discussion / defense: the timer runs out;
  * - votes: everyone voted, or the vote timer runs out;
- * - hunter: the shot, or a timeout.
+ * - hunter: the shot (an offline hunter is skipped).
  */
 function dueAt(room: Room, st: StepTiming, now: number): number | null {
   const game = room.game;
@@ -291,13 +318,14 @@ function dueAt(room: Room, st: StepTiming, now: number): number | null {
     case "roleReveal":
       return Math.max(read, st.startedAt + ROLE_REVEAL_MS);
     case "night":
-      return Math.max(read, confirmed ?? st.startedAt + NIGHT_TIMEOUT_MS, st.startedAt + st.minMs);
+      // Never before the role confirmed (a dead or offline role counts as confirmed).
+      return confirmed === null ? null : Math.max(read, confirmed, st.startedAt + st.minMs);
     case "dawn":
     case "nominateResult":
     case "verdictResult":
       return read + AFTER_READING_MS;
     case "hunter":
-      return Math.max(read, confirmed ?? st.startedAt + HUNTER_TIMEOUT_MS);
+      return confirmed === null ? null : Math.max(read, confirmed);
     case "discussion":
     case "defense": {
       const end = timerEndsAt(room, now);
@@ -318,7 +346,6 @@ function autoStep(room: Room): boolean {
   const game = room.game;
   if (!game) return false;
   if (game.pendingWin && room.phase.kind !== "night") return hostAction(room, { type: "confirmWin" }).ok;
-  if (room.phase.kind === "night") forceWolfBite(room);
   return advance(room).ok;
 }
 

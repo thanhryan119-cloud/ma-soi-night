@@ -249,7 +249,7 @@ describe("mandatory rules", () => {
     room.players.find((p) => p.id === w)!.connected = true;
     next(room); // night 1, werewolf step
     expect(room.phase.steps).toEqual(["werewolf"]);
-    expect(next(room).error).toBe("err.wolvesMustBite");
+    expect(next(room).error).toBe("err.roleNotDone"); // the pack must pick before the host can move on
     playerAction(room, w, { type: "night", targets: [a] });
     expect(next(room).ok).toBe(true);
     expect(room.players.find((p) => p.id === a)!.alive).toBe(false);

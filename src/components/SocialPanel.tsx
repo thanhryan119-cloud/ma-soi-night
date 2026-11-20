@@ -18,8 +18,9 @@ export function SocialPanel({ state, viewer, className = "" }: { state: ClientSt
   const me = isHost ? null : players.get(viewer);
   const phaseOpen = (SOCIAL_PHASES as readonly string[]).includes(state.phase.kind);
   const dead = !!me && state.phase.kind !== "lobby" && !me.alive;
-  const canSpeak = isHost || (phaseOpen && !dead);
-  const reason = !phaseOpen ? t("social.closed") : dead ? t("social.deadReadOnly") : null;
+  const defenseLocked = state.phase.kind === "defense" && !state.me?.onStand;
+  const canSpeak = isHost || (phaseOpen && !dead && !defenseLocked);
+  const reason = !phaseOpen ? t("social.closed") : dead ? t("social.deadReadOnly") : defenseLocked ? t("social.onlyNominees") : null;
   // The board can be folded away so the chat gets the whole panel.
   const [boardOpen, setBoardOpen] = useState(true);
   useEffect(() => setBoardOpen(storage.get<boolean>("msn:boardOpen") ?? true), []);

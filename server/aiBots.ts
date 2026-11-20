@@ -32,6 +32,8 @@ export interface AiBots {
   enabled: boolean;
   /** A human wrote in the chat: some bots may answer. */
   onHumanChat(room: Room, fromId: string, text: string): void;
+  /** One message from a bot on the stand defending itself (null when AI is off or fails). */
+  defend(room: Room, bot: Player, said: number): Promise<string | null>;
 }
 
 export function createAiBots(opts: {
@@ -153,8 +155,22 @@ export function createAiBots(opts: {
     }
   }
 
+  async function defend(room: Room, bot: Player, said: number): Promise<string | null> {
+    if (!enabled || !room.game || room.settings.aiBots === false) return null;
+    const s = stateFor(room);
+    if (s.calls >= MAX_CALLS_PER_GAME) return null;
+    s.calls++;
+    const ask =
+      said === 0
+        ? `${bot.name} has been put on the stand: the village may hang them. Write ${bot.name}'s defence — why they should be spared.`
+        : `Write ${bot.name}'s closing words on the stand: point the village at someone else.`;
+    const text = await generate(systemFor(room, bot), `${transcript(room)}\n\n${ask}`);
+    return text ? text.replace(/^["'“”]+|["'“”]+$/g, "").replace(new RegExp(`^${bot.name}\\s*:\\s*`, "i"), "").slice(0, 200) : null;
+  }
+
   return {
     enabled,
+    defend,
     onHumanChat(room, fromId, text) {
       if (!enabled || !room.game || room.settings.aiBots === false || !opts.canTalk(room)) return;
       const from = room.players.find((p) => p.id === fromId);

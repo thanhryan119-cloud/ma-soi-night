@@ -97,6 +97,8 @@ export interface Settings {
   autoAdvance: boolean;
   /** Bots answer people in the chat with an AI model (needs GEMINI_API_KEY on the server). */
   aiBots: boolean;
+  /** No projector: players' phones also show the narration and the public info. */
+  noScreen: boolean;
   discussionSeconds: number;
   defenseSeconds: number;
   bilingualScreen: boolean;
@@ -195,6 +197,8 @@ export interface Game {
   pendingHunters: string[];
   hunterReturn: "discussion" | "afterVerdict";
   hunterShots: Record<string, string>;
+  /** Nominees who said they are done defending themselves. */
+  defenseDone?: string[];
   pendingWin: Winner | null;
   /** Signature of the alive set when the host chose "keep playing". */
   dismissedWinSig: string | null;
@@ -238,6 +242,7 @@ export type PlayerAction =
   | { type: "setLocale"; locale: Locale }
   | { type: "night"; targets?: string[]; save?: boolean; poisonId?: string | null }
   | { type: "vote"; choice: string }
+  | { type: "endDefense" }
   | { type: "hunterShot"; targetId: string | null }
   | { type: "updateProfile"; name?: string; avatar?: string; style?: Partial<PlayerStyle> };
 

@@ -271,7 +271,8 @@
     "mandatoryVote": "Everyone must vote (no skipping)",
     "voiceChat": "Allow open mic (lobby and discussion)",
     "autoAdvance": "Auto narrator: runs the whole game — reads each step, moves on by itself, closes discussion/votes when time runs out, skips players who don't act",
-    "aiBots": "AI bots answer chat messages (Gemini — needs GEMINI_API_KEY on the server)"
+    "aiBots": "AI bots answer chat messages (Gemini — needs GEMINI_API_KEY on the server)",
+    "noScreen": "No projector: show the narration and public info on everyone's phone"
   },
   "effects": {
     "protected": "Protected",
@@ -376,7 +377,10 @@
     "rejoinHint": "The game has started. Pick your name to get your seat and role back.",
     "rejoinNone": "The game has started and nobody is offline to rejoin as.",
     "rejoinWaiting": "Waiting for the host to let you back in as {name}…",
-    "rejoinDenied": "The host did not let you back in."
+    "rejoinDenied": "The host did not let you back in.",
+    "endDefense": "✋ I'm done — end my defense",
+    "defenseEnded": "You ended your defense.",
+    "narration": "Narrator"
   },
   "profile": {
     "title": "Your profile",
@@ -502,7 +506,7 @@
     "imageTooLarge": "That image is too large.",
     "imageInvalid": "That file isn’t a valid image (JPG, PNG, WebP).",
     "wolvesMustBite": "The Werewolves haven’t picked anyone — they must attack someone.",
-    "votesMissing": "{count, plural, one {# player hasn’t} other {# players haven’t}} voted yet (mandatory voting is on).",
+    "votesMissing": "{count} still haven’t voted — wait for them or for the vote timer to run out.",
     "skipNotAllowed": "Voting is mandatory — you can’t skip.",
     "chatClosed": "Chat, drawing and mic are only open in the lobby and during the discussion.",
     "deadNoChat": "Dead players can’t chat or draw.",
@@ -510,7 +514,10 @@
     "tooFast": "Slow down a little.",
     "voiceDisabled": "The Host has turned the mic off.",
     "micDenied": "Couldn’t use your microphone — you’re listening only. Allow mic access and try again.",
-    "seatTaken": "That player is online or cannot be rejoined."
+    "seatTaken": "That player is online or cannot be rejoined.",
+    "onlyNominees": "During the defense only the players on the stand can chat.",
+    "notOnStand": "You are not on the stand.",
+    "roleNotDone": "The role being called hasn't confirmed yet — wait for them before moving on."
   },
   "log": {
     "join": "{name} joined",
@@ -574,7 +581,9 @@
       "draw": "Draw — nobody survived"
     },
     "wolfAutoTarget": "The Werewolves are offline — {target} was picked at random",
-    "voteRandom": "{actor} didn't vote in time → counted as a random vote: {target}"
+    "voteRandom": "{actor} didn't vote in time → counted as a random vote: {target}",
+    "defenseDone": "{actor} ended their defense",
+    "nominationTally": "Nomination count: {counts} · skipped {skips}"
   },
   "privacy": {
     "title": "Privacy policy",
@@ -604,7 +613,8 @@
     "clear": "Clear board",
     "title": "The moonlit table",
     "hideBoard": "Hide board",
-    "showBoard": "Show board"
+    "showBoard": "Show board",
+    "onlyNominees": "Defense in progress — only the players on the stand may speak."
   },
   "voice": {
     "join": "Join mic",

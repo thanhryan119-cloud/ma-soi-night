@@ -4,7 +4,8 @@
 
 import type { Room } from "./types";
 
-export const SOCIAL_PHASES = ["lobby", "discussion"] as const;
+/** Chat is open in these phases; during the defense only the players on the stand may speak. */
+export const SOCIAL_PHASES = ["lobby", "discussion", "defense"] as const;
 export const CHAT_MAX_LEN = 200;
 export const CHAT_HISTORY = 200;
 export const BOARD_MAX_STROKES = 3000;
@@ -40,6 +41,7 @@ export function canSpeak(room: Room, who: Speaker): string | null {
   if (!p) return "err.notInRoom";
   if (!socialOpen(room)) return "err.chatClosed";
   if (room.game && !p.alive) return "err.deadNoChat";
+  if (room.phase.kind === "defense" && !room.game?.nominees.includes(p.id)) return "err.onlyNominees";
   return null;
 }
 
@@ -50,7 +52,8 @@ export function voiceAccess(room: Room, who: Speaker): { ok: boolean; listenOnly
   if (who.kind === "host") return { ok: true, listenOnly: false };
   const p = room.players.find((x) => x.id === who.playerId);
   if (!p) return { ok: false, listenOnly: true, error: "err.notInRoom" };
-  return { ok: true, listenOnly: !!room.game && !p.alive };
+  const onlyNominees = room.phase.kind === "defense" && !room.game?.nominees.includes(p.id);
+  return { ok: true, listenOnly: (!!room.game && !p.alive) || onlyNominees };
 }
 
 export function sanitizeChat(text: unknown): string | null {

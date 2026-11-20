@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addPlayer, autoReady, createRoom, forceWolfBite, hostAction, playerAction } from "../shared/engine";
+import { addPlayer, autoReady, createRoom, hostAction, playerAction } from "../shared/engine";
 import { botChatLine, newBotChatMemory, truthChance } from "../shared/botChat";
 import { botDecide } from "../shared/bots";
 import { ingestChat, newChatIntel, ranked, suspicion } from "../shared/botIntel";
@@ -49,6 +49,7 @@ describe("bot chat honesty", () => {
 describe("auto narrator readiness", () => {
   it("is ready once the night role has acted", () => {
     const { room, ids } = setup(["werewolf", "seer", "villager", "villager"]);
+    for (const p of room.players) p.connected = true;
     hostAction(room, { type: "next" }); // role reveal → night
     while (room.phase.kind === "night" && room.phase.steps[room.phase.stepIndex] !== "seer") {
       if (room.phase.steps[room.phase.stepIndex] === "werewolf") playerAction(room, ids[0], { type: "night", targets: [ids[2]] });
@@ -119,15 +120,44 @@ describe("bots read the chat", () => {
   });
 });
 
-describe("auto narrator patience", () => {
-  it("picks a victim when online wolves never bite, so the night can go on", () => {
-    const { room, ids } = setup(["werewolf", "villager", "villager", "villager"]);
+
+describe("roles must confirm", () => {
+  it("the host can't move past a night role that is online and hasn't acted", () => {
+    const { room, ids } = setup(["werewolf", "seer", "villager", "villager"]);
     for (const p of room.players) p.connected = true;
     hostAction(room, { type: "next" }); // night
     while (room.phase.steps[room.phase.stepIndex] !== "werewolf") hostAction(room, { type: "next" });
-    expect(hostAction(room, { type: "next" }).error).toBe("err.wolvesMustBite");
-    forceWolfBite(room);
-    expect(Object.values(room.game!.nightState.wolfVotes)[0]).not.toBe(ids[0]);
+    expect(hostAction(room, { type: "next" }).error).toBe("err.roleNotDone");
+    expect(autoReady(room)).toBe(false);
+    playerAction(room, ids[0], { type: "night", targets: [ids[2]] });
+    expect(autoReady(room)).toBe(true);
+    expect(hostAction(room, { type: "next" }).ok).toBe(true);
+  });
+
+  it("an offline role doesn't block the night", () => {
+    const { room } = setup(["werewolf", "seer", "villager", "villager"]);
+    for (const p of room.players) p.connected = p.name !== "P2"; // the Seer is offline
+    hostAction(room, { type: "next" });
+    while (room.phase.steps[room.phase.stepIndex] !== "seer") {
+      if (room.phase.steps[room.phase.stepIndex] === "werewolf") playerAction(room, room.players[0].id, { type: "night", targets: [room.players[2].id] });
+      expect(hostAction(room, { type: "next" }).ok).toBe(true);
+    }
+    expect(autoReady(room)).toBe(true);
+    expect(hostAction(room, { type: "next" }).ok).toBe(true);
+  });
+});
+
+describe("votes must be in", () => {
+  it("can't close the vote while online players haven't voted and time remains", () => {
+    const { room, ids } = setup(["werewolf", "villager", "villager", "villager"]);
+    hostAction(room, { type: "updateSettings", settings: { wolvesMustBite: false } });
+    hostAction(room, { type: "next" }); // night (nobody online yet)
+    while (room.phase.kind !== "nominate") hostAction(room, { type: "next" });
+    for (const p of room.players) p.connected = true;
+    hostAction(room, { type: "timer", op: "start", seconds: 60 });
+    playerAction(room, ids[1], { type: "vote", choice: ids[0] });
+    expect(hostAction(room, { type: "next" }).error).toBe("err.votesMissing");
+    for (const id of [ids[0], ids[2], ids[3]]) playerAction(room, id, { type: "vote", choice: ids[1] });
     expect(hostAction(room, { type: "next" }).ok).toBe(true);
   });
 });

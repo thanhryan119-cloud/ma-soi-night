@@ -10,6 +10,7 @@ import type { ClientState, MeView, PlayerView } from "@shared/views";
 import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, useErrorToast } from "@/components/ui";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
+import { scriptLines } from "@/components/host/common";
 import { SocialPanel } from "@/components/SocialPanel";
 import { SceneArt } from "@/components/art/Woodcut";
 import { CardBack, RoleCardFull } from "@/components/art/Tarot";
@@ -80,6 +81,8 @@ export function PlayerGame({ state, offset, connected }: Props) {
         </div>
       )}
 
+      {state.settings.noScreen && <NarrationBanner state={state} />}
+
       <main className="relative mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-3 px-3 py-3">
         <PhaseBody state={state} me={me} offset={offset} players={players} onTimeline={() => setSheet("timeline")} />
       </main>
@@ -107,6 +110,26 @@ export function PlayerGame({ state, offset, connected }: Props) {
           <Timeline log={state.log} t={t} />
         </Sheet>
       )}
+    </div>
+  );
+}
+
+/**
+ * No projector in the room: the narrator's words for the current step show on
+ * every phone (never the line saying a role has nobody left alive).
+ */
+function NarrationBanner({ state }: { state: ClientState }) {
+  const t = useT();
+  if (state.phase.kind === "lobby" || state.phase.kind === "gameOver") return null;
+  const silent = t("script.stepNobody");
+  const lines = scriptLines(state, t).filter((l) => l !== silent);
+  if (!lines.length) return null;
+  return (
+    <div className="mx-auto w-full max-w-md shrink-0 px-3 pt-2">
+      <div className="max-h-28 overflow-y-auto rounded-lg border border-gold/40 bg-night-900/80 px-3 py-2 text-sm leading-snug">
+        <span className="mr-1 font-bold text-gold">📜 {t("player.narration")}:</span>
+        {lines.join(" ")}
+      </div>
     </div>
   );
 }
@@ -176,16 +199,7 @@ function PhaseBody({
     case "nominateResult":
       return <NominateResult state={state} />;
     case "defense":
-      return (
-        <Fill center>
-          <h2 className="text-2xl font-bold">⚖️ {t("player.defenseTitle")}</h2>
-          {me.onStand && <p className="rounded-lg bg-gold/20 px-4 py-2 font-bold text-gold">{t("player.onStandYou")}</p>}
-          <Nominees state={state} players={players} />
-          <div className="w-full">
-            <TimerDisplay timer={state.timer} offset={offset} className="text-5xl" />
-          </div>
-        </Fill>
-      );
+      return <Defense {...ctx} offset={offset} />;
     case "verdict":
       return <Verdict {...ctx} />;
     case "verdictResult":
@@ -210,6 +224,33 @@ function PhaseBody({
         </Fill>
       );
   }
+}
+
+/** The defense: everyone reads the chat, only the players on the stand can write — and end it early. */
+function Defense({ state, me, players, offset }: Ctx & { offset: number }) {
+  const t = useT();
+  const act = usePlayerAction();
+  const done = !!me.defenseDone;
+  return (
+    <Fill>
+      <div className="flex shrink-0 items-center gap-3">
+        <h2 className="shrink-0 text-lg font-bold">⚖️ {t("player.defenseTitle")}</h2>
+        <div className="min-w-0 flex-1">
+          <TimerDisplay timer={state.timer} offset={offset} className="text-3xl" />
+        </div>
+      </div>
+      <div className="shrink-0">
+        <Nominees state={state} players={players} />
+      </div>
+      {me.onStand && <p className="shrink-0 rounded-lg bg-gold/20 px-3 py-1.5 text-center text-sm font-bold text-gold">{t("player.onStandYou")}</p>}
+      <SocialPanel state={state} viewer={me.id} className="min-h-0 flex-1" />
+      {me.onStand && me.alive && (
+        <button className="btn-primary shrink-0 py-3" disabled={done} onClick={() => act({ type: "endDefense" })}>
+          {done ? t("player.defenseEnded") : t("player.endDefense")}
+        </button>
+      )}
+    </Fill>
+  );
 }
 
 // ---------------------------------------------------------------------------

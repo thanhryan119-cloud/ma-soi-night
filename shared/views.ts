@@ -96,6 +96,8 @@ export interface MeView {
   myVote: string | null;
   canVote: boolean;
   onStand: boolean;
+  /** On the stand and already said "I'm done". */
+  defenseDone: boolean;
   hunter: { canShoot: boolean; targets: string[]; shot: string | null } | null;
 }
 
@@ -205,6 +207,7 @@ function buildMe(room: Room, meId: string): MeView | null {
     myVote: null,
     canVote: false,
     onStand: false,
+    defenseDone: false,
     hunter: null,
   };
   if (!game || !roleId) return view;
@@ -265,6 +268,7 @@ function buildMe(room: Room, meId: string): MeView | null {
     view.canVote = !vote.closed && voteEligible(room).includes(me.id) && view.myVote === null;
   } else if (room.phase.kind === "defense" || room.phase.kind === "verdictResult") {
     view.onStand = game.nominees.includes(me.id);
+    view.defenseDone = (game.defenseDone ?? []).includes(me.id);
   }
 
   if (room.phase.kind === "hunter" && game.pendingHunters[0] === me.id) {
@@ -409,7 +413,9 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
     state.suggested = suggestRoles(room.players.length);
     state.potions = game?.potions;
   } else if (room.phase.kind === "gameOver") {
-    state.log = room.log.filter((e) => e.public);
+    // The game is over, nothing is secret any more: everyone gets the full
+    // story — every night action, every ballot, every nomination and verdict.
+    state.log = room.log;
   }
   return state;
 }

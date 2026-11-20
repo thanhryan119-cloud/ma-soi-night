@@ -217,3 +217,46 @@ export function botChatLine(room: Room, bot: Player, mem: BotChatMemory, intel: 
   }
   return null;
 }
+
+const DEFENSE = {
+  vi: {
+    innocent: ["Mình không phải Sói đâu, mọi người đang treo nhầm người rồi!", "Mình là {role} thật đấy, treo mình là làng mất một người tốt.", "Nghĩ kỹ đi, mình cả buổi đều nói thật mà."],
+    accuse: ["Người đáng treo là {name}, không phải mình.", "Mình nghi {name} hơn, hãy để ý {name}."],
+    seer: ["Mình là Tiên tri, đêm {n} mình soi {name}: {verdict}. Đừng treo mình!"],
+    done: "Mình nói xong rồi, mong mọi người sáng suốt.",
+  },
+  en: {
+    innocent: ["I'm not a wolf, you're about to hang the wrong person!", "I really am the {role} — hang me and the village loses a good player.", "Think it through, I've been honest all day."],
+    accuse: ["The one to hang is {name}, not me.", "I suspect {name} much more, watch {name}."],
+    seer: ["I'm the Seer: night {n} I checked {name} — {verdict}. Don't hang me!"],
+    done: "That's all from me, please choose wisely.",
+  },
+};
+
+/**
+ * What a bot on the stand says to save itself (scripted fallback when no AI).
+ * Wolves lie about their role; the village tells the truth. Returns null once
+ * the bot has said its piece (it should then end its defense).
+ */
+export function botDefenseLine(room: Room, bot: Player, said: number, intel: ChatIntel = newChatIntel(), rnd: Rnd = Math.random): string | null {
+  const game = room.game;
+  if (!game || !bot.alive) return null;
+  const lang = (room.locale as Locale) === "en" ? "en" : "vi";
+  const D = DEFENSE[lang];
+  const L = T[lang];
+  const role = game.roles[bot.id];
+  const others = room.players.filter((p) => p.alive && p.id !== bot.id);
+  if (said >= 2) return null;
+  if (said === 1) {
+    const wolves = new Set(room.players.filter((p) => game.roles[p.id] === "werewolf").map((p) => p.id));
+    const target = role === "werewolf" ? topThreat(room, intel, others.filter((p) => !wolves.has(p.id)).map((p) => p.id)) : ranked(suspicion(room, intel, bot.id), others.map((p) => p.id))[0];
+    return target ? fill(pick(rnd, D.accuse), { name: nameOf(room, target) }) : D.done;
+  }
+  const results = game.seerResults[bot.id] ?? [];
+  if (role === "seer" && results.length) {
+    const r = results[results.length - 1];
+    return fill(pick(rnd, D.seer), { n: r.night, name: nameOf(room, r.targetId), verdict: r.isWolf ? L.isWolf : L.notWolf });
+  }
+  const shownRole: RoleId = role === "werewolf" ? "villager" : role;
+  return fill(pick(rnd, D.innocent), { role: L.roles[shownRole] });
+}

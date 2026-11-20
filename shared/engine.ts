@@ -425,6 +425,12 @@ function closeNomination(room: Room): "defense" | "revote" | "none" {
     tie: isRevote && rules.tie === "revote" ? "none" : rules.tie,
   });
   game.nomination = tally;
+  // Record the full count for the end-of-game story.
+  const counts = Object.entries(tally.counts)
+    .sort((x, y) => y[1] - x[1])
+    .map(([id, n]) => `${nameOf(room, id)} ${n}`)
+    .join(", ");
+  log(room, "log.nominationTally", { counts: counts || "—", skips: tally.skips });
   if (tally.tie && rules.tie === "revote" && rules.mode === "top1" && !isRevote) {
     log(room, "log.nominateTieRevote", { names: tally.tiedIds.map((id) => nameOf(room, id)).join(", ") }, true);
     game.nominees = [];
@@ -474,6 +480,7 @@ function afterVerdict(room: Room) {
 }
 
 function enterTimed(room: Room, kind: "discussion" | "defense") {
+  if (kind === "defense" && room.game) room.game.defenseDone = [];
   room.phase = { ...room.phase, kind };
   const secs = kind === "discussion" ? room.settings.discussionSeconds : room.settings.defenseSeconds;
   timerOp(room, "start", secs);
@@ -519,8 +526,12 @@ function fillMissingBallots(room: Room) {
   }
 }
 
+/**
+ * Votes can't be closed while people (online) still haven't voted and the
+ * vote time hasn't run out. When it runs out, missing votes count as random.
+ */
 function missingVoters(room: Room): ActionResult | null {
-  if (!room.settings.mandatoryVote || voteTimeUp(room)) return null;
+  if (voteTimeUp(room)) return null;
   const pending = pendingVoters(room);
   return pending.length ? fail("err.votesMissing", { count: pending.length }) : null;
 }
@@ -553,14 +564,10 @@ export function autoReady(room: Room): boolean {
   const game = room.game;
   if (!game || game.pendingWin) return false;
   switch (room.phase.kind) {
-    case "night": {
-      const step = currentStep(room);
-      return !!step && isStepDone(room, step);
-    }
-    case "hunter": {
-      const h = game.pendingHunters[0];
-      return !!h && h in game.hunterShots;
-    }
+    case "night":
+      return !!currentStep(room) && !awaitingConfirmation(room);
+    case "hunter":
+      return !!game.pendingHunters[0] && !awaitingConfirmation(room);
     case "nominate":
     case "verdict": {
       const vote = game.vote;
@@ -572,20 +579,35 @@ export function autoReady(room: Room): boolean {
   }
 }
 
+const present = (p: Player) => p.connected || p.isBot;
+
 /**
- * The auto narrator ran out of patience at night: if the pack hasn't picked
- * anyone, a random valid victim is chosen so the night can go on (only used
- * when the wolves must bite).
+ * Night roles and the hunter must confirm before anyone (host or auto
+ * narrator) can move on. A role with nobody alive, or whose players are all
+ * offline, never blocks the game.
  */
-export function forceWolfBite(room: Room) {
-  if (currentStep(room) !== "werewolf" || room.settings.wolvesMustBite === false) return;
-  const ns = room.game!.nightState;
-  const wolves = stepActors(room, "werewolf");
-  if (ns.wolfFinalized || !wolves.length || wolves.some((w) => ns.wolfVotes[w.id])) return;
-  const targets = validTargets(room, wolves[0], "werewolf");
-  if (!targets.length) return;
-  ns.wolfVotes[wolves[0].id] = targets[Math.floor(Math.random() * targets.length)];
-  log(room, "log.wolfAutoTarget", { target: nameOf(room, ns.wolfVotes[wolves[0].id]) });
+export function awaitingConfirmation(room: Room): ActionResult | null {
+  const game = room.game;
+  if (!game) return null;
+  if (room.phase.kind === "night") {
+    const step = currentStep(room);
+    if (!step) return null;
+    const online = stepActors(room, step).filter(present);
+    if (!online.length) return null;
+    const ns = game.nightState;
+    if (step === "werewolf") {
+      if (room.settings.wolvesMustBite === false || ns.wolfFinalized) return null;
+      const votes = online.map((w) => ns.wolfVotes[w.id]);
+      return votes.every((v) => !!v) && new Set(votes).size === 1 ? null : fail("err.roleNotDone", { role: NIGHT_STEP_ROLE[step] });
+    }
+    return ns.done[step] ? null : fail("err.roleNotDone", { role: NIGHT_STEP_ROLE[step] });
+  }
+  if (room.phase.kind === "hunter") {
+    const h = game.pendingHunters[0];
+    const hunter = h ? getPlayer(room, h) : null;
+    if (hunter && present(hunter) && !(hunter.id in game.hunterShots)) return fail("err.roleNotDone", { role: "hunter" });
+  }
+  return null;
 }
 
 /** A key that changes whenever the game moves to a different step. */
@@ -610,6 +632,8 @@ export function advance(room: Room): ActionResult {
       startNight(room);
       return ok;
     case "night": {
+      const waiting = awaitingConfirmation(room);
+      if (waiting) return waiting;
       if (currentStep(room) === "werewolf") {
         const blocked = enforceWolfBite(room);
         if (blocked) return blocked;
@@ -626,6 +650,8 @@ export function advance(room: Room): ActionResult {
       else enterTimed(room, "discussion");
       return ok;
     case "hunter": {
+      const waitingShot = awaitingConfirmation(room);
+      if (waitingShot) return waitingShot;
       // The current hunter stays at the head of the queue until the host moves on.
       const hunter = game.pendingHunters.shift();
       if (hunter && !(hunter in game.hunterShots)) {
@@ -708,11 +734,29 @@ export function playerAction(room: Room, playerId: string, action: PlayerAction)
       return nightAction(room, player, action);
     case "vote":
       return castVote(room, player, String(action.choice ?? ""));
+    case "endDefense":
+      return endDefense(room, player);
     case "hunterShot":
       return hunterShot(room, player, action.targetId ?? null);
     default:
       return fail("err.unknownAction");
   }
+}
+
+/**
+ * A nominee says "I'm done". Once every living nominee is done, the defense
+ * ends early and the verdict vote opens.
+ */
+function endDefense(room: Room, player: Player): ActionResult {
+  const game = room.game;
+  if (!game || room.phase.kind !== "defense") return fail("err.wrongPhase");
+  if (!player.alive || !game.nominees.includes(player.id)) return fail("err.notOnStand");
+  const done = (game.defenseDone ??= []);
+  if (!done.includes(player.id)) done.push(player.id);
+  log(room, "log.defenseDone", { actor: player.name });
+  const waiting = game.nominees.filter((id) => getPlayer(room, id)?.alive && !done.includes(id));
+  if (!waiting.length) return advance(room);
+  return ok;
 }
 
 function nightAction(
@@ -901,6 +945,7 @@ function mergeSettings(room: Room, patch: Partial<Settings>): ActionResult {
       "voiceChat",
       "autoAdvance",
       "aiBots",
+      "noScreen",
       "bilingualScreen",
     ] as const
   ).forEach(bool);
