@@ -638,6 +638,11 @@ export function advance(room: Room): ActionResult {
         const blocked = enforceWolfBite(room);
         if (blocked) return blocked;
       }
+      // For the story: a called role that didn't act (dead, or its player offline).
+      const leaving = currentStep(room);
+      if (leaving && !isStepDone(room, leaving) && !(leaving === "werewolf" && Object.keys(game.nightState.wolfVotes).length)) {
+        log(room, stepActors(room, leaving).length ? "log.stepOffline" : "log.stepNobody", { step: leaving });
+      }
       leaveStep(room, currentStep(room));
       if (room.phase.stepIndex < room.phase.steps.length - 1) {
         room.phase = { ...room.phase, stepIndex: room.phase.stepIndex + 1 };

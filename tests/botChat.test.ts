@@ -161,3 +161,16 @@ describe("votes must be in", () => {
     expect(hostAction(room, { type: "next" }).ok).toBe(true);
   });
 });
+
+describe("timeline for the dead", () => {
+  it("dead players can read the full story, the living can't", async () => {
+    const { buildView } = await import("../shared/views");
+    const { room, ids } = setup(["werewolf", "seer", "villager", "villager"]);
+    room.players[2].alive = false;
+    expect(buildView(room, "player", ids[3]).log).toBeUndefined();
+    const dead = buildView(room, "player", ids[2]).log ?? [];
+    expect(dead.some((e) => e.key === "log.roleOf")).toBe(true);
+    room.settings.deadSeeRoles = false;
+    expect((buildView(room, "player", ids[2]).log ?? []).every((e) => e.public)).toBe(true);
+  });
+});

@@ -233,7 +233,8 @@
     "autoIn": "Moving on in {s}s…",
     "rejoinAsk": "{name} wants to rejoin (new phone)",
     "rejoinAllow": "Allow",
-    "rejoinDeny": "Deny"
+    "rejoinDeny": "Deny",
+    "voiceSpeed": "Narrator reading speed"
   },
   "settings": {
     "nightOrder": "Night wake-up order",
@@ -583,7 +584,9 @@
     "wolfAutoTarget": "The Werewolves are offline — {target} was picked at random",
     "voteRandom": "{actor} didn't vote in time → counted as a random vote: {target}",
     "defenseDone": "{actor} ended their defense",
-    "nominationTally": "Nomination count: {counts} · skipped {skips}"
+    "nominationTally": "Nomination count: {counts} · skipped {skips}",
+    "stepNobody": "{step}: nobody left alive — skipped",
+    "stepOffline": "{step} was offline and did not act — skipped"
   },
   "privacy": {
     "title": "Privacy policy",

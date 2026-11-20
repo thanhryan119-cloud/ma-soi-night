@@ -26,6 +26,11 @@ export default function Home() {
     setBusy(false);
     if (!showError(res) || !res.code) return;
     storage.set(hostKey(res.code), res.hostToken);
+    const saved = storage.get<Record<string, unknown>>("msn:hostSettings");
+    if (saved) {
+      await emitAck("host:action", { type: "updateSettings", settings: saved });
+      if (saved.roleCounts) await emitAck("host:action", { type: "setRoleCounts", roleCounts: saved.roleCounts });
+    }
     router.push(`/host/${res.code}`);
   }
 

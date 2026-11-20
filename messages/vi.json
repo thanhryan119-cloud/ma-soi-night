@@ -233,7 +233,8 @@
     "autoIn": "Tự chuyển sau {s}s…",
     "rejoinAsk": "{name} muốn vào lại ván (điện thoại mới)",
     "rejoinAllow": "Cho phép",
-    "rejoinDeny": "Từ chối"
+    "rejoinDeny": "Từ chối",
+    "voiceSpeed": "Tốc độ đọc của quản trò"
   },
   "settings": {
     "nightOrder": "Thứ tự gọi ban đêm",
@@ -583,7 +584,9 @@
     "wolfAutoTarget": "Sói mất kết nối — hệ thống chọn ngẫu nhiên {target}",
     "voteRandom": "{actor} không kịp vote → tính như vote ngẫu nhiên: {target}",
     "defenseDone": "{actor} kết thúc phần biện hộ",
-    "nominationTally": "Kết quả vote lên dàn: {counts} · bỏ qua {skips}"
+    "nominationTally": "Kết quả vote lên dàn: {counts} · bỏ qua {skips}",
+    "stepNobody": "{step} không còn ai sống — bỏ qua",
+    "stepOffline": "{step} mất kết nối, không hành động — bỏ qua"
   },
   "privacy": {
     "title": "Chính sách quyền riêng tư",

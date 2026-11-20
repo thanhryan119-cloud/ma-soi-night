@@ -121,14 +121,14 @@ export function speak(lines: string[], locale: Locale, rate = 1, onDone?: () => 
     const u = new SpeechSynthesisUtterance(p.text);
     u.lang = locale === "vi" ? "vi-VN" : "en-US";
     if (voice) u.voice = voice;
-    u.rate = p.rate * rate;
+    u.rate = Math.min(2, p.rate * rate);
     u.pitch = deep + Math.sin(k * 2.3) * 0.04;
     u.volume = 1;
     let moved = false;
     const go = () => {
       if (moved) return;
       moved = true;
-      setTimeout(() => next(k + 1), p.pause);
+      setTimeout(() => next(k + 1), p.pause / Math.max(0.5, rate));
     };
     u.onend = go;
     u.onerror = go;

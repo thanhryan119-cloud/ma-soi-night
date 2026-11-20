@@ -73,6 +73,11 @@ export function PlayerGame({ state, offset, connected }: Props) {
       {!me.alive && kind !== "gameOver" && (
         <div className="flex shrink-0 items-center gap-2 border-b border-blood/30 bg-blood/10 px-3 py-1.5 text-xs">
           <span className="min-w-0 flex-1 truncate">💀 {t("player.spectator")}</span>
+          {state.log && (
+            <button className="btn-ghost btn-sm shrink-0" onClick={() => setSheet("timeline")}>
+              📜 {t("screen.timeline")}
+            </button>
+          )}
           {canSeeRoles && (
             <button className="btn-ghost btn-sm shrink-0" onClick={() => setSheet("roles")}>
               {t("player.allRoles")}

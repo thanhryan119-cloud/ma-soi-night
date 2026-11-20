@@ -416,6 +416,10 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
     // The game is over, nothing is secret any more: everyone gets the full
     // story — every night action, every ballot, every nomination and verdict.
     state.log = room.log;
+  } else if (viewer === "player" && game && me && !me.alive) {
+    // Dead players can follow the story: everything when the host lets the
+    // dead see roles, otherwise only the public events.
+    state.log = room.settings.deadSeeRoles ? room.log : room.log.filter((e) => e.public);
   }
   return state;
 }

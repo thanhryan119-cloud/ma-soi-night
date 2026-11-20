@@ -48,6 +48,15 @@ export default function HostApp({ code }: { code: string }) {
   const canSpeakTts = useTtsSupported();
   const [voiceOver, setVoiceOver] = useState(false);
   useEffect(() => setVoiceOver(storage.get<boolean>("msn:voiceOver") ?? false), []);
+  // How fast the narrator reads (also shortens the pauses and the silent reading time).
+  const [voiceRate, setVoiceRate] = useState(1.25);
+  useEffect(() => setVoiceRate(storage.get<number>("msn:voiceRate") ?? 1.25), []);
+
+  // Remember the host's rules so the next room starts with the same settings.
+  const settingsJson = state && state.viewer === "host" ? JSON.stringify(state.settings) : "";
+  useEffect(() => {
+    if (settingsJson) storage.set("msn:hostSettings", JSON.parse(settingsJson));
+  }, [settingsJson]);
   // Never say out loud that a role has nobody left alive: that would tell the table who died.
   const silent = t("script.stepNobody");
   const lines = state && state.viewer === "host" ? scriptLines(state, t).filter((l) => l !== silent) : [];
@@ -62,16 +71,16 @@ export default function HostApp({ code }: { code: string }) {
     const report = (done: boolean) => !cancelled && emitAck("host:narration", { key: stepKey, done });
     report(false);
     let timer: ReturnType<typeof setTimeout> | undefined;
-    if (voiceOver && linesKey) speak(lines, locale, 1, () => report(true));
+    if (voiceOver && linesKey) speak(lines, locale, voiceRate, () => report(true));
     else {
       const words = linesKey.split(/\s+/).filter(Boolean).length;
-      timer = setTimeout(() => report(true), linesKey ? 1500 + words * 350 : 0);
+      timer = setTimeout(() => report(true), linesKey ? (1500 + words * 350) / voiceRate : 0);
     }
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [linesKey, stepKey, voiceOver, locale]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [linesKey, stepKey, voiceOver, locale, voiceRate]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => stopSpeaking(), []);
 
   async function toggleVoiceOver() {
@@ -129,7 +138,7 @@ export default function HostApp({ code }: { code: string }) {
           <a className="btn-ghost btn-sm" href={`/screen/${code}`} target="_blank" rel="noreferrer">
             📽️ {t("host.openScreen")}
           </a>
-          {state && state.phase.kind !== "lobby" && (
+          {state && (
             <button className="btn-ghost btn-sm" onClick={toggleHide} aria-pressed={hideRoles}>
               {hideRoles ? `🙈 ${t("host.showRoles")}` : `👁️ ${t("host.hideRoles")}`}
             </button>
@@ -144,6 +153,25 @@ export default function HostApp({ code }: { code: string }) {
               🗣️ {t("host.voiceOver")}
             </button>
           )}
+          <label className="flex items-center gap-1 text-xs text-white/70" title={t("host.voiceSpeed")}>
+            ⏩
+            <select
+              className="ui-select w-auto py-1 text-xs"
+              value={voiceRate}
+              onChange={(e) => {
+                const r = Number(e.target.value);
+                storage.set("msn:voiceRate", r);
+                setVoiceRate(r);
+              }}
+              aria-label={t("host.voiceSpeed")}
+            >
+              {[1, 1.25, 1.5, 1.75, 2].map((r) => (
+                <option key={r} value={r}>
+                  {r}×
+                </option>
+              ))}
+            </select>
+          </label>
           <button className={`btn-sm btn ${sound ? "bg-gold text-night-950" : "btn-ghost"}`} onClick={toggleSound} aria-pressed={sound}>
             {sound ? "🔊" : "🔈"} {t("host.sound")}
           </button>
@@ -153,7 +181,7 @@ export default function HostApp({ code }: { code: string }) {
       {!state || state.viewer !== "host" ? (
         <Spinner label={t("common.loading")} />
       ) : state.phase.kind === "lobby" ? (
-        <HostLobby state={state} />
+        <HostLobby state={state} hideRoles={hideRoles} />
       ) : (
         <>
           <RejoinRequests requests={state.rejoinRequests} />

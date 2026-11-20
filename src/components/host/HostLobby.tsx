@@ -13,14 +13,14 @@ import { useHostAction } from "./common";
 import { RulesCard } from "./RulesCard";
 import { SocialPanel } from "@/components/SocialPanel";
 
-export function HostLobby({ state }: { state: ClientState }) {
+export function HostLobby({ state, hideRoles = false }: { state: ClientState; hideRoles?: boolean }) {
   return (
     <main className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.2fr)]">
       <div className="xl:min-h-0 xl:overflow-y-auto">
         <JoinCard state={state} />
       </div>
       <div className="flex flex-col gap-4 xl:min-h-0 xl:overflow-y-auto">
-        <PlayersCard state={state} />
+        <PlayersCard state={state} hideRoles={hideRoles} />
         <SocialPanel state={state} viewer="host" className="h-[520px] shrink-0" />
       </div>
       <div className="flex flex-col gap-4 lg:col-span-2 xl:col-span-1 xl:min-h-0 xl:overflow-y-auto">
@@ -114,7 +114,7 @@ function JoinCard({ state }: { state: ClientState }) {
   );
 }
 
-function PlayersCard({ state }: { state: ClientState }) {
+function PlayersCard({ state, hideRoles = false }: { state: ClientState; hideRoles?: boolean }) {
   const t = useT();
   const act = useHostAction();
   const assigned = state.players.filter((p) => p.assignedRole).length;
@@ -138,6 +138,10 @@ function PlayersCard({ state }: { state: ClientState }) {
                 {!p.connected && !p.isBot && <span className="chip py-0 text-blood-light">{t("common.offline")}</span>}
               </div>
             </div>
+            {hideRoles ? (
+              // Roles hidden: nobody glancing at the host screen can see who got what.
+              <span className="chip">{p.assignedRole ? "🂠 •••" : t("host.unassigned")}</span>
+            ) : (
             <select
               className="ui-select max-w-[9.5rem]"
               value={p.assignedRole ?? ""}
@@ -153,6 +157,7 @@ function PlayersCard({ state }: { state: ClientState }) {
                 </option>
               ))}
             </select>
+            )}
             <button
               className="btn-ghost btn-sm"
               title={t("host.rename")}
