@@ -14,6 +14,8 @@ export interface AccountUser {
   style: PlayerStyle;
   /** Shop items this account bought. */
   owned: ItemId[];
+  /** May manage discount codes (/admin/codes). */
+  isAdmin?: boolean;
 }
 
 export interface LocalProfile {
@@ -166,13 +168,30 @@ export function fetchShop(): Promise<ShopInfo> {
   return shopInfo;
 }
 
-/** Opens a payOS checkout for one item; on success the browser leaves for payOS. */
-export async function buyItem(itemId: ItemId): Promise<ApiResult> {
+export interface CodeCheck {
+  code: string;
+  kind: "percent" | "amount";
+  value: number;
+  /** Price of one item after the code. */
+  amount: number;
+}
+
+/** What a discount code does for me right now (price after it), or why it can't be used. */
+export async function checkCode(code: string): Promise<ApiResult & Partial<CodeCheck>> {
+  return (await api(`/shop/codes/${encodeURIComponent(code.trim())}`)) as ApiResult & Partial<CodeCheck>;
+}
+
+/**
+ * Buys one item, with an optional discount code. Usually the browser leaves for
+ * payOS; a code that covers the whole price unlocks it right away (`free`).
+ */
+export async function buyItem(itemId: ItemId, code?: string): Promise<ApiResult & { free?: boolean }> {
   const r = (await api("/shop/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ itemId, returnUrl: window.location.origin }),
-  })) as ApiResult & { checkoutUrl?: string };
+    body: JSON.stringify({ itemId, returnUrl: window.location.origin, ...(code ? { code } : {}) }),
+  })) as ApiResult & { checkoutUrl?: string; free?: boolean };
+  if (r.ok && r.free && r.user && auth) setAuth({ ...auth, user: { ...r.user, owned: sanitizeOwned(r.user.owned) } });
   if (r.ok && r.checkoutUrl) {
     // payOS brings the buyer back to /profile; remember where they bought from.
     storage.set(SHOP_RETURN_KEY, window.location.pathname + window.location.search);
@@ -188,6 +207,57 @@ export async function checkOrder(orderCode: number): Promise<ApiResult & { order
   const r = (await api(`/shop/orders/${orderCode}`)) as ApiResult & { order?: { itemId: ItemId; status: OrderStatus } };
   if (r.ok && r.user && auth) setAuth({ ...auth, user: { ...r.user, owned: sanitizeOwned(r.user.owned) } });
   return r;
+}
+
+// ---------------------------------------------------------------------------
+// Discount code management (admins only)
+// ---------------------------------------------------------------------------
+
+export interface AdminCode {
+  code: string;
+  kind: "percent" | "amount";
+  value: number;
+  maxUses: number | null;
+  uses: number;
+  expiresAt: number | null;
+  active: boolean;
+  note: string;
+  createdAt: number;
+  /** VND brought in by paid orders that used it. */
+  revenue: number;
+}
+
+type CodesResult = ApiResult & { codes?: AdminCode[] };
+
+export async function listCodes(): Promise<CodesResult> {
+  return (await api("/shop/admin/codes")) as CodesResult;
+}
+
+export async function createCode(input: {
+  code: string;
+  kind: "percent" | "amount";
+  value: number;
+  maxUses: number | null;
+  expiresAt: number | null;
+  note: string;
+}): Promise<CodesResult> {
+  return (await api("/shop/admin/codes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  })) as CodesResult;
+}
+
+export async function updateCode(code: string, patch: Partial<Pick<AdminCode, "active" | "maxUses" | "expiresAt" | "note">>): Promise<CodesResult> {
+  return (await api(`/shop/admin/codes/${encodeURIComponent(code)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  })) as CodesResult;
+}
+
+export async function deleteCode(code: string): Promise<CodesResult> {
+  return (await api(`/shop/admin/codes/${encodeURIComponent(code)}`, { method: "DELETE" })) as CodesResult;
 }
 
 export async function signOut() {

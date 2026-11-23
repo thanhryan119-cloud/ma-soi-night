@@ -36,6 +36,8 @@ export interface User {
   style?: PlayerStyle;
   /** Shop items bought with payOS. */
   owned?: string[];
+  /** Google account email, refreshed at every sign-in (used to recognise admins). */
+  email?: string;
   createdAt: number;
 }
 
@@ -46,6 +48,12 @@ interface Store {
 }
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ?? "";
+/** Google emails that may manage discount codes (comma separated). Read on use, after .env is loaded. */
+const adminEmails = () =>
+  (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
 const MAX_AVATAR_BYTES = 1024 * 1024; // the client resizes to 256px, so this is generous
 const SESSION_TTL_MS = 180 * 24 * 60 * 60 * 1000;
 const googleKeys = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
@@ -139,7 +147,15 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
   const ownedOf = (u: User | undefined | null) => sanitizeOwned(u?.owned);
   /** The style others see: anything not (or no longer) owned falls back to the default. */
   const styleOf = (u: User) => limitStyle(u.style ?? DEFAULT_STYLE, ownedOf(u));
-  const publicUser = (u: User) => ({ id: u.id, name: u.name, avatarUrl: u.avatarUrl, style: styleOf(u), owned: ownedOf(u) });
+  const isAdmin = (u: User) => !!u.email && adminEmails().includes(u.email.toLowerCase());
+  const publicUser = (u: User) => ({
+    id: u.id,
+    name: u.name,
+    avatarUrl: u.avatarUrl,
+    style: styleOf(u),
+    owned: ownedOf(u),
+    isAdmin: isAdmin(u),
+  });
 
   /** Adds a bought item to the account and equips it. Safe to call twice. */
   function grantItem(userId: string, item: ItemId) {
@@ -219,6 +235,8 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
           };
           store.users[user.id] = user;
         }
+        // Only a verified Google email can make someone an admin.
+        if (typeof payload.email === "string" && payload.email_verified !== false) user.email = payload.email.toLowerCase();
         const token = randomBytes(32).toString("hex");
         store.sessions[token] = { userId: user.id, createdAt: Date.now() };
         save();
@@ -292,6 +310,7 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
     profileOf,
     grantItem,
     publicUser,
+    isAdmin,
     /** Shop items a user owns (empty for guests). */
     ownedFor: (userId: string | null | undefined) => ownedOf(userId ? store.users[userId] : null),
     enabled: !!GOOGLE_CLIENT_ID,

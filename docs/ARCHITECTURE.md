@@ -99,6 +99,10 @@ Mỗi font/hiệu ứng/khung trừ mặc định là một món `<loại>:<id>`
 | `POST /shop/checkout` | đã đăng nhập | `{ itemId, returnUrl }` → tạo link payOS (ký HMAC-SHA256), trả `checkoutUrl`; bấm lại thì dùng lại link còn hạn |
 | `GET /shop/orders/:orderCode` | chủ đơn | đơn còn chờ thì hỏi payOS; đã trả thì mở khoá |
 | `POST /payos/webhook` | payOS | kiểm chữ ký, `code = "00"` và đủ tiền thì mở khoá (mỗi đơn đúng một lần) |
+| `GET /shop/codes/:code` | đã đăng nhập | mã còn dùng được không, giá sau khi giảm |
+| `GET/POST /shop/admin/codes`, `PATCH/DELETE /shop/admin/codes/:code` | email trong `ADMIN_EMAILS` | quản lý mã giảm giá (`shared/codes.ts`, lưu `codes.json`) |
+
+Mã giảm giá: `POST /shop/checkout` nhận thêm `code`; giá payOS là giá sau giảm, đơn lưu `code`. Lượt dùng (`uses`, `usedBy`) chỉ cộng khi đơn được trả (`fulfil`), mỗi tài khoản một lần. Giá về 0 thì mở khoá ngay, không tạo link payOS. `User.email` được ghi lại ở mỗi lần đăng nhập Google để nhận ra quản trị viên.
 
 ## 4. Luật xử lý đêm (`shared/rules.ts › resolveNight`)
 

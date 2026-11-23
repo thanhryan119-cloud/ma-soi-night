@@ -8,7 +8,7 @@ export function cors(req: IncomingMessage, res: ServerResponse, corsOrigin: stri
   if (allowed) res.setHeader("Access-Control-Allow-Origin", corsOrigin === "*" ? "*" : origin);
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
 }
 
 export function json(res: ServerResponse, status: number, body: unknown) {

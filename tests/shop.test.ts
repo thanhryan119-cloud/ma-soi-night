@@ -10,6 +10,7 @@ import { DEFAULT_STYLE, ITEM_PRICE_VND, SHOP_ITEMS, limitStyle, sanitizeOwned } 
 import { buildView } from "../shared/views";
 import { createPayOS, signData, signPaymentRequest, verifyWebhook } from "../server/payos";
 import { createShop } from "../server/shop";
+import { cleanCodeInput, codeProblem, discountedPrice } from "../shared/codes";
 
 const KEY = "test-checksum-key";
 const hmac = (s: string) => createHmac("sha256", KEY).update(s).digest("hex");
@@ -105,7 +106,10 @@ function call(handle: (req: IncomingMessage, res: ServerResponse) => Promise<boo
 function setup() {
   const users: Record<string, { id: string; owned: string[]; style: typeof DEFAULT_STYLE }> = {
     u1: { id: "u1", owned: [], style: DEFAULT_STYLE },
+    u2: { id: "u2", owned: [], style: DEFAULT_STYLE },
+    boss: { id: "boss", owned: [], style: DEFAULT_STYLE },
   };
+  const tokens: Record<string, string> = { tok1: "u1", tok2: "u2", tokBoss: "boss" };
   const grants: string[] = [];
   let payStatus = "PENDING";
   const created: Record<string, unknown>[] = [];
@@ -125,7 +129,8 @@ function setup() {
     corsOrigin: "*",
     payos,
     accounts: {
-      userForToken: (t) => (t === "tok1" ? users.u1 : null),
+      userForToken: (t) => users[tokens[String(t)]] ?? null,
+      isAdmin: (u) => u.id === "boss",
       ownedFor: (id) => users[id]?.owned ?? [],
       grantItem: (id, item) => {
         grants.push(item);
@@ -206,5 +211,102 @@ describe("shop routes", () => {
     expect(grants).toEqual(["font:script"]);
     // Someone else's order is not visible.
     expect((await call(shop.handle, "GET", `/shop/orders/${orderCode}`, undefined, "nope")).status).toBe(401);
+  });
+});
+
+describe("discount code rules", () => {
+  const base = { maxUses: null, uses: 0, usedBy: [], expiresAt: null, active: true, note: "", createdAt: 0 };
+  it("takes a percentage or an amount off, never below zero", () => {
+    expect(discountedPrice(50000, { kind: "percent", value: 20 })).toBe(40000);
+    expect(discountedPrice(50000, { kind: "percent", value: 100 })).toBe(0);
+    expect(discountedPrice(50000, { kind: "amount", value: 15000 })).toBe(35000);
+    expect(discountedPrice(50000, { kind: "amount", value: 90000 })).toBe(0);
+  });
+
+  it("says why a code cannot be used", () => {
+    const c = { ...base, code: "X", kind: "percent" as const, value: 10 };
+    expect(codeProblem(undefined, "u1")).toBe("err.codeInvalid");
+    expect(codeProblem({ ...c, active: false }, "u1")).toBe("err.codeInvalid");
+    expect(codeProblem({ ...c, expiresAt: 1000 }, "u1", 2000)).toBe("err.codeExpired");
+    expect(codeProblem({ ...c, maxUses: 2, uses: 2 }, "u1")).toBe("err.codeUsedUp");
+    expect(codeProblem({ ...c, usedBy: ["u1"] }, "u1")).toBe("err.codeAlreadyUsed");
+    expect(codeProblem(c, "u1")).toBeNull();
+  });
+
+  it("validates what the management page sends", () => {
+    expect(cleanCodeInput({ code: " tet-2027 ", kind: "percent", value: 30 }, true)).toEqual({
+      ok: true,
+      fields: { code: "TET-2027", kind: "percent", value: 30, maxUses: null, expiresAt: null, active: true, note: "" },
+    });
+    expect(cleanCodeInput({ code: "a b", kind: "percent", value: 30 }, true)).toEqual({ ok: false, error: "err.codeFormat" });
+    expect(cleanCodeInput({ code: "OK1", kind: "percent", value: 120 }, true)).toEqual({ ok: false, error: "err.codeValue" });
+    expect(cleanCodeInput({ code: "OK1", kind: "amount", value: 0 }, true)).toEqual({ ok: false, error: "err.codeValue" });
+    expect(cleanCodeInput({ active: false, maxUses: null }, false)).toEqual({ ok: true, fields: { active: false, maxUses: null } });
+  });
+});
+
+describe("discount codes in the shop", () => {
+  const create = (shop: ReturnType<typeof setup>["shop"], body: Record<string, unknown>, token = "tokBoss") =>
+    call(shop.handle, "POST", "/shop/admin/codes", body, token);
+
+  it("only admins can list and manage codes", async () => {
+    const { shop } = setup();
+    expect((await call(shop.handle, "GET", "/shop/admin/codes", undefined, "tok1")).status).toBe(403);
+    expect((await create(shop, { code: "X1Y", kind: "percent", value: 10 }, "tok1")).status).toBe(403);
+    const r = await create(shop, { code: "tet", kind: "percent", value: 10 });
+    expect(r.body.ok).toBe(true);
+    expect((r.body.codes as { code: string }[])[0].code).toBe("TET");
+    expect((await create(shop, { code: "TET", kind: "amount", value: 5000 })).body.error).toBe("err.codeExists");
+  });
+
+  it("charges the discounted price and counts the use once paid", async () => {
+    const { shop, created } = setup();
+    await create(shop, { code: "SALE20", kind: "percent", value: 20 });
+    const check = await call(shop.handle, "GET", "/shop/codes/sale20", undefined, "tok1");
+    expect(check.body).toMatchObject({ ok: true, code: "SALE20", amount: 40000 });
+
+    const r = await call(shop.handle, "POST", "/shop/checkout", { itemId: "effect:glow", returnUrl: "http://localhost:3000", code: "sale20" }, "tok1");
+    expect(r.body.ok).toBe(true);
+    const req = created[0] as Record<string, number>;
+    expect(req.amount).toBe(40000);
+    expect(req.signature).toBe(signPaymentRequest(KEY, req as never));
+
+    // Not counted while unpaid.
+    let list = (await call(shop.handle, "GET", "/shop/admin/codes", undefined, "tokBoss")).body.codes as { uses: number; revenue: number }[];
+    expect(list[0].uses).toBe(0);
+
+    const data = { orderCode: r.body.orderCode, amount: 40000, description: "MASOI", code: "00" };
+    await call(shop.handle, "POST", "/payos/webhook", { code: "00", data, signature: signData(KEY, data) });
+    list = (await call(shop.handle, "GET", "/shop/admin/codes", undefined, "tokBoss")).body.codes as { uses: number; revenue: number }[];
+    expect(list[0]).toMatchObject({ uses: 1, revenue: 40000 });
+
+    // One use per account.
+    const again = await call(shop.handle, "POST", "/shop/checkout", { itemId: "frame:moon", code: "SALE20" }, "tok1");
+    expect(again.body.error).toBe("err.codeAlreadyUsed");
+  });
+
+  it("a 100% code unlocks right away without payOS, within its use limit", async () => {
+    const { shop, created, grants } = setup();
+    await create(shop, { code: "FREE1", kind: "percent", value: 100, maxUses: 1 });
+    const r = await call(shop.handle, "POST", "/shop/checkout", { itemId: "frame:moon", code: "FREE1" }, "tok1");
+    expect(r.body).toMatchObject({ ok: true, free: true });
+    expect(grants).toEqual(["frame:moon"]);
+    expect(created).toHaveLength(0);
+    const second = await call(shop.handle, "POST", "/shop/checkout", { itemId: "frame:moon", code: "FREE1" }, "tok2");
+    expect(second.body.error).toBe("err.codeUsedUp");
+  });
+
+  it("paused, expired and deleted codes stop working", async () => {
+    const { shop } = setup();
+    await create(shop, { code: "PAUSE", kind: "amount", value: 10000 });
+    await call(shop.handle, "PATCH", "/shop/admin/codes/PAUSE", { active: false }, "tokBoss");
+    expect((await call(shop.handle, "GET", "/shop/codes/PAUSE", undefined, "tok1")).body.error).toBe("err.codeInvalid");
+
+    await create(shop, { code: "OLD", kind: "amount", value: 10000, expiresAt: 1000 });
+    expect((await call(shop.handle, "GET", "/shop/codes/OLD", undefined, "tok1")).body.error).toBe("err.codeExpired");
+
+    const del = await call(shop.handle, "DELETE", "/shop/admin/codes/OLD", undefined, "tokBoss");
+    expect((del.body.codes as { code: string }[]).map((c) => c.code)).toEqual(["PAUSE"]);
+    expect((await call(shop.handle, "GET", "/shop/codes/OLD", undefined, "tok1")).body.error).toBe("err.codeInvalid");
   });
 });

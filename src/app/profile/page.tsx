@@ -57,6 +57,7 @@ export default function ProfilePage() {
       </button>
       <RoleShopCard />
       <MyStats />
+      <AdminLink />
     </main>
   );
 }
@@ -114,6 +115,18 @@ function usePaymentReturn(setProfile: React.Dispatch<React.SetStateAction<LocalP
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return backTo;
+}
+
+/** Admins (ADMIN_EMAILS on the server) get a way into the code management page. */
+function AdminLink() {
+  const t = useT();
+  const account = useAccount();
+  if (!account?.user.isAdmin) return null;
+  return (
+    <Link href="/admin/codes" className="btn-ghost w-full">
+      🏷️ {t("codes.manage")}
+    </Link>
+  );
 }
 
 /** The signed-in player's own career (guests are invited to sign in). */

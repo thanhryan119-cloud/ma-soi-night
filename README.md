@@ -73,6 +73,7 @@ App gồm 2 phần deploy riêng:
   - `DATA_FILE` *(tùy chọn)* — đường dẫn file snapshot, ví dụ `/data/rooms.json` nếu gắn Volume, để phòng sống sót qua lần redeploy.
   - `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY` *(tùy chọn)* — bật cửa hàng (xem mục Cửa hàng bên dưới).
   - `PUBLIC_WEB_URL` *(tùy chọn)* — domain web để payOS đưa người mua quay về, ví dụ `https://ma-soi.vercel.app`.
+  - `ADMIN_EMAILS` *(tùy chọn)* — email Google được vào trang quản lý mã giảm giá `/admin/codes` (nhiều email cách nhau bằng dấu phẩy).
 - Kiểm tra: `https://<server>/health` trả `{"ok":true}`.
 
 **Cập nhật server sau khi sửa code** (Railway CLI đã đăng nhập một lần bằng `npx @railway/cli login`):
@@ -93,6 +94,10 @@ Font tên, hiệu ứng tên và khung avatar (trừ mặc định) được bá
 1. Tạo kênh thanh toán trên https://my.payos.vn, lấy *Client ID*, *API Key*, *Checksum Key* và đặt vào biến môi trường của socket server.
 2. Trong kênh thanh toán, đặt **Webhook URL** = `https://<socket-server>/payos/webhook` (payOS gửi thử một đơn mẫu, server trả 200).
 3. Khi chạy local, webhook không tới được máy bạn: lúc người mua quay về `/profile?order=…`, server tự hỏi payOS trạng thái đơn nên vẫn mở khoá được.
+
+### Mã giảm giá
+
+Trang **`/admin/codes`** (nút "Quản lý mã giảm giá" ở trang Hồ sơ) dành cho email trong `ADMIN_EMAILS`. Sau khi thêm email, hãy đăng xuất rồi đăng nhập Google lại để server ghi nhận email. Ở trang này có thể tạo mã giảm theo % hoặc theo số tiền, giới hạn tổng lượt dùng, đặt ngày hết hạn, tạm dừng hoặc xoá mã, và xem số lượt đã dùng cùng doanh thu của từng mã. Mỗi tài khoản chỉ dùng mỗi mã một lần; lượt dùng được tính khi thanh toán xong. Mã giảm 100% (hoặc giảm từ 50.000đ trở lên) mở khoá món ngay, không qua payOS. Người mua nhập mã ở khung mua ("Có mã giảm giá?"). Mã lưu ở `codes.json`.
 
 Server luôn kiểm tra quyền sở hữu (vào phòng, đổi hồ sơ, `PATCH /me`), nên món chưa mua không hiện cho người khác dù máy khách gửi lên. Bot vẫn đeo đồ ngẫu nhiên để khoe hàng. Đơn hàng lưu ở `orders.json`, món đã mua lưu trong `users.json` (cùng thư mục `DATA_FILE`).
 

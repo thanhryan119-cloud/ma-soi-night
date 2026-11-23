@@ -19,7 +19,9 @@ import {
 import {
   GOOGLE_CLIENT_ID,
   buyItem,
+  checkCode,
   fetchShop,
+  type CodeCheck,
   type ShopInfo,
   signInWithGoogle,
   signOut,
@@ -177,36 +179,101 @@ function BuyBar({
   const price = usePrice();
   const showError = useErrorToast();
   const [busy, setBusy] = useState(false);
+  const [codeOpen, setCodeOpen] = useState(false);
+  const [codeText, setCodeText] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [applied, setApplied] = useState<CodeCheck | null>(null);
   const [kind, value] = item.split(":") as [ItemKind, string];
   const name = t(`profile.${kind}.${value}`);
-  const cost = price(shop?.price ?? ITEM_PRICE_VND);
+  const listPrice = shop?.price ?? ITEM_PRICE_VND;
+  const finalPrice = applied ? applied.amount : listPrice;
+  const cost = price(finalPrice);
+  const free = !!applied && applied.amount === 0;
+
+  async function apply() {
+    if (!codeText.trim()) return;
+    setChecking(true);
+    const r = await checkCode(codeText);
+    setChecking(false);
+    if (showError(r) && r.code && r.kind && r.value !== undefined && r.amount !== undefined)
+      setApplied({ code: r.code, kind: r.kind, value: r.value, amount: r.amount });
+  }
+
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-gold/40 bg-gold/[0.06] p-4" role="region" aria-label={t("shop.title")}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-2">
         <span className="font-bold">{t("shop.trying", { item: name })}</span>
-        <span className="font-bold text-gold">{cost}</span>
+        <span className="flex items-baseline gap-2">
+          {applied && <s className="text-sm text-white/40">{price(listPrice)}</s>}
+          <span className="font-bold text-gold">{free ? t("shop.free") : cost}</span>
+        </span>
       </div>
+      {user &&
+        (applied ? (
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="chip">🏷️ {applied.code}</span>
+            <span className="text-white/70">
+              {applied.kind === "percent" ? t("shop.codePercent", { value: applied.value }) : t("shop.codeAmount", { value: price(applied.value) })}
+            </span>
+            <button type="button" className="btn-ghost btn-sm ml-auto" onClick={() => setApplied(null)}>
+              {t("shop.codeRemove")}
+            </button>
+          </div>
+        ) : codeOpen ? (
+          <form
+            className="flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              apply();
+            }}
+          >
+            <label className="sr-only" htmlFor="shop-code">
+              {t("shop.codeLabel")}
+            </label>
+            <input
+              id="shop-code"
+              className="ui-select min-w-0 flex-1 py-2 text-base uppercase"
+              value={codeText}
+              maxLength={24}
+              autoComplete="off"
+              autoCapitalize="characters"
+              placeholder={t("shop.codePlaceholder")}
+              onChange={(e) => setCodeText(e.target.value)}
+            />
+            <button type="submit" className="btn-ghost btn-sm" disabled={checking || !codeText.trim()}>
+              {checking ? "…" : t("shop.codeApply")}
+            </button>
+          </form>
+        ) : (
+          <button type="button" className="self-start text-sm text-gold/80 underline underline-offset-2" onClick={() => setCodeOpen(true)}>
+            {t("shop.haveCode")}
+          </button>
+        ))}
       {!user ? (
         <p className="text-sm text-white/70">{t("shop.signInToBuy")}</p>
-      ) : shop && !shop.enabled ? (
+      ) : shop && !shop.enabled && !free ? (
         <p className="text-sm text-white/60">{t("shop.disabled")}</p>
       ) : (
         <p className="text-xs text-white/50">{t("shop.hint")}</p>
       )}
       <div className="flex flex-wrap gap-2">
-        {user && shop?.enabled && (
+        {user && (shop?.enabled || free) && (
           <button
             type="button"
             className="btn-primary flex-1"
             disabled={busy}
             onClick={async () => {
               setBusy(true);
-              const r = await buyItem(item);
-              // On success the page is leaving for payOS; keep the button busy.
-              if (!showError(r)) setBusy(false);
+              const r = await buyItem(item, applied?.code);
+              if (!showError(r)) return setBusy(false);
+              // Free with a code: unlocked already. Otherwise the page is leaving for payOS.
+              if (r.free) {
+                setBusy(false);
+                toast(t("shop.paid", { item: name }), "info");
+              }
             }}
           >
-            {busy ? t("shop.redirecting") : t("shop.buy", { price: cost })}
+            {busy ? t("shop.redirecting") : free ? t("shop.claimFree") : t("shop.buy", { price: cost })}
           </button>
         )}
         <button type="button" className="btn-ghost" onClick={onCancel}>
