@@ -1,8 +1,0 @@
-{
-  "$schema": "https://railway.com/railway.schema.json",
-  "deploy": {
-    "startCommand": "npm run server",
-    "healthcheckPath": "/health",
-    "restartPolicyType": "ON_FAILURE"
-  }
-}
