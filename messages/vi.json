@@ -442,6 +442,23 @@
       "pulse": "Nhịp tim"
     }
   },
+  "shop": {
+    "title": "Cửa hàng",
+    "price": "{price}đ",
+    "buy": "Mua {price} qua payOS",
+    "lockedItem": "Cần mua: {price}",
+    "trying": "Đang thử: {item}",
+    "hint": "Mỗi font, hiệu ứng tên hay khung avatar có giá riêng. Mua một lần, gắn với tài khoản, dùng trên mọi máy.",
+    "signInToBuy": "Đăng nhập Google (ở mục Tài khoản bên dưới) để mua. Món đồ sẽ gắn với tài khoản của bạn.",
+    "disabled": "Cửa hàng chưa mở trên máy chủ này.",
+    "redirecting": "Đang chuyển tới trang thanh toán…",
+    "cancel": "Thôi",
+    "checking": "Đang kiểm tra thanh toán…",
+    "paid": "Đã mở khoá {item}. Đang dùng ngay!",
+    "cancelled": "Đã huỷ thanh toán, bạn chưa bị trừ tiền.",
+    "pending": "Chưa nhận được tiền. Nếu bạn đã chuyển khoản, đợi một lát rồi tải lại trang.",
+    "backToRoom": "Quay lại phòng"
+  },
   "screen": {
     "waitingPlayers": "Đang chờ người chơi…",
     "joinAt": "Vào tại",
@@ -533,7 +550,12 @@
     "notOwner": "Chỉ trưởng phòng mới làm được việc này.",
     "wrongPassword": "Sai mật khẩu phòng.",
     "passwordRequired": "Phòng này cần mật khẩu.",
-    "abandoned": "Bạn đã thoát khỏi ván này, bot đang chơi thay."
+    "abandoned": "Bạn đã thoát khỏi ván này, bot đang chơi thay.",
+    "shopDisabled": "Cửa hàng chưa mở.",
+    "itemUnknown": "Món đồ không tồn tại.",
+    "itemOwned": "Bạn đã có món này rồi.",
+    "orderNotFound": "Không tìm thấy đơn hàng.",
+    "paymentFailed": "Không tạo được thanh toán, thử lại sau."
   },
   "log": {
     "join": "{name} vào phòng",

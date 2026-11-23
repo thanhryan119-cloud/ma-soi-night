@@ -1,10 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { LangSwitch, toast } from "@/components/ui";
-import { loadLocalProfile, refreshAccount, saveLocalProfile, useAccount, type LocalProfile } from "@/lib/account";
+import {
+  SHOP_RETURN_KEY,
+  checkOrder,
+  loadLocalProfile,
+  refreshAccount,
+  saveLocalProfile,
+  useAccount,
+  type LocalProfile,
+} from "@/lib/account";
+import { storage } from "@/lib/socket";
+import type { ItemKind } from "@shared/cosmetics";
 import { StatsView } from "@/components/Profile";
 import { fetchMyStats } from "@/lib/stats";
 import type { UserStats } from "@shared/stats";
@@ -17,6 +27,7 @@ export default function ProfilePage() {
     setProfile(loadLocalProfile());
     refreshAccount();
   }, []);
+  const backTo = usePaymentReturn(setProfile);
   return (
     <main className="mx-auto flex min-h-dvh max-w-lg flex-col gap-6 px-4 pt-16 pb-10">
       <LangSwitch />
@@ -26,6 +37,11 @@ export default function ProfilePage() {
         </Link>
         <h1 className="font-display text-3xl font-black">{t("profile.title")}</h1>
       </div>
+      {backTo && (
+        <Link href={backTo} className="btn-ghost w-full">
+          ← {t("shop.backToRoom")}
+        </Link>
+      )}
       {profile && <ProfileEditor value={profile} onChange={setProfile} />}
       <button
         className="btn-primary py-4 text-lg"
@@ -41,6 +57,60 @@ export default function ProfilePage() {
       <MyStats />
     </main>
   );
+}
+
+/**
+ * payOS sends the buyer back here with ?order=<code>. Ask the server whether the
+ * money landed (it double-checks with payOS), wear the item, and tidy the URL.
+ * Returns the page the purchase started from, if any.
+ */
+function usePaymentReturn(setProfile: React.Dispatch<React.SetStateAction<LocalProfile | null>>) {
+  const t = useT();
+  const [backTo, setBackTo] = useState<string | null>(null);
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const orderCode = parseInt(params.get("order") ?? params.get("orderCode") ?? "", 10);
+    if (!orderCode) return;
+    started.current = true;
+    window.history.replaceState(null, "", window.location.pathname);
+    const from = storage.get<string>(SHOP_RETURN_KEY);
+    storage.remove(SHOP_RETURN_KEY);
+    if (from && from.startsWith("/") && !from.startsWith("/profile")) setBackTo(from);
+
+    let alive = true;
+    (async () => {
+      // The webhook can land a few seconds after the buyer is sent back.
+      for (let i = 0; i < 6 && alive; i++) {
+        const r = await checkOrder(orderCode);
+        if (!r.ok || !r.order) return toast(t(r.error ?? "err.server"));
+        const { status, itemId } = r.order;
+        if (status === "paid") {
+          if (r.user) {
+            const style = r.user.style;
+            setProfile((p) => {
+              if (!p) return p;
+              const next = { ...p, style };
+              saveLocalProfile(next);
+              return next;
+            });
+          }
+          const [kind, value] = itemId.split(":") as [ItemKind, string];
+          return toast(t("shop.paid", { item: t(`profile.${kind}.${value}`) }), "info");
+        }
+        if (status === "cancelled" || status === "expired" || params.get("cancel") === "true")
+          return toast(t("shop.cancelled"), "info");
+        if (i === 0) toast(t("shop.checking"), "info");
+        await new Promise((res) => setTimeout(res, 3000));
+      }
+      if (alive) toast(t("shop.pending"));
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return backTo;
 }
 
 /** The signed-in player's own career (guests are invited to sign in). */

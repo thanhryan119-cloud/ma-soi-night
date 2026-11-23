@@ -87,6 +87,17 @@ Chỉ người chơi đăng nhập Google mới có thống kê (khách và bot 
 
 HTTP công khai: `GET /leaderboard` (mọi tài khoản; ai đủ `MIN_RANKED_GAMES` = 5 ván mới được xếp hạng, theo tỉ lệ thắng → số ván thắng → số ván; người chưa đủ xếp bên dưới theo số ván đã chơi), `GET /profiles/:userId`. `GET /me` trả thêm `stats` của chính mình.
 
+### Cửa hàng (`server/shop.ts`, `server/payos.ts`)
+
+Mỗi font/hiệu ứng/khung trừ mặc định là một món `<loại>:<id>` (ví dụ `effect:glow`), giá `ITEM_PRICE_VND` = 50.000đ. `User.owned` giữ các món đã mua; `limitStyle()` gỡ mọi món chưa sở hữu ở `addPlayer`, `updateProfile`, `PATCH /me`, hồ sơ công khai và bảng xếp hạng. `Player.owned` chỉ nằm trên server (không có trong view).
+
+| Route | Ai gọi | Việc |
+|---|---|---|
+| `GET /shop` | công khai | `{ enabled, price, items }` |
+| `POST /shop/checkout` | đã đăng nhập | `{ itemId, returnUrl }` → tạo link payOS (ký HMAC-SHA256), trả `checkoutUrl`; bấm lại thì dùng lại link còn hạn |
+| `GET /shop/orders/:orderCode` | chủ đơn | đơn còn chờ thì hỏi payOS; đã trả thì mở khoá |
+| `POST /payos/webhook` | payOS | kiểm chữ ký, `code = "00"` và đủ tiền thì mở khoá (mỗi đơn đúng một lần) |
+
 ## 4. Luật xử lý đêm (`shared/rules.ts › resolveNight`)
 
 1. Bảo vệ che chở → chặn cú cắn của Sói (không chặn độc).

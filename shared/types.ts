@@ -51,6 +51,8 @@ export interface Player {
   /** Uploaded/Google photo (validated server-side); falls back to the emoji avatar. */
   avatarUrl?: string | null;
   style?: PlayerStyle;
+  /** Shop items the linked account owns (server-side only, never sent to clients). */
+  owned?: string[];
   /** Linked account, if the player signed in. */
   userId?: string | null;
   locale: Locale;

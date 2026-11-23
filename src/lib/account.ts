@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { AVATARS } from "@shared/engine";
-import { DEFAULT_STYLE, sanitizeStyle, type PlayerStyle } from "@shared/cosmetics";
+import { DEFAULT_STYLE, limitStyle, sanitizeOwned, sanitizeStyle, type ItemId, type PlayerStyle } from "@shared/cosmetics";
 import { socketUrl, storage } from "./socket";
 
 export interface AccountUser {
@@ -12,6 +12,8 @@ export interface AccountUser {
   name: string;
   avatarUrl: string | null;
   style: PlayerStyle;
+  /** Shop items this account bought. */
+  owned: ItemId[];
 }
 
 export interface LocalProfile {
@@ -44,6 +46,7 @@ function load() {
   if (loaded || typeof window === "undefined") return;
   loaded = true;
   auth = storage.get<AuthState>(AUTH_KEY);
+  if (auth) auth = { ...auth, user: { ...auth.user, owned: sanitizeOwned(auth.user.owned) } };
 }
 
 function setAuth(next: AuthState) {
@@ -77,7 +80,8 @@ export function loadLocalProfile(): LocalProfile {
   return {
     name: typeof p.name === "string" ? p.name : "",
     avatar: AVATARS.includes(p.avatar ?? "") ? p.avatar! : AVATARS[Math.floor(Math.random() * AVATARS.length)],
-    style: sanitizeStyle(p.style ?? DEFAULT_STYLE),
+    // Paid items only stay on while the signed-in account owns them.
+    style: limitStyle(sanitizeStyle(p.style ?? DEFAULT_STYLE), getAuth()?.user.owned ?? []),
   };
 }
 
@@ -137,6 +141,52 @@ export async function uploadAvatar(file: File): Promise<ApiResult> {
   if (!blob) return { ok: false, error: "err.imageInvalid" };
   const r = await api("/me/avatar", { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
   if (r.ok && r.user && auth) setAuth({ ...auth, user: r.user });
+  return r;
+}
+
+// ---------------------------------------------------------------------------
+// Shop (payOS)
+// ---------------------------------------------------------------------------
+
+export interface ShopInfo {
+  enabled: boolean;
+  price: number;
+}
+
+export const SHOP_RETURN_KEY = "msn:shopReturn";
+
+let shopInfo: Promise<ShopInfo> | null = null;
+/** Is the shop on, and what does an item cost? (asked once per page load) */
+export function fetchShop(): Promise<ShopInfo> {
+  shopInfo ??= api("/shop").then((r) => {
+    const b = r as unknown as Partial<ShopInfo>;
+    if (!r.ok) shopInfo = null; // try again next time
+    return { enabled: !!(r.ok && b.enabled), price: Number(b.price) || 50_000 };
+  });
+  return shopInfo;
+}
+
+/** Opens a payOS checkout for one item; on success the browser leaves for payOS. */
+export async function buyItem(itemId: ItemId): Promise<ApiResult> {
+  const r = (await api("/shop/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ itemId, returnUrl: window.location.origin }),
+  })) as ApiResult & { checkoutUrl?: string };
+  if (r.ok && r.checkoutUrl) {
+    // payOS brings the buyer back to /profile; remember where they bought from.
+    storage.set(SHOP_RETURN_KEY, window.location.pathname + window.location.search);
+    window.location.assign(r.checkoutUrl);
+  }
+  return r;
+}
+
+export type OrderStatus = "pending" | "paid" | "cancelled" | "expired";
+
+/** After payOS sends the buyer back: did the payment land? Updates the account when it did. */
+export async function checkOrder(orderCode: number): Promise<ApiResult & { order?: { itemId: ItemId; status: OrderStatus } }> {
+  const r = (await api(`/shop/orders/${orderCode}`)) as ApiResult & { order?: { itemId: ItemId; status: OrderStatus } };
+  if (r.ok && r.user && auth) setAuth({ ...auth, user: { ...r.user, owned: sanitizeOwned(r.user.owned) } });
   return r;
 }
 
