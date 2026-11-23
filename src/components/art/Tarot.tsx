@@ -491,26 +491,77 @@ const ART: Record<RoleId, (f: Fill) => React.ReactNode> = {
       <circle cx="60" cy="110" r="2.6" fill={INK} {...g} strokeWidth={1.16} />
     </>
   ),
-  // The wolf beneath a bleeding moon, a curse sigil burning below it.
+  // A black wolf in profile howling at a huge bleeding moon, sitting in a curse circle.
   cursedWolf: (f) => (
     <>
-      {ART.werewolf(f)}
-      {/* the moon drips */}
-      <path d="M88 44 q1 6 0 9 q-1.4 2 -2.6 0 q-0.6 -4 2.6 -9 Z M95 46 q1 4 0 6 q-1.2 1.6 -2.2 0 q-0.4 -3 2.2 -6 Z M101 42 q1 5 0 7.5 q-1.3 1.8 -2.4 0 q-0.5 -3.5 2.4 -7.5 Z" fill={PALE} />
-      <circle cx="94" cy="36" r="13.5" fill="none" stroke={PALE} strokeWidth="1" strokeDasharray="1.6 1.6" />
-      {/* sigil over the brow: a circle crossed by a thorned line */}
-      <circle cx="60" cy="52" r="6" fill={INK} stroke={PALE} strokeWidth="1.4" />
-      <path d="M60 44 V60 M55 52 H65 M56.5 47.5 L63.5 56.5 M63.5 47.5 L56.5 56.5" stroke={PALE} strokeWidth="0.9" strokeLinecap="round" />
+      <circle cx="64" cy="70" r="40" fill="none" stroke={PALE} strokeWidth="0.9" strokeDasharray="2 2.2" />
+      <circle cx="64" cy="70" r="34" fill={PALE} />
+      {/* craters */}
+      <circle cx="84" cy="56" r="4" fill="none" stroke={INK} strokeWidth="1.2" />
+      <circle cx="90" cy="76" r="2.4" fill="none" stroke={INK} strokeWidth="1" />
+      <circle cx="78" cy="90" r="1.8" fill="none" stroke={INK} strokeWidth="0.9" />
+      {/* the moon bleeds */}
+      <path
+        d="M38 92 q3 9 1 17 q-1.6 3 -3.6 0 q-1.2 -8 2.6 -17 Z M46 99 q2 6 0.6 11 q-1.3 2.2 -2.8 0 q-0.8 -5 2.2 -11 Z M84 99 q2.4 8 0.8 14 q-1.5 2.6 -3.2 0 q-0.9 -6.5 2.4 -14 Z M92 90 q2 6 0.6 10 q-1.3 2 -2.6 0 q-0.7 -4.5 2 -10 Z"
+        fill={PALE}
+      />
+      <path d="M37 118 q1.6 3 0 4.6 q-1.6 -1.6 0 -4.6 Z M83 120 q1.6 3 0 4.6 q-1.6 -1.6 0 -4.6 Z" fill={PALE} />
+      <Sparks pts={[[20, 34, 2.2], [104, 30, 2], [18, 110, 1.6], [106, 104, 1.6]]} />
+      {/* ground and the pentagram the wolf sits in */}
+      <path d="M12 150 Q36 142 60 146 Q84 142 108 150 V164 H12 Z" fill={f.hatch} {...g} strokeWidth={1.16} />
+      <ellipse cx="60" cy="156" rx="42" ry="7" fill={INK} stroke={PALE} strokeWidth="1.3" />
+      <path d="M60 149 L84.7 161.7 L20.1 153.8 L99.9 153.8 L35.3 161.7 Z" fill="none" stroke={PALE} strokeWidth="0.9" strokeLinejoin="round" />
+      {/* howling wolf, black against the moon */}
+      <g transform="translate(52 154) scale(0.95)">
+        <path
+          d="M-20 -104 L-10 -93 L-6 -95 L-2 -109 L4 -93 Q9 -89 10 -80 Q12 -66 16 -55 Q22 -42 30 -30 Q38 -18 34 -6 Q44 -10 54 -6 Q56 -1 46 0 L-15 0 Q-20 -1 -16 -4 L-12 -10 L-12 -36 Q-18 -48 -17 -60 Q-16 -70 -12 -76 L-25 -98 L-14 -89 Z"
+          fill={INK}
+          stroke={PALE}
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+        {/* slanted eye, ear notch, hind leg, chest fur */}
+        <path d="M-5 -91 l-5 -2.6 l5.4 0.2 Z" fill={PALE} />
+        <path d="M-1 -103 L1 -95" stroke={PALE} strokeWidth="0.9" strokeLinecap="round" />
+        <path d="M28 -30 Q12 -28 14 -2 M-15 -58 l5 2 l-5 3 l5 2 l-5 3" fill="none" stroke={PALE} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+      {/* the howl */}
+      <path d="M28 46 q-4 -3 -3 -8 M24 51 q-6 -4 -5 -11 M20 56 q-7 -5 -6 -14" fill="none" stroke={PALE} strokeWidth="1.1" strokeLinecap="round" />
     </>
   ),
-  // The wolf with a third eye wide open on its brow.
+  // A hooded wolf mystic with burning eyes, gazing into a crystal ball beneath the all-seeing eye.
   wolfSeer: (f) => (
     <>
-      {ART.werewolf(f)}
-      <Rays cx={60} cy={51} r1={7} r2={12} n={16} w={0.8} />
-      <path d="M51 51 Q60 43 69 51 Q60 59 51 51 Z" fill={PALE} stroke={INK} strokeWidth="1" />
-      <circle cx="60" cy="51" r="3.2" fill={INK} />
-      <circle cx="61" cy="50" r="1" fill={PALE} />
+      {/* all-seeing eye in a triangle */}
+      <Rays cx={60} cy={42} r1={15} r2={22} n={24} w={0.8} />
+      <path d="M60 25 L76 52 L44 52 Z" fill={INK} stroke={PALE} strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M50 44 Q60 35 70 44 Q60 53 50 44 Z" fill={PALE} />
+      <circle cx="60" cy="44" r="3.4" fill={INK} />
+      <circle cx="61" cy="43" r="1" fill={PALE} />
+      <Crescent cx={20} cy={36} R={6} />
+      <Sparks pts={[[100, 34, 2.2], [104, 80, 1.6], [16, 82, 1.6]]} />
+      <path d="M12 150 Q36 142 60 146 Q84 142 108 150 V164 H12 Z" fill={f.hatch} {...g} strokeWidth={1.16} />
+      {/* cloak */}
+      <path d="M28 162 Q32 120 44 108 L76 108 Q88 120 92 162 Z" fill={INK} stroke={PALE} strokeWidth="1.6" strokeLinejoin="round" />
+      <Folds d="M40 124 L34 160 M80 124 L86 160 M50 130 L48 160 M70 130 L72 160" />
+      {/* ears poking through the hood */}
+      <path d="M45 70 L42 56 L53 64 Z M75 70 L78 56 L67 64 Z" fill={PALE} />
+      {/* hood */}
+      <path d="M36 116 Q32 76 60 64 Q88 76 84 116 Q72 106 60 106 Q48 106 36 116 Z" fill={INK} stroke={PALE} strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M42 108 Q42 82 60 74 Q78 82 78 108" fill="none" stroke={PALE} strokeWidth="0.7" />
+      {/* the wolf's muzzle in the hood's shadow, eyes burning */}
+      <path d="M54 92 Q60 89 66 92 L63 106 Q60 110 57 106 Z" fill={PALE} />
+      <path d="M58 104.5 h4 l-2 2.2 Z" fill={INK} />
+      <path d="M56 96 v6 M64 96 v6" stroke={INK} strokeWidth="0.7" strokeLinecap="round" />
+      <path d="M45 88 q4 -3 8 0 q-4 2.6 -8 0 Z M67 88 q4 -3 8 0 q-4 2.6 -8 0 Z" fill={PALE} />
+      <path d="M43 85 l-3 -2 M44 91 l-3 1.4 M77 85 l3 -2 M76 91 l3 1.4" stroke={PALE} strokeWidth="0.7" strokeLinecap="round" />
+      {/* clawed paws around the crystal ball, an eye inside it */}
+      <circle cx="60" cy="134" r="14" fill={PALE} />
+      <path d="M50 126 A11 11 0 0 1 57 122" fill="none" stroke={INK} strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M52 136 Q60 128 68 136 Q60 144 52 136 Z" fill={INK} />
+      <circle cx="60" cy="136" r="2.6" fill={PALE} />
+      <path d="M44 140 q2 -8 8 -8 l-1 3 l3 0 l-2 3 l3 1 Q50 146 44 140 Z M76 140 q-2 -8 -8 -8 l1 3 l-3 0 l2 3 l-3 1 Q70 146 76 140 Z" fill={PALE} stroke={INK} strokeWidth="0.8" strokeLinejoin="round" />
+      <path d="M48 150 H72 L68 145 H52 Z" fill={PALE} />
     </>
   ),
   // A bearded elder leaning on a staff under a crescent moon.
