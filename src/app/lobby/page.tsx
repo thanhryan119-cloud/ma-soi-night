@@ -32,9 +32,14 @@ export default function LobbyPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col gap-4 px-4 pt-16 pb-10">
       <LangSwitch />
-      <Link href="/profile" className="btn-ghost btn-sm fixed top-3 right-3 z-50">
-        👤 {t("profile.open")}
-      </Link>
+      <div className="fixed top-3 right-3 z-50 flex gap-2">
+        <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold">
+          🛒 {t("shop.open")}
+        </Link>
+        <Link href="/profile" className="btn-ghost btn-sm">
+          👤 {t("profile.open")}
+        </Link>
+      </div>
       <div className="flex flex-wrap items-center gap-3">
         <Link href="/" className="btn-ghost btn-sm">
           ← {t("common.back")}

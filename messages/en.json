@@ -509,7 +509,15 @@
     "codePercent": "{value}% off",
     "codeAmount": "{value} off",
     "claimFree": "Claim for free",
-    "unlockRole": "Unlock the {role} role"
+    "unlockRole": "Unlock the {role} role",
+    "open": "Shop",
+    "pageHint": "Everything sold in the game in one place: special roles, name effects, name fonts and avatar frames. 50,000 VND each, bought once, tied to your Google account and usable on any device.",
+    "signInFirst": "Sign in with Google to buy. Items are tied to your account.",
+    "ownedCount": "Owned {owned}/{total}",
+    "wear": "Wear",
+    "wearing": "Wearing",
+    "buyShort": "Buy",
+    "sampleName": "Your name"
   },
   "screen": {
     "waitingPlayers": "Waiting for players…",

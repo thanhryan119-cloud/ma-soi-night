@@ -509,7 +509,15 @@
     "codePercent": "Giảm {value}%",
     "codeAmount": "Giảm {value}",
     "claimFree": "Nhận miễn phí",
-    "unlockRole": "Mở khoá vai {role}"
+    "unlockRole": "Mở khoá vai {role}",
+    "open": "Cửa hàng",
+    "pageHint": "Mọi thứ bán trong game ở cùng một chỗ: vai đặc biệt, hiệu ứng tên, font tên và khung avatar. Mỗi món 50.000đ, mua một lần, gắn với tài khoản Google và dùng trên mọi máy.",
+    "signInFirst": "Đăng nhập Google để mua. Món đồ sẽ gắn với tài khoản của bạn.",
+    "ownedCount": "Đã có {owned}/{total}",
+    "wear": "Dùng",
+    "wearing": "Đang dùng",
+    "buyShort": "Mua",
+    "sampleName": "Tên của bạn"
   },
   "screen": {
     "waitingPlayers": "Đang chờ người chơi…",

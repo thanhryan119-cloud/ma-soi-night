@@ -62,7 +62,7 @@ function loadGsi(): Promise<GoogleId> {
   return gsiPromise;
 }
 
-function GoogleButton() {
+export function GoogleButton() {
   const ref = useRef<HTMLDivElement>(null);
   const { locale } = useLocale();
   const showError = useErrorToast();

@@ -45,9 +45,14 @@ export default function Home() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-5xl flex-col px-4 py-10 sm:py-16">
       <LangSwitch />
-      <Link href="/profile" className="btn-ghost btn-sm fixed top-3 right-3 z-50">
-        👤 {t("profile.open")}
-      </Link>
+      <div className="fixed top-3 right-3 z-50 flex gap-2">
+        <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold">
+          🛒 {t("shop.open")}
+        </Link>
+        <Link href="/profile" className="btn-ghost btn-sm">
+          👤 {t("profile.open")}
+        </Link>
+      </div>
       <header className="mb-10 flex flex-col items-center text-center">
         <TarotSpread className="mb-14 sm:mb-16" />
         <h1 className="font-display text-5xl font-black tracking-tight text-moon sm:text-6xl">{t("app.name")}</h1>
