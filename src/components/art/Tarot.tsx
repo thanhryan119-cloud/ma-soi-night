@@ -8,6 +8,7 @@
 import { cosR, sinR } from "./trig";
 import { useId } from "react";
 import type { RoleId } from "@shared/types";
+import type { Scene } from "./Woodcut";
 import { useT } from "@/lib/i18n";
 
 const INK = "#000000";
@@ -495,12 +496,7 @@ const ART: Record<RoleId, (f: Fill) => React.ReactNode> = {
       <Wheat x={104} y={166} h={44} lean={3} />
       <Wheat x={97} y={166} h={36} lean={-2} />
       <HumanHead hair="short" mouth="smile" />
-      {/* straw hat */}
-      <path d="M43 66 Q43 42 60 40 Q77 42 77 66 Z" fill={INK} />
-      <path d="M43 66 Q43 42 60 40 Q77 42 77 66 Z" fill={f.hatch} {...g} strokeWidth={1.4} />
-      <path d="M43 59 H77 V65 H43 Z" fill={INK} stroke={PALE} strokeWidth="1.2" />
-      <path d="M20 70 Q60 54 100 70 Q60 80 20 70 Z" fill={PALE} stroke={INK} strokeWidth="1" />
-      <path d="M28 70 L32 65.5 M38 71.5 L41 63 M48 73 L50 61.5 M58 73.5 L59 61 M68 73.5 L68 61.2 M78 72.5 L77 62.5 M88 71 L85.5 64.5" stroke={INK} strokeWidth="1" strokeLinecap="round" />
+      <StrawHat f={f} />
       {/* a stalk of wheat in his teeth */}
       <g transform="rotate(62 68 110)">
         <Wheat x={68} y={110} h={26} />
@@ -572,13 +568,7 @@ const ART: Record<RoleId, (f: Fill) => React.ReactNode> = {
       <path d="M34 137 L42 133 L86 166 L74 166 Z" fill={f.hatch} stroke={PALE} strokeWidth="1" strokeLinejoin="round" />
       <path d="M52 134 L60 146 L68 134" fill="none" stroke={PALE} strokeWidth="1.2" />
       <HumanHead hair="short" beard="short" />
-      {/* feathered cap */}
-      <path d="M37 80 Q38 54 60 50 Q82 54 83 78 Q60 68 37 80 Z" fill={INK} stroke={PALE} strokeWidth="1.6" strokeLinejoin="round" />
-      <path d="M37 80 Q38 54 60 50 Q82 54 83 78 Q60 68 37 80 Z" fill={f.hatch} />
-      <path d="M35 81 Q60 66 85 79 L84 74 Q60 61 36 76 Z" fill={PALE} />
-      <path d="M78 74 Q90 50 106 28 Q100 52 83 76 Z" fill={PALE} />
-      <path d="M80.5 74.5 Q92 51 105 30" fill="none" stroke={INK} strokeWidth="0.8" />
-      <path d="M88 61 l4 1.2 M92 53 l4 1.2 M96.5 45 l4 1.2 M85 63 l-1.6 -3.6 M89 55 l-1.6 -3.6" stroke={INK} strokeWidth="0.7" strokeLinecap="round" />
+      <HunterCap f={f} />
     </>
   ),
   // Cupid: curly hair, hearts in the eyes and on the cheeks, wings at his
@@ -720,6 +710,304 @@ const ART: Record<RoleId, (f: Fill) => React.ReactNode> = {
     </>
   ),
 };
+
+// ---------------------------------------------------------------------------
+// Wide scenes (viewBox 200 x 120) in the same stencil style as the cards:
+// phases on the projector and phones, and the end-of-game winners. They reuse
+// the cards' wolf and human heads, rays, moons, clouds and pines.
+// ---------------------------------------------------------------------------
+
+/** A farmer's wide straw hat, in HumanHead coordinates. */
+function StrawHat({ f }: { f: Fill }) {
+  return (
+    <>
+      <path d="M43 66 Q43 42 60 40 Q77 42 77 66 Z" fill={INK} />
+      <path d="M43 66 Q43 42 60 40 Q77 42 77 66 Z" fill={f.hatch} {...g} strokeWidth={1.4} />
+      <path d="M43 59 H77 V65 H43 Z" fill={INK} stroke={PALE} strokeWidth="1.2" />
+      <path d="M20 70 Q60 54 100 70 Q60 80 20 70 Z" fill={PALE} stroke={INK} strokeWidth="1" />
+      <path d="M28 70 L32 65.5 M38 71.5 L41 63 M48 73 L50 61.5 M58 73.5 L59 61 M68 73.5 L68 61.2 M78 72.5 L77 62.5 M88 71 L85.5 64.5" stroke={INK} strokeWidth="1" strokeLinecap="round" />
+    </>
+  );
+}
+
+/** A hunter's cap with a long feather, in HumanHead coordinates. */
+function HunterCap({ f }: { f: Fill }) {
+  return (
+    <>
+      <path d="M37 80 Q38 54 60 50 Q82 54 83 78 Q60 68 37 80 Z" fill={INK} stroke={PALE} strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M37 80 Q38 54 60 50 Q82 54 83 78 Q60 68 37 80 Z" fill={f.hatch} />
+      <path d="M35 81 Q60 66 85 79 L84 74 Q60 61 36 76 Z" fill={PALE} />
+      <path d="M78 74 Q90 50 106 28 Q100 52 83 76 Z" fill={PALE} />
+      <path d="M80.5 74.5 Q92 51 105 30" fill="none" stroke={INK} strokeWidth="0.8" />
+      <path d="M88 61 l4 1.2 M92 53 l4 1.2 M96.5 45 l4 1.2 M85 63 l-1.6 -3.6 M89 55 l-1.6 -3.6" stroke={INK} strokeWidth="0.7" strokeLinecap="round" />
+    </>
+  );
+}
+
+/**
+ * Places a head drawn in card coordinates: the point (ax, ay) of the card goes
+ * to (x, y) in the scene, scaled by s. Heads centre on (60, 92), wolves on (60, 98).
+ */
+function At({ x, y, s, ax = 60, ay = 92, children }: { x: number; y: number; s: number; ax?: number; ay?: number; children: React.ReactNode }) {
+  return <g transform={`translate(${x} ${y}) scale(${s}) translate(${-ax} ${-ay})`}>{children}</g>;
+}
+
+/** Shoulders under a head placed with At (card coordinates). */
+function Shoulders() {
+  return <path d="M22 166 Q24 140 44 133 L60 140 L76 133 Q96 140 98 166 Z" fill={INK} stroke={PALE} strokeWidth="1.6" strokeLinejoin="round" />;
+}
+
+/** Rolling ground along the bottom of a scene. */
+function Ground({ f, y = 104 }: { f: Fill; y?: number }) {
+  return (
+    <>
+      <path d={`M0 ${y + 4} Q50 ${y - 6} 100 ${y + 2} Q150 ${y - 6} 200 ${y + 4} V120 H0 Z`} fill={INK} stroke={PALE} strokeWidth="1.4" />
+      <path d={`M0 ${y + 4} Q50 ${y - 6} 100 ${y + 2} Q150 ${y - 6} 200 ${y + 4} V120 H0 Z`} fill={f.hatch} opacity="0.7" />
+    </>
+  );
+}
+
+const SCENE_ART: Record<Scene, (f: Fill) => React.ReactNode> = {
+  // The moon with a sleeping face over the pines; wolf eyes glint in the dark.
+  night: () => (
+    <>
+      <Rays cx={100} cy={50} r1={30} r2={72} n={56} w={0.7} />
+      <circle cx="100" cy="50" r="27" fill={INK} stroke={PALE} strokeWidth="1.2" />
+      <Crescent cx={95} cy={50} R={21} face />
+      <Sparks pts={[[24, 18, 2.6], [46, 36, 1.8], [154, 20, 2.4], [178, 42, 1.8], [138, 12, 1.6], [62, 14, 1.6]]} />
+      <Pine x={14} y={120} h={52} />
+      <Pine x={34} y={120} h={38} />
+      <Pine x={186} y={120} h={52} />
+      <Pine x={166} y={120} h={38} />
+      <path d="M44 94 q2.4 -2 4.8 0 q-2.4 1.6 -4.8 0 Z M52 94 q2.4 -2 4.8 0 q-2.4 1.6 -4.8 0 Z" fill={PALE} />
+      <Cloud cx={74} cy={112} s={1.1} />
+      <Cloud cx={128} cy={112} s={1.1} />
+      <Cloud cx={100} cy={120} s={1.2} />
+    </>
+  ),
+  // The sun with its calm face rising over the hills; birds take off.
+  dawn: (f) => (
+    <>
+      <Rays cx={100} cy={88} r1={44} r2={96} n={44} w={0.7} />
+      <SunFace cx={100} cy={86} r={22} />
+      <path d="M0 118 Q40 88 80 100 Q120 86 160 98 Q184 90 200 96 V120 H0 Z" fill={INK} stroke={PALE} strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M0 118 Q40 88 80 100 Q120 86 160 98 Q184 90 200 96 V120 H0 Z" fill={f.hatch} opacity="0.6" />
+      <Cloud cx={34} cy={36} s={0.8} />
+      <Cloud cx={168} cy={28} s={0.7} />
+      <path d="M140 54 q5 -5 10 0 q5 -5 10 0 M154 44 q4 -4 8 0 q4 -4 8 0 M30 60 q4 -4 8 0 q4 -4 8 0" fill="none" stroke={PALE} strokeWidth="1.4" strokeLinecap="round" />
+      <Sparks pts={[[66, 20, 1.8], [132, 16, 1.8]]} />
+    </>
+  ),
+  // Three villagers puzzling it out, a question over each head.
+  discussion: () => (
+    <>
+      <Rays cx={100} cy={70} r1={30} r2={90} n={48} w={0.6} />
+      {(
+        [
+          [44, 70, "short", "calm"],
+          [100, 64, "curly", "smile"],
+          [156, 70, "long", "stern"],
+        ] as const
+      ).map(([x, y, hair, mouth]) => (
+        <g key={x}>
+          <At x={x} y={y} s={0.52}>
+            <Shoulders />
+            <HumanHead hair={hair} mouth={mouth} ears={hair !== "long"} />
+          </At>
+          <path d={`M${x - 11} ${y - 42} h22 a5 5 0 0 1 5 5 v8 a5 5 0 0 1 -5 5 h-9 l-4 5 v-5 h-9 a5 5 0 0 1 -5 -5 v-8 a5 5 0 0 1 5 -5 Z`} fill={PALE} />
+          <text x={x} y={y - 30.5} textAnchor="middle" fontSize="12" fontWeight="900" fill={INK} style={{ fontFamily: "var(--font-title), Georgia, serif" }}>
+            ?
+          </text>
+        </g>
+      ))}
+    </>
+  ),
+  // The gallows against the moon, the village watching.
+  execute: (f) => (
+    <>
+      <Rays cx={150} cy={34} r1={16} r2={40} n={32} w={0.6} />
+      <Crescent cx={150} cy={34} R={13} face />
+      <Sparks pts={[[24, 20, 2.2], [110, 16, 1.6], [186, 70, 1.6]]} />
+      <path d="M0 106 H200 V120 H0 Z" fill={f.hatch} {...g} strokeWidth={1.2} />
+      <path d="M36 100 H112 V106 H36 Z" fill={PALE} />
+      <path d="M40 106 V100 M108 106 V100" stroke={INK} strokeWidth="1" />
+      <path d="M54 100 V16 H112" fill="none" stroke={PALE} strokeWidth="5" strokeLinecap="square" />
+      <path d="M54 36 L74 16" stroke={PALE} strokeWidth="3.4" />
+      <path d="M104 16 V38" stroke={PALE} strokeWidth="1.6" />
+      <ellipse cx="104" cy="46" rx="6" ry="8" fill="none" stroke={PALE} strokeWidth="2.2" />
+      {[132, 150, 168, 186].map((x, i) => (
+        <g key={x}>
+          <path d={`M${x - 9} 106 Q${x - 9} ${92 - (i % 2) * 3} ${x} ${92 - (i % 2) * 3} Q${x + 9} ${92 - (i % 2) * 3} ${x + 9} 106 Z`} fill={INK} stroke={PALE} strokeWidth="1.4" />
+          <circle cx={x} cy={84 - (i % 2) * 3} r="6" fill={INK} stroke={PALE} strokeWidth="1.4" />
+          <path d={`M${x - 2.6} ${83 - (i % 2) * 3} h1.6 M${x + 1} ${83 - (i % 2) * 3} h1.6`} stroke={PALE} strokeWidth="1.2" strokeLinecap="round" />
+        </g>
+      ))}
+      <Cloud cx={18} cy={112} s={0.8} />
+    </>
+  ),
+  // Spared: a dove with an olive branch flies out of the light.
+  spare: () => (
+    <>
+      <Rays cx={100} cy={58} r1={30} r2={72} n={48} w={0.7} />
+      <circle cx="100" cy="58" r="30" fill={INK} stroke={PALE} strokeWidth="1.4" />
+      <path d="M62 66 C76 46 94 44 104 54 C112 40 134 30 150 34 C138 44 128 56 120 66 C132 66 140 72 144 80 C126 80 110 76 98 72 C88 82 72 82 62 66 Z" fill={PALE} />
+      <path d="M108 52 L134 38 M112 58 L139 44 M117 63 L141 51" stroke={INK} strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="74" cy="64" r="1.8" fill={INK} />
+      <path d="M62 66 l-8 2 l8 2 Z" fill={PALE} />
+      <path d="M54 72 q10 8 26 6" fill="none" stroke={PALE} strokeWidth="1.6" strokeLinecap="round" />
+      {[[58, 75, -30], [65, 78, -10], [72, 79, 10], [62, 79, 40]].map(([x, y, a]) => (
+        <ellipse key={`${x}${y}`} cx={x} cy={y} rx="3.4" ry="1.5" transform={`rotate(${a} ${x} ${y})`} fill={PALE} />
+      ))}
+      <Sparks pts={[[30, 24, 2.2], [170, 22, 2.2], [24, 90, 1.6], [178, 92, 1.6]]} />
+      <Cloud cx={40} cy={112} s={1} />
+      <Cloud cx={160} cy={112} s={1} />
+    </>
+  ),
+  // The hunter takes his last shot: arrow on its way into the target.
+  hunter: (f) => (
+    <>
+      <Rays cx={156} cy={58} r1={30} r2={70} n={40} w={0.6} />
+      <Sparks pts={[[110, 16, 2], [106, 100, 1.6], [190, 104, 1.6]]} />
+      {[30, 22, 14, 6].map((r, i) => (
+        <circle key={r} cx="156" cy="58" r={r} fill={i % 2 ? INK : PALE} stroke={i % 2 ? PALE : INK} strokeWidth="1.2" />
+      ))}
+      <At x={44} y={62} s={0.6}>
+        <Shoulders />
+        <HumanHead hair="short" beard="short" />
+        <HunterCap f={f} />
+      </At>
+      <path d="M84 64 L150 58" stroke={PALE} strokeWidth="2" strokeLinecap="round" />
+      <path d="M152 57.8 l-8 -3.6 l1 4 l-1 3.8 Z" fill={PALE} />
+      <path d="M84 64 l-5 -4 l7 0.6 Z M88 63.6 l-5 -4 l7 0.6 Z M84 64 l-4.6 4.6 l6.8 -1.4 Z M88 63.6 l-4.6 4.6 l6.8 -1.4 Z" fill={PALE} />
+    </>
+  ),
+  // The pack wins: three wolf heads in the light of the full moon.
+  wolves: () => (
+    <>
+      <Rays cx={100} cy={62} r1={36} r2={96} n={56} w={0.7} />
+      <circle cx="178" cy="22" r="10" fill={PALE} />
+      <circle cx="175" cy="20" r="2" fill={INK} />
+      <circle cx="181" cy="26" r="1.4" fill={INK} />
+      <Crescent cx={20} cy={22} R={7} />
+      <At x={40} y={72} s={0.52} ay={98}>
+        <WolfHead eyes="slit" />
+      </At>
+      <At x={160} y={72} s={0.52} ay={98}>
+        <WolfHead eyes="slit" />
+      </At>
+      <circle cx="100" cy="62" r="40" fill={INK} />
+      <At x={100} y={64} s={0.76} ay={98}>
+        <WolfHead />
+      </At>
+      <Cloud cx={30} cy={114} s={1} />
+      <Cloud cx={100} cy={120} s={1.2} />
+      <Cloud cx={170} cy={114} s={1} />
+    </>
+  ),
+  // The village wins: the elder, a farmer and a young villager under the sun.
+  village: (f) => (
+    <>
+      <Rays cx={100} cy={20} r1={14} r2={70} n={48} w={0.6} />
+      <SunFace cx={100} cy={18} r={8} />
+      <Sparks pts={[[30, 18, 2], [170, 18, 2]]} />
+      <Wheat x={10} y={120} h={46} lean={-3} />
+      <Wheat x={18} y={120} h={36} lean={2} />
+      <Wheat x={190} y={120} h={46} lean={3} />
+      <Wheat x={182} y={120} h={36} lean={-2} />
+      <At x={46} y={70} s={0.5}>
+        <Shoulders />
+        <HumanHead hair="bald" brows="bushy" eyes="closed" mouth="none" beard="long" />
+      </At>
+      <At x={154} y={70} s={0.5}>
+        <Shoulders />
+        <HumanHead hair="curly" mouth="smile" />
+      </At>
+      <At x={100} y={70} s={0.58}>
+        <Shoulders />
+        <HumanHead hair="short" mouth="smile" />
+        <StrawHat f={f} />
+      </At>
+    </>
+  ),
+  // The lovers win: two faces with hearts in their eyes under a pierced heart.
+  lovers: () => (
+    <>
+      <Rays cx={100} cy={30} r1={16} r2={90} n={48} w={0.6} />
+      <path d="M68 38 L134 8" stroke={PALE} strokeWidth="1.6" strokeLinecap="round" />
+      <Heart cx={100} cy={24} s={10} fill={PALE} />
+      <path d="M134 8 L128 8.6 M134 8 L131.4 13.4" stroke={PALE} strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M68 38 L64 37.4 L66 33.6 L70 34.2 M70.6 36.6 L66.6 36 L68.6 32.2 L72.6 32.8" fill="none" stroke={PALE} strokeWidth="0.9" />
+      <Sparks pts={[[24, 22, 2.2], [176, 22, 2.2], [20, 90, 1.6], [180, 90, 1.6]]} />
+      <At x={70} y={76} s={0.56}>
+        <Shoulders />
+        <HumanHead hair="long" ears={false} eyes="heart" mouth="smile" cheeks="heart" />
+      </At>
+      <At x={130} y={76} s={0.56}>
+        <Shoulders />
+        <HumanHead hair="short" eyes="heart" mouth="smile" cheeks="heart" />
+      </At>
+    </>
+  ),
+  // Nobody wins: wolf and villager both close their eyes, sun and moon apart.
+  draw: () => (
+    <>
+      <Crescent cx={24} cy={24} R={9} face />
+      <SunFace cx={176} cy={24} r={8} />
+      <path d="M100 8 V112" stroke={PALE} strokeWidth="1" strokeDasharray="3 3" />
+      <At x={54} y={66} s={0.52} ay={98}>
+        <WolfHead eyes="closed" />
+      </At>
+      <At x={146} y={68} s={0.56}>
+        <Shoulders />
+        <HumanHead hair="short" eyes="closed" mouth="stern" />
+      </At>
+      <Cloud cx={40} cy={116} s={0.9} />
+      <Cloud cx={160} cy={116} s={0.9} />
+    </>
+  ),
+  // The werewolf's head between the moons, over the clouds and the pines.
+  hero: () => (
+    <>
+      <Rays cx={100} cy={62} r1={36} r2={96} n={56} w={0.7} />
+      <circle cx="160" cy="26" r="11" fill={PALE} />
+      <circle cx="157" cy="24" r="2.2" fill={INK} />
+      <circle cx="164" cy="30" r="1.5" fill={INK} />
+      <Crescent cx={38} cy={26} R={9} />
+      <Pine x={12} y={120} h={50} />
+      <Pine x={188} y={120} h={50} />
+      <At x={100} y={62} s={0.78} ay={98}>
+        <WolfHead />
+      </At>
+      <Cloud cx={46} cy={112} s={1} />
+      <Cloud cx={100} cy={120} s={1.2} />
+      <Cloud cx={154} cy={112} s={1} />
+    </>
+  ),
+};
+
+/** A wide scene in the cards' style, framed like a card lying on its side. */
+export function TarotScene({ scene, className = "" }: { scene: Scene; className?: string }) {
+  const id = `s${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+  return (
+    <svg viewBox="0 0 200 120" className={className} role="img" aria-hidden>
+      <defs>
+        <pattern id={`${id}h`} width="2.8" height="2.8" patternUnits="userSpaceOnUse" patternTransform="rotate(-40)">
+          <line x1="0" y1="0" x2="0" y2="2.8" stroke={GOLD} strokeWidth="1.1" />
+        </pattern>
+        <pattern id={`${id}d`} width="3" height="3" patternUnits="userSpaceOnUse">
+          <circle cx="0.8" cy="0.8" r="0.6" fill={GOLD} />
+          <circle cx="2.3" cy="2.3" r="0.45" fill={GOLD} />
+        </pattern>
+        <clipPath id={`${id}c`}>
+          <rect x="5" y="5" width="190" height="110" rx="4" />
+        </clipPath>
+      </defs>
+      <rect x="1" y="1" width="198" height="118" rx="7" fill={INK} stroke={GOLD} strokeWidth="1.6" />
+      <g clipPath={`url(#${id}c)`}>{SCENE_ART[scene]({ hatch: `url(#${id}h)`, dots: `url(#${id}d)` })}</g>
+      <rect x="5" y="5" width="190" height="110" rx="4" fill="none" stroke={GOLD} strokeWidth="1" />
+    </svg>
+  );
+}
 
 const PANEL = "M9 26 Q9 22 13 22 H107 Q111 22 111 26 V162 Q111 166 107 166 H13 Q9 166 9 162 Z";
 
