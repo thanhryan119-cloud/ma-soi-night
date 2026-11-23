@@ -430,7 +430,8 @@
     "wolfSeerSaw": "{name} is the {role}",
     "lostVote": "You revealed the Village Idiot — you can't vote any more.",
     "idiotRevealed": "THE VILLAGE IDIOT",
-    "idiotRevealedDesc": "{name} is the Village Idiot: lives on, but loses the vote."
+    "idiotRevealedDesc": "{name} is the Village Idiot: lives on, but loses the vote.",
+    "joinNoLogin": "Just type your name to join, no sign-in needed."
   },
   "profile": {
     "title": "Your profile",
@@ -905,5 +906,13 @@
     "confirmDelete": "Delete code {code}? This cannot be undone.",
     "copy": "Copy code",
     "copied": "Code copied"
+  },
+  "share": {
+    "button": "Share link",
+    "copy": "Copy link",
+    "copied": "Invite link copied: paste it in your group so everyone can join",
+    "copyManual": "Copy this invite link:",
+    "text": "Come play Werewolf with me! Room {code}: open the link, type your name and you're in, no sign-in needed.",
+    "hint": "Send the link to your group: they open it, type a name and they're in, no sign-in needed."
   }
 }

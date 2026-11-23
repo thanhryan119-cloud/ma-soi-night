@@ -10,6 +10,7 @@ import { ProfileEditor } from "@/components/ProfileEditor";
 import { emitAck, getSocket, playerKey, storage, type PlayerSession } from "@/lib/socket";
 import { useRoomState } from "@/lib/useRoom";
 import { PlayerGame } from "./PlayerGame";
+import { passwordFromLink, rememberRoomPassword } from "@/components/ShareRoom";
 import { PASSWORD_MAX } from "@shared/multiplayer";
 
 type Status = "checking" | "form" | "rejoin" | "in" | "kicked" | "closed" | "notFound" | "abandoned";
@@ -238,6 +239,11 @@ function JoinForm({
   const [password, setPassword] = useState("");
 
   useEffect(() => setProfile(loadLocalProfile()), []);
+  // An invite link from a password room carries the password: nothing to type.
+  useEffect(() => {
+    const pw = passwordFromLink();
+    if (pw) setPassword(pw);
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -255,12 +261,14 @@ function JoinForm({
     setBusy(false);
     if (!showError(res) || !res.playerId || !res.token) return;
     saveLocalProfile(profile);
+    if (locked) rememberRoomPassword(code, password);
     onJoined({ playerId: res.playerId, token: res.token });
   }
 
   return (
     <main className="fixed inset-0 mx-auto flex max-w-md flex-col px-4 pt-14 pb-4">
       <h1 className="shrink-0 text-center font-display text-2xl font-black text-moon">{t("player.joinTitle", { code })}</h1>
+      <p className="mt-1 shrink-0 text-center text-sm text-white/60">{t("player.joinNoLogin")}</p>
       <form onSubmit={submit} className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
         {locked && (
@@ -277,7 +285,7 @@ function JoinForm({
             />
           </label>
         )}
-        {profile && <ProfileEditor value={profile} onChange={setProfile} compact />}
+        {profile && <ProfileEditor value={profile} onChange={setProfile} compact autoFocusName />}
         <div>
           <span className="ui-label">{t("lang.label")}</span>
           <div className="flex gap-2">

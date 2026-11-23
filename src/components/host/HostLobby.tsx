@@ -1,6 +1,7 @@
 "use client";
 
 import { QRCodeSVG } from "qrcode.react";
+import { ShareRoom } from "@/components/ShareRoom";
 import { useEffect, useState } from "react";
 import { MIN_PLAYERS } from "@shared/engine";
 import { PREMIUM_ROLES, ROLES, ROLE_IDS, isPremiumRole, totalRoles } from "@shared/roles";
@@ -87,6 +88,7 @@ function JoinCard({ state }: { state: ClientState }) {
       <div className="w-full text-sm text-white/60">
         {t("host.orGoTo")} <span className="font-mono break-all text-white">{url}</span>
       </div>
+      <ShareRoom code={state.code} className="w-full" />
       {isLocal && (
         <div className="w-full rounded-xl border border-gold/30 bg-gold/10 p-3 text-left text-sm">
           <p className="mb-2 text-gold">{t("host.localhostWarning")}</p>

@@ -430,7 +430,8 @@
     "wolfSeerSaw": "{name} là {role}",
     "lostVote": "Bạn đã lật bài Thằng Ngốc — không được vote nữa.",
     "idiotRevealed": "LẬT BÀI THẰNG NGỐC",
-    "idiotRevealedDesc": "{name} là Thằng Ngốc: được sống nhưng mất quyền vote."
+    "idiotRevealedDesc": "{name} là Thằng Ngốc: được sống nhưng mất quyền vote.",
+    "joinNoLogin": "Chỉ cần nhập tên để vào phòng, không cần đăng nhập."
   },
   "profile": {
     "title": "Hồ sơ của bạn",
@@ -905,5 +906,13 @@
     "confirmDelete": "Xoá mã {code}? Không hoàn tác được.",
     "copy": "Sao chép mã",
     "copied": "Đã sao chép mã"
+  },
+  "share": {
+    "button": "Chia sẻ link",
+    "copy": "Sao chép link",
+    "copied": "Đã sao chép link mời, dán vào nhóm để mọi người vào chơi",
+    "copyManual": "Sao chép link mời này:",
+    "text": "Vào chơi Ma Sói với mình! Phòng {code}: bấm link, nhập tên là chơi, không cần đăng nhập.",
+    "hint": "Gửi link vào nhóm: mọi người bấm vào, nhập tên là vào phòng, không cần đăng nhập."
   }
 }

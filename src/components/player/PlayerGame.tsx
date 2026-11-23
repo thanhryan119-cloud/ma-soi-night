@@ -14,6 +14,7 @@ import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
 import { scriptLines } from "@/components/host/common";
 import { SocialPanel } from "@/components/SocialPanel";
+import { ShareRoom } from "@/components/ShareRoom";
 import { SceneArt } from "@/components/art/Woodcut";
 import { CardBack, RoleCardFull } from "@/components/art/Tarot";
 import { useLocale, useT } from "@/lib/i18n";
@@ -373,6 +374,7 @@ function Lobby({ state, onOwnerSettings }: { state: ClientState; onOwnerSettings
         </div>
       </div>
       <OwnerBar state={state} onSettings={onOwnerSettings} />
+      <ShareRoom code={state.code} className="shrink-0" />
       <AliveStrip state={state} />
       {state.me && <SocialPanel state={state} viewer={state.me.id} className="flex-1" />}
     </Fill>

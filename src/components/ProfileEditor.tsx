@@ -165,10 +165,13 @@ export function ProfileEditor({
   value,
   onChange,
   compact = false,
+  autoFocusName = false,
 }: {
   value: LocalProfile;
   onChange: (p: LocalProfile) => void;
   compact?: boolean;
+  /** Put the cursor in the name box (joining from an invite link). */
+  autoFocusName?: boolean;
 }) {
   const t = useT();
   const account = useAccount();
@@ -275,6 +278,7 @@ export function ProfileEditor({
           value={value.name}
           maxLength={24}
           autoComplete="nickname"
+          autoFocus={autoFocusName && !value.name}
           placeholder={t("player.namePlaceholder")}
           onChange={(e) => onChange({ ...value, name: e.target.value })}
           onBlur={() => user && value.name.trim() && updateAccount({ name: value.name })}
@@ -395,6 +399,8 @@ export function ProfileEditor({
         </>
       )}
 
+      {/* Joining needs only a name: the account box stays out of the way until you open the options. */}
+      {open && (
       <div className="rounded-lg border border-white/10 p-4">
         <span className="ui-label">{t("profile.account")}</span>
         {user ? (
@@ -413,6 +419,7 @@ export function ProfileEditor({
           <p className="text-sm text-white/50">{t("profile.authUnavailable")}</p>
         )}
       </div>
+      )}
     </div>
   );
 }

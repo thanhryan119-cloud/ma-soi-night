@@ -16,6 +16,7 @@ import { Avatar, ConnectionDot, LangSwitch, Spinner, useErrorToast } from "@/com
 import { getAuth, loadLocalProfile, saveLocalProfile, type LocalProfile } from "@/lib/account";
 import { useLocale, useT } from "@/lib/i18n";
 import { useLobby } from "@/lib/lobby";
+import { rememberRoomPassword } from "@/components/ShareRoom";
 import { emitAck, hostKey, playerKey, storage } from "@/lib/socket";
 
 export default function LobbyPage() {
@@ -137,6 +138,8 @@ function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
     });
     setBusy(false);
     if (!showError(res) || !res.code) return;
+    // So the room's invite link can carry the password (friends then only type a name).
+    if (withPassword) rememberRoomPassword(res.code, password);
     if (res.playerId && res.token) {
       storage.set(playerKey(res.code), { playerId: res.playerId, token: res.token });
       router.push(`/join/${res.code}`);
