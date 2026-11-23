@@ -156,6 +156,19 @@ export function StyledName({
   return <span className={`${font} ${effect} ${className}`}>{p.name}</span>;
 }
 
+/** True on a computer-sized screen (1024 px and wider), where the game gets its desktop layout. */
+export function useWide() {
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const on = () => setWide(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return wide;
+}
+
 /**
  * Glides the element in whenever `key` changes (a new game phase), without
  * remounting it, so nothing inside loses its state. Skipped for people who

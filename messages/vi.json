@@ -431,7 +431,9 @@
     "lostVote": "Bạn đã lật bài Thằng Ngốc — không được vote nữa.",
     "idiotRevealed": "LẬT BÀI THẰNG NGỐC",
     "idiotRevealedDesc": "{name} là Thằng Ngốc: được sống nhưng mất quyền vote.",
-    "joinNoLogin": "Chỉ cần nhập tên để vào phòng, không cần đăng nhập."
+    "joinNoLogin": "Chỉ cần nhập tên để vào phòng, không cần đăng nhập.",
+    "playersPanel": "Người chơi",
+    "chatOnRight": "Trò chuyện ở khung chat bên phải."
   },
   "profile": {
     "title": "Hồ sơ của bạn",

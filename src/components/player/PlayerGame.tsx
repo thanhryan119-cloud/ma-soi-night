@@ -4,11 +4,12 @@
 // scrolls. Grids shrink to fit any player count; long content (vote details,
 // end-of-game timeline) lives in a panel that scrolls on its own.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { NIGHT_STEP_ROLE, ROLES } from "@shared/roles";
 import type { ClientState, MeView, PlayerView } from "@shared/views";
-import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, phaseKeyOf, useErrorToast, usePhaseEnter } from "@/components/ui";
+import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, phaseKeyOf, useErrorToast, usePhaseEnter, useWide } from "@/components/ui";
+import { CHAT_COLORS } from "@shared/cosmetics";
 import { ProfileLink } from "../Profile";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
@@ -25,6 +26,14 @@ import { OwnerBar, OwnerSettings } from "./OwnerPanel";
 
 type Props = { state: ClientState; offset: number; connected: boolean };
 type Ctx = { state: ClientState; me: MeView; players: Map<string, PlayerView> };
+
+/**
+ * Desktop layout (1024 px and wider): players on the left, the phase in the
+ * middle, the chat always open on the right, all in one screen. Phases that
+ * carry their own chat on a phone leave it out here.
+ */
+const WideCtx = createContext(false);
+const useWideLayout = () => useContext(WideCtx);
 
 function usePlayerAction() {
   const showError = useErrorToast();
@@ -52,6 +61,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
   const kind = state.phase.kind;
   const [sheet, setSheet] = useState<null | "role" | "roles" | "timeline" | "owner">(null);
   const mainRef = usePhaseEnter<HTMLElement>(phaseKeyOf(state.phase));
+  const wide = useWide();
 
   // Vibrate when it becomes my turn to do something.
   const myTurn = !!(me.turn && !me.turn.done) || me.canVote || !!me.hunter?.canShoot;
@@ -65,8 +75,9 @@ export function PlayerGame({ state, offset, connected }: Props) {
   const showRoleButton = !!me.roleId && kind !== "gameOver" && kind !== "roleReveal";
 
   return (
+    <WideCtx.Provider value={wide}>
     <div className={`fixed inset-0 flex flex-col overflow-hidden transition-colors duration-700`}>
-      <header className="flex shrink-0 items-center gap-2.5 border-b border-white/5 px-3 py-2 pr-28">
+      <header className={`flex shrink-0 items-center gap-2.5 border-b border-white/5 px-3 py-2 pr-28 ${wide ? "lg:px-6" : ""}`}>
         <ProfileLink playerId={self.id}>
           <Avatar p={self} size="sm" />
         </ProfileLink>
@@ -98,20 +109,42 @@ export function PlayerGame({ state, offset, connected }: Props) {
         </div>
       )}
 
-      {state.settings.noScreen && <NarrationBanner state={state} />}
+      {wide ? (
+        <div className="mx-auto grid min-h-0 w-full max-w-[1600px] flex-1 grid-cols-[260px_minmax(0,1fr)_360px] gap-4 p-4 xl:grid-cols-[300px_minmax(0,1fr)_420px]">
+          <PlayersPanel state={state} me={me} onRole={showRoleButton ? () => setSheet("role") : null} />
+          <div className="flex min-h-0 flex-col gap-3">
+            {state.settings.noScreen && <NarrationBanner state={state} />}
+            <main ref={mainRef} className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-lg border border-white/10 bg-night-900/50 p-5">
+              <PhaseBody
+                state={state}
+                me={me}
+                offset={offset}
+                players={players}
+                onTimeline={() => setSheet("timeline")}
+                onOwnerSettings={() => setSheet("owner")}
+              />
+            </main>
+          </div>
+          <SocialPanel state={state} viewer={me.id} className="min-h-0" />
+        </div>
+      ) : (
+        <>
+          {state.settings.noScreen && <NarrationBanner state={state} />}
 
-      <main ref={mainRef} className="relative mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-3 px-3 py-3">
-        <PhaseBody
-          state={state}
-          me={me}
-          offset={offset}
-          players={players}
-          onTimeline={() => setSheet("timeline")}
-          onOwnerSettings={() => setSheet("owner")}
-        />
-      </main>
+          <main ref={mainRef} className="relative mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-3 px-3 py-3">
+            <PhaseBody
+              state={state}
+              me={me}
+              offset={offset}
+              players={players}
+              onTimeline={() => setSheet("timeline")}
+              onOwnerSettings={() => setSheet("owner")}
+            />
+          </main>
+        </>
+      )}
 
-      {showRoleButton && (
+      {showRoleButton && !wide && (
         <footer className="mx-auto w-full max-w-md shrink-0 border-t border-white/10 px-3 py-2">
           <button className="btn-ghost w-full" onClick={() => setSheet("role")}>
             🂠 {t("player.showRole")}
@@ -140,6 +173,48 @@ export function PlayerGame({ state, offset, connected }: Props) {
         </Sheet>
       )}
     </div>
+    </WideCtx.Provider>
+  );
+}
+
+/** Desktop: everyone in the room, with their chat colour, status and any role you may see. */
+function PlayersPanel({ state, me, onRole }: { state: ClientState; me: MeView; onRole: (() => void) | null }) {
+  const t = useT();
+  const alive = state.players.filter((p) => p.alive).length;
+  return (
+    <aside className="tarot-frame flex min-h-0 flex-col overflow-hidden rounded-lg border border-gold/40 bg-night-900/85">
+      <div className="flex shrink-0 items-center justify-center gap-2 border-b border-gold/25 px-2 py-1.5">
+        <span className="text-gold/60">✦</span>
+        <h3 className="font-display text-lg leading-none text-gold">{t("player.playersPanel")}</h3>
+        <span className="text-sm text-white/60">{state.phase.kind === "lobby" ? state.players.length : `${alive}/${state.players.length}`}</span>
+        <span className="text-gold/60">✦</span>
+      </div>
+      <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-2">
+        {state.players.map((p) => (
+          <li key={p.id} className={`flex items-center gap-2 rounded-md px-1.5 py-1 ${p.id === me.id ? "bg-white/10" : ""} ${p.alive ? "" : "opacity-50"}`}>
+            <ProfileLink playerId={p.id} className="shrink-0">
+              <Avatar p={p} size="sm" />
+            </ProfileLink>
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: CHAT_COLORS[p.chatColor % CHAT_COLORS.length] }} aria-hidden />
+            <span className="min-w-0 flex-1 truncate text-sm">
+              <ProfileLink playerId={p.id} className="max-w-full">
+                <StyledName p={p} className="truncate" />
+              </ProfileLink>
+            </span>
+            {/* Only roles the whole table knows: never your own or your pack mates, which someone could read off the screen. */}
+            {p.roleId && p.id !== me.id && (!p.alive || p.noVote || state.phase.kind === "gameOver") && <RoleBadge roleId={p.roleId} />}
+            <span className="shrink-0 text-xs">{!p.alive ? "💀" : p.isBot ? "🤖" : !p.connected ? <span className="text-white/40">⏸</span> : null}</span>
+          </li>
+        ))}
+      </ul>
+      {onRole && (
+        <div className="shrink-0 border-t border-white/10 p-2">
+          <button className="btn-ghost w-full" onClick={onRole}>
+            🂠 {t("player.showRole")}
+          </button>
+        </div>
+      )}
+    </aside>
   );
 }
 
@@ -268,6 +343,7 @@ function PhaseBody({
   onOwnerSettings,
 }: Ctx & { offset: number; onTimeline: () => void; onOwnerSettings: () => void }) {
   const t = useT();
+  const wide = useWideLayout();
   const ctx = { state, me, players };
   switch (state.phase.kind) {
     case "lobby":
@@ -286,7 +362,14 @@ function PhaseBody({
     case "hunter":
       return <Hunter {...ctx} />;
     case "discussion":
-      return (
+      return wide ? (
+        <Fill center>
+          <h2 className="font-display text-4xl font-bold text-moon">🗣️ {t("player.discussion")}</h2>
+          <TimerDisplay timer={state.timer} offset={offset} className="text-6xl" />
+          <SceneArt scene="discussion" className="w-full max-w-xl" />
+          <p className="text-white/60">{t("player.chatOnRight")}</p>
+        </Fill>
+      ) : (
         <Fill>
           <div className="flex shrink-0 items-center gap-3">
             <h2 className="shrink-0 text-lg font-bold">🗣️ {t("player.discussion")}</h2>
@@ -333,6 +416,7 @@ function PhaseBody({
 /** The defense: everyone reads the chat, only the players on the stand can write — and end it early. */
 function Defense({ state, me, players, offset }: Ctx & { offset: number }) {
   const t = useT();
+  const wide = useWideLayout();
   const act = usePlayerAction();
   const done = !!me.defenseDone;
   return (
@@ -347,7 +431,7 @@ function Defense({ state, me, players, offset }: Ctx & { offset: number }) {
         <Nominees state={state} players={players} />
       </div>
       {me.onStand && <p className="shrink-0 rounded-lg bg-gold/20 px-3 py-1.5 text-center text-sm font-bold text-gold">{t("player.onStandYou")}</p>}
-      <SocialPanel state={state} viewer={me.id} className="min-h-0 flex-1" />
+      {wide ? <div className="flex-1" /> : <SocialPanel state={state} viewer={me.id} className="min-h-0 flex-1" />}
       {me.onStand && me.alive && (
         <button className="btn-primary shrink-0 py-3" disabled={done} onClick={() => act({ type: "endDefense" })}>
           {done ? t("player.defenseEnded") : t("player.endDefense")}
@@ -363,6 +447,7 @@ function Defense({ state, me, players, offset }: Ctx & { offset: number }) {
 
 function Lobby({ state, onOwnerSettings }: { state: ClientState; onOwnerSettings: () => void }) {
   const t = useT();
+  const wide = useWideLayout();
   const iOwn = state.machineHost && state.ownerId === state.me?.id;
   return (
     <Fill>
@@ -375,8 +460,16 @@ function Lobby({ state, onOwnerSettings }: { state: ClientState; onOwnerSettings
       </div>
       <OwnerBar state={state} onSettings={onOwnerSettings} />
       <ShareRoom code={state.code} className="shrink-0" />
-      <AliveStrip state={state} />
-      {state.me && <SocialPanel state={state} viewer={state.me.id} className="flex-1" />}
+      {wide ? (
+        <div className="flex min-h-0 flex-1 items-center justify-center">
+          <SceneArt scene="hero" className="max-h-full w-full max-w-2xl" />
+        </div>
+      ) : (
+        <>
+          <AliveStrip state={state} />
+          {state.me && <SocialPanel state={state} viewer={state.me.id} className="flex-1" />}
+        </>
+      )}
     </Fill>
   );
 }
@@ -998,8 +1091,10 @@ function Verdict({ state, me, players }: Ctx) {
   const t = useT();
   const act = usePlayerAction();
   const nominee = state.vote?.nomineeId ? players.get(state.vote.nomineeId) : null;
-  // Online rooms: the defender can still plead in the chat while everyone votes.
-  const chat = state.machineHost;
+  // Online rooms: the defender can still plead in the chat while everyone votes
+  // (on a desktop the chat is already open on the right).
+  const wide = useWideLayout();
+  const chat = state.machineHost && !wide;
   return (
     <Fill>
       {nominee && (

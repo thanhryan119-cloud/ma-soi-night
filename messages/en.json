@@ -431,7 +431,9 @@
     "lostVote": "You revealed the Village Idiot — you can't vote any more.",
     "idiotRevealed": "THE VILLAGE IDIOT",
     "idiotRevealedDesc": "{name} is the Village Idiot: lives on, but loses the vote.",
-    "joinNoLogin": "Just type your name to join, no sign-in needed."
+    "joinNoLogin": "Just type your name to join, no sign-in needed.",
+    "playersPanel": "Players",
+    "chatOnRight": "Talk it over in the chat on the right."
   },
   "profile": {
     "title": "Your profile",
