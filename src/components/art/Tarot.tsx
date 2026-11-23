@@ -239,6 +239,59 @@ function Folds({ d }: { d: string }) {
   return <path d={d} fill="none" {...g} strokeWidth={0.72} />;
 }
 
+/**
+ * The werewolf's head (drawn at 0.66 scale, centred on the card).
+ * The wolf-side roles reuse it so they read as the same beast:
+ * `invert` draws it black with a white edge (the Cursed Wolf on its moon),
+ * `eyes` picks open, slit-pupilled or shut eyes, `torn` rips the left ear.
+ */
+function WolfHead({ invert = false, eyes = "open", torn = false }: { invert?: boolean; eyes?: "open" | "slit" | "closed"; torn?: boolean }) {
+  const fg = invert ? INK : PALE;
+  const cut = invert ? PALE : INK;
+  const edge = invert ? { stroke: PALE, strokeWidth: 2.4, strokeLinejoin: "round" as const } : {};
+  return (
+    <g transform="translate(60 98) scale(0.66)">
+      {[1, -1].map((sx) => {
+        const rip = torn && sx === 1;
+        return (
+          <g key={sx} transform={sx === -1 ? "scale(-1 1)" : undefined}>
+            {rip ? (
+              <>
+                <path d="M-16 -50 L-30 -80 L-34 -73 L-38 -84 L-42 -76 L-52 -36 Z" fill={fg} {...edge} />
+                <path d="M-22 -52 L-31 -70 L-45 -44 Z" fill={cut} />
+                <path d="M-36 -60 L-33 -53 M-30 -60 L-28 -55" stroke={fg} strokeWidth="2.4" strokeLinecap="round" />
+              </>
+            ) : (
+              <>
+                <path d="M-16 -50 L-40 -98 L-52 -36 Z" fill={fg} {...edge} />
+                <path d="M-22 -52 L-38 -84 L-45 -44 Z" fill={cut} />
+                <path d="M-36 -72 L-31 -60 M-41 -62 L-36 -52 M-30 -66 L-27 -57" stroke={fg} strokeWidth="2.4" strokeLinecap="round" />
+              </>
+            )}
+            <path d="M-48 -34 L-62 -20 L-53 -18 L-68 -2 L-55 -2 L-66 16 L-51 12 L-58 30 L-41 22 L-43 40 L-29 30 L-31 20 L-43 17 L-39 4 L-49 2 L-41 -12 L-49 -17 Z" fill={fg} {...edge} />
+            <path d="M-34 -28 L-6 -36 L-10 -27 L-27 -21 Z" fill={fg} {...edge} />
+            <path d="M-31 -5 L-13 -1 L-23 3 Z" fill={fg} {...edge} />
+            <path d="M-11 -3 L-15 24" stroke={fg} strokeWidth="2.6" strokeLinecap="round" />
+            {eyes === "closed" ? (
+              <path d="M-33 -15 Q-20 -6 -7 -15 M-29 -11 l-2 4 M-20 -9 v4.4 M-12 -11 l2 4" fill="none" stroke={fg} strokeWidth="2.8" strokeLinecap="round" />
+            ) : (
+              <>
+                <path d="M-33 -14 Q-20 -25 -7 -14 Q-20 -7 -33 -14 Z" fill={fg} {...edge} />
+                {eyes === "slit" ? <ellipse cx="-18.5" cy="-14.5" rx="1.8" ry="5" fill={cut} /> : <circle cx="-18.5" cy="-14.5" r="3.8" fill={cut} />}
+              </>
+            )}
+          </g>
+        );
+      })}
+      <path d="M0 -62 L7 -41 L3 -22 L0 -12 L-3 -22 L-7 -41 Z" fill={fg} {...edge} />
+      <path d="M-9 -6 Q0 -10 9 -6 L12 22 Q0 30 -12 22 Z" fill={fg} {...edge} />
+      <path d="M-9 14 Q0 9 9 14 Q5 23 0 24 Q-5 23 -9 14 Z" fill={cut} />
+      <path d="M0 24 V29 M-9 28 Q0 33 9 28" fill="none" stroke={cut} strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M-26 34 L-18 52 L-10 42 L-4 60 L0 46 L4 60 L10 42 L18 52 L26 34 L14 40 L0 32 L-14 40 Z" fill={fg} {...edge} />
+    </g>
+  );
+}
+
 // Arch panel: x 13..107, y 24..164, centre x = 60. Every card shows a figure.
 const ART: Record<RoleId, (f: Fill) => React.ReactNode> = {
   // A wolf's head staring out of swirling clouds beneath the moon.
@@ -250,26 +303,7 @@ const ART: Record<RoleId, (f: Fill) => React.ReactNode> = {
       <circle cx="97" cy="40" r="1.4" fill={INK} />
       <Crescent cx={22} cy={36} R={7} />
       <Sparks pts={[[40, 30, 2], [80, 28, 1.8], [18, 70, 1.8], [102, 68, 1.8]]} />
-      <g transform="translate(60 98) scale(0.66)">
-        {[1, -1].map((sx) => (
-          <g key={sx} transform={sx === -1 ? "scale(-1 1)" : undefined}>
-            <path d="M-16 -50 L-40 -98 L-52 -36 Z" fill={PALE} />
-            <path d="M-22 -52 L-38 -84 L-45 -44 Z" fill={INK} />
-            <path d="M-36 -72 L-31 -60 M-41 -62 L-36 -52 M-30 -66 L-27 -57" stroke={PALE} strokeWidth="2.4" strokeLinecap="round" />
-            <path d="M-48 -34 L-62 -20 L-53 -18 L-68 -2 L-55 -2 L-66 16 L-51 12 L-58 30 L-41 22 L-43 40 L-29 30 L-31 20 L-43 17 L-39 4 L-49 2 L-41 -12 L-49 -17 Z" fill={PALE} />
-            <path d="M-34 -28 L-6 -36 L-10 -27 L-27 -21 Z" fill={PALE} />
-            <path d="M-31 -5 L-13 -1 L-23 3 Z" fill={PALE} />
-            <path d="M-11 -3 L-15 24" stroke={PALE} strokeWidth="2.6" strokeLinecap="round" />
-            <path d="M-33 -14 Q-20 -25 -7 -14 Q-20 -7 -33 -14 Z" fill={PALE} />
-            <circle cx="-18.5" cy="-14.5" r="3.8" fill={INK} />
-          </g>
-        ))}
-        <path d="M0 -62 L7 -41 L3 -22 L0 -12 L-3 -22 L-7 -41 Z" fill={PALE} />
-        <path d="M-9 -6 Q0 -10 9 -6 L12 22 Q0 30 -12 22 Z" fill={PALE} />
-        <path d="M-9 14 Q0 9 9 14 Q5 23 0 24 Q-5 23 -9 14 Z" fill={INK} />
-        <path d="M0 24 V29 M-9 28 Q0 33 9 28" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" />
-        <path d="M-26 34 L-18 52 L-10 42 L-4 60 L0 46 L4 60 L10 42 L18 52 L26 34 L14 40 L0 32 L-14 40 Z" fill={PALE} />
-      </g>
+      <WolfHead />
       {/* clouds */}
       <Cloud cx={22} cy={152} s={1.05} />
       <Cloud cx={58} cy={160} s={1.2} />
@@ -491,77 +525,63 @@ const ART: Record<RoleId, (f: Fill) => React.ReactNode> = {
       <circle cx="60" cy="110" r="2.6" fill={INK} {...g} strokeWidth={1.16} />
     </>
   ),
-  // A black wolf in profile howling at a huge bleeding moon, sitting in a curse circle.
+  // The werewolf's head turned black against a huge bleeding moon: a torn ear,
+  // slit eyes, a pentagram burnt on its brow and a broken chain at its throat.
   cursedWolf: (f) => (
     <>
-      <circle cx="64" cy="70" r="40" fill="none" stroke={PALE} strokeWidth="0.9" strokeDasharray="2 2.2" />
-      <circle cx="64" cy="70" r="34" fill={PALE} />
-      {/* craters */}
-      <circle cx="84" cy="56" r="4" fill="none" stroke={INK} strokeWidth="1.2" />
-      <circle cx="90" cy="76" r="2.4" fill="none" stroke={INK} strokeWidth="1" />
-      <circle cx="78" cy="90" r="1.8" fill="none" stroke={INK} strokeWidth="0.9" />
+      <circle cx="60" cy="86" r="50" fill="none" stroke={PALE} strokeWidth="0.9" strokeDasharray="2 2.2" />
+      <circle cx="60" cy="86" r="45" fill={PALE} />
       {/* the moon bleeds */}
-      <path
-        d="M38 92 q3 9 1 17 q-1.6 3 -3.6 0 q-1.2 -8 2.6 -17 Z M46 99 q2 6 0.6 11 q-1.3 2.2 -2.8 0 q-0.8 -5 2.2 -11 Z M84 99 q2.4 8 0.8 14 q-1.5 2.6 -3.2 0 q-0.9 -6.5 2.4 -14 Z M92 90 q2 6 0.6 10 q-1.3 2 -2.6 0 q-0.7 -4.5 2 -10 Z"
-        fill={PALE}
-      />
-      <path d="M37 118 q1.6 3 0 4.6 q-1.6 -1.6 0 -4.6 Z M83 120 q1.6 3 0 4.6 q-1.6 -1.6 0 -4.6 Z" fill={PALE} />
-      <Sparks pts={[[20, 34, 2.2], [104, 30, 2], [18, 110, 1.6], [106, 104, 1.6]]} />
-      {/* ground and the pentagram the wolf sits in */}
-      <path d="M12 150 Q36 142 60 146 Q84 142 108 150 V164 H12 Z" fill={f.hatch} {...g} strokeWidth={1.16} />
-      <ellipse cx="60" cy="156" rx="42" ry="7" fill={INK} stroke={PALE} strokeWidth="1.3" />
-      <path d="M60 149 L84.7 161.7 L20.1 153.8 L99.9 153.8 L35.3 161.7 Z" fill="none" stroke={PALE} strokeWidth="0.9" strokeLinejoin="round" />
-      {/* howling wolf, black against the moon */}
-      <g transform="translate(52 154) scale(0.95)">
-        <path
-          d="M-20 -104 L-10 -93 L-6 -95 L-2 -109 L4 -93 Q9 -89 10 -80 Q12 -66 16 -55 Q22 -42 30 -30 Q38 -18 34 -6 Q44 -10 54 -6 Q56 -1 46 0 L-15 0 Q-20 -1 -16 -4 L-12 -10 L-12 -36 Q-18 -48 -17 -60 Q-16 -70 -12 -76 L-25 -98 L-14 -89 Z"
-          fill={INK}
-          stroke={PALE}
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        />
-        {/* slanted eye, ear notch, hind leg, chest fur */}
-        <path d="M-5 -91 l-5 -2.6 l5.4 0.2 Z" fill={PALE} />
-        <path d="M-1 -103 L1 -95" stroke={PALE} strokeWidth="0.9" strokeLinecap="round" />
-        <path d="M28 -30 Q12 -28 14 -2 M-15 -58 l5 2 l-5 3 l5 2 l-5 3" fill="none" stroke={PALE} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
-      </g>
-      {/* the howl */}
-      <path d="M28 46 q-4 -3 -3 -8 M24 51 q-6 -4 -5 -11 M20 56 q-7 -5 -6 -14" fill="none" stroke={PALE} strokeWidth="1.1" strokeLinecap="round" />
+      <path d="M24 112 q3 9 1 17 q-1.6 3 -3.6 0 q-1.2 -8 2.6 -17 Z M31 120 q2 6 0.6 11 q-1.3 2.2 -2.8 0 q-0.8 -5 2.2 -11 Z M96 112 q-3 9 -1 17 q1.6 3 3.6 0 q1.2 -8 -2.6 -17 Z M89 120 q-2 6 -0.6 11 q1.3 2.2 2.8 0 q0.8 -5 -2.2 -11 Z" fill={PALE} />
+      <path d="M22.5 134 q1.6 3 0 4.6 q-1.6 -1.6 0 -4.6 Z M97.5 134 q1.6 3 0 4.6 q-1.6 -1.6 0 -4.6 Z" fill={PALE} />
+      <Sparks pts={[[18, 30, 2.2], [102, 30, 2.2], [16, 76, 1.6], [104, 76, 1.6]]} />
+      <WolfHead invert eyes="slit" torn />
+      {/* pentagram burnt on the brow */}
+      <circle cx="60" cy="56" r="7" fill={INK} stroke={PALE} strokeWidth="1.2" />
+      <path d="M60 50 L63.5 60.8 L54.3 54.1 L65.7 54.1 L56.5 60.8 Z" fill="none" stroke={PALE} strokeWidth="0.9" strokeLinejoin="round" />
+      {/* broken chain at the throat */}
+      {[1, -1].map((sx) => (
+        <g key={sx} transform={sx === -1 ? "translate(120 0) scale(-1 1)" : undefined} fill={INK} stroke={PALE}>
+          {[0, 1, 2, 3, 4].map((i) => {
+            const x = 20 + i * 6;
+            const y = 136 + i * 2.4;
+            return i % 2 ? (
+              <path key={i} d={`M${x - 2.6} ${n2(y - 0.9)} L${x + 2.6} ${n2(y + 0.9)}`} strokeWidth="2.6" strokeLinecap="round" />
+            ) : (
+              <ellipse key={i} cx={x} cy={y} rx="4" ry="2.4" transform={`rotate(20 ${x} ${y})`} strokeWidth="1.6" />
+            );
+          })}
+          {/* the snapped end */}
+          <path d="M47 146.5 l2.6 -2 M47.5 149 l3 0.4" stroke={PALE} strokeWidth="1.2" strokeLinecap="round" />
+        </g>
+      ))}
+      {/* ground with the curse circle */}
+      <path d="M12 154 Q36 148 60 151 Q84 148 108 154 V164 H12 Z" fill={f.hatch} {...g} strokeWidth={1.16} />
+      <ellipse cx="60" cy="159" rx="40" ry="5" fill={INK} stroke={PALE} strokeWidth="1.2" />
+      <path d="M60 154 L83.5 162.1 L22 157.1 L98 157.1 L36.5 162.1 Z" fill="none" stroke={PALE} strokeWidth="0.8" strokeLinejoin="round" />
     </>
   ),
-  // A hooded wolf mystic with burning eyes, gazing into a crystal ball beneath the all-seeing eye.
-  wolfSeer: (f) => (
+  // The werewolf's head in a mystic's hood, its own eyes shut and a third eye
+  // wide open on its brow, clawed paws cradling a crystal ball below.
+  wolfSeer: () => (
     <>
-      {/* all-seeing eye in a triangle */}
-      <Rays cx={60} cy={42} r1={15} r2={22} n={24} w={0.8} />
-      <path d="M60 25 L76 52 L44 52 Z" fill={INK} stroke={PALE} strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M50 44 Q60 35 70 44 Q60 53 50 44 Z" fill={PALE} />
-      <circle cx="60" cy="44" r="3.4" fill={INK} />
-      <circle cx="61" cy="43" r="1" fill={PALE} />
-      <Crescent cx={20} cy={36} R={6} />
-      <Sparks pts={[[100, 34, 2.2], [104, 80, 1.6], [16, 82, 1.6]]} />
-      <path d="M12 150 Q36 142 60 146 Q84 142 108 150 V164 H12 Z" fill={f.hatch} {...g} strokeWidth={1.16} />
-      {/* cloak */}
-      <path d="M28 162 Q32 120 44 108 L76 108 Q88 120 92 162 Z" fill={INK} stroke={PALE} strokeWidth="1.6" strokeLinejoin="round" />
-      <Folds d="M40 124 L34 160 M80 124 L86 160 M50 130 L48 160 M70 130 L72 160" />
-      {/* ears poking through the hood */}
-      <path d="M45 70 L42 56 L53 64 Z M75 70 L78 56 L67 64 Z" fill={PALE} />
+      <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
+      <Crescent cx={22} cy={36} R={7} />
+      <Sparks pts={[[98, 30, 2.4], [40, 26, 2], [80, 26, 2], [16, 70, 1.8], [104, 70, 1.8]]} />
       {/* hood */}
-      <path d="M36 116 Q32 76 60 64 Q88 76 84 116 Q72 106 60 106 Q48 106 36 116 Z" fill={INK} stroke={PALE} strokeWidth="1.6" strokeLinejoin="round" />
-      <path d="M42 108 Q42 82 60 74 Q78 82 78 108" fill="none" stroke={PALE} strokeWidth="0.7" />
-      {/* the wolf's muzzle in the hood's shadow, eyes burning */}
-      <path d="M54 92 Q60 89 66 92 L63 106 Q60 110 57 106 Z" fill={PALE} />
-      <path d="M58 104.5 h4 l-2 2.2 Z" fill={INK} />
-      <path d="M56 96 v6 M64 96 v6" stroke={INK} strokeWidth="0.7" strokeLinecap="round" />
-      <path d="M45 88 q4 -3 8 0 q-4 2.6 -8 0 Z M67 88 q4 -3 8 0 q-4 2.6 -8 0 Z" fill={PALE} />
-      <path d="M43 85 l-3 -2 M44 91 l-3 1.4 M77 85 l3 -2 M76 91 l3 1.4" stroke={PALE} strokeWidth="0.7" strokeLinecap="round" />
-      {/* clawed paws around the crystal ball, an eye inside it */}
-      <circle cx="60" cy="134" r="14" fill={PALE} />
-      <path d="M50 126 A11 11 0 0 1 57 122" fill="none" stroke={INK} strokeWidth="1.4" strokeLinecap="round" />
-      <path d="M52 136 Q60 128 68 136 Q60 144 52 136 Z" fill={INK} />
-      <circle cx="60" cy="136" r="2.6" fill={PALE} />
-      <path d="M44 140 q2 -8 8 -8 l-1 3 l3 0 l-2 3 l3 1 Q50 146 44 140 Z M76 140 q-2 -8 -8 -8 l1 3 l-3 0 l2 3 l-3 1 Q70 146 76 140 Z" fill={PALE} stroke={INK} strokeWidth="0.8" strokeLinejoin="round" />
-      <path d="M48 150 H72 L68 145 H52 Z" fill={PALE} />
+      <path d="M20 166 Q14 74 60 38 Q106 74 100 166 Z" fill={INK} stroke={PALE} strokeWidth="1.8" strokeLinejoin="round" />
+      <WolfHead eyes="closed" />
+      {/* third eye */}
+      <Rays cx={60} cy={66} r1={8} r2={13} n={16} w={0.8} />
+      <path d="M50 66 Q60 57 70 66 Q60 75 50 66 Z" fill={PALE} stroke={INK} strokeWidth="1.2" />
+      <circle cx="60" cy="66" r="3.4" fill={INK} />
+      <circle cx="61" cy="65" r="1" fill={PALE} />
+      {/* clawed paws around the crystal ball */}
+      <circle cx="60" cy="149" r="14" fill={PALE} stroke={INK} strokeWidth="1.2" />
+      <path d="M50 141 A11 11 0 0 1 57 137.5" fill="none" stroke={INK} strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M52 149 Q60 142 68 149 Q60 156 52 149 Z" fill={INK} />
+      <circle cx="60" cy="149" r="2.6" fill={PALE} />
+      <path d="M38 160 q1 -10 10 -10 l-1 3 l3 0 l-2 3 l3 1 Q46 166 38 160 Z M82 160 q-1 -10 -10 -10 l1 3 l-3 0 l2 3 l-3 1 Q74 166 82 160 Z" fill={PALE} stroke={INK} strokeWidth="0.8" strokeLinejoin="round" />
     </>
   ),
   // A bearded elder leaning on a staff under a crescent moon.
