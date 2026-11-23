@@ -20,7 +20,12 @@ describe("profile cosmetics", () => {
 
   it("players carry their style into every view and can change it in the lobby", () => {
     const room = createRoom("STYLE", "vi");
-    const p = addPlayer(room, { name: "Lan", style: { font: "brush", effect: "blood", frame: "thorns" }, avatarUrl: "https://evil.example/x.png" }).player!;
+    const p = addPlayer(room, {
+      name: "Lan",
+      style: { font: "brush", effect: "blood", frame: "thorns" },
+      owned: ["font:brush", "effect:blood", "frame:thorns", "effect:glow"],
+      avatarUrl: "https://evil.example/x.png",
+    }).player!;
     expect(p.avatarUrl).toBeNull();
     const screen = buildView(room, "screen");
     expect(screen.players[0].style).toEqual({ font: "brush", effect: "blood", frame: "thorns" });

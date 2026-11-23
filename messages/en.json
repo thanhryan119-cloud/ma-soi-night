@@ -442,6 +442,23 @@
       "pulse": "Heartbeat"
     }
   },
+  "shop": {
+    "title": "Shop",
+    "price": "{price} VND",
+    "buy": "Buy for {price} with payOS",
+    "lockedItem": "Locked: {price}",
+    "trying": "Trying on: {item}",
+    "hint": "Every font, name effect and avatar frame is sold separately. Buy once, it stays on your account on every device.",
+    "signInToBuy": "Sign in with Google (under Account below) to buy. Items belong to your account.",
+    "disabled": "The shop is not open on this server.",
+    "redirecting": "Opening the payment page…",
+    "cancel": "Not now",
+    "checking": "Checking your payment…",
+    "paid": "{item} unlocked and equipped!",
+    "cancelled": "Payment cancelled, nothing was charged.",
+    "pending": "Payment not received yet. If you already paid, wait a moment and reload the page.",
+    "backToRoom": "Back to the room"
+  },
   "screen": {
     "waitingPlayers": "Waiting for players…",
     "joinAt": "Join at",
@@ -533,7 +550,12 @@
     "notOwner": "Only the room owner can do that.",
     "wrongPassword": "Wrong room password.",
     "passwordRequired": "This room needs a password.",
-    "abandoned": "You left this game; a bot is playing for you."
+    "abandoned": "You left this game; a bot is playing for you.",
+    "shopDisabled": "The shop is not open.",
+    "itemUnknown": "That item does not exist.",
+    "itemOwned": "You already own this item.",
+    "orderNotFound": "Order not found.",
+    "paymentFailed": "Could not start the payment, try again later."
   },
   "log": {
     "join": "{name} joined",

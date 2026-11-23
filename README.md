@@ -71,6 +71,8 @@ App gồm 2 phần deploy riêng:
   - `PORT` — Railway/Render tự cấp.
   - `CORS_ORIGIN` — domain web, ví dụ `https://ma-soi.vercel.app` (nhiều domain cách nhau bằng dấu phẩy).
   - `DATA_FILE` *(tùy chọn)* — đường dẫn file snapshot, ví dụ `/data/rooms.json` nếu gắn Volume, để phòng sống sót qua lần redeploy.
+  - `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY` *(tùy chọn)* — bật cửa hàng (xem mục Cửa hàng bên dưới).
+  - `PUBLIC_WEB_URL` *(tùy chọn)* — domain web để payOS đưa người mua quay về, ví dụ `https://ma-soi.vercel.app`.
 - Kiểm tra: `https://<server>/health` trả `{"ok":true}`.
 
 **Cập nhật server sau khi sửa code** (Railway CLI đã đăng nhập một lần bằng `npx @railway/cli login`):
@@ -83,6 +85,16 @@ npm run deploy:server
 
 - Import repo, framework **Next.js** (mặc định).
 - Biến môi trường: `NEXT_PUBLIC_SOCKET_URL=https://<socket-server-của-bạn>`.
+
+## Cửa hàng (payOS)
+
+Font tên, hiệu ứng tên và khung avatar (trừ mặc định) được bán qua [payOS](https://payos.vn), **50.000đ mỗi món** (`ITEM_PRICE_VND` trong `shared/cosmetics.ts`). Mua một lần, món đồ gắn với tài khoản Google và tự đeo ngay. Khách chưa đăng nhập vẫn thử xem trước được nhưng phải đăng nhập mới mua.
+
+1. Tạo kênh thanh toán trên https://my.payos.vn, lấy *Client ID*, *API Key*, *Checksum Key* và đặt vào biến môi trường của socket server.
+2. Trong kênh thanh toán, đặt **Webhook URL** = `https://<socket-server>/payos/webhook` (payOS gửi thử một đơn mẫu, server trả 200).
+3. Khi chạy local, webhook không tới được máy bạn: lúc người mua quay về `/profile?order=…`, server tự hỏi payOS trạng thái đơn nên vẫn mở khoá được.
+
+Server luôn kiểm tra quyền sở hữu (vào phòng, đổi hồ sơ, `PATCH /me`), nên món chưa mua không hiện cho người khác dù máy khách gửi lên. Bot vẫn đeo đồ ngẫu nhiên để khoe hàng. Đơn hàng lưu ở `orders.json`, món đã mua lưu trong `users.json` (cùng thư mục `DATA_FILE`).
 
 ## Cấu trúc thư mục
 

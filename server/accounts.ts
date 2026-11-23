@@ -7,7 +7,16 @@ import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileS
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { join } from "node:path";
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { DEFAULT_STYLE, sanitizeStyle, type PlayerStyle } from "../shared/cosmetics";
+import {
+  DEFAULT_STYLE,
+  equip,
+  limitStyle,
+  sanitizeOwned,
+  sanitizeStyle,
+  type ItemId,
+  type PlayerStyle,
+} from "../shared/cosmetics";
+import { bearer, cors as corsFor, json, readBody } from "./http";
 import {
   applyResult,
   rankLeaderboard,
@@ -25,6 +34,8 @@ export interface User {
   /** "/avatars/<file>" for an uploaded photo, or the Google profile photo URL. */
   avatarUrl: string | null;
   style?: PlayerStyle;
+  /** Shop items bought with payOS. */
+  owned?: string[];
   createdAt: number;
 }
 
@@ -89,7 +100,7 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
       name: u.name,
       avatar: "",
       avatarUrl: u.avatarUrl,
-      style: u.style ?? DEFAULT_STYLE,
+      style: styleOf(u),
       isBot: false,
       memberSince: u.createdAt,
       stats: stats[u.id] ?? null,
@@ -104,7 +115,7 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
           userId: u.id,
           name: u.name,
           avatarUrl: u.avatarUrl,
-          style: u.style ?? DEFAULT_STYLE,
+          style: styleOf(u),
           games: s?.games ?? 0,
           wins: s?.wins ?? 0,
           winRate: s ? winRate(s) : 0,
@@ -125,42 +136,24 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
     return store.users[s.userId] ?? null;
   }
 
-  const publicUser = (u: User) => ({ id: u.id, name: u.name, avatarUrl: u.avatarUrl, style: u.style ?? DEFAULT_STYLE });
+  const ownedOf = (u: User | undefined | null) => sanitizeOwned(u?.owned);
+  /** The style others see: anything not (or no longer) owned falls back to the default. */
+  const styleOf = (u: User) => limitStyle(u.style ?? DEFAULT_STYLE, ownedOf(u));
+  const publicUser = (u: User) => ({ id: u.id, name: u.name, avatarUrl: u.avatarUrl, style: styleOf(u), owned: ownedOf(u) });
+
+  /** Adds a bought item to the account and equips it. Safe to call twice. */
+  function grantItem(userId: string, item: ItemId) {
+    const u = store.users[userId];
+    if (!u) return null;
+    u.owned = sanitizeOwned([...ownedOf(u), item]);
+    u.style = equip(styleOf(u), item);
+    save();
+    return publicUser(u);
+  }
 
   // ------------------------------------------------------------------ HTTP --
 
-  function cors(req: IncomingMessage, res: ServerResponse) {
-    const origin = req.headers.origin ?? "";
-    const allowed = corsOrigin === "*" || corsOrigin.includes(origin);
-    if (allowed) res.setHeader("Access-Control-Allow-Origin", corsOrigin === "*" ? "*" : origin);
-    res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
-  }
-
-  const json = (res: ServerResponse, status: number, body: unknown) => {
-    res.statusCode = status;
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify(body));
-  };
-
-  function readBody(req: IncomingMessage, limit: number): Promise<Buffer | null> {
-    return new Promise((resolve) => {
-      const chunks: Buffer[] = [];
-      let size = 0;
-      req.on("data", (c: Buffer) => {
-        size += c.length;
-        if (size > limit) {
-          resolve(null);
-          req.destroy();
-        } else chunks.push(c);
-      });
-      req.on("end", () => resolve(Buffer.concat(chunks)));
-      req.on("error", () => resolve(null));
-    });
-  }
-
-  const bearer = (req: IncomingMessage) => (req.headers.authorization ?? "").replace(/^Bearer\s+/i, "");
+  const cors = (req: IncomingMessage, res: ServerResponse) => corsFor(req, res, corsOrigin);
 
   function imageExt(buf: Buffer): "jpg" | "png" | "webp" | null {
     if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "jpg";
@@ -262,7 +255,7 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
           if (!clean) return json(res, 400, { ok: false, error: "err.nameRequired" }), true;
           user.name = clean;
         }
-        if (patch.style !== undefined) user.style = sanitizeStyle(patch.style);
+        if (patch.style !== undefined) user.style = limitStyle(sanitizeStyle(patch.style), ownedOf(user));
         save();
         return json(res, 200, { ok: true, user: publicUser(user) }), true;
       }
@@ -292,5 +285,15 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
     }
   }
 
-  return { handle, userForToken, recordGame, profileOf, enabled: !!GOOGLE_CLIENT_ID };
+  return {
+    handle,
+    userForToken,
+    recordGame,
+    profileOf,
+    grantItem,
+    publicUser,
+    /** Shop items a user owns (empty for guests). */
+    ownedFor: (userId: string | null | undefined) => ownedOf(userId ? store.users[userId] : null),
+    enabled: !!GOOGLE_CLIENT_ID,
+  };
 }

@@ -1,7 +1,7 @@
 // Game engine: mutates a Room in response to validated host/player actions.
 // Every action is checked here (phase, role, alive, valid target, double vote).
 
-import { AVATAR_FRAMES, NAME_EFFECTS, NAME_FONTS, sanitizeAvatarUrl, sanitizeStyle } from "./cosmetics";
+import { AVATAR_FRAMES, NAME_EFFECTS, NAME_FONTS, limitStyle, sanitizeAvatarUrl, sanitizeOwned, sanitizeStyle } from "./cosmetics";
 import {
   BOT_SPEEDS,
   NIGHT_STEP_ROLE,
@@ -145,6 +145,8 @@ export function addPlayer(
     isBot?: boolean;
     avatarUrl?: string | null;
     style?: unknown;
+    /** Shop items the player's account owns; paid styles outside it are dropped. */
+    owned?: readonly string[];
     userId?: string | null;
   },
   now = Date.now(),
@@ -161,7 +163,8 @@ export function addPlayer(
     name,
     avatar: AVATARS.includes(input.avatar ?? "") ? input.avatar! : AVATARS[room.players.length % AVATARS.length],
     avatarUrl: sanitizeAvatarUrl(input.avatarUrl),
-    style: sanitizeStyle(input.style),
+    style: limitStyle(sanitizeStyle(input.style), input.isBot ? "all" : sanitizeOwned(input.owned)),
+    owned: sanitizeOwned(input.owned),
     userId: input.userId ?? null,
     locale: input.locale === "en" ? "en" : "vi",
     isBot: !!input.isBot,
@@ -744,7 +747,8 @@ export function playerAction(room: Room, playerId: string, action: PlayerAction)
     case "updateProfile": {
       if (room.phase.kind !== "lobby") return fail("err.wrongPhase");
       if (action.avatar && AVATARS.includes(action.avatar)) player.avatar = action.avatar;
-      if (action.style) player.style = sanitizeStyle({ ...player.style, ...action.style });
+      if (action.style)
+        player.style = limitStyle(sanitizeStyle({ ...player.style, ...action.style }), player.isBot ? "all" : player.owned ?? []);
       if (action.name !== undefined) {
         const name = sanitizeName(action.name);
         if (!name) return fail("err.nameRequired");

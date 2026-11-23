@@ -28,6 +28,8 @@ import { botChatLine, botDefenseLine, newBotChatMemory, type BotChatMemory } fro
 import { ingestChat, newChatIntel, type ChatIntel } from "../shared/botIntel";
 import { createAiBots } from "./aiBots";
 import { createAccounts } from "./accounts";
+import { payOSFromEnv } from "./payos";
+import { createShop } from "./shop";
 import { createSocial } from "./social";
 import { gameResults, type PublicProfile } from "../shared/stats";
 import {
@@ -110,6 +112,14 @@ function loadRooms() {
 loadRooms();
 const accounts = createAccounts(dirname(DATA_FILE), CORS_ORIGIN);
 if (!accounts.enabled) console.log("[accounts] GOOGLE_CLIENT_ID not set: Google sign-in disabled");
+const shop = createShop({
+  dataDir: dirname(DATA_FILE),
+  corsOrigin: CORS_ORIGIN,
+  payos: payOSFromEnv(),
+  accounts,
+  webUrl: process.env.PUBLIC_WEB_URL || undefined,
+});
+if (!shop.enabled) console.log("[shop] PAYOS_CLIENT_ID / PAYOS_API_KEY / PAYOS_CHECKSUM_KEY not set: shop disabled");
 
 interface SocketData {
   code?: string;
@@ -130,6 +140,7 @@ function lanAddresses(): string[] {
 
 const httpServer = createServer(async (req, res) => {
   if (await accounts.handle(req, res)) return;
+  if (await shop.handle(req, res)) return;
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Content-Type", "application/json");
   if (req.url === "/health") return res.end(JSON.stringify({ ok: true, rooms: rooms.size }));
@@ -635,6 +646,7 @@ io.on("connection", (raw) => {
         locale,
         avatarUrl: user?.avatarUrl ?? null,
         style: profile.style,
+        owned: accounts.ownedFor(user?.id),
         userId: user?.id ?? null,
       });
       if (!res.ok || !res.player) return { ok: false, error: res.error, params: res.params };
@@ -725,6 +737,7 @@ io.on("connection", (raw) => {
         locale: p.locale === "en" ? "en" : "vi",
         avatarUrl: user?.avatarUrl ?? null,
         style: p.style,
+        owned: accounts.ownedFor(user?.id),
         userId: user?.id ?? null,
       });
       if (!res.ok || !res.player) return { ok: false, error: res.error, params: res.params };
@@ -835,6 +848,9 @@ io.on("connection", (raw) => {
       const { code, kind, playerId } = socket.data;
       const room = code ? rooms.get(code) : undefined;
       if (!room || kind !== "player" || !playerId) return { ok: false, error: "err.notInRoom" };
+      // Items bought since joining count right away.
+      const me = getPlayer(room, playerId);
+      if (me?.userId && (p as { type?: string })?.type === "updateProfile") me.owned = accounts.ownedFor(me.userId);
       const res = playerAction(room, playerId, p as unknown as PlayerAction);
       if (res.ok) touch(room);
       return res as ActionResult & Record<string, unknown>;

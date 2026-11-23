@@ -2,9 +2,25 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AVATARS } from "@shared/engine";
-import { AVATAR_FRAMES, DEFAULT_STYLE, NAME_EFFECTS, NAME_FONTS, type PlayerStyle } from "@shared/cosmetics";
+import {
+  AVATAR_FRAMES,
+  DEFAULT_STYLE,
+  ITEM_PRICE_VND,
+  NAME_EFFECTS,
+  NAME_FONTS,
+  equip,
+  isFreeItem,
+  itemId,
+  limitStyle,
+  type ItemId,
+  type ItemKind,
+  type PlayerStyle,
+} from "@shared/cosmetics";
 import {
   GOOGLE_CLIENT_ID,
+  buyItem,
+  fetchShop,
+  type ShopInfo,
   signInWithGoogle,
   signOut,
   updateAccount,
@@ -79,36 +95,123 @@ function GoogleButton() {
 // Editor
 // ---------------------------------------------------------------------------
 
+const sameStyle = (a: PlayerStyle, b: PlayerStyle) => a.font === b.font && a.effect === b.effect && a.frame === b.frame;
+
+/** "50.000đ" / "50,000 VND" */
+export function usePrice() {
+  const t = useT();
+  const { locale } = useLocale();
+  return (vnd: number) => t("shop.price", { price: new Intl.NumberFormat(locale === "en" ? "en-US" : "vi-VN").format(vnd) });
+}
+
 function Picker<T extends string>({
   label,
   options,
   value,
+  trying,
+  locked,
+  price,
   onChange,
   render,
 }: {
   label: string;
   options: readonly T[];
   value: T;
+  /** A paid option being previewed (not bought yet). */
+  trying: T | null;
+  locked: (v: T) => boolean;
+  price: string;
   onChange: (v: T) => void;
   render: (v: T) => React.ReactNode;
 }) {
+  const t = useT();
   return (
     <div>
       <span className="ui-label">{label}</span>
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-        {options.map((o) => (
+        {options.map((o) => {
+          const isLocked = locked(o);
+          const selected = trying ? o === trying : o === value;
+          return (
+            <button
+              key={o}
+              type="button"
+              onClick={() => onChange(o)}
+              aria-pressed={selected}
+              title={isLocked ? t("shop.lockedItem", { price }) : undefined}
+              className={`relative flex min-h-12 items-center justify-center gap-2 rounded-md border px-2 pt-3.5 pb-2 text-sm transition ${
+                selected
+                  ? isLocked
+                    ? "border-dashed border-gold bg-gold/10"
+                    : "border-gold bg-gold/10"
+                  : "border-white/10 hover:border-white/30"
+              }`}
+            >
+              {render(o)}
+              {isLocked && (
+                <span className="absolute top-0.5 right-1 rounded bg-black/60 px-1 text-[9px] leading-4 text-gold">
+                  🔒 {price}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Preview of a paid item with the button that sends the player to payOS. */
+function BuyBar({
+  item,
+  user,
+  shop,
+  onCancel,
+}: {
+  item: ItemId;
+  user: { id: string } | null;
+  shop: ShopInfo | null;
+  onCancel: () => void;
+}) {
+  const t = useT();
+  const price = usePrice();
+  const showError = useErrorToast();
+  const [busy, setBusy] = useState(false);
+  const [kind, value] = item.split(":") as [ItemKind, string];
+  const name = t(`profile.${kind}.${value}`);
+  const cost = price(shop?.price ?? ITEM_PRICE_VND);
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-gold/40 bg-gold/[0.06] p-4" role="region" aria-label={t("shop.title")}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+        <span className="font-bold">{t("shop.trying", { item: name })}</span>
+        <span className="font-bold text-gold">{cost}</span>
+      </div>
+      {!user ? (
+        <p className="text-sm text-white/70">{t("shop.signInToBuy")}</p>
+      ) : shop && !shop.enabled ? (
+        <p className="text-sm text-white/60">{t("shop.disabled")}</p>
+      ) : (
+        <p className="text-xs text-white/50">{t("shop.hint")}</p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        {user && shop?.enabled && (
           <button
-            key={o}
             type="button"
-            onClick={() => onChange(o)}
-            aria-pressed={o === value}
-            className={`flex min-h-12 items-center justify-center gap-2 rounded-md border px-2 py-2 text-sm transition ${
-              o === value ? "border-gold bg-gold/10" : "border-white/10 hover:border-white/30"
-            }`}
+            className="btn-primary flex-1"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              const r = await buyItem(item);
+              // On success the page is leaving for payOS; keep the button busy.
+              if (!showError(r)) setBusy(false);
+            }}
           >
-            {render(o)}
+            {busy ? t("shop.redirecting") : t("shop.buy", { price: cost })}
           </button>
-        ))}
+        )}
+        <button type="button" className="btn-ghost" onClick={onCancel}>
+          {t("shop.cancel")}
+        </button>
       </div>
     </div>
   );
@@ -133,28 +236,58 @@ export function ProfileEditor({
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const user = account?.user ?? null;
+  const owned = user?.owned ?? [];
   const [open, setOpen] = useState(!compact);
-
-  // When the player signs in, adopt the account's name and style once.
-  const adopted = useRef<string | null>(null);
+  const [trying, setTrying] = useState<ItemId | null>(null);
+  const [shop, setShop] = useState<ShopInfo | null>(null);
+  const price = usePrice();
   useEffect(() => {
-    if (user && adopted.current !== user.id) {
+    fetchShop().then(setShop);
+  }, []);
+
+  // When the player signs in, adopt the account's name and style once; after
+  // that, follow the account whenever its style changes (a purchase equips the
+  // item, another device). Paid items the player does not own are taken off.
+  const adopted = useRef<string | null>(null);
+  const accountStyle = useRef<PlayerStyle | null>(null);
+  useEffect(() => {
+    const own = user?.owned ?? [];
+    const local = limitStyle(value.style, own);
+    const lastSeen = accountStyle.current;
+    accountStyle.current = user?.style ?? null;
+    if (user && adopted.current === user.id && lastSeen && !sameStyle(lastSeen, user.style)) {
+      if (!sameStyle(user.style, value.style)) onChange({ ...value, style: user.style });
+    } else if (user && adopted.current !== user.id) {
       adopted.current = user.id;
-      const accountIsDefault = JSON.stringify(user.style) === JSON.stringify(DEFAULT_STYLE);
-      const localIsDefault = JSON.stringify(value.style) === JSON.stringify(DEFAULT_STYLE);
-      if (accountIsDefault && !localIsDefault) {
+      const accountIsDefault = sameStyle(user.style, DEFAULT_STYLE);
+      if (accountIsDefault && !sameStyle(local, DEFAULT_STYLE)) {
         // First sign-in: keep what the player picked as a guest and save it to the account.
-        updateAccount({ style: value.style });
-        onChange({ ...value, name: value.name || user.name });
+        updateAccount({ style: local });
+        onChange({ ...value, name: value.name || user.name, style: local });
       } else onChange({ ...value, name: value.name || user.name, style: user.style });
-    }
+    } else if (!sameStyle(local, value.style)) onChange({ ...value, style: local });
+    if (trying && own.includes(trying)) setTrying(null);
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const setStyle = (patch: Partial<PlayerStyle>) => {
-    const style = { ...value.style, ...patch };
+  const isLocked = (kind: ItemKind, v: string) => {
+    const id = itemId(kind, v);
+    return !isFreeItem(id) && !owned.includes(id);
+  };
+
+  /** Owned or free: wear it. Paid: preview it with a buy button. */
+  const pick = (kind: ItemKind, v: string) => {
+    if (isLocked(kind, v)) {
+      setTrying(itemId(kind, v));
+      return;
+    }
+    setTrying(null);
+    const style = { ...value.style, [kind]: v } as PlayerStyle;
     onChange({ ...value, style });
     if (user) updateAccount({ style });
   };
+  const [tryKind, tryValue] = trying ? (trying.split(":") as [ItemKind, string]) : [null, null];
+  const shown = trying ? equip(value.style, trying) : value.style;
+  const priceLabel = price(shop?.price ?? ITEM_PRICE_VND);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -169,7 +302,7 @@ export function ProfileEditor({
     name: value.name || t("player.namePlaceholder"),
     avatar: value.avatar,
     avatarUrl: user?.avatarUrl ?? null,
-    style: value.style,
+    style: shown,
     alive: true,
   };
 
@@ -182,6 +315,8 @@ export function ProfileEditor({
           <StyledName p={preview} className="block truncate text-3xl font-black" />
         </div>
       </div>
+
+      {trying && <BuyBar item={trying} user={user} shop={shop} onCancel={() => setTrying(null)} />}
 
       <div>
         <label className="ui-label" htmlFor="profile-name">
@@ -251,7 +386,10 @@ export function ProfileEditor({
             label={t("profile.nameFont")}
             options={NAME_FONTS}
             value={value.style.font}
-            onChange={(font) => setStyle({ font })}
+            trying={tryKind === "font" ? (tryValue as PlayerStyle["font"]) : null}
+            locked={(v) => isLocked("font", v)}
+            price={priceLabel}
+            onChange={(font) => pick("font", font)}
             render={(f) => (
               <span className="flex flex-col items-center">
                 <StyledName p={{ name: "Ma Sói", style: { ...value.style, font: f, effect: "none" } }} className="text-lg" />
@@ -263,7 +401,10 @@ export function ProfileEditor({
             label={t("profile.nameEffect")}
             options={NAME_EFFECTS}
             value={value.style.effect}
-            onChange={(effect) => setStyle({ effect })}
+            trying={tryKind === "effect" ? (tryValue as PlayerStyle["effect"]) : null}
+            locked={(v) => isLocked("effect", v)}
+            price={priceLabel}
+            onChange={(effect) => pick("effect", effect)}
             render={(e) => (
               <span className="flex flex-col items-center">
                 <StyledName p={{ name: "Ma Sói", style: { ...value.style, effect: e } }} className="text-lg font-bold" />
@@ -275,7 +416,10 @@ export function ProfileEditor({
             label={t("profile.avatarFrame")}
             options={AVATAR_FRAMES}
             value={value.style.frame}
-            onChange={(frame) => setStyle({ frame })}
+            trying={tryKind === "frame" ? (tryValue as PlayerStyle["frame"]) : null}
+            locked={(v) => isLocked("frame", v)}
+            price={priceLabel}
+            onChange={(frame) => pick("frame", frame)}
             render={(f) => (
               <>
                 <Avatar p={{ ...preview, style: { ...value.style, frame: f } }} size="sm" />
