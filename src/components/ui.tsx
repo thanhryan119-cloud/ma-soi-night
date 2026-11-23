@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ROLES } from "@shared/roles";
 import { CHAT_COLORS, type ChatDeco } from "@shared/cosmetics";
 import type { Locale, RoleId, TimerState } from "@shared/types";
@@ -155,6 +155,41 @@ export function StyledName({
   const effect = s && s.effect !== "none" && p.alive !== false ? `ne-${s.effect}` : "";
   return <span className={`${font} ${effect} ${className}`}>{p.name}</span>;
 }
+
+/**
+ * Glides the element in whenever `key` changes (a new game phase), without
+ * remounting it, so nothing inside loses its state. Skipped for people who
+ * asked their device for reduced motion.
+ */
+export function usePhaseEnter<T extends HTMLElement>(key: string) {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof el.animate !== "function") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    el.animate(
+      [
+        { opacity: 0, transform: "translateY(12px) scale(0.985)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 420, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+    );
+  }, [key]);
+  return ref;
+}
+
+/** A block that glides in when the game moves to a new phase (see usePhaseEnter). */
+export function PhaseIn({ phaseKey, className = "", children }: { phaseKey: string; className?: string; children: React.ReactNode }) {
+  const ref = usePhaseEnter<HTMLDivElement>(phaseKey);
+  return (
+    <div ref={ref} className={className}>
+      {children}
+    </div>
+  );
+}
+
+/** The key that changes with each new phase of the game. */
+export const phaseKeyOf = (phase: { kind: string; night: number; day: number }) => `${phase.kind}-${phase.night}-${phase.day}`;
 
 /**
  * A chat bubble in the writer's own colour (unique in the room) with their

@@ -84,6 +84,17 @@ body {
     --dy: calc(var(--off) * var(--off) * 1.3px);
   }
 }
+/* Smooth page and phase changes (phases animate with usePhaseEnter in ui.tsx). */
+html { scroll-behavior: smooth; }
+.page-enter { animation: page-enter 0.35s ease-out backwards; }
+@keyframes page-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .page-enter { animation: none; }
+}
 /* The role card opening full screen on the player's phone */
 .role-flip-in { animation: role-flip-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
 @keyframes role-flip-in {
@@ -189,7 +200,10 @@ body {
   to { opacity: 1; transform: none; }
 }
 .rise {
-  animation: rise 0.45s ease-out both;
+  animation: rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise { animation: none; }
 }
 
 @keyframes pulse-ring {

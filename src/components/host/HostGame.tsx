@@ -6,7 +6,7 @@ import type { NightStepId, RoleId, Winner } from "@shared/types";
 import type { ClientState, PlayerView } from "@shared/views";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown } from "@/components/VoteBreakdown";
-import { Avatar, RoleBadge, StyledName, TimerDisplay } from "@/components/ui";
+import { Avatar, PhaseIn, RoleBadge, StyledName, TimerDisplay, phaseKeyOf } from "@/components/ui";
 import { ProfileLink } from "../Profile";
 import { formatLog, useLocale, useT } from "@/lib/i18n";
 import { speak, stopSpeaking, useTtsSupported } from "@/lib/tts";
@@ -55,7 +55,9 @@ export function HostGame({ state, offset, hideRoles }: Props) {
           <PhaseBar state={state} />
           {state.pendingWin && <WinPending state={state} winner={state.pendingWin} />}
           <ScriptCard state={state} />
-          <PhasePanel state={state} hideRoles={hideRoles} />
+          <PhaseIn phaseKey={phaseKeyOf(state.phase)}>
+            <PhasePanel state={state} hideRoles={hideRoles} />
+          </PhaseIn>
         </div>
         <div className="shrink-0">
           <Controls state={state} offset={offset} />

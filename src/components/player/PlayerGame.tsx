@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { NIGHT_STEP_ROLE, ROLES } from "@shared/roles";
 import type { ClientState, MeView, PlayerView } from "@shared/views";
-import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, useErrorToast } from "@/components/ui";
+import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, phaseKeyOf, useErrorToast, usePhaseEnter } from "@/components/ui";
 import { ProfileLink } from "../Profile";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
@@ -50,6 +50,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
   const self = players.get(me.id)!;
   const kind = state.phase.kind;
   const [sheet, setSheet] = useState<null | "role" | "roles" | "timeline" | "owner">(null);
+  const mainRef = usePhaseEnter<HTMLElement>(phaseKeyOf(state.phase));
 
   // Vibrate when it becomes my turn to do something.
   const myTurn = !!(me.turn && !me.turn.done) || me.canVote || !!me.hunter?.canShoot;
@@ -98,7 +99,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
 
       {state.settings.noScreen && <NarrationBanner state={state} />}
 
-      <main className="relative mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-3 px-3 py-3">
+      <main ref={mainRef} className="relative mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-3 px-3 py-3">
         <PhaseBody
           state={state}
           me={me}

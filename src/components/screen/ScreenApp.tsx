@@ -10,7 +10,7 @@ import { useJoinUrl } from "@/components/host/HostLobby";
 import { SceneArt } from "@/components/art/Woodcut";
 import { CardBack, RoleArt } from "@/components/art/Tarot";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
-import { Avatar, LangSwitch, Spinner, StyledName, TimerDisplay } from "@/components/ui";
+import { Avatar, LangSwitch, PhaseIn, Spinner, StyledName, TimerDisplay, phaseKeyOf } from "@/components/ui";
 import { translatorFor, useLocale, useT, type T } from "@/lib/i18n";
 import { emitAck } from "@/lib/socket";
 import { useRoomState } from "@/lib/useRoom";
@@ -77,7 +77,9 @@ export default function ScreenApp({ code }: { code: string }) {
         ) : !state ? (
           <Spinner />
         ) : (
-          <ScreenBody state={state} offset={offset} t={t} />
+          <PhaseIn phaseKey={phaseKeyOf(state.phase)} className="flex w-full flex-1 flex-col items-center justify-center">
+            <ScreenBody state={state} offset={offset} t={t} />
+          </PhaseIn>
         )}
       </main>
     </div>
