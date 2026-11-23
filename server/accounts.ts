@@ -9,6 +9,7 @@ import { join } from "node:path";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import {
   DEFAULT_STYLE,
+  SHOP_ITEMS,
   equip,
   limitStyle,
   sanitizeOwned,
@@ -48,7 +49,10 @@ interface Store {
 }
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ?? "";
-/** Google emails that may manage discount codes (comma separated). Read on use, after .env is loaded. */
+/**
+ * Google emails of the game's admins (comma separated): they manage discount
+ * codes and own every shop item. Read on use, after .env is loaded.
+ */
 const adminEmails = () =>
   (process.env.ADMIN_EMAILS ?? "")
     .split(",")
@@ -144,10 +148,11 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
     return store.users[s.userId] ?? null;
   }
 
-  const ownedOf = (u: User | undefined | null) => sanitizeOwned(u?.owned);
+  const isAdmin = (u: User) => !!u.email && adminEmails().includes(u.email.toLowerCase());
+  /** What an account owns. Admins own the whole shop, items added later included. */
+  const ownedOf = (u: User | undefined | null) => (u && isAdmin(u) ? [...SHOP_ITEMS] : sanitizeOwned(u?.owned));
   /** The style others see: anything not (or no longer) owned falls back to the default. */
   const styleOf = (u: User) => limitStyle(u.style ?? DEFAULT_STYLE, ownedOf(u));
-  const isAdmin = (u: User) => !!u.email && adminEmails().includes(u.email.toLowerCase());
   const publicUser = (u: User) => ({
     id: u.id,
     name: u.name,
