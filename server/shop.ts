@@ -127,7 +127,14 @@ export function createShop<U extends ShopUser>(deps: ShopDeps<U>) {
       if (!deps.payos) return json(res, 503, { ok: false }), true;
       const body = await readJson<unknown>(req, 64 * 1024);
       const data = deps.payos.verifyWebhook(body);
-      if (!data) return json(res, 400, { ok: false, error: "bad signature" }), true;
+      if (!data) {
+        // Shape only (field names and types), never values: enough to tell a wrong
+        // checksum key from a payload we do not understand.
+        const b = body as { data?: Record<string, unknown>; signature?: unknown } | null;
+        const shape = b?.data && typeof b.data === "object" ? Object.entries(b.data).map(([k, v]) => `${k}:${v === null ? "null" : typeof v}`) : null;
+        console.warn("[shop] webhook rejected: bad signature", JSON.stringify({ topKeys: b && typeof b === "object" ? Object.keys(b) : null, data: shape, signatureLength: typeof b?.signature === "string" ? b.signature.length : null }));
+        return json(res, 400, { ok: false, error: "bad signature" }), true;
+      }
       const order = orders[String(data.orderCode)];
       // Unknown orders (e.g. payOS's own test when the webhook URL is saved) are acknowledged.
       if (order && (data.code ?? "00") === "00" && Number(data.amount) >= order.amount) fulfil(order);

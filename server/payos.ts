@@ -132,8 +132,9 @@ export type PayOS = ReturnType<typeof createPayOS>;
 
 /** Reads PAYOS_CLIENT_ID / PAYOS_API_KEY / PAYOS_CHECKSUM_KEY; null when any is missing. */
 export function payOSFromEnv(env: NodeJS.ProcessEnv = process.env): PayOS | null {
-  const clientId = env.PAYOS_CLIENT_ID ?? "";
-  const apiKey = env.PAYOS_API_KEY ?? "";
-  const checksumKey = env.PAYOS_CHECKSUM_KEY ?? "";
+  // Trim: keys pasted into a hosting dashboard often pick up a stray space or newline.
+  const clientId = (env.PAYOS_CLIENT_ID ?? "").trim();
+  const apiKey = (env.PAYOS_API_KEY ?? "").trim();
+  const checksumKey = (env.PAYOS_CHECKSUM_KEY ?? "").trim();
   return clientId && apiKey && checksumKey ? createPayOS({ clientId, apiKey, checksumKey }) : null;
 }
