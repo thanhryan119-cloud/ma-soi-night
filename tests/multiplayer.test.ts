@@ -202,18 +202,39 @@ describe("leaving", () => {
 });
 
 describe("room settings", () => {
-  it("bots are twice as fast by default; only listed speeds are allowed", () => {
+  it("bots are three times as fast by default; only listed speeds are allowed", () => {
     const room = createRoom("SPD1", "vi");
-    expect(room.settings.botSpeed).toBe(2);
-    expect(hostAction(room, { type: "updateSettings", settings: { botSpeed: 3 } }).ok).toBe(true);
     expect(room.settings.botSpeed).toBe(3);
+    expect(hostAction(room, { type: "updateSettings", settings: { botSpeed: 1.5 } }).ok).toBe(true);
+    expect(room.settings.botSpeed).toBe(1.5);
     expect(hostAction(room, { type: "updateSettings", settings: { botSpeed: 50 } }).ok).toBe(false);
-    expect(room.settings.botSpeed).toBe(3);
+    expect(room.settings.botSpeed).toBe(1.5);
   });
 
   it("absent players are kicked in online rooms only (by default)", () => {
     expect(createRoom("OFF1", "vi").settings.autoKickAway).toBe(false);
     expect(machineRoom().room.settings.autoKickAway).toBe(true);
+  });
+
+  it("new rooms start with the agreed defaults", () => {
+    const s = machineRoom().room.settings;
+    expect(s).toMatchObject({
+      discussionSeconds: 120,
+      defenseSeconds: 30,
+      botSpeed: 3,
+      autoKickAway: true,
+      aiBots: true,
+      wolvesMustBite: true,
+      mandatoryVote: true,
+      voiceChat: true,
+      decoyActions: true,
+      deadSeeRoles: true,
+      revealRoleOnDeath: false,
+      bodyguardSelf: true,
+      witchSelfSave: true,
+      witchBothSameNight: true,
+      hunterShootsWhenPoisoned: true,
+    });
   });
 });
 

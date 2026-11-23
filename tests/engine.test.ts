@@ -6,6 +6,8 @@ import type { RoleId, Room } from "../shared/types";
 
 function setupRoom(roles: RoleId[]): { room: Room; ids: string[] } {
   const room = createRoom("TEST1", "vi");
+  // These scripts let players skip votes (the default now makes voting compulsory).
+  room.settings.mandatoryVote = false;
   const ids = roles.map((_, i) => addPlayer(room, { name: `P${i + 1}` }).player!.id);
   ids.forEach((id, i) => hostAction(room, { type: "assignManual", playerId: id, roleId: roles[i] }));
   expect(hostAction(room, { type: "start" }).ok).toBe(true);

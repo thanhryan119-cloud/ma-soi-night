@@ -291,9 +291,9 @@ export function totalRoles(counts: Record<RoleId, number>): number {
   return ROLE_IDS.reduce((s, r) => s + (counts[r] || 0), 0);
 }
 
-/** Bot speed choices (multiplier). Bots act twice as fast by default. */
+/** Bot speed choices (multiplier). Bots act three times as fast by default. */
 export const BOT_SPEEDS = [1, 1.5, 2, 3] as const;
-export const DEFAULT_BOT_SPEED = 2;
+export const DEFAULT_BOT_SPEED = 3;
 
 export function defaultSettings(playerCount = 8): Settings {
   return {
@@ -304,12 +304,12 @@ export function defaultSettings(playerCount = 8): Settings {
     bodyguardSelf: true,
     witchSelfSave: true,
     witchBothSameNight: true,
-    hunterShootsWhenPoisoned: false,
+    hunterShootsWhenPoisoned: true,
     revealRoleOnDeath: false,
     deadSeeRoles: true,
     decoyActions: true,
     wolvesMustBite: true,
-    mandatoryVote: false,
+    mandatoryVote: true,
     voiceChat: true,
     autoAdvance: false,
     aiBots: true,

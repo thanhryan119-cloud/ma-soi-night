@@ -12,6 +12,8 @@ const ALL = PREMIUM_ROLES.map(roleItem);
 function game(roles: RoleId[]): { room: Room; id: (r: RoleId, n?: number) => string } {
   const room = createRoom("PREM", "vi");
   room.hostOwned = ALL;
+  // These scripts let players skip votes (the default now makes voting compulsory).
+  room.settings.mandatoryVote = false;
   roles.forEach((_, i) => addPlayer(room, { name: `P${i}` }));
   for (const p of room.players) p.connected = true;
   room.players.forEach((p, i) => expect(hostAction(room, { type: "assignManual", playerId: p.id, roleId: roles[i] }).ok).toBe(true));
