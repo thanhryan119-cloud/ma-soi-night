@@ -7,11 +7,16 @@ import {
   NIGHT_STEP_ROLE,
   ROLES,
   ROLE_IDS,
+  completeNightOrder,
   defaultSettings,
   emptyRoleCounts,
+  isPremiumRole,
   isWolf,
+  roleItem,
+  stepRoles,
   suggestRoles,
   totalRoles,
+  wakesIn,
 } from "./roles";
 import {
   SKIP,
@@ -193,6 +198,29 @@ const nameOf = (room: Room, id: string | null | undefined) => getPlayer(room, id
 // Role assignment
 // ---------------------------------------------------------------------------
 
+/**
+ * Premium roles this room may use: those the human host's account owns, or in
+ * a machine-host room those the room owner owns. Everyone in the room then
+ * plays with them.
+ */
+export function unlockedRoles(room: Room): RoleId[] {
+  const owned = room.machineHost ? getPlayer(room, room.ownerId)?.owned ?? [] : room.hostOwned ?? [];
+  return ROLE_IDS.filter((r) => !isPremiumRole(r) || owned.includes(roleItem(r)));
+}
+
+export function isRoleUnlocked(room: Room, roleId: RoleId): boolean {
+  return unlockedRoles(room).includes(roleId);
+}
+
+/** The first premium role the room would use without owning it (counts or the dealt cards). */
+function lockedRoleIn(room: Room, roles: Iterable<RoleId>): RoleId | null {
+  const open = new Set(unlockedRoles(room));
+  for (const r of roles) if (!open.has(r)) return r;
+  return null;
+}
+
+const lockedFail = (roleId: RoleId) => fail("err.roleLocked", { role: roleId });
+
 export function validateRoleCounts(counts: Record<RoleId, number>): string | null {
   for (const r of ROLE_IDS) {
     const c = counts[r] ?? 0;
@@ -228,6 +256,8 @@ function newNightState(): NightState {
     witchPoisonId: null,
     witchDone: false,
     seerTarget: null,
+    wolfSeerTarget: null,
+    curse: false,
     done: {},
   };
 }
@@ -238,6 +268,8 @@ export function startGame(room: Room): ActionResult {
   const missing = room.players.filter((p) => !room.assignment[p.id]);
   if (missing.length) return fail("err.unassigned", { count: missing.length });
   if (!room.players.some((p) => isWolf(room.assignment[p.id]))) return fail("err.noWolves");
+  const locked = lockedRoleIn(room, room.players.map((p) => room.assignment[p.id]));
+  if (locked) return lockedFail(locked);
   const roles: Record<string, RoleId> = {};
   for (const p of room.players) {
     roles[p.id] = room.assignment[p.id];
@@ -279,10 +311,11 @@ export function startGame(room: Room): ActionResult {
 
 export function buildNightSteps(room: Room, night: number): NightStepId[] {
   const game = room.game!;
-  const present = new Set(Object.values(game.roles));
-  return room.settings.nightOrder.filter((step) => {
+  // Dealt roles too, so a curse never reveals itself by removing the victim's old step.
+  const present = new Set([...Object.values(game.originalRoles ?? {}), ...Object.values(game.roles)]);
+  return completeNightOrder(room.settings.nightOrder).filter((step) => {
     const role = ROLES[NIGHT_STEP_ROLE[step]];
-    if (!present.has(role.id)) return false;
+    if (!stepRoles(step).some((r) => present.has(r))) return false;
     if (role.night?.firstNightOnly && night !== 1) return false;
     return true;
   });
@@ -294,8 +327,7 @@ export function currentStep(room: Room): NightStepId | null {
 }
 
 export function stepActors(room: Room, step: NightStepId): Player[] {
-  const roleId = NIGHT_STEP_ROLE[step];
-  return alivePlayers(room).filter((p) => room.game!.roles[p.id] === roleId);
+  return alivePlayers(room).filter((p) => wakesIn(room.game!.roles[p.id], step));
 }
 
 export function isStepDone(room: Room, step: NightStepId): boolean {
@@ -362,11 +394,20 @@ function resolveDawn(room: Room) {
     wolfTarget: ns.wolfTarget,
     witchSave: ns.witchSave,
     witchPoisonId: ns.witchPoisonId,
+    curse: !!ns.curse,
+    sturdy: aliveIds(room).filter((id) => game.roles[id] === "elder" && !(game.elderHits ?? []).includes(id)),
   });
-  if (outcome.attackBlockedBy)
-    log(room, outcome.attackBlockedBy === "bodyguard" ? "log.savedByGuard" : "log.savedByWitch", {
-      target: nameOf(room, ns.wolfTarget),
-    });
+  const blockedKey = { bodyguard: "log.savedByGuard", witch: "log.savedByWitch", elder: "log.savedByElder" } as const;
+  if (outcome.attackBlockedBy) log(room, blockedKey[outcome.attackBlockedBy], { target: nameOf(room, ns.wolfTarget) });
+  if (outcome.attackBlockedBy === "elder" && ns.wolfTarget) (game.elderHits ??= []).push(ns.wolfTarget);
+  if (ns.curse && !outcome.cursedId) log(room, "log.curseFailed", { target: nameOf(room, ns.wolfTarget) });
+  if (outcome.cursedId) {
+    const id = outcome.cursedId;
+    log(room, "log.cursed", { target: nameOf(room, id), role: game.roles[id] });
+    game.roles[id] = "werewolf";
+    game.curseUsed = true;
+    (game.cursed ??= []).push({ playerId: id, night: room.phase.night });
+  }
   game.bodyguardLast = ns.protectId;
   applyDeaths(room, outcome.deaths);
   game.lastDeaths = outcome.deaths;
@@ -429,10 +470,15 @@ export function verdictEligible(room: Room): string[] {
   return aliveIds(room).filter((id) => !nominees.has(id));
 }
 
+/** A revealed Idiot lives on but has lost his vote. */
+export function hasLostVote(room: Room, id: string): boolean {
+  return !!room.game?.revealedIdiots?.includes(id);
+}
+
 export function voteEligible(room: Room): string[] {
   const vote = room.game?.vote;
   if (!vote) return [];
-  return vote.kind === "verdict" ? verdictEligible(room) : aliveIds(room);
+  return (vote.kind === "verdict" ? verdictEligible(room) : aliveIds(room)).filter((id) => !hasLostVote(room, id));
 }
 
 function closeNomination(room: Room): "defense" | "revote" | "none" {
@@ -475,20 +521,26 @@ function closeVerdict(room: Room) {
   const tally = tallyVerdict(vote.ballots, eligible, room.settings.verdict);
   const nomineeId = vote.nomineeId!;
   let deaths: Death[] = [];
-  if (tally.executed && getPlayer(room, nomineeId)?.alive) {
+  const idiotSpared = tally.executed && game.roles[nomineeId] === "idiot" && !hasLostVote(room, nomineeId);
+  if (idiotSpared) {
+    // The village sees who he really is: he stays alive but never votes again.
+    (game.revealedIdiots ??= []).push(nomineeId);
+    log(room, "log.idiotRevealed", { name: nameOf(room, nomineeId) }, true);
+  } else if (tally.executed && getPlayer(room, nomineeId)?.alive) {
     const res = cascadeDeaths([{ playerId: nomineeId, cause: "execution" }], deathCtx(room));
     deaths = res.deaths;
     applyDeaths(room, deaths);
     game.pendingHunters.push(...res.hunters);
     game.hunterReturn = "afterVerdict";
   }
-  game.verdicts.push({ ...tally, nomineeId, ballots: { ...vote.ballots }, deaths });
-  log(
-    room,
-    tally.executed ? "log.executed" : "log.spared",
-    { name: nameOf(room, nomineeId), execute: tally.execute, spare: tally.spare },
-    true,
-  );
+  game.verdicts.push({ ...tally, nomineeId, ballots: { ...vote.ballots }, deaths, ...(idiotSpared ? { idiotRevealed: true } : {}) });
+  if (!idiotSpared)
+    log(
+      room,
+      tally.executed ? "log.executed" : "log.spared",
+      { name: nameOf(room, nomineeId), execute: tally.execute, spare: tally.spare },
+      true,
+    );
   room.phase = { ...room.phase, kind: "verdictResult" };
   evaluateWin(room);
 }
@@ -796,7 +848,7 @@ function nightAction(
   const step = currentStep(room);
   if (!game || !step) return fail("err.wrongPhase");
   if (!actor.alive) return fail("err.dead");
-  if (game.roles[actor.id] !== NIGHT_STEP_ROLE[step]) return fail("err.notYourTurn");
+  if (!wakesIn(game.roles[actor.id], step)) return fail("err.notYourTurn");
   const ns = game.nightState;
   const valid = new Set(validTargets(room, actor, step));
   const targets = Array.isArray(action.targets) ? action.targets.map(String) : [];
@@ -863,6 +915,28 @@ function nightAction(
       log(room, isWolfResult ? "log.seerWolf" : "log.seerNotWolf", { actor: actor.name, target: nameOf(room, targets[0]) });
       return ok;
     }
+    case "wolfSeer": {
+      if (ns.done.wolfSeer) return fail("err.alreadyActed");
+      if (targets.length !== 1 || !valid.has(targets[0])) return fail("err.invalidTarget");
+      const roleId = game.roles[targets[0]];
+      ns.wolfSeerTarget = targets[0];
+      ns.done.wolfSeer = true;
+      (game.seerResults[actor.id] ??= []).push({ night: room.phase.night, targetId: targets[0], isWolf: isWolf(roleId), roleId });
+      log(room, "log.wolfSeer", { actor: actor.name, target: nameOf(room, targets[0]), role: roleId });
+      return ok;
+    }
+    case "cursedWolf": {
+      if (ns.done.cursedWolf) return fail("err.alreadyActed");
+      const curse = !!action.curse;
+      if (curse) {
+        if (game.curseUsed) return fail("err.curseUsed");
+        if (!ns.wolfFinalized || !ns.wolfTarget) return fail("err.nobodyToCurse");
+      }
+      ns.curse = curse;
+      ns.done.cursedWolf = true;
+      log(room, curse ? "log.curse" : "log.cursePass", { actor: actor.name, target: nameOf(room, ns.wolfTarget) });
+      return ok;
+    }
   }
 }
 
@@ -872,6 +946,7 @@ function castVote(room: Room, voter: Player, choice: string): ActionResult {
   const kind = room.phase.kind;
   if (!game || !vote || vote.closed || (kind !== "nominate" && kind !== "verdict")) return fail("err.wrongPhase");
   if (!voter.alive) return fail("err.dead");
+  if (hasLostVote(room, voter.id)) return fail("err.noVoteIdiot");
   if (voter.id in vote.ballots) return fail("err.alreadyVoted");
   if (vote.kind === "nominate") {
     if (choice === SKIP && room.settings.mandatoryVote) return fail("err.skipNotAllowed");
@@ -1004,9 +1079,9 @@ function mergeSettings(room: Room, patch: Partial<Settings>): ActionResult {
     s.verdict = v;
   }
   if (patch.nightOrder) {
-    const order = patch.nightOrder.filter((st, i, arr) => st in NIGHT_STEP_ROLE && arr.indexOf(st) === i);
-    if (order.length !== Object.keys(NIGHT_STEP_ROLE).length) return fail("err.invalidSettings");
-    s.nightOrder = order;
+    if (!Array.isArray(patch.nightOrder)) return fail("err.invalidSettings");
+    // An order saved before new roles existed still works: their steps are slotted in.
+    s.nightOrder = completeNightOrder(patch.nightOrder);
   }
   room.settings = s;
   return ok;
@@ -1038,6 +1113,7 @@ function override(room: Room, o: OverrideAction): ActionResult {
     case "changeRole": {
       const p = getPlayer(room, o.playerId);
       if (!p || !ROLES[o.roleId]) return fail("err.invalidTarget");
+      if (!isRoleUnlocked(room, o.roleId)) return lockedFail(o.roleId);
       const from = game.roles[p.id];
       game.roles[p.id] = o.roleId;
       log(room, "log.host.changeRole", { name: p.name, from, role: o.roleId });
@@ -1071,6 +1147,7 @@ function override(room: Room, o: OverrideAction): ActionResult {
             if (p) p.alive = true;
             delete game.hunterShots[d.playerId];
           }
+          if (last.idiotRevealed) game.revealedIdiots = (game.revealedIdiots ?? []).filter((id) => id !== last.nomineeId);
           const revived = new Set(last.deaths.map((d) => d.playerId));
           game.pendingHunters = game.pendingHunters.filter((h) => !revived.has(h));
           game.pendingWin = null;
@@ -1117,6 +1194,10 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       const counts = { ...emptyRoleCounts(), ...action.roleCounts };
       const err = validateRoleCounts(counts);
       if (err) return fail(err);
+      // A role the room hasn't unlocked can be taken out, never added.
+      const before = room.settings.roleCounts;
+      const locked = lockedRoleIn(room, ROLE_IDS.filter((r) => counts[r] > (before[r] ?? 0)));
+      if (locked) return lockedFail(locked);
       room.settings = { ...room.settings, roleCounts: counts };
       return ok;
     }
@@ -1131,8 +1212,9 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       if (!inLobby) return fail("err.wrongPhase");
       if (!getPlayer(room, action.playerId)) return fail("err.invalidTarget");
       if (action.roleId === null) delete room.assignment[action.playerId];
-      else if (ROLES[action.roleId]) room.assignment[action.playerId] = action.roleId;
-      else return fail("err.invalidTarget");
+      else if (!ROLES[action.roleId]) return fail("err.invalidTarget");
+      else if (!isRoleUnlocked(room, action.roleId)) return lockedFail(action.roleId);
+      else room.assignment[action.playerId] = action.roleId;
       return ok;
     }
     case "addBots": {

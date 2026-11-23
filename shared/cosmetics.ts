@@ -1,3 +1,5 @@
+import { PREMIUM_ROLES } from "./roles";
+
 // Profile cosmetics a player can pick: name font, name effect and avatar frame.
 // Ids are whitelisted here; labels live in messages (profile.font.<id> etc.),
 // visuals in src/app/globals.css (.nf-<id>, .ne-<id>, .af-<id>).
@@ -40,17 +42,24 @@ export function sanitizeAvatarUrl(url: unknown): string | null {
 }
 
 // ---------------------------------------------------------------------------
-// Shop: every font, effect and frame except the defaults is sold through payOS.
-// An item id is "<kind>:<value>", e.g. "effect:glow" or "frame:moon".
+// Shop: every font, effect and frame except the defaults is sold through payOS,
+// and so is every premium role (Cursed Wolf, Wolf Seer, Elder, Idiot).
+// An item id is "<kind>:<value>", e.g. "effect:glow" or "role:cursedWolf".
 // ---------------------------------------------------------------------------
 
-export type ItemKind = keyof PlayerStyle;
+export type StyleKind = keyof PlayerStyle;
+export type ItemKind = StyleKind | "role";
 export type ItemId = `${ItemKind}:${string}`;
 
 /** Price of one item, in VND. */
 export const ITEM_PRICE_VND = 50_000;
 
-const OPTIONS: Record<ItemKind, readonly string[]> = { font: NAME_FONTS, effect: NAME_EFFECTS, frame: AVATAR_FRAMES };
+const OPTIONS: Record<ItemKind, readonly string[]> = {
+  font: NAME_FONTS,
+  effect: NAME_EFFECTS,
+  frame: AVATAR_FRAMES,
+  role: PREMIUM_ROLES,
+};
 
 /** What everyone gets for free (the defaults). */
 export const FREE_ITEMS: readonly ItemId[] = ["font:default", "effect:none", "frame:none"];
@@ -81,7 +90,7 @@ export function sanitizeOwned(input: unknown): ItemId[] {
  */
 export function limitStyle(style: PlayerStyle, owned: readonly string[] | "all"): PlayerStyle {
   if (owned === "all") return style;
-  const has = (kind: ItemKind) => isFreeItem(itemId(kind, style[kind])) || owned.includes(itemId(kind, style[kind]));
+  const has = (kind: StyleKind) => isFreeItem(itemId(kind, style[kind])) || owned.includes(itemId(kind, style[kind]));
   return {
     font: has("font") ? style.font : DEFAULT_STYLE.font,
     effect: has("effect") ? style.effect : DEFAULT_STYLE.effect,
@@ -92,5 +101,6 @@ export function limitStyle(style: PlayerStyle, owned: readonly string[] | "all")
 /** Equips an item: the style with that one part swapped in. */
 export function equip(style: PlayerStyle, id: ItemId): PlayerStyle {
   const [kind, value] = id.split(":") as [ItemKind, string];
+  if (kind === "role") return style;
   return sanitizeStyle({ ...style, [kind]: value });
 }

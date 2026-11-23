@@ -8,12 +8,13 @@
 
 import { truthChance } from "../shared/botChat";
 import type { ChatMessage } from "../shared/social";
+import { isWolf } from "../shared/roles";
 import type { Player, Room, RoleId } from "../shared/types";
 
 const API = "https://generativelanguage.googleapis.com/v1beta/models";
 const ROLE_NAMES: Record<"vi" | "en", Record<RoleId, string>> = {
-  vi: { werewolf: "Ma Sói", villager: "Dân làng", seer: "Tiên tri", bodyguard: "Bảo vệ", witch: "Phù thủy", hunter: "Thợ săn", cupid: "Cupid" },
-  en: { werewolf: "Werewolf", villager: "Villager", seer: "Seer", bodyguard: "Bodyguard", witch: "Witch", hunter: "Hunter", cupid: "Cupid" },
+  vi: { werewolf: "Ma Sói", villager: "Dân làng", seer: "Tiên tri", bodyguard: "Bảo vệ", witch: "Phù thủy", hunter: "Thợ săn", cupid: "Cupid", cursedWolf: "Sói Nguyền", wolfSeer: "Sói Tiên Tri", elder: "Già làng", idiot: "Thằng Ngốc" },
+  en: { werewolf: "Werewolf", villager: "Villager", seer: "Seer", bodyguard: "Bodyguard", witch: "Witch", hunter: "Hunter", cupid: "Cupid", cursedWolf: "Cursed Wolf", wolfSeer: "Wolf Seer", elder: "Elder", idiot: "Village Idiot" },
 };
 
 /** Calls budget per game, so a chatty table can't run up the bill. */
@@ -91,11 +92,11 @@ export function createAiBots(opts: {
     const role = game.roles[bot.id];
     const name = (id: string) => room.players.find((p) => p.id === id)?.name ?? "?";
     const lines = [`Your secret role: ${ROLE_NAMES[lang][role]}.`];
-    if (role === "werewolf") {
-      const mates = room.players.filter((p) => p.id !== bot.id && game.roles[p.id] === "werewolf").map((p) => `${p.name}${p.alive ? "" : " (dead)"}`);
+    if (isWolf(role)) {
+      const mates = room.players.filter((p) => p.id !== bot.id && isWolf(game.roles[p.id])).map((p) => `${p.name}${p.alive ? "" : " (dead)"}`);
       lines.push(mates.length ? `Your fellow wolves: ${mates.join(", ")}. Protect them, never reveal them.` : "You are the only wolf.");
     }
-    for (const r of game.seerResults[bot.id] ?? []) lines.push(`Night ${r.night} you checked ${name(r.targetId)}: ${r.isWolf ? "WEREWOLF" : "not a werewolf"}.`);
+    for (const r of game.seerResults[bot.id] ?? []) lines.push(`Night ${r.night} you checked ${name(r.targetId)}: ${r.roleId ? ROLE_NAMES[lang][r.roleId] : r.isWolf ? "WEREWOLF" : "not a werewolf"}.`);
     if (game.lovers?.includes(bot.id)) lines.push(`You are in love with ${name(game.lovers.find((id) => id !== bot.id)!)} (Cupid's arrow).`);
     return lines.join(" ");
   }
@@ -103,7 +104,7 @@ export function createAiBots(opts: {
   function systemFor(room: Room, bot: Player): string {
     const lang = room.locale === "en" ? "en" : "vi";
     const role = room.game!.roles[bot.id];
-    const wolf = role === "werewolf";
+    const wolf = isWolf(role);
     const truth = Math.round(truthChance(room, bot.id) * 100);
     return [
       `You are "${bot.name}", a player in a game of Werewolf (Ma Sói) chatting in a group chat during the day discussion.`,

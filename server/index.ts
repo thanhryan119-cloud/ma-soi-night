@@ -592,6 +592,21 @@ function grantSeat(room: Room, playerId: string): string {
   return p.token;
 }
 
+/** The human host signed in (or not): premium roles follow the host account. */
+function setHostAccount(room: Room, authToken: unknown) {
+  const user = accounts.userForToken(authToken);
+  room.hostUserId = user?.id ?? null;
+  room.hostOwned = accounts.ownedFor(user?.id);
+}
+
+/** Roles bought since the room was opened count right away. */
+function refreshOwned(room: Room, playerId?: string) {
+  if (playerId) {
+    const p = getPlayer(room, playerId);
+    if (p?.userId) p.owned = accounts.ownedFor(p.userId);
+  } else if (room.hostUserId) room.hostOwned = accounts.ownedFor(room.hostUserId);
+}
+
 function guard(fn: () => ActionResult & Record<string, unknown>, ack: Ack) {
   try {
     ack(fn());
@@ -634,6 +649,7 @@ io.on("connection", (raw) => {
       if (p.settings && typeof p.settings === "object") hostAction(room, { type: "updateSettings", settings: p.settings as Partial<Room["settings"]> });
 
       if (!p.machine) {
+        setHostAccount(room, p.authToken);
         rooms.set(room.code, room);
         attach(socket, room, "host");
         touch(room);
@@ -667,6 +683,7 @@ io.on("connection", (raw) => {
       const room = code ? rooms.get(code) : undefined;
       if (!room || kind !== "player" || !playerId) return { ok: false, error: "err.notInRoom" };
       const action = p as unknown as OwnerAction;
+      refreshOwned(room, playerId);
       const res = ownerAction(room, playerId, action);
       if (res.ok && action.type === "kick") kickSockets(room, action.playerId);
       if (res.ok && action.type === "newGame") social.clearForNewGame(room.code);
@@ -694,6 +711,7 @@ io.on("connection", (raw) => {
     guard(() => {
       const locale: Locale = p.locale === "en" ? "en" : "vi";
       const room = createRoom(makeRoomCode((c) => rooms.has(c)), locale);
+      setHostAccount(room, p.authToken);
       rooms.set(room.code, room);
       attach(socket, room, "host");
       touch(room);
@@ -707,6 +725,7 @@ io.on("connection", (raw) => {
       const room = rooms.get(normCode(p.code));
       if (!room) return { ok: false, error: "err.roomNotFound" };
       if (p.hostToken !== room.hostToken) return { ok: false, error: "err.notHost" };
+      setHostAccount(room, p.authToken);
       attach(socket, room, "host");
       touch(room);
       return { ok: true };
@@ -756,6 +775,7 @@ io.on("connection", (raw) => {
       if (player && room.abandoned?.includes(player.id)) return { ok: false, error: "err.abandoned" };
       if (!player || player.token !== p.token) return { ok: false, error: "err.sessionExpired" };
       dropRejoinRequest(room, player.id);
+      refreshOwned(room, player.id);
       attach(socket, room, "player", player.id);
       player.connected = true;
       touch(room);
@@ -879,6 +899,7 @@ io.on("connection", (raw) => {
       if (!room || kind !== "host") return { ok: false, error: "err.notHost" };
       const action = p as unknown as HostAction;
       const kickedId = action.type === "kick" ? action.playerId : null;
+      refreshOwned(room);
       const res = hostAction(room, action);
       if (res.ok && kickedId) kickSockets(room, kickedId);
       if (res.ok && action.type === "newGame") social.clearForNewGame(room.code);

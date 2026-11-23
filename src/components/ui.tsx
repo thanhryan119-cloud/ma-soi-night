@@ -93,8 +93,15 @@ export function useErrorToast() {
   return (res: { ok: boolean; error?: string; params?: Record<string, string | number> }) => {
     if (!res.ok && res.error) {
       let text = res.error;
+      const params = { ...(res.params ?? {}) };
+      // Role ids (e.g. "this role is locked") are shown by name.
+      if (typeof params.role === "string") {
+        try {
+          params.role = t(`roles.${params.role}.name`);
+        } catch {}
+      }
       try {
-        text = t(res.error, res.params ?? {});
+        text = t(res.error, params);
       } catch {}
       toast(text);
     }

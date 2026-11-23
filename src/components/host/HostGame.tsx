@@ -322,11 +322,14 @@ function PlayerRow({
               onChange={(e) => e.target.value && act({ type: "override", action: { kind: "changeRole", playerId: p.id, roleId: e.target.value as RoleId } })}
             >
               {hideRoles && <option value="">•••</option>}
-              {ROLE_IDS.map((r) => (
-                <option key={r} value={r}>
-                  {ROLES[r].emoji} {t(`roles.${r}.name`)}
-                </option>
-              ))}
+              {ROLE_IDS.map((r) => {
+                const locked = !!state.unlockedRoles && !state.unlockedRoles.includes(r);
+                return (
+                  <option key={r} value={r} disabled={locked}>
+                    {locked ? "🔒" : ROLES[r].emoji} {t(`roles.${r}.name`)}
+                  </option>
+                );
+              })}
             </select>
           </label>
           <button
@@ -444,6 +447,8 @@ function StepDetail({ state, step }: { state: ClientState; step: NightStepId }) 
       </>
     );
   } else if (step === "bodyguard") text = `🛡️ ${name(n.protectId)}`;
+  else if (step === "wolfSeer") text = `👁️ ${name(n.wolfSeerTarget)}`;
+  else if (step === "cursedWolf") text = `🐺 ${name(n.wolfTarget)} · 🩸 ${n.curse ? "✓" : "—"}`;
   else if (step === "seer") text = `🔮 ${name(n.seerTarget)}`;
   else if (step === "witch")
     text = `🐺 ${name(n.wolfTarget)} · 💚 ${n.witchSave ? "✓" : "—"} · ☠️ ${n.witchPoisonId ? nameOf(state, n.witchPoisonId) : "—"}`;
@@ -477,6 +482,7 @@ function ActFor({ state, step, actors }: { state: ClientState; step: NightStepId
   );
   const submit = () => {
     if (step === "witch") return act({ type: "actAs", playerId: actor, action: { type: "night", save: false, poisonId: a || null } });
+    if (step === "cursedWolf") return act({ type: "actAs", playerId: actor, action: { type: "night", curse: false } });
     const targets = step === "cupid" ? [a, b] : [a];
     if (targets.some((x) => !x)) return;
     act({ type: "actAs", playerId: actor, action: { type: "night", targets } });
@@ -491,10 +497,10 @@ function ActFor({ state, step, actors }: { state: ClientState; step: NightStepId
           </option>
         ))}
       </select>
-      {sel(a, setA)}
+      {step !== "cursedWolf" && sel(a, setA)}
       {step === "cupid" && sel(b, setB)}
       <button className="btn-ghost btn-sm" onClick={submit}>
-        {step === "witch" && !a ? t("host.pass") : t("host.send")}
+        {(step === "witch" && !a) || step === "cursedWolf" ? t("host.pass") : t("host.send")}
       </button>
     </div>
   );
@@ -691,8 +697,12 @@ function VerdictResultPanel({ state }: { state: ClientState }) {
   if (!r) return null;
   return (
     <section className="card">
-      <h3 className={`text-xl font-bold ${r.executed ? "text-blood-light" : "text-emerald-300"}`}>
-        {r.executed ? t("host.resultExecuted", { name: nameOf(state, r.nomineeId) }) : t("host.resultSpared", { name: nameOf(state, r.nomineeId) })}
+      <h3 className={`text-xl font-bold ${r.idiotRevealed ? "text-teal-300" : r.executed ? "text-blood-light" : "text-emerald-300"}`}>
+        {r.idiotRevealed
+          ? t("host.resultIdiot", { name: nameOf(state, r.nomineeId) })
+          : r.executed
+            ? t("host.resultExecuted", { name: nameOf(state, r.nomineeId) })
+            : t("host.resultSpared", { name: nameOf(state, r.nomineeId) })}
       </h3>
       <p className="mt-1 text-sm text-white/70">
         🪢 {r.execute} · 🕊️ {r.spare} · — {r.abstain}

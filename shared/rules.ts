@@ -60,34 +60,48 @@ export interface NightInput extends DeathContext {
   wolfTarget: string | null;
   witchSave: boolean;
   witchPoisonId: string | null;
+  /** The Cursed Wolf chose to curse the victim tonight. */
+  curse?: boolean;
+  /** Elders who can still take a bite. */
+  sturdy?: string[];
 }
 
 export interface NightOutcome extends CascadeResult {
   /** Who the wolves attacked and why they survived, if they did. */
-  attackBlockedBy: "bodyguard" | "witch" | null;
+  attackBlockedBy: "bodyguard" | "witch" | "elder" | null;
+  /** The victim the curse turned into a werewolf (alive). */
+  cursedId: string | null;
 }
 
 /**
  * Night resolution priority:
  *  1. Bodyguard protection blocks the wolf attack.
  *  2. The Witch's healing potion cancels the wolf attack.
- *  3. The Witch's poison kills (protection does NOT block poison).
- *  4. Lovers die together (heartbreak).
- *  5. Hunters who died get a revenge shot (resolved in a later phase).
+ *  3. A curse turns the victim into a werewolf instead of killing them.
+ *  4. An Elder survives their first bite.
+ *  5. The Witch's poison kills (protection does NOT block poison, even a cursed victim dies).
+ *  6. Lovers die together (heartbreak).
+ *  7. Hunters who died get a revenge shot (resolved in a later phase).
  */
 export function resolveNight(input: NightInput): NightOutcome {
   const initial: Death[] = [];
   let attackBlockedBy: NightOutcome["attackBlockedBy"] = null;
+  let cursedId: string | null = null;
   if (input.wolfTarget && input.alive.includes(input.wolfTarget)) {
     if (input.protectId === input.wolfTarget) attackBlockedBy = "bodyguard";
     else if (input.witchSave) attackBlockedBy = "witch";
+    else if (input.curse) cursedId = input.wolfTarget;
+    else if (input.sturdy?.includes(input.wolfTarget)) attackBlockedBy = "elder";
     else initial.push({ playerId: input.wolfTarget, cause: "wolves" });
   }
   if (input.witchPoisonId && input.alive.includes(input.witchPoisonId)) {
     if (!initial.some((d) => d.playerId === input.witchPoisonId))
       initial.push({ playerId: input.witchPoisonId, cause: "poison" });
   }
-  return { ...cascadeDeaths(initial, input), attackBlockedBy };
+  const res = cascadeDeaths(initial, input);
+  // Poisoned the same night: the curse never takes hold.
+  if (cursedId && res.deaths.some((d) => d.playerId === cursedId)) cursedId = null;
+  return { ...res, attackBlockedBy, cursedId };
 }
 
 /** Plurality of the pack's picks. Ties are broken by `pick` (random by default). */

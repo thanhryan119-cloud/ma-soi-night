@@ -9,6 +9,7 @@ import { LangSwitch, useErrorToast } from "@/components/ui";
 import { Leaderboard } from "@/components/Leaderboard";
 import { useLocale, useT } from "@/lib/i18n";
 import { emitAck, hostKey, storage } from "@/lib/socket";
+import { getAuth } from "@/lib/account";
 
 export default function Home() {
   const t = useT();
@@ -23,7 +24,7 @@ export default function Home() {
 
   async function createRoom() {
     setBusy(true);
-    const res = await emitAck<{ ok: boolean; code: string; hostToken: string }>("host:create", { locale: roomLocale });
+    const res = await emitAck<{ ok: boolean; code: string; hostToken: string }>("host:create", { locale: roomLocale, authToken: getAuth()?.token });
     setBusy(false);
     if (!showError(res) || !res.code) return;
     storage.set(hostKey(res.code), res.hostToken);

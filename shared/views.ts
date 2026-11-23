@@ -3,14 +3,16 @@
 // (wolf teammates, being dead with "dead see roles", or the game is over).
 
 import { DEFAULT_STYLE, type PlayerStyle } from "./cosmetics";
-import { NIGHT_STEP_ROLE, ROLES, isWolf, suggestRoles } from "./roles";
+import { NIGHT_STEP_ROLE, ROLES, isWolf, suggestRoles, wakesIn } from "./roles";
 import {
   aliveIds,
   currentStep,
   getPlayer,
+  hasLostVote,
   isStepDone,
   stepActors,
   stepKey,
+  unlockedRoles,
   validTargets,
   voteEligible,
 } from "./engine";
@@ -49,6 +51,7 @@ export type Effect =
   | "poisoned"
   | "lover"
   | "inspected"
+  | "cursed"
   | "potionHeal"
   | "potionPoison";
 
@@ -62,6 +65,8 @@ export interface PlayerView {
   connected: boolean;
   locale: Locale;
   isBot: boolean;
+  /** A revealed Idiot: alive, everyone knows his role, he cannot vote. */
+  noVote?: boolean;
   /** Only present when the viewer is allowed to know it. */
   roleId?: RoleId;
   /** Host only. */
@@ -71,7 +76,7 @@ export interface PlayerView {
 
 export interface MyTurn {
   step: NightStepId;
-  kind: "pick" | "witch";
+  kind: "pick" | "witch" | "curse";
   picks: number;
   targets: string[];
   done: boolean;
@@ -81,6 +86,8 @@ export interface MyTurn {
   witch?: { victimId: string | null; heal: boolean; poison: boolean; canSelfSave: boolean; bothAllowed: boolean };
   /** Wolves only: live picks of the pack. */
   packVotes?: Record<string, string>;
+  /** Cursed Wolf only: tonight's victim, and whether the curse is still unused. */
+  curse?: { victimId: string | null; available: boolean; chosen: boolean };
 }
 
 export interface MeView {
@@ -99,6 +106,10 @@ export interface MeView {
   /** On the stand and already said "I'm done". */
   defenseDone: boolean;
   hunter: { canShoot: boolean; targets: string[]; shot: string | null } | null;
+  /** The night the Cursed Wolf turned me into a werewolf, if it did. */
+  cursedNight: number | null;
+  /** A revealed Idiot cannot vote any more. */
+  lostVote: boolean;
 }
 
 export interface VoteView {
@@ -125,6 +136,8 @@ export interface NightView {
   witchSave?: boolean;
   witchPoisonId?: string | null;
   seerTarget?: string | null;
+  wolfSeerTarget?: string | null;
+  curse?: boolean;
 }
 
 export interface ClientState {
@@ -162,6 +175,8 @@ export interface ClientState {
   lovers: [string, string] | null;
   log?: LogEntry[];
   suggested?: Record<RoleId, number>;
+  /** Host / room owner: the roles this room may use (premium ones only when bought). */
+  unlockedRoles?: RoleId[];
   potions?: { heal: boolean; poison: boolean };
 }
 
@@ -186,7 +201,8 @@ function hostEffects(room: Room, id: string): Effect[] {
     if (ns.wolfTarget === id || (!ns.wolfFinalized && Object.values(ns.wolfVotes).includes(id))) out.push("bitten");
     if (ns.witchSave && ns.wolfTarget === id) out.push("healed");
     if (ns.witchPoisonId === id) out.push("poisoned");
-    if (ns.seerTarget === id) out.push("inspected");
+    if (ns.seerTarget === id || ns.wolfSeerTarget === id) out.push("inspected");
+    if (ns.curse && ns.wolfTarget === id) out.push("cursed");
   }
   if (game.roles[id] === "witch") {
     if (game.potions.heal) out.push("potionHeal");
@@ -214,8 +230,12 @@ function buildMe(room: Room, meId: string): MeView | null {
     onStand: false,
     defenseDone: false,
     hunter: null,
+    cursedNight: null,
+    lostVote: false,
   };
   if (!game || !roleId) return view;
+  view.cursedNight = game.cursed?.find((c) => c.playerId === me.id)?.night ?? null;
+  view.lostVote = hasLostVote(room, me.id);
 
   if (isWolf(roleId))
     view.teammates = room.players.filter((p) => p.id !== me.id && isWolf(game.roles[p.id])).map((p) => p.id);
@@ -224,9 +244,9 @@ function buildMe(room: Room, meId: string): MeView | null {
 
   const step = currentStep(room);
   if (step && me.alive) {
-    const isActor = NIGHT_STEP_ROLE[step] === roleId;
+    const isActor = wakesIn(roleId, step);
     if (isActor) {
-      const def = ROLES[roleId].night!;
+      const def = ROLES[NIGHT_STEP_ROLE[step]].night!;
       const ns = game.nightState;
       const turn: MyTurn = {
         step,
@@ -249,6 +269,12 @@ function buildMe(room: Room, meId: string): MeView | null {
       } else if (step === "seer") {
         turn.done = !!ns.done.seer;
         turn.selected = ns.seerTarget ? [ns.seerTarget] : [];
+      } else if (step === "wolfSeer") {
+        turn.done = !!ns.done.wolfSeer;
+        turn.selected = ns.wolfSeerTarget ? [ns.wolfSeerTarget] : [];
+      } else if (step === "cursedWolf") {
+        turn.done = !!ns.done.cursedWolf;
+        turn.curse = { victimId: ns.wolfTarget, available: !game.curseUsed, chosen: !!ns.curse };
       } else if (step === "witch") {
         turn.done = ns.witchDone;
         turn.selected = ns.witchPoisonId ? [ns.witchPoisonId] : [];
@@ -297,6 +323,8 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
     visibleRoles.add(me.id);
     me.teammates.forEach((id) => visibleRoles.add(id));
   }
+  // A revealed Idiot showed his card to the whole village.
+  game?.revealedIdiots?.forEach((id) => visibleRoles.add(id));
 
   const players: PlayerView[] = room.players.map((p) => {
     const v: PlayerView = {
@@ -310,6 +338,7 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
       locale: p.locale,
       isBot: p.isBot,
     };
+    if (game && hasLostVote(room, p.id)) v.noVote = true;
     if (game) {
       const revealDead = !p.alive && room.settings.revealRoleOnDeath;
       if (allRoles || visibleRoles.has(p.id) || revealDead) v.roleId = game.roles[p.id];
@@ -336,6 +365,8 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
     night.witchSave = ns.witchSave;
     night.witchPoisonId = ns.witchPoisonId;
     night.seerTarget = ns.seerTarget;
+    night.wolfSeerTarget = ns.wolfSeerTarget ?? null;
+    night.curse = !!ns.curse;
   }
 
   let vote: VoteView | null = null;
@@ -404,6 +435,7 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
       abstain: r.abstain,
       eligible: r.eligible,
       executed: r.executed,
+      ...(r.idiotRevealed ? { idiotRevealed: true } : {}),
       deaths: r.deaths.map((d) => ({ playerId: d.playerId, cause: isHost ? d.cause : d.cause === "execution" ? "execution" : "heartbreak" })),
       ...(showBallots ? { ballots: r.ballots } : {}),
     })),
@@ -416,8 +448,12 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
   };
 
   // The owner of a machine-host room sets the roles up, so they get the suggestion too.
-  if (!isHost && room.machineHost && meId && room.ownerId === meId) state.suggested = suggestRoles(room.players.length);
+  if (!isHost && room.machineHost && meId && room.ownerId === meId) {
+    state.suggested = suggestRoles(room.players.length);
+    state.unlockedRoles = unlockedRoles(room);
+  }
   if (isHost) {
+    state.unlockedRoles = unlockedRoles(room);
     state.pendingWin = game?.pendingWin ?? null;
     state.log = room.log;
     state.suggested = suggestRoles(room.players.length);

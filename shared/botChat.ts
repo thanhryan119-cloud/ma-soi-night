@@ -10,6 +10,7 @@
 // pack most.
 
 import { newChatIntel, ranked, suspicion, topThreat, type ChatIntel, type Reason } from "./botIntel";
+import { isWolf as isWolfRole } from "./roles";
 import type { Locale, Player, Room, RoleId } from "./types";
 
 export interface BotChatMemory {
@@ -42,12 +43,12 @@ function hash01(s: string): number {
 export function truthChance(room: Room, botId: string): number {
   const role = room.game?.roles[botId];
   const k = hash01(`${room.code}:${room.createdAt}:${botId}`);
-  return role === "werewolf" ? 0.2 + k * 0.2 : 0.8 + k * 0.2;
+  return isWolfRole(role) ? 0.2 + k * 0.2 : 0.8 + k * 0.2;
 }
 
 const T = {
   vi: {
-    roles: { werewolf: "Sói", villager: "Dân làng", seer: "Tiên tri", bodyguard: "Bảo vệ", witch: "Phù thủy", hunter: "Thợ săn", cupid: "Cupid" } as Record<RoleId, string>,
+    roles: { werewolf: "Sói", villager: "Dân làng", seer: "Tiên tri", bodyguard: "Bảo vệ", witch: "Phù thủy", hunter: "Thợ săn", cupid: "Cupid", cursedWolf: "Sói Nguyền", wolfSeer: "Sói Tiên Tri", elder: "Già làng", idiot: "Thằng Ngốc" } as Record<RoleId, string>,
     claim: ["Nói thật nhé, mình là {role}.", "Mình là {role}, mọi người tin mình đi.", "Mình xin lộ bài: mình là {role}."],
     seerTrue: ["Đêm {n} mình soi {name}: {verdict}.", "Mình là Tiên tri. Đêm {n} soi {name}, kết quả: {verdict}."],
     isWolf: "là Sói",
@@ -67,7 +68,7 @@ const T = {
     fakeOfSeer: ["{name} là Tiên tri giả đấy, treo {name} đi!", "Đừng tin {name}, {name} nhận bừa Tiên tri để lừa làng."],
   },
   en: {
-    roles: { werewolf: "Werewolf", villager: "Villager", seer: "Seer", bodyguard: "Bodyguard", witch: "Witch", hunter: "Hunter", cupid: "Cupid" } as Record<RoleId, string>,
+    roles: { werewolf: "Werewolf", villager: "Villager", seer: "Seer", bodyguard: "Bodyguard", witch: "Witch", hunter: "Hunter", cupid: "Cupid", cursedWolf: "Cursed Wolf", wolfSeer: "Wolf Seer", elder: "Elder", idiot: "Village Idiot" } as Record<RoleId, string>,
     claim: ["Honestly, I'm the {role}.", "I'm the {role}, trust me.", "Cards on the table: I'm the {role}."],
     seerTrue: ["Night {n} I checked {name}: {verdict}.", "I'm the Seer. Night {n} I checked {name} — {verdict}."],
     isWolf: "a Werewolf",
@@ -121,10 +122,10 @@ function compose(room: Room, bot: Player, mem: BotChatMemory, intel: ChatIntel, 
   const game = room.game!;
   const L = T[(room.locale as Locale) === "en" ? "en" : "vi"];
   const role = game.roles[bot.id];
-  const isWolf = role === "werewolf";
+  const isWolf = isWolfRole(role);
   const others = room.players.filter((p) => p.alive && p.id !== bot.id);
   if (!others.length) return null;
-  const wolves = new Set(room.players.filter((p) => game.roles[p.id] === "werewolf").map((p) => p.id));
+  const wolves = new Set(room.players.filter((p) => isWolfRole(game.roles[p.id])).map((p) => p.id));
   const innocents = others.filter((p) => !wolves.has(p.id));
   const packmates = others.filter((p) => wolves.has(p.id));
   const honest = rnd() < truthChance(room, bot.id);
@@ -248,8 +249,8 @@ export function botDefenseLine(room: Room, bot: Player, said: number, intel: Cha
   const others = room.players.filter((p) => p.alive && p.id !== bot.id);
   if (said >= 2) return null;
   if (said === 1) {
-    const wolves = new Set(room.players.filter((p) => game.roles[p.id] === "werewolf").map((p) => p.id));
-    const target = role === "werewolf" ? topThreat(room, intel, others.filter((p) => !wolves.has(p.id)).map((p) => p.id)) : ranked(suspicion(room, intel, bot.id), others.map((p) => p.id))[0];
+    const wolves = new Set(room.players.filter((p) => isWolfRole(game.roles[p.id])).map((p) => p.id));
+    const target = isWolfRole(role) ? topThreat(room, intel, others.filter((p) => !wolves.has(p.id)).map((p) => p.id)) : ranked(suspicion(room, intel, bot.id), others.map((p) => p.id))[0];
     return target ? fill(pick(rnd, D.accuse), { name: nameOf(room, target) }) : D.done;
   }
   const results = game.seerResults[bot.id] ?? [];
@@ -257,6 +258,6 @@ export function botDefenseLine(room: Room, bot: Player, said: number, intel: Cha
     const r = results[results.length - 1];
     return fill(pick(rnd, D.seer), { n: r.night, name: nameOf(room, r.targetId), verdict: r.isWolf ? L.isWolf : L.notWolf });
   }
-  const shownRole: RoleId = role === "werewolf" ? "villager" : role;
+  const shownRole: RoleId = isWolfRole(role) ? "villager" : role;
   return fill(pick(rnd, D.innocent), { role: L.roles[shownRole] });
 }

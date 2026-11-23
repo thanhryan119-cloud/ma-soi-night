@@ -12,12 +12,17 @@ export type RoleId =
   | "bodyguard"
   | "witch"
   | "hunter"
-  | "cupid";
+  | "cupid"
+  // Premium roles (unlocked in the shop, 50k each):
+  | "cursedWolf"
+  | "wolfSeer"
+  | "elder"
+  | "idiot";
 
 export type Team = "wolves" | "village";
 
 /** Night steps are identified by the role that wakes up. */
-export type NightStepId = "cupid" | "bodyguard" | "werewolf" | "witch" | "seer";
+export type NightStepId = "cupid" | "bodyguard" | "werewolf" | "wolfSeer" | "cursedWolf" | "witch" | "seer";
 
 export type PhaseKind =
   | "lobby"
@@ -121,6 +126,10 @@ export interface NightState {
   witchPoisonId: string | null;
   witchDone: boolean;
   seerTarget: string | null;
+  /** The Wolf Seer's pick tonight. */
+  wolfSeerTarget?: string | null;
+  /** The Cursed Wolf turns tonight's victim into a werewolf instead of killing them. */
+  curse?: boolean;
   /** Steps whose actor(s) have finished. */
   done: Partial<Record<NightStepId, boolean>>;
 }
@@ -129,6 +138,8 @@ export interface SeerResult {
   night: number;
   targetId: string;
   isWolf: boolean;
+  /** Wolf Seer only: the exact role seen. */
+  roleId?: RoleId;
 }
 
 export type VoteKind = "nominate" | "verdict";
@@ -164,6 +175,8 @@ export interface VerdictRecord extends VerdictTally {
   nomineeId: string;
   ballots: Record<string, string>;
   deaths: Death[];
+  /** The village voted to hang the Idiot: he was revealed and lives. */
+  idiotRevealed?: boolean;
 }
 
 export interface TimerState {
@@ -209,6 +222,14 @@ export interface Game {
   /** Signature of the alive set when the host chose "keep playing". */
   dismissedWinSig: string | null;
   winner: Winner | null;
+  /** The Cursed Wolf has turned someone already (once per game). */
+  curseUsed?: boolean;
+  /** Players turned into werewolves by the curse, and on which night. */
+  cursed?: { playerId: string; night: number }[];
+  /** Elders who already took their one wolf bite. */
+  elderHits?: string[];
+  /** Idiots the village voted to hang: revealed, alive, but no vote any more. */
+  revealedIdiots?: string[];
   /** The finished game was added to the players' career stats (server side, once). */
   statsRecorded?: boolean;
 }
@@ -250,6 +271,9 @@ export interface Room {
   ownerId?: string | null;
   /** Players who left a running game for good (their seat is played by a bot now). */
   abandoned?: string[];
+  /** Human-host rooms: the host's signed-in account and the shop items it owns (server-side only). */
+  hostUserId?: string | null;
+  hostOwned?: string[];
   /** "salt:sha256" of the room password, or null/absent when the room is open. Never sent to clients. */
   passwordHash?: string | null;
 }
@@ -271,7 +295,7 @@ export type OwnerAction =
 
 export type PlayerAction =
   | { type: "setLocale"; locale: Locale }
-  | { type: "night"; targets?: string[]; save?: boolean; poisonId?: string | null }
+  | { type: "night"; targets?: string[]; save?: boolean; poisonId?: string | null; curse?: boolean }
   | { type: "vote"; choice: string }
   | { type: "endDefense" }
   | { type: "hunterShot"; targetId: string | null }

@@ -3,7 +3,7 @@
 // When given what was said in the chat (ChatIntel), they vote and act on it.
 
 import { currentStep, getPlayer, isStepDone, playerAction, voteEligible } from "./engine";
-import { NIGHT_STEP_ROLE, isWolf } from "./roles";
+import { isWolf, wakesIn } from "./roles";
 import { validTargets } from "./engine";
 import { accusersOf, newChatIntel, ranked, suspicion, topThreat, type ChatIntel } from "./botIntel";
 import type { PlayerAction, Room } from "./types";
@@ -22,7 +22,7 @@ export function botDecide(room: Room, botId: string, intel: ChatIntel = newChatI
 
   if (kind === "night" && bot.alive) {
     const step = currentStep(room);
-    if (!step || NIGHT_STEP_ROLE[step] !== role) return null;
+    if (!step || !wakesIn(role, step)) return null;
     const ns = game.nightState;
     const targets = validTargets(room, bot, step);
     switch (step) {
@@ -46,6 +46,22 @@ export function botDecide(room: Room, botId: string, intel: ChatIntel = newChatI
         const fresh = targets.filter((id) => !checked.has(id));
         const top = ranked(read(), fresh)[0];
         return { type: "night", targets: [top && Math.random() < 0.75 ? top : pick(fresh.length ? fresh : targets)!] };
+      }
+      case "wolfSeer": {
+        if (ns.done.wolfSeer || !targets.length) return null;
+        const checked = new Set((game.seerResults[bot.id] ?? []).map((r) => r.targetId));
+        const fresh = targets.filter((id) => !checked.has(id));
+        // Hunt the Seer first: whoever is hurting the pack most in the chat.
+        const threat = topThreat(room, intel, fresh.length ? fresh : targets);
+        return { type: "night", targets: [threat && Math.random() < 0.7 ? threat : pick(fresh.length ? fresh : targets)!] };
+      }
+      case "cursedWolf": {
+        if (ns.done.cursedWolf) return null;
+        // Keep the curse for a strong victim (a Seer claim or the town's favourite), else roll for it.
+        const victim = ns.wolfTarget;
+        const canCurse = !game.curseUsed && !!victim;
+        const valuable = !!victim && (intel.claims[victim]?.length ?? 0) > 0;
+        return { type: "night", curse: canCurse && (valuable || Math.random() < 0.4) };
       }
       case "werewolf": {
         if (ns.wolfFinalized || isStepDone(room, step) || !targets.length) return null;

@@ -91,6 +91,8 @@ HTTP công khai: `GET /leaderboard` (mọi tài khoản; ai đủ `MIN_RANKED_GA
 
 Mỗi font/hiệu ứng/khung trừ mặc định là một món `<loại>:<id>` (ví dụ `effect:glow`), giá `ITEM_PRICE_VND` = 50.000đ. `User.owned` giữ các món đã mua; `limitStyle()` gỡ mọi món chưa sở hữu ở `addPlayer`, `updateProfile`, `PATCH /me`, hồ sơ công khai và bảng xếp hạng. `Player.owned` chỉ nằm trên server (không có trong view).
 
+**Vai đặc biệt** (`role:cursedWolf`, `role:wolfSeer`, `role:elder`, `role:idiot`, cũng 50.000đ/vai, `RoleDef.premium`): phòng chỉ được dùng vai mà người dựng phòng đã mua — quản trò người (tài khoản gửi kèm `host:create` / `host:resume` / `lobby:createRoom`, lưu ở `room.hostUserId` + `room.hostOwned`, chỉ trên server) hoặc trưởng phòng của phòng máy dẫn (`Player.owned`). `unlockedRoles(room)` quyết định; `setRoleCounts` không cho *tăng* vai chưa mở (giảm thì luôn được), `assignManual`, `changeRole` và `start` đều kiểm tra lại. Mỗi `host:action` / `owner:action` đọc lại món đã mua nên mua xong là dùng được ngay. View của quản trò và trưởng phòng có `unlockedRoles` để hiện 🔒 và nút "Mở khoá".
+
 | Route | Ai gọi | Việc |
 |---|---|---|
 | `GET /shop` | công khai | `{ enabled, price, items }` |
@@ -105,6 +107,15 @@ Mỗi font/hiệu ứng/khung trừ mặc định là một món `<loại>:<id>`
 3. Bình độc → giết mục tiêu.
 4. Người yêu chết → người còn lại chết theo (`cascadeDeaths`).
 5. Thợ săn chết → vào pha `hunter` để bắn (bị độc thì không bắn, trừ khi bật tùy chọn).
+
+Vai đặc biệt:
+
+- **Sói Nguyền** cắn cùng bầy (`alsoWakesIn: ["werewolf"]`), rồi có bước riêng ngay sau bầy: một lần mỗi ván được nguyền người bị cắn. Nếu cú cắn không bị Bảo vệ/bình cứu chặn, người đó không chết mà đổi vai thành `werewolf` (mất chức năng cũ, `game.cursed`), sáng ra công bố "đêm bình yên". Bị chặn thì lời nguyền chưa mất. Bị độc cùng đêm thì vẫn chết.
+- **Sói Tiên Tri** cắn cùng bầy và mỗi đêm soi được *chính xác vai* của một người (`SeerResult.roleId`).
+- **Già làng** chịu được nhát cắn đầu tiên (`game.elderHits`); độc và treo cổ vẫn chết.
+- **Thằng Ngốc** bị vote treo cổ thì lật bài, sống, nhưng mất quyền vote (`game.revealedIdiots`, `VerdictRecord.idiotRevealed`).
+
+Thứ tự đêm đã lưu từ trước (thiếu bước mới) được `completeNightOrder()` tự chèn bước mới vào đúng chỗ.
 
 Sau mỗi lần có người chết (đêm, treo cổ, thợ săn, quản trò can thiệp) `checkWin` chạy; kết quả chỉ được công bố khi Host bấm **Công bố** (hoặc chọn **Chơi tiếp**).
 

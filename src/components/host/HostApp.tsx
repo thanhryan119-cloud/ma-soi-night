@@ -8,6 +8,7 @@ import { useLocale, useT } from "@/lib/i18n";
 import { hasVoiceFor, speak, stopSpeaking, useTtsSupported, whenVoicesReady } from "@/lib/tts";
 import { scriptLines } from "./common";
 import { emitAck, hostKey, storage } from "@/lib/socket";
+import { getAuth, useAccount } from "@/lib/account";
 import { useRoomState } from "@/lib/useRoom";
 import { HostGame } from "./HostGame";
 import { HostLobby } from "./HostLobby";
@@ -22,11 +23,23 @@ export default function HostApp({ code }: { code: string }) {
   const resume = useCallback(async () => {
     const hostToken = storage.get<string>(hostKey(code));
     if (!hostToken) return setDenied(true);
-    const res = await emitAck("host:resume", { code, hostToken });
+    // The host's Google account decides which premium roles the room may use.
+    const res = await emitAck("host:resume", { code, hostToken, authToken: getAuth()?.token });
     if (!res.ok && res.error !== "err.disconnected") setDenied(true);
   }, [code]);
 
   const { state, connected, offset } = useRoomState(resume);
+
+  // Signing in or out on this page updates the unlocked roles right away.
+  const authToken = useAccount()?.token;
+  const firstAuth = useRef(true);
+  useEffect(() => {
+    if (firstAuth.current) {
+      firstAuth.current = false;
+      return;
+    }
+    resume();
+  }, [authToken, resume]);
 
   useEffect(() => {
     setHideRoles(storage.get<boolean>("msn:hideRoles") ?? false);

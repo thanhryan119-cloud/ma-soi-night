@@ -5,7 +5,7 @@
 // end-of-game timeline) lives in a panel that scrolls on its own.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ROLES } from "@shared/roles";
+import { NIGHT_STEP_ROLE, ROLES } from "@shared/roles";
 import type { ClientState, MeView, PlayerView } from "@shared/views";
 import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, useErrorToast } from "@/components/ui";
 import { ProfileLink } from "../Profile";
@@ -442,12 +442,14 @@ function RoleSheet(ctx: Ctx) {
       </div>
       {me.seerResults.length > 0 && (
         <div>
-          <h4 className="mb-1 text-sm font-bold">🔮 {t("player.seerHistory")}</h4>
+          <h4 className="mb-1 text-sm font-bold">{me.roleId === "wolfSeer" ? "👁️" : "🔮"} {t("player.seerHistory")}</h4>
           <ul className="space-y-1 text-sm">
             {me.seerResults.map((r, i) => (
               <li key={i} className={r.isWolf ? "text-blood-light" : "text-emerald-300"}>
                 {t("phase.night", { n: r.night })}:{" "}
-                {t(r.isWolf ? "player.seerIsWolf" : "player.seerNotWolf", { name: players.get(r.targetId)?.name ?? "?" })}
+                {r.roleId
+                  ? t("player.wolfSeerSaw", { name: players.get(r.targetId)?.name ?? "?", role: t(`roles.${r.roleId}.name`) })
+                  : t(r.isWolf ? "player.seerIsWolf" : "player.seerNotWolf", { name: players.get(r.targetId)?.name ?? "?" })}
               </li>
             ))}
           </ul>
@@ -639,7 +641,7 @@ function NightTurn({ state, me, players }: Ctx) {
   const roleId = me.roleId!;
 
   if (turn.done) {
-    const last = turn.step === "seer" ? me.seerResults[me.seerResults.length - 1] : null;
+    const last = turn.step === "seer" || turn.step === "wolfSeer" ? me.seerResults[me.seerResults.length - 1] : null;
     return (
       <CloseEyes>
         {last && last.night === state.phase.night && (
@@ -648,12 +650,47 @@ function NightTurn({ state, me, players }: Ctx) {
               last.isWolf ? "border-blood bg-blood/20 text-blood-light" : "border-emerald-500 bg-emerald-500/15 text-emerald-300"
             }`}
           >
-            {t(last.isWolf ? "player.seerIsWolf" : "player.seerNotWolf", { name: players.get(last.targetId)?.name ?? "?" })}
+            {last.roleId
+              ? t("player.wolfSeerSaw", { name: players.get(last.targetId)?.name ?? "?", role: t(`roles.${last.roleId}.name`) })
+              : t(last.isWolf ? "player.seerIsWolf" : "player.seerNotWolf", { name: players.get(last.targetId)?.name ?? "?" })}
           </div>
         )}
         {turn.step === "werewolf" && <div className="shrink-0 text-base font-bold text-emerald-300">✓ {t("player.packAgree")}</div>}
         {turn.step === "werewolf" && <PackStrip me={me} players={players} pack={turn.packVotes ?? {}} />}
       </CloseEyes>
+    );
+  }
+
+  if (turn.kind === "curse" && turn.curse) {
+    const c = turn.curse;
+    const victim = c.victimId ? players.get(c.victimId) : null;
+    const can = c.available && !!victim;
+    return (
+      <Fill>
+        <TurnBanner roleId={NIGHT_STEP_ROLE[turn.step]} />
+        <div className="flex shrink-0 flex-col items-center gap-2 rounded-lg border border-blood/40 bg-blood/10 p-3 text-center">
+          {victim ? (
+            <>
+              <Avatar p={victim} size="lg" />
+              <p className="text-base font-semibold">{t("player.curseVictim", { name: victim.name })}</p>
+            </>
+          ) : (
+            <p className="text-sm">{t("player.curseNoVictim")}</p>
+          )}
+          {!c.available && <p className="text-sm text-white/60">{t("player.curseSpent")}</p>}
+        </div>
+        <div className="flex-1" />
+        <Actions>
+          <button className="btn-ghost flex-1 py-3" onClick={() => act({ type: "night", curse: false })}>
+            {t("player.curseNo")}
+          </button>
+          {can && (
+            <button className="btn flex-1 bg-blood py-3 font-bold text-white" onClick={() => act({ type: "night", curse: true })}>
+              {t("player.curseYes")}
+            </button>
+          )}
+        </Actions>
+      </Fill>
     );
   }
 
@@ -725,7 +762,7 @@ function NightTurn({ state, me, players }: Ctx) {
     return (
       <Fill>
         <TurnBanner
-          roleId={roleId}
+          roleId="werewolf"
           extra={
             <p className="mt-0.5 text-[11px] text-white/70">
               {Object.keys(pack).length > 0 && !agreed
@@ -747,7 +784,7 @@ function NightTurn({ state, me, players }: Ctx) {
     setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : max === 1 ? [id] : [...s, id].slice(-max)));
   return (
     <Fill>
-      <TurnBanner roleId={roleId} extra={max > 1 ? <p className="text-[11px] text-white/70">{t("player.pickTwo")}</p> : null} />
+      <TurnBanner roleId={NIGHT_STEP_ROLE[turn.step] ?? roleId} extra={max > 1 ? <p className="text-[11px] text-white/70">{t("player.pickTwo")}</p> : null} />
       <TargetGrid players={players} ids={turn.targets} selected={sel} onPick={toggle} />
       <Actions>
         <button className="btn-primary flex-1 py-3" disabled={sel.length !== max} onClick={() => act({ type: "night", targets: sel })}>
@@ -771,6 +808,12 @@ function Dawn({ state, me, players }: Ctx) {
       <SceneArt scene="dawn" className="w-full max-w-[260px]" />
       <h2 className="font-display text-3xl font-bold text-moon">{t("player.dawn")}</h2>
       {iDied && <p className="rounded-lg bg-blood/25 px-4 py-2 text-xl font-bold text-blood-light">{t("player.youDied")}</p>}
+      {me.cursedNight !== null && me.cursedNight === state.phase.day && (
+        <div className="rise max-w-sm rounded-lg border border-blood bg-blood/20 px-4 py-3 text-center">
+          <p className="text-xl font-bold text-blood-light">{t("player.cursedTitle")}</p>
+          <p className="mt-1 text-sm leading-snug">{t("player.cursedDesc")}</p>
+        </div>
+      )}
       {deaths.length ? (
         <>
           <p className="text-white/70">{t("player.diedLastNight")}</p>
@@ -871,6 +914,7 @@ function Nominate({ state, me, players }: Ctx) {
               ? t("player.votedSkip")
               : t("player.votedFor", { name: players.get(me.myVote)?.name ?? "?" })}
         </p>
+        {me.lostVote && <p className="text-sm text-teal-300">{t("player.lostVote")}</p>}
         <VoteProgress state={state} />
       </Fill>
     );
@@ -952,6 +996,10 @@ function Verdict({ state, me, players }: Ctx) {
             {t("player.spare")}
           </button>
         </div>
+      ) : me.lostVote ? (
+        <div className={`flex items-center justify-center ${chat ? "shrink-0" : "flex-1"}`}>
+          <p className="rounded-lg bg-teal-500/15 px-4 py-3 text-center font-bold text-teal-300">{t("player.lostVote")}</p>
+        </div>
       ) : (
         !chat && <div className="flex-1" />
       )}
@@ -971,11 +1019,13 @@ function VerdictResult({ state, players }: { state: ClientState; players: Map<st
       <div className="flex shrink-0 items-center gap-3">
         {p && <Avatar p={p} size="lg" />}
         <div className="min-w-0 flex-1">
-          <h2 className={`font-display text-2xl font-black ${r.executed ? "text-blood-light" : "text-emerald-300"}`}>
-            {r.executed ? t("screen.executed") : t("screen.spared")}
+          <h2 className={`font-display text-2xl font-black ${r.idiotRevealed ? "text-teal-300" : r.executed ? "text-blood-light" : "text-emerald-300"}`}>
+            {r.idiotRevealed ? t("player.idiotRevealed") : r.executed ? t("screen.executed") : t("screen.spared")}
           </h2>
           <p className="text-sm leading-snug">
-            {t(r.executed ? "script.verdictExecuted" : "script.verdictSpared", { name: p?.name ?? "?", execute: r.execute, spare: r.spare })}
+            {r.idiotRevealed
+              ? t("player.idiotRevealedDesc", { name: p?.name ?? "?" })
+              : t(r.executed ? "script.verdictExecuted" : "script.verdictSpared", { name: p?.name ?? "?", execute: r.execute, spare: r.spare })}
           </p>
           {r.deaths
             .filter((d) => d.playerId !== r.nomineeId)

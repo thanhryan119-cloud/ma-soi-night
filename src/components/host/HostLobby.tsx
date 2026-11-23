@@ -3,7 +3,8 @@
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { MIN_PLAYERS } from "@shared/engine";
-import { ROLES, ROLE_IDS, totalRoles } from "@shared/roles";
+import { PREMIUM_ROLES, ROLES, ROLE_IDS, isPremiumRole, totalRoles } from "@shared/roles";
+import { RoleUnlockButton } from "@/components/RoleShop";
 import type { Locale, RoleId } from "@shared/types";
 import type { ClientState } from "@shared/views";
 import { Avatar, RoleBadge, StyledName } from "@/components/ui";
@@ -162,11 +163,14 @@ function PlayersCard({ state, hideRoles = false }: { state: ClientState; hideRol
               aria-label={t("host.role")}
             >
               <option value="">{t("host.unassigned")}</option>
-              {ROLE_IDS.map((r) => (
-                <option key={r} value={r}>
-                  {ROLES[r].emoji} {t(`roles.${r}.name`)}
-                </option>
-              ))}
+              {ROLE_IDS.map((r) => {
+                const locked = !!state.unlockedRoles && !state.unlockedRoles.includes(r);
+                return (
+                  <option key={r} value={r} disabled={locked}>
+                    {locked ? "🔒" : ROLES[r].emoji} {t(`roles.${r}.name`)}
+                  </option>
+                );
+              })}
             </select>
             )}
             <button
@@ -220,31 +224,47 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
   const set = (r: RoleId, v: number) => act({ type: "setRoleCounts", roleCounts: { ...counts, [r]: Math.max(0, v) } });
   const suggested = state.suggested;
   const sameAsSuggested = suggested && ROLE_IDS.every((r) => suggested[r] === counts[r]);
+  const unlocked = new Set(state.unlockedRoles ?? ROLE_IDS.filter((r) => !isPremiumRole(r)));
+  const anyLocked = PREMIUM_ROLES.some((r) => !unlocked.has(r));
 
   return (
     <section className="card flex flex-col gap-3">
       <h2 className="text-xl font-bold">{t("host.roleConfig")}</h2>
       <ul className={`grid grid-cols-1 gap-1.5 ${owner ? "" : "sm:grid-cols-2"}`}>
-        {ROLE_IDS.map((r) => (
-          <li key={r} className="flex items-center gap-2 rounded-xl bg-white/5 p-2">
-            <span className="min-w-0 flex-1">
-              <RoleBadge roleId={r} />
-            </span>
-            <button className="btn-ghost btn-sm w-8" onClick={() => set(r, counts[r] - 1)} disabled={counts[r] <= 0} aria-label="-">
-              −
-            </button>
-            <span className="w-6 text-center font-mono text-lg font-bold">{counts[r]}</span>
-            <button
-              className="btn-ghost btn-sm w-8"
-              onClick={() => set(r, counts[r] + 1)}
-              disabled={ROLES[r].max !== undefined && counts[r] >= ROLES[r].max!}
-              aria-label="+"
+        {ROLE_IDS.map((r) => {
+          const locked = !unlocked.has(r);
+          return (
+            <li
+              key={r}
+              className={`flex items-center gap-2 rounded-xl p-2 ${isPremiumRole(r) ? "border border-gold/25 bg-gold/[0.04]" : "bg-white/5"}`}
+              title={t(`roles.${r}.desc`)}
             >
-              +
-            </button>
-          </li>
-        ))}
+              <span className={`min-w-0 flex-1 ${locked ? "opacity-60" : ""}`}>
+                <RoleBadge roleId={r} />
+              </span>
+              {locked && counts[r] === 0 ? (
+                <RoleUnlockButton roleId={r} />
+              ) : (
+                <>
+                  <button className="btn-ghost btn-sm w-8" onClick={() => set(r, counts[r] - 1)} disabled={counts[r] <= 0} aria-label="-">
+                    −
+                  </button>
+                  <span className="w-6 text-center font-mono text-lg font-bold">{counts[r]}</span>
+                  <button
+                    className="btn-ghost btn-sm w-8"
+                    onClick={() => set(r, counts[r] + 1)}
+                    disabled={locked || (ROLES[r].max !== undefined && counts[r] >= ROLES[r].max!)}
+                    aria-label="+"
+                  >
+                    +
+                  </button>
+                </>
+              )}
+            </li>
+          );
+        })}
       </ul>
+      {anyLocked && <p className="text-xs text-white/50">{t("host.premiumHint")}</p>}
       <div className={`rounded-xl p-2 text-sm ${total === n ? "bg-emerald-500/10 text-emerald-300" : "bg-blood/15 text-blood-light"}`}>
         {total === n ? t("host.totalRoles", { roles: total, players: n }) : t("host.mismatch", { roles: total, players: n })}
       </div>

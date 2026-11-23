@@ -233,9 +233,10 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
             {p && <PlayerBubble p={p} size="xl" />}
           </div>
           <Bi
-            k={r.executed ? "screen.executed" : "screen.spared"}
-            className={`font-display text-7xl font-black ${r.executed ? "text-blood-light" : "text-emerald-300"}`}
+            k={r.idiotRevealed ? "player.idiotRevealed" : r.executed ? "screen.executed" : "screen.spared"}
+            className={`font-display text-7xl font-black ${r.idiotRevealed ? "text-teal-300" : r.executed ? "text-blood-light" : "text-emerald-300"}`}
           />
+          {r.idiotRevealed && <Bi k="player.idiotRevealedDesc" params={{ name: p?.name ?? "?" }} className="text-3xl text-teal-200" />}
           <div className="flex gap-10 text-5xl font-black">
             <span className="text-blood-light">🪢 {r.execute}</span>
             <span className="text-emerald-300">🕊️ {r.spare}</span>

@@ -205,6 +205,10 @@ const NUMERAL: Record<RoleId, string> = {
   witch: "XIV",
   hunter: "VIII",
   cupid: "VI",
+  cursedWolf: "XV",
+  wolfSeer: "IX",
+  elder: "V",
+  idiot: "0",
 };
 
 /** Engraved front-facing face: brows, almond eyes (or closed lids), nose, lips. */
@@ -485,6 +489,85 @@ const ART: Record<RoleId, (f: Fill) => React.ReactNode> = {
       {/* joined hands */}
       <path d="M49 98 Q54 106 60 110 M71 98 Q66 106 60 110" fill="none" {...g} strokeWidth={1.59} />
       <circle cx="60" cy="110" r="2.6" fill={INK} {...g} strokeWidth={1.16} />
+    </>
+  ),
+  // The wolf beneath a bleeding moon, a curse sigil burning below it.
+  cursedWolf: (f) => (
+    <>
+      {ART.werewolf(f)}
+      {/* the moon drips */}
+      <path d="M88 44 q1 6 0 9 q-1.4 2 -2.6 0 q-0.6 -4 2.6 -9 Z M95 46 q1 4 0 6 q-1.2 1.6 -2.2 0 q-0.4 -3 2.2 -6 Z M101 42 q1 5 0 7.5 q-1.3 1.8 -2.4 0 q-0.5 -3.5 2.4 -7.5 Z" fill={PALE} />
+      <circle cx="94" cy="36" r="13.5" fill="none" stroke={PALE} strokeWidth="1" strokeDasharray="1.6 1.6" />
+      {/* sigil over the brow: a circle crossed by a thorned line */}
+      <circle cx="60" cy="52" r="6" fill={INK} stroke={PALE} strokeWidth="1.4" />
+      <path d="M60 44 V60 M55 52 H65 M56.5 47.5 L63.5 56.5 M63.5 47.5 L56.5 56.5" stroke={PALE} strokeWidth="0.9" strokeLinecap="round" />
+    </>
+  ),
+  // The wolf with a third eye wide open on its brow.
+  wolfSeer: (f) => (
+    <>
+      {ART.werewolf(f)}
+      <Rays cx={60} cy={51} r1={7} r2={12} n={16} w={0.8} />
+      <path d="M51 51 Q60 43 69 51 Q60 59 51 51 Z" fill={PALE} stroke={INK} strokeWidth="1" />
+      <circle cx="60" cy="51" r="3.2" fill={INK} />
+      <circle cx="61" cy="50" r="1" fill={PALE} />
+    </>
+  ),
+  // A bearded elder leaning on a staff under a crescent moon.
+  elder: (f) => (
+    <>
+      <Crescent cx={86} cy={42} R={9} face />
+      <Sparks pts={[[24, 36, 2.2], [40, 28, 1.6], [104, 70, 1.6], [18, 84, 1.6]]} />
+      <path d="M12 140 Q36 130 60 136 Q84 130 108 140 V164 H12 Z" fill={f.hatch} {...g} strokeWidth={1.16} />
+      <Pine x={22} y={140} h={34} />
+      <Pine x={100} y={140} h={28} />
+      {/* staff */}
+      <path d="M84 70 V158" {...g} strokeWidth={2.6} />
+      <path d="M84 70 q-6 -2 -6 -8 q0 -6 6 -6 q5 0 5 5" fill="none" {...g} strokeWidth={2.2} />
+      {/* robe */}
+      <path d="M46 90 Q60 84 74 90 L80 156 H40 Z" fill={INK} {...g} strokeWidth={1.74} />
+      <Folds d="M52 104 L48 156 M68 104 L72 156 M60 112 V156" />
+      <path d="M40 156 H80" {...g} strokeWidth={1.4} />
+      {/* arm holding the staff */}
+      <path d="M72 94 Q80 104 82 112" fill="none" {...g} strokeWidth={1.6} />
+      <circle cx="83" cy="112" r="2.6" fill={INK} {...g} strokeWidth={1.16} />
+      <Face x={60} y={74} r={6.5} closed />
+      {/* long beard */}
+      <path d="M54 78 Q53 92 60 106 Q67 92 66 78 Q60 82 54 78 Z" fill={PALE} />
+      <path d="M57 84 Q58 92 60 100 M63 84 Q62 92 60 100" fill="none" stroke={INK} strokeWidth="0.8" />
+      {/* hood */}
+      <path d="M50 76 Q49 62 60 60 Q71 62 70 76 Q66 66 60 66 Q54 66 50 76 Z" fill={f.hatch} {...g} strokeWidth={1.3} />
+    </>
+  ),
+  // A grinning fool in a belled cap, juggling three balls.
+  idiot: (f) => (
+    <>
+      <SunFace cx={60} cy={38} r={9} />
+      <Sparks pts={[[22, 40, 2], [98, 40, 2], [18, 98, 1.6], [102, 98, 1.6]]} />
+      <path d="M12 142 Q36 132 60 138 Q84 132 108 142 V164 H12 Z" fill={f.hatch} {...g} strokeWidth={1.16} />
+      {/* juggled balls */}
+      <circle cx="30" cy="68" r="4" fill={PALE} />
+      <circle cx="90" cy="64" r="4" fill={PALE} />
+      <circle cx="60" cy="54" r="3.4" fill={INK} {...g} strokeWidth={1.3} />
+      <path d="M34 66 Q46 50 57 53 M63 53 Q76 50 86 62" fill="none" stroke={PALE} strokeWidth="0.7" strokeDasharray="1.4 1.6" />
+      {/* legs */}
+      <path d="M50 128 H59 L57 152 H50 Z M61 128 H70 L70 152 H63 Z" fill={INK} {...g} strokeWidth={1.4} />
+      <path d="M50 152 Q44 152 42 148 M70 152 Q76 152 78 148" fill="none" {...g} strokeWidth={1.8} />
+      {/* diamond tunic */}
+      <path d="M46 92 Q60 86 74 92 L76 130 H44 Z" fill={INK} {...g} strokeWidth={1.74} />
+      <path d="M60 92 L67 102 L60 112 L53 102 Z M60 112 L67 122 L60 130 L53 122 Z" fill={f.hatch} {...g} strokeWidth={1} />
+      {/* raised arms */}
+      <path d="M47 95 Q38 84 32 72 M73 95 Q82 82 88 68" fill="none" {...g} strokeWidth={1.7} />
+      {/* ruff collar */}
+      <path d="M48 90 l4 4 l4 -4 l4 4 l4 -4 l4 4 l4 -4" fill="none" {...g} strokeWidth={1.3} />
+      <Face x={60} y={80} r={6.5} />
+      <path d="M56 83.5 q4 3 8 0" fill="none" {...g} strokeWidth={0.9} />
+      {/* two-pointed cap with bells */}
+      <path d="M52 76 Q50 64 38 62 Q48 66 54 72 M68 76 Q70 64 82 62 Q72 66 66 72" fill="none" {...g} strokeWidth={1.4} />
+      <path d="M51 76 Q52 66 60 66 Q68 66 69 76 Z" fill={f.hatch} {...g} strokeWidth={1.4} />
+      <path d="M53 74 Q44 60 36 60 Q42 66 50 76 Z M67 74 Q76 60 84 60 Q78 66 70 76 Z" fill={PALE} />
+      <circle cx="35" cy="61" r="2.6" fill={PALE} {...g} strokeWidth={0.8} />
+      <circle cx="85" cy="61" r="2.6" fill={PALE} {...g} strokeWidth={0.8} />
     </>
   ),
 };

@@ -7,6 +7,7 @@
 // Seer claim is a lie, a villager falsely accused knows the accuser is wrong,
 // and wolves rank innocents by how dangerous they are to the pack.
 
+import { isWolf } from "./roles";
 import type { Player, RoleId, Room } from "./types";
 
 export interface ChatIntel {
@@ -25,6 +26,8 @@ const ROLE_WORDS: [RoleId, RegExp][] = [
   ["witch", /(phù thủy|phù thuỷ|phu thuy|witch)/i],
   ["hunter", /(thợ săn|tho san|hunter)/i],
   ["cupid", /(cupid|thần tình yêu)/i],
+  ["elder", /(già làng|gia lang|elder)/i],
+  ["idiot", /(thằng ngốc|chàng ngốc|thang ngoc|ngốc|idiot)/i],
   ["villager", /(dân làng|dân thường|dân lành|dan lang|\bdân\b|villager)/i],
   ["werewolf", /(ma sói|\bsói\b|werewolf|\bwolf\b)/i],
 ];
@@ -87,7 +90,7 @@ export function ingestChat(room: Room, intel: ChatIntel, fromId: string, text: s
   }
 }
 
-const UNIQUE: RoleId[] = ["seer", "bodyguard", "witch", "hunter", "cupid"];
+const UNIQUE: RoleId[] = ["seer", "bodyguard", "witch", "hunter", "cupid", "elder", "idiot"];
 const lastClaim = (intel: ChatIntel, id: string) => intel.claims[id]?.at(-1);
 
 export interface Read {
@@ -148,8 +151,8 @@ export function suspicion(room: Room, intel: ChatIntel, viewerId: string): Read 
     if (reporterDead && claimedSeer) w *= 1.3; // killed by the wolves — probably told the truth
     if (rep.targetId === viewerId) {
       // About me: I know the truth, so a wrong report exposes the reporter.
-      const iAmWolf = myRole === "werewolf";
-      if (rep.isWolf !== iAmWolf && myRole !== "werewolf") bump(read, rep.by, 5, { kind: "accusedMe" });
+      const iAmWolf = isWolf(myRole);
+      if (rep.isWolf !== iAmWolf && !iAmWolf) bump(read, rep.by, 5, { kind: "accusedMe" });
       continue;
     }
     bump(read, rep.targetId, (rep.isWolf ? 4 : -3) * w, rep.isWolf ? { kind: "report", by: rep.by } : undefined);
@@ -159,7 +162,7 @@ export function suspicion(room: Room, intel: ChatIntel, viewerId: string): Read 
   const accusers = new Map<string, Set<string>>();
   for (const a of intel.accuse) {
     if (a.targetId === viewerId) {
-      if (myRole !== "werewolf") bump(read, a.by, 1.5, { kind: "accusedMe" });
+      if (!isWolf(myRole)) bump(read, a.by, 1.5, { kind: "accusedMe" });
       continue;
     }
     if (!accusers.has(a.targetId)) accusers.set(a.targetId, new Set());
@@ -185,7 +188,7 @@ export function ranked(read: Read, pool: string[]): string[] {
  */
 export function threat(room: Room, intel: ChatIntel): Map<string, number> {
   const game = room.game!;
-  const wolves = new Set(room.players.filter((p) => game.roles[p.id] === "werewolf").map((p) => p.id));
+  const wolves = new Set(room.players.filter((p) => isWolf(game.roles[p.id])).map((p) => p.id));
   const out = new Map<string, number>();
   for (const p of room.players) if (p.alive && !wolves.has(p.id)) out.set(p.id, Math.random() * 0.5);
   const add = (id: string, by: number) => out.has(id) && out.set(id, out.get(id)! + by);

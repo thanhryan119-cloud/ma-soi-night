@@ -83,6 +83,26 @@
       "name": "Cupid",
       "desc": "On the first night, link two players as lovers. If one dies, the other dies of heartbreak.",
       "action": "Choose two players to fall in love"
+    },
+    "cursedWolf": {
+      "name": "Cursed Wolf",
+      "desc": "Part of the pack and bites every night. Once per game, may curse the victim: if nobody saves them, they don't die but turn into a werewolf.",
+      "action": "Curse tonight's victim?"
+    },
+    "wolfSeer": {
+      "name": "Wolf Seer",
+      "desc": "Part of the pack and bites every night. Each night also inspects one player to learn their exact role.",
+      "action": "Pick someone to inspect"
+    },
+    "elder": {
+      "name": "Elder",
+      "desc": "A villager with two lives against the wolves: survives the first bite. Poison and the gallows still kill.",
+      "action": "No action"
+    },
+    "idiot": {
+      "name": "Village Idiot",
+      "desc": "A villager. If the village votes to hang you, you reveal your card and live, but you can never vote again.",
+      "action": "No action"
     }
   },
   "phase": {
@@ -109,7 +129,9 @@
       "bodyguard": "Bodyguard, wake up. Who will you protect tonight?… Bodyguard, go back to sleep.",
       "werewolf": "Werewolves, wake up and recognise each other. Who will you devour tonight?… Werewolves, go back to sleep.",
       "witch": "Witch, wake up. This is tonight’s victim. Will you use your healing potion? Will you use your poison on anyone?… Witch, go back to sleep.",
-      "seer": "Seer, wake up. Whose identity will you reveal tonight?… Seer, go back to sleep."
+      "seer": "Seer, wake up. Whose identity will you reveal tonight?… Seer, go back to sleep.",
+      "wolfSeer": "Wolf Seer, open your eyes. Whose role do you want to see tonight?… Wolf Seer, go back to sleep.",
+      "cursedWolf": "Cursed Wolf, open your eyes. This is the pack's victim. Do you want to curse them into a werewolf?… Cursed Wolf, go back to sleep."
     },
     "stepNobody": "(This role is dead or absent — still read the line and pause a few seconds so nothing is given away.)",
     "dawnDeaths": "The sun rises — everyone, open your eyes. Sadly, last night {names} passed away.",
@@ -235,7 +257,12 @@
     "rejoinAllow": "Allow",
     "rejoinDeny": "Deny",
     "voiceSpeed": "Narrator reading speed",
-    "stepCalling": "Calling"
+    "stepCalling": "Calling",
+    "locked": "Locked",
+    "unlock": "Unlock {price}",
+    "premiumHint": "🔒 roles are a one-time purchase (50,000 VND each) on the host's Google account. Once bought, every room you run can use them.",
+    "signInToUnlock": "Sign in with Google on the Profile page to buy this role.",
+    "resultIdiot": "{name} revealed the Village Idiot — lives, loses the vote"
   },
   "settings": {
     "nightOrder": "Night wake-up order",
@@ -286,7 +313,8 @@
     "lover": "Lover",
     "inspected": "Inspected",
     "potionHeal": "Heal potion left",
-    "potionPoison": "Poison left"
+    "potionPoison": "Poison left",
+    "cursed": "Cursed"
   },
   "cause": {
     "wolves": "Devoured",
@@ -391,7 +419,18 @@
     "leaveConfirmGame": "Quit the game? It counts as a loss (quit), a bot will play your character and you can't come back to this game.",
     "abandoned": "You left this game (or were away for over 5 minutes). A bot is playing your character.",
     "pack": "Your pack",
-    "lastWolf": "You're the last wolf"
+    "lastWolf": "You're the last wolf",
+    "curseVictim": "The pack just bit {name}.",
+    "curseNoVictim": "The pack bit nobody tonight.",
+    "curseSpent": "You have already used your curse.",
+    "curseYes": "🩸 Curse into a wolf",
+    "curseNo": "Don't curse",
+    "cursedTitle": "You have been cursed! 🩸",
+    "cursedDesc": "Last night the Cursed Wolf turned you into a werewolf. You are on the pack's side now, your old power is gone, and you wake up to bite with the pack.",
+    "wolfSeerSaw": "{name} is the {role}",
+    "lostVote": "You revealed the Village Idiot — you can't vote any more.",
+    "idiotRevealed": "THE VILLAGE IDIOT",
+    "idiotRevealedDesc": "{name} is the Village Idiot: lives on, but loses the vote."
   },
   "profile": {
     "title": "Your profile",
@@ -457,7 +496,11 @@
     "paid": "{item} unlocked and equipped!",
     "cancelled": "Payment cancelled, nothing was charged.",
     "pending": "Payment not received yet. If you already paid, wait a moment and reload the page.",
-    "backToRoom": "Back to the room"
+    "backToRoom": "Back to the room",
+    "rolesTitle": "Special roles",
+    "rolesHint": "50,000 VND per role, bought once for your account. When you host or own a room, the whole room can play it.",
+    "owned": "Owned",
+    "roleBought": "the {role} role"
   },
   "screen": {
     "waitingPlayers": "Waiting for players…",
@@ -555,7 +598,11 @@
     "itemUnknown": "That item does not exist.",
     "itemOwned": "You already own this item.",
     "orderNotFound": "Order not found.",
-    "paymentFailed": "Could not start the payment, try again later."
+    "paymentFailed": "Could not start the payment, try again later.",
+    "roleLocked": "{role} isn't unlocked. The host (or room owner) needs to buy it in the shop.",
+    "curseUsed": "The curse has already been used.",
+    "nobodyToCurse": "Nobody was bitten tonight, there is no one to curse.",
+    "noVoteIdiot": "You revealed the Village Idiot, you can't vote any more."
   },
   "log": {
     "join": "{name} joined",
@@ -628,7 +675,14 @@
     "ownerChanged": "{name} is now the room owner",
     "leave": "{name} left the room",
     "abandon": "{name} quit the game, a bot takes over",
-    "abandonAway": "{name} was away for over 5 minutes and is out, a bot takes over"
+    "abandonAway": "{name} was away for over 5 minutes and is out, a bot takes over",
+    "savedByElder": "{target} (Elder) survived the first bite",
+    "curse": "{actor} curses {target}",
+    "cursePass": "{actor} keeps the curse",
+    "curseFailed": "The curse on {target} failed",
+    "cursed": "{target} ({role}) was cursed and turned into a werewolf",
+    "wolfSeer": "{actor} (Wolf Seer) inspects {target}: {role}",
+    "idiotRevealed": "{name} was voted to hang but revealed the Village Idiot: lives, loses the vote"
   },
   "privacy": {
     "title": "Privacy policy",

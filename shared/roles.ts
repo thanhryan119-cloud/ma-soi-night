@@ -18,8 +18,8 @@ export interface NightBehaviour {
   /** Default position in the night order (lower = earlier). */
   order: number;
   firstNightOnly?: boolean;
-  /** UI kind used by the phone: pick N targets, or the witch's potion panel. */
-  kind: "pick" | "witch";
+  /** UI kind used by the phone: pick N targets, the witch's potion panel, or the curse yes/no. */
+  kind: "pick" | "witch" | "curse";
   /** Number of targets to pick (for kind=pick). */
   picks?: number;
   /** All holders act together (wolves). */
@@ -39,11 +39,16 @@ export interface RoleDef {
   /** Max copies allowed in one game (undefined = unlimited). */
   max?: number;
   night?: NightBehaviour;
+  /** Other night steps this role wakes up for (the Cursed Wolf and Wolf Seer bite with the pack). */
+  alsoWakesIn?: NightStepId[];
   /** Triggers a revenge shot when this role dies. */
   shootsOnDeath?: boolean;
+  /** Sold in the shop (`role:<id>`): the host or room owner must own it to put it in a game. */
+  premium?: boolean;
 }
 
 const aliveIds = (ctx: NightContext) => ctx.alive.map((p) => p.id);
+const nonWolves = (ctx: NightContext) => ctx.alive.filter((p) => !isWolf(ctx.game.roles[p.id])).map((p) => p.id);
 
 export const ROLES: Record<RoleId, RoleDef> = {
   werewolf: {
@@ -58,8 +63,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
       kind: "pick",
       picks: 1,
       group: true,
-      validTargets: (ctx) =>
-        ctx.alive.filter((p) => !isWolf(ctx.game.roles[p.id])).map((p) => p.id),
+      validTargets: nonWolves,
     },
   },
   villager: {
@@ -143,25 +147,123 @@ export const ROLES: Record<RoleId, RoleDef> = {
       validTargets: (ctx) => aliveIds(ctx),
     },
   },
+
+  // --- Premium roles -------------------------------------------------------
+
+  /**
+   * Bites with the pack. Once per game, after the pack has chosen, may curse the
+   * victim instead: if the bite lands (not guarded, not healed) the victim lives
+   * and wakes up a werewolf, losing their old power.
+   */
+  cursedWolf: {
+    id: "cursedWolf",
+    team: "wolves",
+    emoji: "🩸",
+    color: "#b91c1c",
+    seenAsWolf: true,
+    max: 1,
+    premium: true,
+    alsoWakesIn: ["werewolf"],
+    night: {
+      step: "cursedWolf",
+      order: 35,
+      kind: "curse",
+      validTargets: () => [],
+    },
+  },
+  /** Bites with the pack, and each night learns the exact role of one player. */
+  wolfSeer: {
+    id: "wolfSeer",
+    team: "wolves",
+    emoji: "👁️",
+    color: "#7c3aed",
+    seenAsWolf: true,
+    max: 1,
+    premium: true,
+    alsoWakesIn: ["werewolf"],
+    night: {
+      step: "wolfSeer",
+      order: 33,
+      kind: "pick",
+      picks: 1,
+      validTargets: (ctx) => nonWolves(ctx).filter((id) => id !== ctx.actor.id),
+    },
+  },
+  /** Survives the first wolf bite (poison and the gallows still kill). */
+  elder: {
+    id: "elder",
+    team: "village",
+    emoji: "👴",
+    color: "#ca8a04",
+    seenAsWolf: false,
+    max: 1,
+    premium: true,
+  },
+  /** If the village votes to hang him, he is revealed and lives on, but can never vote again. */
+  idiot: {
+    id: "idiot",
+    team: "village",
+    emoji: "🤪",
+    color: "#14b8a6",
+    seenAsWolf: false,
+    max: 1,
+    premium: true,
+  },
 };
 
 export const ROLE_IDS = Object.keys(ROLES) as RoleId[];
+
+/** Roles sold in the shop. */
+export const PREMIUM_ROLES: RoleId[] = ROLE_IDS.filter((r) => ROLES[r].premium);
 
 export const NIGHT_STEP_ROLE: Record<NightStepId, RoleId> = {
   cupid: "cupid",
   bodyguard: "bodyguard",
   werewolf: "werewolf",
+  wolfSeer: "wolfSeer",
+  cursedWolf: "cursedWolf",
   witch: "witch",
   seer: "seer",
 };
+
+export const NIGHT_STEPS = Object.keys(NIGHT_STEP_ROLE) as NightStepId[];
+
+/** Every role that wakes up in a step (the step's own role, plus e.g. the special wolves for the pack). */
+export function stepRoles(step: NightStepId): RoleId[] {
+  return ROLE_IDS.filter((r) => ROLES[r].night?.step === step || ROLES[r].alsoWakesIn?.includes(step));
+}
+
+export function wakesIn(roleId: RoleId | undefined, step: NightStepId): boolean {
+  return !!roleId && stepRoles(step).includes(roleId);
+}
 
 export const DEFAULT_NIGHT_ORDER: NightStepId[] = ROLE_IDS.filter((r) => ROLES[r].night)
   .sort((a, b) => ROLES[a].night!.order - ROLES[b].night!.order)
   .map((r) => ROLES[r].night!.step);
 
-export function isWolf(roleId: RoleId | undefined): boolean {
-  return !!roleId && ROLES[roleId].team === "wolves";
+/**
+ * Keeps a saved night order valid: unknown or repeated steps are dropped and
+ * steps it doesn't know about yet (roles added later) are slotted in after the
+ * step they follow by default.
+ */
+export function completeNightOrder(order: readonly unknown[] | undefined): NightStepId[] {
+  const out = (order ?? []).filter(
+    (s, i, arr): s is NightStepId => typeof s === "string" && s in NIGHT_STEP_ROLE && arr.indexOf(s) === i,
+  );
+  DEFAULT_NIGHT_ORDER.forEach((step, i) => {
+    if (out.includes(step)) return;
+    const before = DEFAULT_NIGHT_ORDER.slice(0, i).reverse().find((s) => out.includes(s));
+    out.splice(before ? out.indexOf(before) + 1 : 0, 0, step);
+  });
+  return out;
 }
+
+export function isWolf(roleId: RoleId | undefined): boolean {
+  return !!roleId && ROLES[roleId]?.team === "wolves";
+}
+
+export const isPremiumRole = (roleId: RoleId) => !!ROLES[roleId]?.premium;
+export const roleItem = (roleId: RoleId) => `role:${roleId}` as const;
 
 export function emptyRoleCounts(): Record<RoleId, number> {
   return Object.fromEntries(ROLE_IDS.map((r) => [r, 0])) as Record<RoleId, number>;

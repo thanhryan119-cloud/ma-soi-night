@@ -69,6 +69,7 @@ export function scriptLines(state: ClientState, t: T): string[] {
     case "verdictResult": {
       const r = state.verdicts[state.verdicts.length - 1];
       if (!r) return [];
+      if (r.idiotRevealed) return [t("player.idiotRevealedDesc", { name: nameOf(state, r.nomineeId) })];
       return [
         t(r.executed ? "script.verdictExecuted" : "script.verdictSpared", {
           name: nameOf(state, r.nomineeId),
