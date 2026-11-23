@@ -61,6 +61,8 @@ export interface PlayerView {
   avatar: string;
   avatarUrl: string | null;
   style: PlayerStyle;
+  /** Index into CHAT_COLORS, unique in the room. */
+  chatColor: number;
   alive: boolean;
   connected: boolean;
   locale: Locale;
@@ -326,13 +328,14 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
   // A revealed Idiot showed his card to the whole village.
   game?.revealedIdiots?.forEach((id) => visibleRoles.add(id));
 
-  const players: PlayerView[] = room.players.map((p) => {
+  const players: PlayerView[] = room.players.map((p, i) => {
     const v: PlayerView = {
       id: p.id,
       name: p.name,
       avatar: p.avatar,
       avatarUrl: p.avatarUrl ?? null,
       style: p.style ?? DEFAULT_STYLE,
+      chatColor: p.chatColor ?? i,
       alive: p.alive,
       connected: p.connected,
       locale: p.locale,

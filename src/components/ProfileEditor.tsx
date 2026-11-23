@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AVATARS } from "@shared/engine";
 import {
   AVATAR_FRAMES,
+  CHAT_DECOS,
   DEFAULT_STYLE,
   ITEM_PRICE_VND,
   NAME_EFFECTS,
@@ -12,6 +13,7 @@ import {
   isFreeItem,
   itemId,
   limitStyle,
+  sameStyle,
   type ItemId,
   type ItemKind,
   type PlayerStyle,
@@ -28,7 +30,7 @@ import {
   type LocalProfile,
 } from "@/lib/account";
 import { useLocale, useT } from "@/lib/i18n";
-import { Avatar, StyledName, toast, useErrorToast } from "./ui";
+import { Avatar, ChatBubble, StyledName, toast, useErrorToast } from "./ui";
 import { CheckoutPanel, usePrice } from "./Checkout";
 
 export { usePrice };
@@ -97,7 +99,6 @@ export function GoogleButton() {
 // Editor
 // ---------------------------------------------------------------------------
 
-const sameStyle = (a: PlayerStyle, b: PlayerStyle) => a.font === b.font && a.effect === b.effect && a.frame === b.frame;
 
 function Picker<T extends string>({
   label,
@@ -373,6 +374,24 @@ export function ProfileEditor({
               </>
             )}
           />
+          <Picker
+            label={t("profile.chatDeco")}
+            options={CHAT_DECOS}
+            value={value.style.chat}
+            trying={tryKind === "chat" ? (tryValue as PlayerStyle["chat"]) : null}
+            locked={(v) => isLocked("chat", v)}
+            price={priceLabel}
+            onChange={(chat) => pick("chat", chat)}
+            render={(c) => (
+              <span className="flex flex-col items-center gap-1">
+                <ChatBubble color={1} deco={c}>
+                  {t("profile.chatSample")}
+                </ChatBubble>
+                <span className="text-[10px] text-white/50">{t(`profile.chat.${c}`)}</span>
+              </span>
+            )}
+          />
+          <p className="-mt-2 text-xs text-white/50">{t("profile.chatColorHint")}</p>
         </>
       )}
 

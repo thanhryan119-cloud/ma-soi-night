@@ -5,6 +5,7 @@
 // end-of-game timeline) lives in a panel that scrolls on its own.
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { NIGHT_STEP_ROLE, ROLES } from "@shared/roles";
 import type { ClientState, MeView, PlayerView } from "@shared/views";
 import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, useErrorToast } from "@/components/ui";
@@ -173,6 +174,9 @@ function NarrationBanner({ state }: { state: ClientState }) {
   const canTts = useTtsSupported();
   const [voice, setVoice] = useState(false);
   useEffect(() => setVoice(storage.get<boolean>("msn:phoneVoice") ?? false), []);
+  // How fast this phone reads the narration (same choice and default as the host screen).
+  const [rate, setRate] = useState(1.25);
+  useEffect(() => setRate(storage.get<number>("msn:voiceRate") ?? 1.25), []);
   const silent = t("script.stepNobody");
   const off = state.phase.kind === "lobby" || state.phase.kind === "gameOver";
   const lines = off ? [] : scriptLines(state, t).filter((l) => l !== silent);
@@ -180,9 +184,9 @@ function NarrationBanner({ state }: { state: ClientState }) {
   // With the machine as host, each phone can read the narration aloud for its player.
   useEffect(() => {
     if (!voice || !state.machineHost || !linesKey) return;
-    speak(linesKey.split("|"), locale);
+    speak(linesKey.split("|"), locale, rate);
     return () => stopSpeaking();
-  }, [voice, linesKey, locale, state.machineHost]);
+  }, [voice, linesKey, locale, state.machineHost, rate]);
   if (!lines.length) return null;
   const toggle = () =>
     setVoice((v) => {
@@ -203,6 +207,25 @@ function NarrationBanner({ state }: { state: ClientState }) {
           >
             {voice ? "🔊" : "🔇"}
           </button>
+        )}
+        {state.machineHost && canTts && voice && (
+          <select
+            className="ui-select float-right ml-1 w-auto px-1 py-0 text-xs"
+            value={rate}
+            onChange={(e) => {
+              const r = Number(e.target.value);
+              storage.set("msn:voiceRate", r);
+              setRate(r);
+            }}
+            aria-label={t("host.voiceSpeed")}
+            title={t("host.voiceSpeed")}
+          >
+            {[1, 1.25, 1.5, 1.75, 2].map((r) => (
+              <option key={r} value={r}>
+                ⏩ {r}×
+              </option>
+            ))}
+          </select>
         )}
         <span className="mr-1 font-bold text-gold">📜 {t("player.narration")}:</span>
         {lines.join(" ")}
@@ -367,12 +390,22 @@ function AliveStrip({ state }: { state: ClientState }) {
   );
 }
 
-/** Hold to reveal, release to hide — protects against peeking. Shrinks to the free height. */
+/**
+ * Hold to reveal, release to hide — protects against peeking. The card back
+ * shrinks to the free height; while it is held, the role card opens over the
+ * whole screen (big enough to read at arm's length on a phone).
+ */
 function HoldCard({ me, players }: Ctx) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const role = me.roleId ? ROLES[me.roleId] : null;
-  const show = () => {
+  const show = (e?: React.PointerEvent<HTMLButtonElement>) => {
+    // Keep the finger on this button even though the full-screen card now covers it.
+    try {
+      if (e) e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // The pointer is already gone; releasing it still hides the card.
+    }
     setOpen(true);
     navigator.vibrate?.(20);
   };
@@ -383,51 +416,46 @@ function HoldCard({ me, players }: Ctx) {
         <button
           type="button"
           className="no-select relative h-full max-h-[560px] max-w-full touch-none rounded-[14px]"
-          style={{ perspective: "1000px", aspectRatio: "3 / 5" }}
+          style={{ aspectRatio: "3 / 5" }}
           onPointerDown={show}
           onPointerUp={hide}
-          onPointerLeave={hide}
           onPointerCancel={hide}
+          onLostPointerCapture={hide}
           onContextMenu={(e) => e.preventDefault()}
           onKeyDown={(e) => (e.key === " " || e.key === "Enter") && show()}
           onKeyUp={hide}
           onBlur={hide}
           aria-label={t("player.holdToReveal")}
         >
-          <div
-            className="absolute inset-0 transition-transform duration-300"
-            style={{ transformStyle: "preserve-3d", transform: open ? "rotateY(180deg)" : "none" }}
-          >
-            <div
-              className="absolute inset-0 flex flex-col items-center justify-center"
-              style={{ backfaceVisibility: "hidden" }}
-            >
-              <CardBack className="absolute inset-0 h-full w-full" />
-              <span className="relative mt-[78%] rounded bg-night-950/80 px-3 py-1 text-sm font-bold text-gold">{t("player.holdToReveal")}</span>
-            </div>
-            <div className="absolute inset-0" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-              {role && open && (
-                <RoleCardFull role={role.id} className="h-full w-full">
-                  <div className="text-[10px] font-semibold tracking-[0.2em] text-white/70 uppercase">{t(`teams.${role.team}`)}</div>
-                  <p className="mt-0.5 text-[12px] leading-snug text-white">{t(`roles.${role.id}.desc`)}</p>
-                  {role.team === "wolves" && (
-                    <div className="mt-1 text-xs">
-                      <div className="font-bold text-blood-light">{t("player.teammates")}</div>
-                      {me.teammates.length
-                        ? me.teammates.map((id) => players.get(id)?.name).join(", ")
-                        : t("player.noTeammates")}
-                    </div>
-                  )}
-                  {me.loverId && (
-                    <div className="mt-1 text-xs text-pink-300">{t("player.yourLover", { name: players.get(me.loverId)?.name ?? "?" })}</div>
-                  )}
-                </RoleCardFull>
-              )}
-            </div>
-          </div>
+          <CardBack className="absolute inset-0 h-full w-full" />
+          <span className="absolute inset-x-0 bottom-[14%] mx-auto w-fit rounded bg-night-950/80 px-3 py-1 text-sm font-bold text-gold">
+            {t("player.holdToReveal")}
+          </span>
         </button>
       </div>
       <p className="shrink-0 text-sm text-white/50">{open ? t("player.releaseToHide") : t("player.holdToReveal")}</p>
+      {role &&
+        open &&
+        createPortal(
+          <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center bg-black p-3">
+            <div className="role-flip-in" style={{ aspectRatio: "3 / 5", height: "min(calc(100dvh - 24px), calc((100vw - 24px) * 5 / 3))" }}>
+              <RoleCardFull role={role.id} className="h-full w-full">
+                <div className="text-xs font-semibold tracking-[0.2em] text-white/70 uppercase">{t(`teams.${role.team}`)}</div>
+                <p className="mt-1 text-base leading-snug text-white">{t(`roles.${role.id}.desc`)}</p>
+                {role.team === "wolves" && (
+                  <div className="mt-1.5 text-sm">
+                    <div className="font-bold text-blood-light">{t("player.teammates")}</div>
+                    {me.teammates.length ? me.teammates.map((id) => players.get(id)?.name).join(", ") : t("player.noTeammates")}
+                  </div>
+                )}
+                {me.loverId && (
+                  <div className="mt-1.5 text-sm text-pink-300">{t("player.yourLover", { name: players.get(me.loverId)?.name ?? "?" })}</div>
+                )}
+              </RoleCardFull>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

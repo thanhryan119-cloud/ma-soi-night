@@ -58,6 +58,8 @@ export interface Player {
   style?: PlayerStyle;
   /** Shop items the linked account owns (server-side only, never sent to clients). */
   owned?: string[];
+  /** Index into CHAT_COLORS, unique in the room: the player's chat bubble colour. */
+  chatColor?: number;
   /** Linked account, if the player signed in. */
   userId?: string | null;
   locale: Locale;

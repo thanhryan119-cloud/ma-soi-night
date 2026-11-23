@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ROLES } from "@shared/roles";
+import { CHAT_COLORS, type ChatDeco } from "@shared/cosmetics";
 import type { Locale, RoleId, TimerState } from "@shared/types";
 import type { PlayerView } from "@shared/views";
 import { useLocale, useT } from "@/lib/i18n";
@@ -153,6 +154,31 @@ export function StyledName({
   const font = s && s.font !== "default" ? `nf-${s.font}` : "";
   const effect = s && s.effect !== "none" && p.alive !== false ? `ne-${s.effect}` : "";
   return <span className={`${font} ${effect} ${className}`}>{p.name}</span>;
+}
+
+/**
+ * A chat bubble in the writer's own colour (unique in the room) with their
+ * chat decoration, if they bought one, laid over it.
+ */
+export function ChatBubble({
+  color,
+  deco = "plain",
+  className = "",
+  children,
+}: {
+  color: number;
+  deco?: ChatDeco;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`chat-bubble cb-${deco} inline-block rounded-lg px-2 py-1 text-sm leading-snug break-words text-white ${className}`}
+      style={{ "--cb": CHAT_COLORS[color % CHAT_COLORS.length] } as React.CSSProperties}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function RoleBadge({ roleId, size = "sm" }: { roleId: RoleId; size?: "sm" | "md" }) {

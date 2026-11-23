@@ -7,7 +7,7 @@ import { useT } from "@/lib/i18n";
 import { useSocial } from "@/lib/social";
 import { storage } from "@/lib/socket";
 import { useVoice } from "@/lib/voice";
-import { Avatar, StyledName, useErrorToast } from "./ui";
+import { Avatar, ChatBubble, StyledName, useErrorToast } from "./ui";
 import { ProfileLink } from "./Profile";
 
 /** Who is using the panel: the host, or a player id. */
@@ -209,9 +209,13 @@ function Chat({
                     t("social.host")
                   )}
                 </div>
-                <div className={`inline-block rounded-lg px-2 py-1 text-sm leading-snug break-words ${mine ? "bg-gold text-night-950" : m.from === "host" ? "bg-blood/30" : "bg-white/10"}`}>
-                  {m.text}
-                </div>
+                {p ? (
+                  <ChatBubble color={p.chatColor} deco={p.style.chat}>
+                    {m.text}
+                  </ChatBubble>
+                ) : (
+                  <div className="inline-block rounded-lg bg-night-700 px-2 py-1 text-sm leading-snug break-words ring-1 ring-gold/50">{m.text}</div>
+                )}
               </div>
             </div>
           );

@@ -479,6 +479,18 @@
       "moon": "Trăng khuyết",
       "thorns": "Gai",
       "pulse": "Nhịp tim"
+    },
+    "chatDeco": "Nền chat",
+    "chatSample": "Ai là sói?",
+    "chatColorHint": "Mỗi người trong phòng tự có một màu chat riêng, không trùng ai, để dễ nhận ra. Nền trơn là miễn phí, các nền trang trí phủ lên màu đó.",
+    "chat": {
+      "plain": "Trơn",
+      "stars": "Bầu sao",
+      "moon": "Trăng khuyết",
+      "blood": "Vệt máu",
+      "frost": "Băng giá",
+      "ember": "Than hồng",
+      "gold": "Viền vàng"
     }
   },
   "shop": {

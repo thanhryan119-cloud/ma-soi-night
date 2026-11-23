@@ -479,6 +479,18 @@
       "moon": "Crescent moon",
       "thorns": "Thorns",
       "pulse": "Heartbeat"
+    },
+    "chatDeco": "Chat background",
+    "chatSample": "Who's the wolf?",
+    "chatColorHint": "Everyone in a room gets their own chat colour, never shared, so you can tell who wrote what. Plain is free; decorations sit on top of that colour.",
+    "chat": {
+      "plain": "Plain",
+      "stars": "Starry sky",
+      "moon": "Crescent moon",
+      "blood": "Blood streaks",
+      "frost": "Frost",
+      "ember": "Embers",
+      "gold": "Gold trim"
     }
   },
   "shop": {

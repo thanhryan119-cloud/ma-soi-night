@@ -6,13 +6,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ITEM_PRICE_VND, SHOP_ITEMS, equip, type ItemId, type ItemKind, type PlayerStyle } from "@shared/cosmetics";
+import { DEFAULT_STYLE, ITEM_PRICE_VND, SHOP_ITEMS, equip, type ChatDeco, type ItemId, type ItemKind, type PlayerStyle } from "@shared/cosmetics";
 import { ROLES } from "@shared/roles";
 import type { RoleId } from "@shared/types";
 import { RoleArt } from "@/components/art/Tarot";
 import { CheckoutDialog, usePrice } from "@/components/Checkout";
 import { GoogleButton } from "@/components/ProfileEditor";
-import { Avatar, LangSwitch, StyledName } from "@/components/ui";
+import { Avatar, ChatBubble, LangSwitch, StyledName } from "@/components/ui";
 import {
   GOOGLE_CLIENT_ID,
   fetchShop,
@@ -32,6 +32,7 @@ const SECTIONS: { kind: ItemKind; icon: string; title: string }[] = [
   { kind: "effect", icon: "✨", title: "profile.nameEffect" },
   { kind: "font", icon: "🔤", title: "profile.nameFont" },
   { kind: "frame", icon: "⭕", title: "profile.avatarFrame" },
+  { kind: "chat", icon: "💬", title: "profile.chatDeco" },
 ];
 
 const split = (id: ItemId) => id.split(":") as [ItemKind, string];
@@ -51,7 +52,7 @@ export default function ShopPage() {
   // Follow the account's style (a purchase or another device equips items).
   useEffect(() => {
     if (user) setProfile((p) => (p ? { ...p, style: user.style } : p));
-  }, [user?.style.font, user?.style.effect, user?.style.frame]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.style.font, user?.style.effect, user?.style.frame, user?.style.chat]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const name = profile?.name || user?.name || t("shop.sampleName");
 
@@ -165,7 +166,7 @@ function ShopItem({
   const cost = price(shop?.price ?? ITEM_PRICE_VND);
   const isRole = kind === "role";
   const title = isRole ? t(`roles.${value}.name`) : t(`profile.${kind}.${value}`);
-  const base: PlayerStyle = profile?.style ?? { font: "default", effect: "none", frame: "none" };
+  const base: PlayerStyle = profile?.style ?? DEFAULT_STYLE;
   const preview = { name, avatar: profile?.avatar ?? "🐺", avatarUrl, style: isRole ? base : equip(base, id), alive: true };
   const wearing = !isRole && owned && profile?.style[kind as keyof PlayerStyle] === value;
 
@@ -190,6 +191,10 @@ function ShopItem({
         <div className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-md bg-night-900 p-2">
           {kind === "frame" ? (
             <Avatar p={preview} size="lg" />
+          ) : kind === "chat" ? (
+            <ChatBubble color={1} deco={value as ChatDeco} className="px-3 py-1.5">
+              {t("profile.chatSample")}
+            </ChatBubble>
           ) : (
             <StyledName p={preview} className="block max-w-full truncate text-xl font-black" />
           )}

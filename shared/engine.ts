@@ -1,7 +1,7 @@
 // Game engine: mutates a Room in response to validated host/player actions.
 // Every action is checked here (phase, role, alive, valid target, double vote).
 
-import { AVATAR_FRAMES, NAME_EFFECTS, NAME_FONTS, limitStyle, sanitizeAvatarUrl, sanitizeOwned, sanitizeStyle } from "./cosmetics";
+import { AVATAR_FRAMES, CHAT_DECOS, NAME_EFFECTS, NAME_FONTS, freeChatColor, limitStyle, sanitizeAvatarUrl, sanitizeOwned, sanitizeStyle } from "./cosmetics";
 import {
   BOT_SPEEDS,
   NIGHT_STEP_ROLE,
@@ -126,10 +126,21 @@ export function sanitizeName(name: unknown): string {
     .slice(0, 24);
 }
 
-/** Short, distinct, easy-to-remember bot names (shuffled, never reusing one in the room). */
+/**
+ * Bot names: two words each, every first word different, so bots are easy to
+ * tell apart in the chat and the vote lists (shuffled, never reused in a room).
+ */
 const BOT_NAMES = {
-  vi: ["Mít", "Bơ", "Xoài", "Cốm", "Tôm", "Sóc", "Gấu", "Kem", "Bin", "Tép", "Mận", "Khoai", "Ổi", "Nấm", "Cún", "Lúa", "Bắp", "Dừa", "Đậu", "Sen"],
-  en: ["Ash", "Bella", "Cody", "Daisy", "Eli", "Fern", "Gus", "Hazel", "Iris", "Jack", "Kit", "Luna", "Milo", "Nora", "Otis", "Pip", "Rex", "Sky", "Theo", "Zoe"],
+  vi: [
+    "Mít Ướt", "Bơ Sáp", "Xoài Cát", "Cốm Xanh", "Tôm Càng", "Sóc Nâu", "Gấu Trúc", "Kem Dâu",
+    "Bin Lém", "Tép Riu", "Mận Hậu", "Khoai Lang", "Ổi Đào", "Nấm Rơm", "Cún Con", "Lúa Mới",
+    "Bắp Rang", "Dừa Xiêm", "Đậu Phộng", "Sen Hồng", "Mèo Mun", "Chuối Tiêu",
+  ],
+  en: [
+    "Ash Fox", "Bella Moon", "Cody Bear", "Daisy Bell", "Eli Stone", "Fern Hill", "Gus Barley", "Hazel Nut",
+    "Iris Rain", "Jack Frost", "Kit Kettle", "Luna Grey", "Milo Pond", "Nora Finch", "Otis Oak", "Pip Sparrow",
+    "Rex Thorn", "Sky Willow", "Theo Brook", "Zoe Ember", "Wren Hollow", "Ivy Lantern",
+  ],
 };
 
 function botName(room: Room): string {
@@ -170,6 +181,7 @@ export function addPlayer(
     avatarUrl: sanitizeAvatarUrl(input.avatarUrl),
     style: limitStyle(sanitizeStyle(input.style), input.isBot ? "all" : sanitizeOwned(input.owned)),
     owned: sanitizeOwned(input.owned),
+    chatColor: freeChatColor(room.players.map((p) => p.chatColor)),
     userId: input.userId ?? null,
     locale: input.locale === "en" ? "en" : "vi",
     isBot: !!input.isBot,
@@ -1227,7 +1239,7 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
           avatar: AVATARS[(room.players.length * 7) % AVATARS.length],
           locale: room.locale,
           isBot: true,
-          style: { font: rnd(NAME_FONTS), effect: rnd(NAME_EFFECTS), frame: rnd(AVATAR_FRAMES) },
+          style: { font: rnd(NAME_FONTS), effect: rnd(NAME_EFFECTS), frame: rnd(AVATAR_FRAMES), chat: rnd(CHAT_DECOS) },
         });
       }
       return ok;
