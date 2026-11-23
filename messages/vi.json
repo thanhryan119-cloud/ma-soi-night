@@ -484,7 +484,7 @@
   "shop": {
     "title": "Cửa hàng",
     "price": "{price}đ",
-    "buy": "Mua {price} qua payOS",
+    "buy": "Mua {price}",
     "lockedItem": "Cần mua: {price}",
     "trying": "Đang thử: {item}",
     "hint": "Mỗi font, hiệu ứng tên hay khung avatar có giá riêng. Mua một lần, gắn với tài khoản, dùng trên mọi máy.",
@@ -859,7 +859,7 @@
     "value": "Giá trị",
     "valueHint": "Phần trăm từ 1 đến 100, hoặc số tiền (VND).",
     "preview": "Người mua trả {price} mỗi món.",
-    "previewFree": "Miễn phí: món được mở khoá ngay, không qua payOS.",
+    "previewFree": "Miễn phí: món được mở khoá ngay, không cần thanh toán.",
     "maxUses": "Tổng lượt dùng",
     "unlimited": "Không giới hạn",
     "expires": "Hết hạn",
