@@ -1,26 +1,27 @@
 "use client";
 
-// Landing-page hero: every role card dealt out into a fan, the sun card
-// back in the middle. Cards sit dimmed in the dark and light up when hovered.
+// Landing-page hero: every role card dealt out into a fan. Cards sit dimmed
+// in the dark and light up when hovered.
 
+import { ROLE_IDS } from "@shared/roles";
 import type { RoleId } from "@shared/types";
 import { CardBack, RoleArt } from "./Tarot";
 
 type Slot = RoleId | "back";
-const SPREAD: Slot[] = [
-  "villager",
-  "seer",
-  "witch",
-  "bodyguard",
-  "hunter",
-  "werewolf",
-  "back",
-  "cursedWolf",
-  "wolfSeer",
-  "cupid",
-  "elder",
-  "idiot",
-];
+
+/** Left to right, with the Werewolf in the middle. */
+const ORDER: RoleId[] = ["villager", "seer", "witch", "bodyguard", "hunter", "werewolf", "cursedWolf", "wolfSeer", "cupid", "elder", "idiot"];
+
+/**
+ * Every role (a new one not in ORDER joins at the end). With an odd count one
+ * card sits in the middle; with an even count the sun card back goes in the
+ * middle so the fan stays balanced.
+ */
+const ROLES_IN_FAN: RoleId[] = [...ORDER.filter((r) => ROLE_IDS.includes(r)), ...ROLE_IDS.filter((r) => !ORDER.includes(r))];
+const SPREAD: Slot[] =
+  ROLES_IN_FAN.length % 2
+    ? ROLES_IN_FAN
+    : [...ROLES_IN_FAN.slice(0, ROLES_IN_FAN.length / 2), "back", ...ROLES_IN_FAN.slice(ROLES_IN_FAN.length / 2)];
 
 export function TarotSpread({ className = "" }: { className?: string }) {
   const mid = (SPREAD.length - 1) / 2;
