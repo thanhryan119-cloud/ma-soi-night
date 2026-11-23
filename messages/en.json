@@ -754,7 +754,8 @@
     "hideBoard": "Hide board",
     "showBoard": "Show board",
     "onlyNominees": "Defense in progress — only the players on the stand may speak.",
-    "newMessages": "{n} new messages"
+    "newMessages": "{n} new messages",
+    "typing": "{count, plural, =1 {{names} is typing…} other {{names} are typing…}}"
   },
   "voice": {
     "join": "Join mic",

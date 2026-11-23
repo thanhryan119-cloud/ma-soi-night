@@ -24,7 +24,8 @@ import {
 } from "../shared/engine";
 import { botDecide } from "../shared/bots";
 import { DEFAULT_BOT_SPEED } from "../shared/roles";
-import { botChatLine, botDefenseLine, newBotChatMemory, type BotChatMemory } from "../shared/botChat";
+import { botChatLine, botDefenseLine, botGameOverLine, botReplyLine, newBotChatMemory, type BotChatMemory } from "../shared/botChat";
+import { linesPerDay, personaOf, typingMs } from "../shared/botPersona";
 import { ingestChat, newChatIntel, type ChatIntel } from "../shared/botIntel";
 import { createAiBots } from "./aiBots";
 import { createAccounts } from "./accounts";
@@ -46,7 +47,7 @@ import {
 import { checkPassword, createLobby, hashPassword } from "./lobby";
 import type { OwnerAction } from "../shared/types";
 import { REJOIN_TTL_MS, buildView, type Viewer } from "../shared/views";
-import type { ActionResult, HostAction, Locale, PlayerAction, Room } from "../shared/types";
+import type { ActionResult, HostAction, Locale, Player, PlayerAction, Room } from "../shared/types";
 
 // Port priority: --port CLI flag (used by `npm run dev`) > SOCKET_PORT > PORT (Railway/Render) > 4000
 const argPort = process.argv.indexOf("--port");
@@ -70,7 +71,6 @@ const autoTimers = new Map<string, { key: string; timer: NodeJS.Timeout }>();
 const AUTO_DELAY_MS = 3000;
 const botChatTimers = new Map<string, NodeJS.Timeout>();
 const botChatMemory = new Map<string, BotChatMemory>();
-const BOT_LINES_PER_DAY = 3;
 
 // ---------------------------------------------------------------------------
 // Persistence: rooms are snapshotted to a JSON file so a server restart
@@ -187,13 +187,19 @@ const social = createSocial(io, (code) => rooms.get(code), channel, (room, fromI
   if (!room.game) return;
   ingestChat(room, intelFor(room), fromId, text);
   ai.onHumanChat(room, fromId, text);
+  botsReplyTo(room, fromId, text);
 });
 /** Bots that read the chat and answer with Gemini (only when GEMINI_API_KEY is set). */
 const ai = createAiBots({
   apiKey: process.env.GEMINI_API_KEY,
   model: process.env.GEMINI_MODEL || "gemini-3.5-flash-lite",
   recentChat: (room) => social.recentChat(room.code),
-  post: (room, botId, text) => social.postAs(room, botId, text),
+  intel: (room) => intelFor(room),
+  post: (room, botId, text) => {
+    const bot = room.players.find((p) => p.id === botId);
+    const day = room.phase.day;
+    if (bot) typeThenPost(room, bot, text, () => room.phase.kind === "discussion" && room.phase.day === day && bot.alive);
+  },
   canTalk: (room) => room.phase.kind === "discussion" && rooms.get(room.code) === room,
 });
 console.log(`[ai] chat bots ${ai.enabled ? "ON (Gemini)" : "off — set GEMINI_API_KEY to enable"}`);
@@ -235,9 +241,49 @@ function touch(room: Room) {
 }
 
 /**
- * During the day discussion, bots talk in the chat: one line every few
- * seconds from a random living bot, at most a few lines each per day.
+ * Bots in the chat, paced like people: a bot "types" for as long as its line
+ * would take a person at its own speed (shown as "… is typing"), chatty bots
+ * jump in more often and quiet ones barely speak, and at most two type at
+ * once. This runs in real time: the room's bot speed only hurries night
+ * actions and votes, never the talk.
  */
+const botTyping = new Map<string, Set<string>>();
+const typingOf = (room: Room) => {
+  let s = botTyping.get(room.code);
+  if (!s) botTyping.set(room.code, (s = new Set()));
+  return s;
+};
+
+/** A bot types `line` (or a line made when it finishes) and posts it, if the moment hasn't passed. */
+function typeThenPost(room: Room, bot: Player, line: string, stillOk: () => boolean, after?: () => void) {
+  const typing = typingOf(room);
+  typing.add(bot.id);
+  social.typing(room, bot.id, true);
+  setTimeout(() => {
+    typing.delete(bot.id);
+    social.typing(room, bot.id, false);
+    if (rooms.get(room.code) === room && stillOk()) social.postAs(room, bot.id, line);
+    after?.();
+  }, typingMs(line, personaOf(room, bot.id)));
+}
+
+function memoryFor(room: Room): BotChatMemory {
+  let mem = botChatMemory.get(room.code);
+  if (!mem || mem.day !== room.phase.day) {
+    const verdicts = room.game?.verdicts.length ?? 0;
+    mem = {
+      ...newBotChatMemory(),
+      claims: mem?.claims ?? {},
+      day: room.phase.day,
+      // Yesterday's verdict is new to react to; older ones were seen already.
+      seenVerdicts: mem?.verdictsAtDayStart ?? 0,
+      verdictsAtDayStart: verdicts,
+    };
+    botChatMemory.set(room.code, mem);
+  }
+  return mem;
+}
+
 /** During the defense only bots on the stand talk: two lines of defence, then they end it. */
 const botDefenseSaid = new Map<string, number>();
 function scheduleBotDefense(room: Room) {
@@ -245,26 +291,49 @@ function scheduleBotDefense(room: Room) {
   const done = game.defenseDone ?? [];
   const speakers = room.players.filter((p) => p.isBot && p.alive && game.nominees.includes(p.id) && !done.includes(p.id));
   if (!speakers.length) return;
+  const bot = speakers[0];
+  const onStand = () => room.phase.kind === "defense";
   botChatTimers.set(
     room.code,
     setTimeout(async () => {
-      if (rooms.get(room.code) !== room || room.phase.kind !== "defense") return botChatTimers.delete(room.code);
-      const bot = speakers[0];
+      if (rooms.get(room.code) !== room || !onStand()) return botChatTimers.delete(room.code);
       const key = `${room.code}:${room.phase.day}:${bot.id}`;
       const said = botDefenseSaid.get(key) ?? 0;
       const line = said < 2 ? ((await ai.defend(room, bot, said)) ?? botDefenseLine(room, bot, said, intelFor(room))) : null;
-      botChatTimers.delete(room.code);
-      if (rooms.get(room.code) !== room || room.phase.kind !== "defense") return;
-      if (line) {
-        botDefenseSaid.set(key, said + 1);
-        social.postAs(room, bot.id, line);
+      if (rooms.get(room.code) !== room || !onStand()) return botChatTimers.delete(room.code);
+      if (!line) {
+        botChatTimers.delete(room.code);
+        if (playerAction(room, bot.id, { type: "endDefense" }).ok) touch(room);
+        return;
+      }
+      botDefenseSaid.set(key, said + 1);
+      typeThenPost(room, bot, line, onStand, () => {
+        botChatTimers.delete(room.code);
         scheduleBotChat(room);
-      } else if (playerAction(room, bot.id, { type: "endDefense" }).ok) touch(room);
-    }, botDelay(room, 3000 + Math.random() * 3000)),
+      });
+    }, 1200 + Math.random() * 2000),
   );
 }
 
+/** Game over: a few bots say "gg" (winners cheer, losers sigh, a sneaky wolf gloats). */
+const ggDone = new WeakSet<object>();
+function scheduleGameOverChat(room: Room) {
+  const game = room.game;
+  if (!game || ggDone.has(game)) return;
+  ggDone.add(game);
+  const used = new Set<string>();
+  for (const bot of room.players.filter((p) => p.isBot)) {
+    if (Math.random() > 0.6) continue;
+    const line = botGameOverLine(room, bot, Math.random, used);
+    if (!line) continue;
+    setTimeout(() => {
+      if (rooms.get(room.code) === room && room.game === game) typeThenPost(room, bot, line, () => room.phase.kind === "gameOver" && room.game === game);
+    }, 1500 + Math.random() * 9000);
+  }
+}
+
 function scheduleBotChat(room: Room) {
+  if (room.phase.kind === "gameOver") return scheduleGameOverChat(room);
   if (room.phase.kind === "defense" && room.game) {
     if (!botChatTimers.has(room.code)) scheduleBotDefense(room);
     return;
@@ -276,27 +345,48 @@ function scheduleBotChat(room: Room) {
     return;
   }
   if (botChatTimers.has(room.code)) return;
-  let mem = botChatMemory.get(room.code);
-  if (!mem || mem.day !== room.phase.day) {
-    const claims = mem?.claims ?? {};
-    mem = { ...newBotChatMemory(), claims, day: room.phase.day };
-    botChatMemory.set(room.code, mem);
-  }
-  const m = mem;
-  const talkers = room.players.filter((p) => p.isBot && p.alive && (m.said[p.id] ?? 0) < BOT_LINES_PER_DAY);
-  if (!talkers.length) return;
+  const mem = memoryFor(room);
+  const typing = typingOf(room);
+  const day = room.phase.day;
+  const inDiscussion = () => room.phase.kind === "discussion" && room.phase.day === day;
   botChatTimers.set(
     room.code,
     setTimeout(() => {
       botChatTimers.delete(room.code);
       if (rooms.get(room.code) !== room) return;
-      if (room.phase.kind !== "discussion") return scheduleBotChat(room);
-      const bot = talkers[Math.floor(Math.random() * talkers.length)];
-      const line = botChatLine(room, bot, m, intelFor(room));
-      if (line) social.postAs(room, bot.id, line);
+      if (!inDiscussion()) return scheduleBotChat(room);
+      const talkers = room.players.filter((p) => p.isBot && p.alive && !typing.has(p.id) && (mem.said[p.id] ?? 0) < linesPerDay(personaOf(room, p.id)));
+      if (!talkers.length) return;
+      if (typing.size < 2) {
+        // Chatty bots are more likely to speak next.
+        const weights = talkers.map((p) => personaOf(room, p.id).talk);
+        let r = Math.random() * weights.reduce((a, b) => a + b, 0);
+        const bot = talkers.find((_, i) => (r -= weights[i]) <= 0) ?? talkers[0];
+        const line = botChatLine(room, bot, mem, intelFor(room));
+        if (line) typeThenPost(room, bot, line, () => inDiscussion() && bot.alive);
+      }
       scheduleBotChat(room);
-    }, botDelay(room, 2500 + Math.random() * 4500)),
+    }, 1500 + Math.random() * 4500),
   );
+}
+
+/** Scripted bots answer the people who talk to them (when the AI bots are off). */
+function botsReplyTo(room: Room, fromId: string, text: string) {
+  const from = room.players.find((p) => p.id === fromId);
+  if (!room.game || !from || from.isBot || room.phase.kind !== "discussion") return;
+  if (ai.enabled && room.settings.aiBots !== false) return;
+  const typing = typingOf(room);
+  const lower = text.toLowerCase();
+  const bots = room.players.filter((p) => p.isBot && p.alive && !typing.has(p.id));
+  const named = bots.filter((b) => lower.includes(b.name.toLowerCase()));
+  const responders = named.length ? named.slice(0, 2) : Math.random() < 0.55 ? [bots[Math.floor(Math.random() * bots.length)]].filter(Boolean) : [];
+  const mem = memoryFor(room);
+  const day = room.phase.day;
+  for (const bot of responders) {
+    const line = botReplyLine(room, bot, fromId, text, mem, intelFor(room));
+    if (!line) continue;
+    setTimeout(() => typeThenPost(room, bot, line, () => room.phase.kind === "discussion" && room.phase.day === day && bot.alive), 600 + Math.random() * 1800);
+  }
 }
 
 /**

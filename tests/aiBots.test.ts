@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { newChatIntel } from "../shared/botIntel";
 import { createAiBots } from "../server/aiBots";
 import { addPlayer, createRoom, hostAction } from "../shared/engine";
 import type { ChatMessage } from "../shared/social";
@@ -20,7 +21,8 @@ afterEach(() => {
 
 describe("Gemini chat bots", () => {
   it("does nothing without an API key", () => {
-    const ai = createAiBots({ apiKey: undefined, model: "m", recentChat: () => [], post: () => {}, canTalk: () => true });
+    const ai = createAiBots({ apiKey: undefined, model: "m", intel: () => newChatIntel(),
+      recentChat: () => [], post: () => {}, canTalk: () => true });
     expect(ai.enabled).toBe(false);
   });
 
@@ -44,6 +46,7 @@ describe("Gemini chat bots", () => {
     const ai = createAiBots({
       apiKey: "test-key",
       model: "gemini-3.5-flash-lite",
+      intel: () => newChatIntel(),
       recentChat: () => chat,
       post: (_r, id, text) => posted.push([id, text]),
       canTalk: () => true,
@@ -77,7 +80,8 @@ describe("Gemini chat bots", () => {
         return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: "Ừ mình cũng nghĩ vậy" }] } }] }) };
       }),
     );
-    const ai = createAiBots({ apiKey: "k", model: "m", recentChat: () => [], post: () => {}, canTalk: () => true });
+    const ai = createAiBots({ apiKey: "k", model: "m", intel: () => newChatIntel(),
+      recentChat: () => [], post: () => {}, canTalk: () => true });
     ai.onHumanChat(room, human.id, "P2 nghi ai?");
     await vi.advanceTimersByTimeAsync(10_000);
     expect(systems.length).toBe(1);

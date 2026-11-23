@@ -92,6 +92,13 @@ export function createSocial(
       });
     });
 
+    // "So-and-so is typing…": relayed to the rest of the room while the player may chat.
+    on("chat:typing", (p) => {
+      const c = ctx();
+      if (!c || c.who.kind !== "player" || canSpeak(c.room, c.who)) return;
+      socket.to(channel(c.room.code)).emit("chat:typing", { from: c.who.playerId, on: !!p.on });
+    });
+
     on("chat:send", (p, ack) => {
       const c = ctx();
       if (!c) return ack({ ok: false, error: "err.notInRoom" });
@@ -184,6 +191,11 @@ export function createSocial(
     }
   }
 
+  /** Shows or hides "… is typing" for a bot. */
+  function typing(room: Room, playerId: string, on: boolean) {
+    io.to(channel(room.code)).emit("chat:typing", { from: playerId, on });
+  }
+
   /** Posts a chat line on behalf of a bot (server-side, no socket). */
   function postAs(room: Room, playerId: string, raw: string) {
     const text = sanitizeChat(raw);
@@ -214,5 +226,5 @@ export function createSocial(
   /** The room's recent chat (for the AI bots' context). */
   const recentChat = (code: string) => social.get(code)?.chat ?? [];
 
-  return { register, afterChange, dispose, postAs, recentChat, clearForNewGame };
+  return { register, afterChange, dispose, postAs, typing, recentChat, clearForNewGame };
 }

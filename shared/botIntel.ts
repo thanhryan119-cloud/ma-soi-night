@@ -27,7 +27,7 @@ const ROLE_WORDS: [RoleId, RegExp][] = [
   ["hunter", /(thợ săn|tho san|hunter)/i],
   ["cupid", /(cupid|thần tình yêu)/i],
   ["elder", /(già làng|gia lang|elder)/i],
-  ["idiot", /(thằng ngốc|chàng ngốc|thang ngoc|ngốc|idiot)/i],
+  ["idiot", /(thằng ngốc|chàng ngốc|thang ngoc|(?<![\p{L}])ngốc(?![\p{L}])|idiot)/iu],
   ["villager", /(dân làng|dân thường|dân lành|dan lang|\bdân\b|villager)/i],
   ["werewolf", /(ma sói|\bsói\b|werewolf|\bwolf\b)/i],
 ];
@@ -67,7 +67,7 @@ export function ingestChat(room: Room, intel: ChatIntel, fromId: string, text: s
     const m = CLAIM.exec(s);
     if (m) {
       const after = s.slice(m.index + m[0].length);
-      const role = ROLE_WORDS.find(([, re]) => new RegExp(`^(${re.source})`, "i").test(after.trim()))?.[0];
+      const role = ROLE_WORDS.find(([, re]) => new RegExp(`^(${re.source})`, re.flags).test(after.trim()))?.[0];
       const namedFirst = names.some((p) => s.toLowerCase().indexOf(p.name.toLowerCase()) < m.index);
       if (role && !namedFirst && !/không phải|not/i.test(after.slice(0, 12))) {
         (intel.claims[fromId] ??= []).push(role);

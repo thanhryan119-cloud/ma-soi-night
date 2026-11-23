@@ -20,7 +20,7 @@ export function SocialPanel({ state, viewer, className = "" }: { state: ClientSt
   // Online rooms: the players on the stand keep the chat during the verdict vote.
   const defenderChat = state.machineHost && state.phase.kind === "verdict";
   const phaseOpen = (SOCIAL_PHASES as readonly string[]).includes(state.phase.kind) || defenderChat;
-  const dead = !!me && state.phase.kind !== "lobby" && !me.alive;
+  const dead = !!me && state.phase.kind !== "lobby" && state.phase.kind !== "gameOver" && !me.alive;
   const defenseLocked = (state.phase.kind === "defense" || defenderChat) && !state.me?.onStand;
   const canSpeak = isHost || (phaseOpen && !dead && !defenseLocked);
   const reason = !phaseOpen ? t("social.closed") : dead ? t("social.deadReadOnly") : defenseLocked ? t("social.onlyNominees") : null;
@@ -175,12 +175,34 @@ function Chat({
     setUnread(0);
   };
 
+  // Let the room see "… is typing" (at most every 3 s, and "stopped" after a pause).
+  const lastTyping = useRef(0);
+  const stopTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  function onType(value: string) {
+    setText(value);
+    const now = Date.now();
+    if (value.trim() && now - lastTyping.current > 3000) {
+      lastTyping.current = now;
+      social.sendTyping(true);
+    }
+    clearTimeout(stopTimer.current);
+    stopTimer.current = setTimeout(() => {
+      lastTyping.current = 0;
+      social.sendTyping(false);
+    }, 4000);
+  }
+
   async function send(e: React.FormEvent) {
     e.preventDefault();
     if (!text.trim()) return;
     const r = await social.sendChat(text);
-    if (showError(r)) setText("");
+    if (showError(r)) {
+      setText("");
+      clearTimeout(stopTimer.current);
+      lastTyping.current = 0;
+    }
   }
+  const typers = social.typingIds.filter((id) => id !== viewer).map((id) => players.get(id)?.name).filter(Boolean) as string[];
 
   return (
     <>
@@ -221,6 +243,11 @@ function Chat({
           );
         })}
       </div>
+      {typers.length > 0 && (
+        <p className="pointer-events-none absolute bottom-0 left-2 rounded-t bg-night-900/90 px-2 py-0.5 text-[11px] text-white/60 italic">
+          {t("social.typing", { names: typers.slice(0, 3).join(", "), count: typers.length })}
+        </p>
+      )}
       {unread > 0 && (
         <button type="button" onClick={jumpDown} className="btn-primary btn-sm absolute bottom-2 left-1/2 -translate-x-1/2 shadow-lg">
           ↓ {t("social.newMessages", { n: unread })}
@@ -234,7 +261,7 @@ function Chat({
             value={text}
             maxLength={200}
             placeholder={t("social.placeholder")}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => onType(e.target.value)}
             enterKeyHint="send"
           />
           <button className="btn-primary shrink-0 px-3" disabled={!text.trim()}>

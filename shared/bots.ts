@@ -91,11 +91,18 @@ export function botDecide(room: Room, botId: string, intel: ChatIntel = newChatI
 
   if ((kind === "nominate" || kind === "verdict") && game.vote && !game.vote.closed) {
     if (bot.id in game.vote.ballots || !voteEligible(room).includes(bot.id)) return null;
+    // Bots vote the way they talked: the last person they accused in the chat.
+    const saidVote = [...intel.accuse].reverse().find((a) => a.by === bot.id)?.targetId;
+    const vouched = new Set(intel.defend.filter((d) => d.by === bot.id).map((d) => d.targetId));
     if (game.vote.kind === "nominate") {
       const all = (game.vote.candidates ?? room.players.filter((p) => p.alive).map((p) => p.id)).filter((id) => id !== bot.id);
-      const options = all.filter((id) => !(wolf && isWolf(game.roles[id])));
+      // A wolf only votes a pack mate it already threw under the bus (one the town has caught).
+      const bussed = wolf && saidVote && isWolf(game.roles[saidVote]) && accusersOf(intel, saidVote).length >= 3 ? saidVote : null;
+      const options = all.filter((id) => !(wolf && isWolf(game.roles[id]) && id !== bussed));
       let choice: string | undefined;
-      if (wolf) {
+      if (saidVote && options.includes(saidVote) && Math.random() < 0.85) {
+        choice = saidVote;
+      } else if (wolf) {
         // Pile onto the innocent the town already suspects, else the biggest threat.
         const crowd = [...options].sort((a, b) => accusersOf(intel, b).length - accusersOf(intel, a).length)[0];
         choice = crowd && accusersOf(intel, crowd).length >= 2 && Math.random() < 0.6 ? crowd : topThreat(room, intel, options) ?? pick(options);
@@ -110,9 +117,14 @@ export function botDecide(room: Room, botId: string, intel: ChatIntel = newChatI
     const nominee = game.vote.nomineeId;
     if (!nominee) return { type: "vote", choice: "spare" };
     if (wolf) {
+      // A pack mate is spared, unless this wolf already turned on them in the chat and the town has them.
       const friend = isWolf(game.roles[nominee]);
+      if (friend && saidVote === nominee && accusersOf(intel, nominee).length >= 3) return { type: "vote", choice: "execute" };
       return { type: "vote", choice: friend ? "spare" : Math.random() < 0.85 ? "execute" : "spare" };
     }
+    // Hang the one you accused, spare the one you vouched for.
+    if (saidVote === nominee) return { type: "vote", choice: Math.random() < 0.9 ? "execute" : "spare" };
+    if (vouched.has(nominee)) return { type: "vote", choice: Math.random() < 0.85 ? "spare" : "execute" };
     const s = read().score.get(nominee) ?? 0;
     const pExecute = s > 1 ? 0.8 : s < -1 ? 0.2 : 0.5;
     return { type: "vote", choice: Math.random() < pExecute ? "execute" : "spare" };

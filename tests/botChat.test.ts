@@ -14,7 +14,7 @@ function setup(roles: RoleId[]): { room: Room; ids: string[] } {
 }
 
 describe("bot chat honesty", () => {
-  it("wolves tell the truth 20–40% of the time, the village 80–100%", () => {
+  it("wolves tell the truth 20–40% of the time, the village always", () => {
     const { room, ids } = setup(["werewolf", "werewolf", "seer", "villager", "villager", "bodyguard"]);
     for (const id of ids.slice(0, 2)) {
       const p = truthChance(room, id);

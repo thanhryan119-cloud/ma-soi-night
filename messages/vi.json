@@ -754,7 +754,8 @@
     "hideBoard": "Thu bảng vẽ",
     "showBoard": "Mở bảng vẽ",
     "onlyNominees": "Đang biện hộ — chỉ người lên dàn được nói.",
-    "newMessages": "{n} tin nhắn mới"
+    "newMessages": "{n} tin nhắn mới",
+    "typing": "{count, plural, =1 {{names} đang nhập…} other {{names} đang nhập…}}"
   },
   "voice": {
     "join": "Bật mic",
