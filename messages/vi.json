@@ -502,14 +502,14 @@
     "owned": "Đã sở hữu",
     "roleBought": "vai {role}",
     "free": "Miễn phí",
-    "haveCode": "Có mã giảm giá?",
     "codeLabel": "Mã giảm giá",
     "codePlaceholder": "Nhập mã",
     "codeApply": "Áp dụng",
     "codeRemove": "Bỏ mã",
     "codePercent": "Giảm {value}%",
     "codeAmount": "Giảm {value}",
-    "claimFree": "Nhận miễn phí"
+    "claimFree": "Nhận miễn phí",
+    "unlockRole": "Mở khoá vai {role}"
   },
   "screen": {
     "waitingPlayers": "Đang chờ người chơi…",

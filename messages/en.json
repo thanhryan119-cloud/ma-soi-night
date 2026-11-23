@@ -502,14 +502,14 @@
     "owned": "Owned",
     "roleBought": "the {role} role",
     "free": "Free",
-    "haveCode": "Have a discount code?",
     "codeLabel": "Discount code",
     "codePlaceholder": "Enter code",
     "codeApply": "Apply",
     "codeRemove": "Remove",
     "codePercent": "{value}% off",
     "codeAmount": "{value} off",
-    "claimFree": "Claim for free"
+    "claimFree": "Claim for free",
+    "unlockRole": "Unlock the {role} role"
   },
   "screen": {
     "waitingPlayers": "Waiting for players…",

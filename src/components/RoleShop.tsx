@@ -1,58 +1,55 @@
 "use client";
 
 // Premium roles (Cursed Wolf, Wolf Seer, Elder, Idiot): bought once per Google
-// account through payOS, then usable in every room the buyer hosts or owns.
+// account, then usable in every room the buyer hosts or owns. Buying opens the
+// shared checkout dialog, where a discount code can be entered first.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ITEM_PRICE_VND } from "@shared/cosmetics";
 import { PREMIUM_ROLES, ROLES, roleItem } from "@shared/roles";
 import type { RoleId } from "@shared/types";
 import { RoleBadge, toast } from "@/components/ui";
-import { usePrice } from "@/components/ProfileEditor";
-import { buyItem, fetchShop, useAccount, type ShopInfo } from "@/lib/account";
+import { CheckoutDialog, usePrice, useShopInfo } from "@/components/Checkout";
+import { useAccount } from "@/lib/account";
 import { useT } from "@/lib/i18n";
 
-function useShopInfo() {
-  const [shop, setShop] = useState<ShopInfo | null>(null);
-  useEffect(() => {
-    fetchShop().then(setShop);
-  }, []);
-  return shop;
-}
-
-/** Starts the payOS checkout for a role (the browser leaves for payOS on success). */
-function useBuyRole() {
+/** Which role's checkout is open, and the dialog for it. */
+function useRoleCheckout() {
   const t = useT();
   const account = useAccount();
-  const shop = useShopInfo();
-  const [busy, setBusy] = useState<RoleId | null>(null);
-  const buy = async (roleId: RoleId) => {
+  const [open, setOpen] = useState<RoleId | null>(null);
+  const start = (roleId: RoleId) => {
     if (!account) return toast(t("host.signInToUnlock"), "info");
-    if (shop && !shop.enabled) return toast(t("shop.disabled"), "info");
-    setBusy(roleId);
-    const r = await buyItem(roleItem(roleId));
-    if (!r.ok) {
-      setBusy(null);
-      toast(t(r.error ?? "err.paymentFailed"));
-    }
+    setOpen(roleId);
   };
-  return { buy, busy, shop, account };
+  const dialog = open && (
+    <CheckoutDialog
+      itemId={roleItem(open)}
+      title={t("shop.unlockRole", { role: t(`roles.${open}.name`) })}
+      itemName={t(`roles.${open}.name`)}
+      onClose={() => setOpen(null)}
+    />
+  );
+  return { start, dialog, account };
 }
 
 /** "🔒 Unlock 50.000đ" next to a locked role in the role setup. */
 export function RoleUnlockButton({ roleId }: { roleId: RoleId }) {
   const t = useT();
   const price = usePrice();
-  const { buy, busy, shop } = useBuyRole();
+  const shop = useShopInfo();
+  const { start, dialog } = useRoleCheckout();
   return (
-    <button
-      className="btn-sm shrink-0 rounded-lg border border-gold/50 bg-gold/10 px-2 text-xs font-bold text-gold hover:bg-gold/20 disabled:opacity-50"
-      disabled={!!busy}
-      onClick={() => buy(roleId)}
-      title={t("host.premiumHint")}
-    >
-      {busy === roleId ? t("shop.redirecting") : `🔒 ${t("host.unlock", { price: price(shop?.price ?? ITEM_PRICE_VND) })}`}
-    </button>
+    <>
+      <button
+        className="btn-sm shrink-0 rounded-lg border border-gold/50 bg-gold/10 px-2 text-xs font-bold text-gold hover:bg-gold/20 disabled:opacity-50"
+        onClick={() => start(roleId)}
+        title={t("host.premiumHint")}
+      >
+        🔒 {t("host.unlock", { price: price(shop?.price ?? ITEM_PRICE_VND) })}
+      </button>
+      {dialog}
+    </>
   );
 }
 
@@ -60,7 +57,8 @@ export function RoleUnlockButton({ roleId }: { roleId: RoleId }) {
 export function RoleShopCard() {
   const t = useT();
   const price = usePrice();
-  const { buy, busy, shop, account } = useBuyRole();
+  const shop = useShopInfo();
+  const { start, dialog, account } = useRoleCheckout();
   const owned = account?.user.owned ?? [];
   const cost = price(shop?.price ?? ITEM_PRICE_VND);
   return (
@@ -68,7 +66,6 @@ export function RoleShopCard() {
       <h2 className="text-lg font-bold">🃏 {t("shop.rolesTitle")}</h2>
       <p className="text-xs text-white/60">{t("shop.rolesHint")}</p>
       {!account && <p className="text-sm text-white/70">{t("shop.signInToBuy")}</p>}
-      {shop && !shop.enabled && <p className="text-sm text-white/60">{t("shop.disabled")}</p>}
       <ul className="grid gap-2 sm:grid-cols-2">
         {PREMIUM_ROLES.map((r) => {
           const has = owned.includes(roleItem(r));
@@ -83,10 +80,9 @@ export function RoleShopCard() {
                 {has ? (
                   <span className="text-xs font-bold text-emerald-300">✓ {t("shop.owned")}</span>
                 ) : (
-                  account &&
-                  shop?.enabled && (
-                    <button className="btn-gold btn-sm" disabled={!!busy} onClick={() => buy(r)}>
-                      {busy === r ? t("shop.redirecting") : t("shop.buy", { price: cost })}
+                  account && (
+                    <button className="btn-gold btn-sm" onClick={() => start(r)}>
+                      {t("shop.buy", { price: cost })}
                     </button>
                   )
                 )}
@@ -96,6 +92,7 @@ export function RoleShopCard() {
           );
         })}
       </ul>
+      {dialog}
     </section>
   );
 }
