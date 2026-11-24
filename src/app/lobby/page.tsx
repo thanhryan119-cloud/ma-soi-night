@@ -4,6 +4,7 @@
 // (the machine as host, or yourself), with an optional password.
 
 import Link from "next/link";
+import { QuestsLink } from "@/components/Quests";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { LobbyPerson, RoomSummary } from "@shared/multiplayer";
@@ -34,6 +35,7 @@ export default function LobbyPage() {
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col gap-4 px-4 pt-16 pb-10">
       <LangSwitch />
       <div className="fixed top-3 right-3 z-50 flex gap-2">
+        <QuestsLink />
         <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold">
           🛒 {t("shop.open")}
         </Link>

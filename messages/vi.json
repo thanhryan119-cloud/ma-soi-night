@@ -532,7 +532,11 @@
     "wear": "Dùng",
     "wearing": "Đang dùng",
     "buyShort": "Mua",
-    "sampleName": "Tên của bạn"
+    "sampleName": "Tên của bạn",
+    "goldHint": "Một số món mua được bằng vàng kiếm từ nhiệm vụ.",
+    "buyGold": "Mua bằng vàng",
+    "boughtWithGold": "Đã mua {item} bằng vàng!",
+    "needGold": "Còn thiếu {gold} vàng"
   },
   "screen": {
     "waitingPlayers": "Đang chờ người chơi…",
@@ -642,7 +646,12 @@
     "codeFormat": "Mã chỉ gồm 3–24 chữ, số, gạch ngang hoặc gạch dưới.",
     "codeValue": "Mức giảm, lượt dùng hoặc ngày hết hạn không hợp lệ.",
     "codeExists": "Mã này đã tồn tại.",
-    "notAdmin": "Bạn không có quyền quản lý mã giảm giá."
+    "notAdmin": "Bạn không có quyền quản lý mã giảm giá.",
+    "questClaimed": "Bạn đã nhận phần thưởng này rồi.",
+    "questNotDone": "Nhiệm vụ chưa hoàn thành.",
+    "questUnknown": "Không tìm thấy nhiệm vụ.",
+    "notForGold": "Món này không bán bằng vàng.",
+    "notEnoughGold": "Bạn chưa đủ vàng."
   },
   "log": {
     "join": "{name} vào phòng",
@@ -917,5 +926,47 @@
     "copyManual": "Sao chép link mời này:",
     "text": "Vào chơi Ma Sói với mình! Phòng {code}: bấm link, nhập tên là chơi, không cần đăng nhập.",
     "hint": "Gửi link vào nhóm: mọi người bấm vào, nhập tên là vào phòng, không cần đăng nhập."
+  },
+  "quests": {
+    "title": "Nhiệm vụ",
+    "open": "Nhiệm vụ",
+    "goldTitle": "Vàng của bạn: làm nhiệm vụ để kiếm, tiêu ở Cửa hàng",
+    "signIn": "Đăng nhập Google để làm nhiệm vụ và nhận vàng. Vàng gắn với tài khoản, dùng để mua một số hiệu ứng và vai trong Cửa hàng.",
+    "loading": "Đang tải nhiệm vụ…",
+    "checkin": "Điểm danh hôm nay",
+    "checkinHint": "Ghé qua mỗi ngày để nhận vàng.",
+    "daily": "Nhiệm vụ ngày",
+    "resetsIn": "Làm mới sau {hours} giờ {minutes} phút",
+    "bonus": "Thưởng hoàn thành",
+    "bonusHint": "Nhận đủ 3 nhiệm vụ ngày để mở hộp quà.",
+    "goldQuests": "Nhiệm vụ tặng vàng",
+    "goldQuestsHint": "Mỗi nhiệm vụ chỉ nhận một lần. Ván đã chơi trước đây cũng được tính.",
+    "claim": "Nhận {gold} 🪙",
+    "claimed": "Đã nhận",
+    "gotGold": "+{gold} vàng!",
+    "spend": "Tiêu vàng ở Cửa hàng",
+    "earnedTotal": "Tổng vàng đã kiếm: {gold}",
+    "q": {
+      "play3": "Chơi {goal} ván",
+      "play5": "Chơi {goal} ván",
+      "win1": "Thắng {goal} ván",
+      "win2": "Thắng {goal} ván",
+      "wolfWin1": "Thắng {goal} ván khi làm Sói",
+      "villageWin1": "Thắng {goal} ván cùng phe Dân làng",
+      "survive2": "Sống sót tới cuối {goal} ván",
+      "power2": "Chơi {goal} ván với vai có chức năng",
+      "firstGame": "Chơi ván đầu tiên",
+      "firstWin": "Thắng ván đầu tiên",
+      "games10": "Chơi {goal} ván",
+      "firstWolfWin": "Lần đầu thắng khi làm Sói",
+      "streak3": "Thắng {goal} ván liên tiếp",
+      "roles6": "Chơi {goal} vai khác nhau",
+      "survive20": "Sống sót tới cuối {goal} ván",
+      "wolfWins5": "Thắng {goal} ván khi làm Sói",
+      "villageWins10": "Thắng {goal} ván cùng phe Dân làng",
+      "games50": "Chơi {goal} ván",
+      "wins25": "Thắng {goal} ván",
+      "games100": "Chơi {goal} ván"
+    }
   }
 }

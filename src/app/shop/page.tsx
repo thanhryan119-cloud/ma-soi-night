@@ -3,24 +3,29 @@
 // The shop: everything that can be bought, in one place — special roles, name
 // effects, name fonts and avatar frames. 50.000đ each, bought once per Google
 // account through payOS (the buyer comes back to /profile, which confirms it).
+// Some items can also be bought with gold earned from quests (GOLD_PRICES).
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DEFAULT_STYLE, ITEM_PRICE_VND, SHOP_ITEMS, equip, type ChatDeco, type ItemId, type ItemKind, type PlayerStyle } from "@shared/cosmetics";
+import { goldPrice } from "@shared/quests";
 import { ROLES } from "@shared/roles";
 import type { RoleId } from "@shared/types";
 import { RoleArt } from "@/components/art/Tarot";
 import { CheckoutDialog, usePrice } from "@/components/Checkout";
 import { GoogleButton } from "@/components/ProfileEditor";
-import { Avatar, ChatBubble, LangSwitch, StyledName } from "@/components/ui";
+import { GoldChip, QuestsLink, useGoldFormat } from "@/components/Quests";
+import { Avatar, ChatBubble, LangSwitch, StyledName, toast } from "@/components/ui";
 import {
   GOOGLE_CLIENT_ID,
+  buyWithGold,
   fetchShop,
   loadLocalProfile,
   refreshAccount,
   saveLocalProfile,
   updateAccount,
   useAccount,
+  useQuests,
   type LocalProfile,
   type ShopInfo,
 } from "@/lib/account";
@@ -78,10 +83,15 @@ export default function ShopPage() {
         </Link>
         <h1 className="font-display text-3xl font-black">🛒 {t("shop.title")}</h1>
         {user && <span className="chip ml-auto">{t("shop.ownedCount", { owned: mine, total })}</span>}
+        <GoldChip />
       </div>
 
       <section className="card flex flex-col gap-3">
         <p className="text-white/80">{t("shop.pageHint")}</p>
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-gold/30 bg-gold/[0.05] p-3">
+          <p className="min-w-0 flex-1 text-sm text-gold">🪙 {t("shop.goldHint")}</p>
+          <QuestsLink />
+        </div>
         {shop && !shop.enabled && <p className="text-sm text-blood-light">{t("shop.disabled")}</p>}
         {user ? (
           <div className="flex items-center gap-3">
@@ -162,6 +172,10 @@ function ShopItem({
   const t = useT();
   const price = usePrice();
   const [checkout, setCheckout] = useState(false);
+  const [buying, setBuying] = useState(false);
+  const quests = useQuests();
+  const fmtGold = useGoldFormat();
+  const gold = goldPrice(id);
   const [kind, value] = split(id);
   const cost = price(shop?.price ?? ITEM_PRICE_VND);
   const isRole = kind === "role";
@@ -170,6 +184,13 @@ function ShopItem({
   const preview = { name, avatar: profile?.avatar ?? "🐺", avatarUrl, style: isRole ? base : equip(base, id), alive: true };
   const wearing = !isRole && owned && profile?.style[kind as keyof PlayerStyle] === value;
 
+  const payGold = async () => {
+    setBuying(true);
+    const r = await buyWithGold(id);
+    setBuying(false);
+    if (r.ok) toast(t("shop.boughtWithGold", { item: title }), "info");
+    else toast(t(r.error ?? "err.server"));
+  };
 
   return (
     <li
@@ -225,6 +246,21 @@ function ShopItem({
           )
         )}
       </div>
+      {!owned && gold !== null && (
+        <div className="flex items-center justify-between gap-2 border-t border-white/10 pt-2">
+          <span className="text-sm font-bold text-gold">🪙 {fmtGold(gold)}</span>
+          {signedIn && (
+            <button
+              className="btn-ghost btn-sm border-gold/50 text-gold"
+              disabled={buying || !quests || quests.gold < gold}
+              title={quests && quests.gold < gold ? t("shop.needGold", { gold: fmtGold(gold - quests.gold) }) : undefined}
+              onClick={payGold}
+            >
+              {t("shop.buyGold")}
+            </button>
+          )}
+        </div>
+      )}
       {/* Price, discount code and the payment button. */}
       {checkout && <CheckoutDialog itemId={id} title={title} itemName={title} onClose={() => setCheckout(false)} />}
     </li>

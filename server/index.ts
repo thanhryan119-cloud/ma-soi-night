@@ -30,6 +30,7 @@ import { ingestChat, newChatIntel, type ChatIntel } from "../shared/botIntel";
 import { createAiBots } from "./aiBots";
 import { createAccounts } from "./accounts";
 import { payOSFromEnv } from "./payos";
+import { createQuests } from "./quests";
 import { createShop } from "./shop";
 import { createSocial } from "./social";
 import { gameResults, type PublicProfile } from "../shared/stats";
@@ -120,6 +121,7 @@ const shop = createShop({
   webUrl: process.env.PUBLIC_WEB_URL || undefined,
 });
 if (!shop.enabled) console.log("[shop] PAYOS_CLIENT_ID / PAYOS_API_KEY / PAYOS_CHECKSUM_KEY not set: shop disabled");
+const quests = createQuests({ dataDir: dirname(DATA_FILE), corsOrigin: CORS_ORIGIN, accounts });
 
 interface SocketData {
   code?: string;
@@ -141,6 +143,7 @@ function lanAddresses(): string[] {
 const httpServer = createServer(async (req, res) => {
   if (await accounts.handle(req, res)) return;
   if (await shop.handle(req, res)) return;
+  if (await quests.handle(req, res)) return;
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Content-Type", "application/json");
   if (req.url === "/health") return res.end(JSON.stringify({ ok: true, rooms: rooms.size }));
@@ -221,8 +224,15 @@ function recordStats(room: Room) {
   const game = room.game;
   if (!game || game.statsRecorded || room.phase.kind !== "gameOver" || !game.winner) return;
   game.statsRecorded = true;
+  const results = gameResults(room);
   try {
-    accounts.recordGame(gameResults(room));
+    // Quests first: a player's first quest record starts from their stats before this game.
+    quests.recordGame(results);
+  } catch (err) {
+    console.error("[quests] record failed", err);
+  }
+  try {
+    accounts.recordGame(results);
   } catch (err) {
     console.error("[stats] record failed", err);
   }
@@ -624,6 +634,7 @@ function scheduleAwayKick(room: Room, playerId: string, delay = AWAY_MS) {
 function recordAbandon(res: LeaveResult) {
   if (!res.abandon) return;
   try {
+    quests.recordGame([res.abandon]);
     accounts.recordGame([res.abandon]);
   } catch (err) {
     console.error("[stats] abandon failed", err);

@@ -532,7 +532,11 @@
     "wear": "Wear",
     "wearing": "Wearing",
     "buyShort": "Buy",
-    "sampleName": "Your name"
+    "sampleName": "Your name",
+    "goldHint": "Some items can be bought with gold from quests.",
+    "buyGold": "Buy with gold",
+    "boughtWithGold": "Bought {item} with gold!",
+    "needGold": "{gold} more gold needed"
   },
   "screen": {
     "waitingPlayers": "Waiting for players…",
@@ -642,7 +646,12 @@
     "codeFormat": "Codes are 3–24 letters, digits, - or _.",
     "codeValue": "The discount, uses or expiry date is not valid.",
     "codeExists": "That code already exists.",
-    "notAdmin": "You cannot manage discount codes."
+    "notAdmin": "You cannot manage discount codes.",
+    "questClaimed": "You already collected this reward.",
+    "questNotDone": "This quest isn't finished yet.",
+    "questUnknown": "Quest not found.",
+    "notForGold": "This item can't be bought with gold.",
+    "notEnoughGold": "Not enough gold."
   },
   "log": {
     "join": "{name} joined",
@@ -917,5 +926,47 @@
     "copyManual": "Copy this invite link:",
     "text": "Come play Werewolf with me! Room {code}: open the link, type your name and you're in, no sign-in needed.",
     "hint": "Send the link to your group: they open it, type a name and they're in, no sign-in needed."
+  },
+  "quests": {
+    "title": "Quests",
+    "open": "Quests",
+    "goldTitle": "Your gold: earn it from quests, spend it in the Shop",
+    "signIn": "Sign in with Google to do quests and earn gold. Gold stays on your account and buys some effects and roles in the Shop.",
+    "loading": "Loading quests…",
+    "checkin": "Daily check-in",
+    "checkinHint": "Drop by every day for gold.",
+    "daily": "Daily quests",
+    "resetsIn": "New quests in {hours}h {minutes}m",
+    "bonus": "Completion bonus",
+    "bonusHint": "Collect all 3 daily quests to open the gift.",
+    "goldQuests": "Gold quests",
+    "goldQuestsHint": "Each one pays out once. Games you played before count too.",
+    "claim": "Claim {gold} 🪙",
+    "claimed": "Claimed",
+    "gotGold": "+{gold} gold!",
+    "spend": "Spend gold in the Shop",
+    "earnedTotal": "Gold earned in total: {gold}",
+    "q": {
+      "play3": "Play {goal} games",
+      "play5": "Play {goal} games",
+      "win1": "Win {goal} game",
+      "win2": "Win {goal} games",
+      "wolfWin1": "Win {goal} game as a wolf",
+      "villageWin1": "Win {goal} game with the village",
+      "survive2": "Survive to the end of {goal} games",
+      "power2": "Play {goal} games with a power role",
+      "firstGame": "Play your first game",
+      "firstWin": "Win your first game",
+      "games10": "Play {goal} games",
+      "firstWolfWin": "Win as a wolf for the first time",
+      "streak3": "Win {goal} games in a row",
+      "roles6": "Play {goal} different roles",
+      "survive20": "Survive to the end of {goal} games",
+      "wolfWins5": "Win {goal} games as a wolf",
+      "villageWins10": "Win {goal} games with the village",
+      "games50": "Play {goal} games",
+      "wins25": "Win {goal} games",
+      "games100": "Play {goal} games"
+    }
   }
 }

@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { AVATARS } from "@shared/engine";
 import { DEFAULT_STYLE, limitStyle, sanitizeOwned, sanitizeStyle, type ItemId, type PlayerStyle } from "@shared/cosmetics";
+import type { QuestsView } from "@shared/quests";
 import { socketUrl, storage } from "./socket";
 
 export interface AccountUser {
@@ -258,6 +259,65 @@ export async function updateCode(code: string, patch: Partial<Pick<AdminCode, "a
 
 export async function deleteCode(code: string): Promise<CodesResult> {
   return (await api(`/shop/admin/codes/${encodeURIComponent(code)}`, { method: "DELETE" })) as CodesResult;
+}
+
+// ---------------------------------------------------------------------------
+// Quests and gold
+// ---------------------------------------------------------------------------
+
+let quests: QuestsView | null = null;
+const questListeners = new Set<() => void>();
+function setQuests(q: QuestsView | null) {
+  quests = q;
+  questListeners.forEach((l) => l());
+}
+
+/** My gold and quests (null for guests, or until loaded). Loads them on first use. */
+export function useQuests() {
+  const account = useAccount();
+  const [state, setState] = useState<QuestsView | null>(quests);
+  useEffect(() => {
+    const l = () => setState(quests);
+    questListeners.add(l);
+    l();
+    return () => {
+      questListeners.delete(l);
+    };
+  }, []);
+  useEffect(() => {
+    if (account) refreshQuests();
+    else setQuests(null);
+  }, [account?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  return account ? state : null;
+}
+
+export async function refreshQuests() {
+  if (!getAuth()) return;
+  const r = (await api("/quests")) as ApiResult & { quests?: QuestsView };
+  if (r.ok && r.quests) setQuests(r.quests);
+}
+
+/** Collects a finished quest's gold ("checkin", "bonus" or a quest id). */
+export async function claimQuestReward(id: string): Promise<ApiResult & { gold?: number }> {
+  const r = (await api("/quests/claim", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  })) as ApiResult & { gold?: number; quests?: QuestsView };
+  if (r.quests) setQuests(r.quests);
+  return r;
+}
+
+/** Buys a shop item with gold (only items with a gold price). */
+export async function buyWithGold(itemId: ItemId): Promise<ApiResult> {
+  const r = (await api("/quests/buy", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ itemId }),
+  })) as ApiResult & { quests?: QuestsView };
+  if (r.quests) setQuests(r.quests);
+  if (r.ok && r.user && auth) setAuth({ ...auth, user: { ...r.user, owned: sanitizeOwned(r.user.owned) } });
+  return r;
 }
 
 export async function signOut() {

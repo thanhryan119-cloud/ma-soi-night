@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { QuestsLink } from "@/components/Quests";
 import { TarotSpread } from "@/components/art/TarotSpread";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -46,6 +47,7 @@ export default function Home() {
     <main className="mx-auto flex min-h-dvh max-w-5xl flex-col px-4 py-10 sm:py-16">
       <LangSwitch />
       <div className="fixed top-3 right-3 z-50 flex gap-2">
+        <QuestsLink />
         <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold">
           🛒 {t("shop.open")}
         </Link>

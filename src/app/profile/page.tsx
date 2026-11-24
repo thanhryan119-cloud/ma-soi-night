@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ProfileEditor } from "@/components/ProfileEditor";
+import { QuestsLink } from "@/components/Quests";
 import { RoleShopCard } from "@/components/RoleShop";
 import { LangSwitch, toast } from "@/components/ui";
 import {
@@ -37,7 +38,10 @@ export default function ProfilePage() {
           ← {t("common.back")}
         </Link>
         <h1 className="font-display text-3xl font-black">{t("profile.title")}</h1>
-        <Link href="/shop" className="btn-ghost btn-sm ml-auto border-gold/50 text-gold">
+        <span className="ml-auto">
+          <QuestsLink />
+        </span>
+        <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold">
           🛒 {t("shop.open")}
         </Link>
       </div>

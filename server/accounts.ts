@@ -316,6 +316,8 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
     grantItem,
     publicUser,
     isAdmin,
+    hasUser: (userId: string) => !!store.users[userId],
+    statsOf: (userId: string) => stats[userId] ?? null,
     /** Shop items a user owns (empty for guests). */
     ownedFor: (userId: string | null | undefined) => ownedOf(userId ? store.users[userId] : null),
     enabled: !!GOOGLE_CLIENT_ID,
