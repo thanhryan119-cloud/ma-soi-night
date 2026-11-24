@@ -494,6 +494,7 @@ function AliveStrip({ state }: { state: ClientState }) {
 function HoldCard({ me, players }: Ctx) {
   const t = useT();
   const [open, setOpen] = useState(false);
+  const [tips, setTips] = useState(false);
   const role = me.roleId ? ROLES[me.roleId] : null;
   const show = (e?: React.PointerEvent<HTMLButtonElement>) => {
     // Keep the finger on this button even though the full-screen card now covers it.
@@ -530,6 +531,27 @@ function HoldCard({ me, players }: Ctx) {
         </button>
       </div>
       <p className="shrink-0 text-sm text-white/50">{open ? t("player.releaseToHide") : t("player.holdToReveal")}</p>
+      {role && (
+        <div className="w-full max-w-md shrink-0">
+          <button
+            type="button"
+            className="mx-auto block rounded-full border border-gold/40 px-3 py-1 text-xs font-semibold text-gold"
+            onClick={() => setTips((v) => !v)}
+            aria-expanded={tips}
+          >
+            {tips ? t("player.tipsHide") : t("player.tipsShow")}
+          </button>
+          {tips && (
+            <ul className="mt-2 max-h-40 list-disc space-y-1 overflow-y-auto rounded-lg bg-white/5 py-2 pr-3 pl-7 text-left text-sm leading-snug text-white/80">
+              {t(`roles.${role.id}.tips`)
+                .split("\n")
+                .map((tip) => (
+                  <li key={tip}>{tip}</li>
+                ))}
+            </ul>
+          )}
+        </div>
+      )}
       {role &&
         open &&
         createPortal(

@@ -53,122 +53,146 @@
     "werewolf": {
       "name": "Werewolf",
       "desc": "Each night the pack agrees on one victim to devour. By day, pretend to be an innocent villager.",
-      "action": "Choose someone to devour tonight"
+      "action": "Choose someone to devour tonight",
+      "tips": "During the day talk like a villager: ask questions, suspect others, and don't stay quiet too long.\nBite the Seer, Witch, Bodyguard or whoever is reasoning best.\nDon't defend packmates too openly. Sometimes vote with the village to keep your cover."
     },
     "villager": {
       "name": "Villager",
       "desc": "No special power. Use reasoning and intuition to find the Werewolves.",
-      "action": "No action"
+      "action": "No action",
+      "tips": "Watch who keeps changing their mind, who defends whom, and who jumps on the bandwagon at the last second.\nShare your reasoning: silent players get suspected and hanged by mistake.\nYou have nothing to lose, so you can bluff a strong role to draw the wolves away from the real Seer."
     },
     "seer": {
       "name": "Seer",
       "desc": "Each night, inspect one player to learn whether they are a Werewolf.",
-      "action": "Choose someone to inspect"
+      "action": "Choose someone to inspect",
+      "tips": "Don't reveal yourself too early: the wolves will bite you that same night.\nRemember every result. Once you've found a wolf, or you're about to die, reveal everything.\nCheck the loud, influential players first: that's where wolves like to hide."
     },
     "bodyguard": {
       "name": "Bodyguard",
       "desc": "Each night, protect one player from the Werewolves. You can’t protect the same person two nights in a row.",
-      "action": "Choose someone to protect"
+      "action": "Choose someone to protect",
+      "tips": "Guess who the wolves want most: usually whoever just revealed a strong role or argued well.\nYou can't protect the same person two nights in a row, so plan a night ahead.\nKeep your role secret: if the wolves know you're the Bodyguard, they'll bite you first."
     },
     "witch": {
       "name": "Witch",
       "desc": "You have one healing potion and one poison, each usable once. You learn who the Werewolves attacked.",
-      "action": "Use your potions"
+      "action": "Use your potions",
+      "tips": "The healing potion is worth most on a key role. Don't rush it on night one if unsure.\nOnly poison when you're fairly sure who's a wolf. Poisoning a villager costs the village a life.\nKnowing who was bitten is a big clue: wolves often bite whoever suspected them."
     },
     "hunter": {
       "name": "Hunter",
       "desc": "When you die, you take one other player down with you.",
-      "action": "Choose someone to shoot"
+      "action": "Choose someone to shoot",
+      "tips": "Keep track of your top suspect all game: that's who you take with you when you die.\nRevealing you're the Hunter can make wolves hesitant to bite or hang you.\nDon't shoot in a hurry: think about who pushed you onto the block."
     },
     "cupid": {
       "name": "Cupid",
       "desc": "On the first night, link two players as lovers. If one dies, the other dies of heartbreak.",
-      "action": "Choose two players to fall in love"
+      "action": "Choose two players to fall in love",
+      "tips": "Pairing two from the same side is safe. Mixing sides creates a couple that wins only by surviving together.\nPairing yourself gives you one ally you can always trust.\nAfter night one you're a villager: keep helping the village find wolves."
     },
     "cursedWolf": {
       "name": "Cursed Wolf",
       "desc": "Part of the pack and bites every night. Once per game, may curse the victim: if nobody saves them, they don't die but turn into a werewolf.",
-      "action": "Curse tonight's victim?"
+      "action": "Curse tonight's victim?",
+      "tips": "Curse a strong role (Seer, Bodyguard...) to turn them into a packmate instead of killing them.\nA night with no death looks like a save by the Bodyguard or Witch, which hides the curse.\nYou only get one curse, so save it for when it matters most."
     },
     "wolfSeer": {
       "name": "Wolf Seer",
       "desc": "Part of the pack and bites every night. Each night also inspects one player to learn their exact role.",
-      "action": "Pick someone to inspect"
+      "action": "Pick someone to inspect",
+      "tips": "Check players to find the Seer, Witch or Bodyguard, then point the pack at them.\nYou learn real roles: you can pose as the Seer by day with half-true information.\nDon't let the village see you know too much, or you'll be suspected at once."
     },
     "elder": {
       "name": "Elder",
       "desc": "A villager with two lives against the wolves: survives the first bite. Poison and the gallows still kill.",
-      "action": "No action"
+      "action": "No action",
+      "tips": "You survive the first bite, so you can speak up boldly.\nYou can bluff a strong role as a decoy: the first bite won’t kill you.\nBeware of hanging and poison: those still kill you outright."
     },
     "idiot": {
       "name": "Village Idiot",
       "desc": "A villager. If the village votes to hang you, you reveal your card and live, but you can never vote again.",
-      "action": "No action"
+      "action": "No action",
+      "tips": "Being hanged won't kill you, so you can accuse people boldly.\nAfter you're revealed you lose your vote, but you can still talk: lead the village with words.\nGetting you hanged wastes a village day, so don't draw suspicion on purpose."
     },
     "lycan": {
       "name": "Lycan",
       "desc": "A villager with wolf blood: the Seer sees you as a Werewolf, but you still win with the village.",
-      "action": "No action"
+      "action": "No action",
+      "tips": "The Seer sees you as a wolf. If accused, calmly defend yourself with what you've done.\nConsider claiming Lycan early if the Seer seems to be checking around you.\nYou're still a villager: focus on finding wolves like everyone else."
     },
     "sister": {
       "name": "Sister",
       "desc": "Two sisters on the village team who know each other from the start. Trust each other and find the wolves.",
-      "action": "No action"
+      "action": "No action",
+      "tips": "Sisters know each other are villagers: the most trustworthy pair in town.\nYou can reveal together to vouch for each other, but the wolves will target you.\nVoting together can steer the whole village."
     },
     "wildChild": {
       "name": "Wild Child",
       "desc": "On the first night, pick a role model. While they live you are a villager. If they die, you turn into a werewolf.",
-      "action": "Pick your role model"
+      "action": "Pick your role model",
+      "tips": "Pick a role model you think will live long, so you stay a villager as long as possible.\nIf your role model dies you become a wolf: switch play style and hide the change.\nDefending your role model by day is a way of protecting yourself."
     },
     "medium": {
       "name": "Medium",
       "desc": "A villager. Each night (once someone has died), contact one dead player to learn their exact role.",
-      "action": "Pick a dead player to contact"
+      "action": "Pick a dead player to contact",
+      "tips": "Contact the dead player the village is still arguing about: their real role confirms or exposes claims.\nIf a self-declared Seer died, contact them to see if they told the truth.\nKeep your role quiet until you have something worth revealing."
     },
     "mayor": {
       "name": "Mayor",
       "desc": "A villager whose vote counts twice, in the nomination and in the verdict.",
-      "action": "No action"
+      "action": "No action",
+      "tips": "Your vote counts double, so it often decides who hangs. Vote carefully.\nRevealing you're the Mayor helps you lead but makes you a wolf target.\nWolves may try to sway you: watch who keeps pushing you to vote their way."
     },
     "bigBadWolf": {
       "name": "Big Bad Wolf",
       "desc": "Bites with the pack, then bites a second victim every night. Loses that power as soon as a wolf dies.",
-      "action": "Pick a second victim"
+      "action": "Pick a second victim",
+      "tips": "You bite an extra person each night, so aim straight at the village's key roles.\nYou lose the extra bite once a wolf dies, so quietly protect your packmates by day.\nTwo deaths in one night panics the village: use it to spread suspicion."
     },
     "minion": {
       "name": "Minion",
       "desc": "A human who wins with the wolves. You know who the wolves are; they don't know you. The Seer sees you as a villager.",
-      "action": "No action"
+      "action": "No action",
+      "tips": "You know the wolves but they don't know you. Quietly steer votes away from the pack.\nThe Seer sees you as a villager: you can fake being the Seer to cause chaos.\nGetting hanged instead of a wolf is still a way to help your team win."
     },
     "knight": {
       "name": "Rusty Knight",
       "desc": "A villager. If the wolves bite you to death, your rusty sword kills one of them the following night.",
-      "action": "No action"
+      "action": "No action",
+      "tips": "A wolf dies the night after they bite you, so revealing may scare them off.\nOr stay hidden and let the wolves bite you by mistake.\nIf you die from a bite, whoever dies from the rusty sword next night is surely a wolf."
     },
     "silencer": {
       "name": "Silencer",
       "desc": "Bites with the pack. Each night picks someone who can't chat, use the mic or vote the next day.",
-      "action": "Pick who is silenced tomorrow"
+      "action": "Pick who is silenced tomorrow",
+      "tips": "Silence whoever is reasoning well or suspecting the pack.\nSilenced players can't vote either: use it when a packmate is close to being hanged.\nDon't keep silencing the same kind of player, or the village will see who you fear."
     },
     "tanner": {
       "name": "Tanner",
       "desc": "Solo. You just want to hang: if the village votes to hang you, you win alone.",
-      "action": "No action"
+      "action": "No action",
+      "tips": "You want to be hanged, but don't be obvious: the village will catch on and spare you.\nAct slightly suspicious: give inconsistent answers, defend suspects.\nIf the wolves kill you, you lose, so don't look like a threat to them."
     },
     "whiteWolf": {
       "name": "White Wolf",
       "desc": "Solo. Bites with the pack, and every other night may kill one of the wolves. Wins only as the last one standing.",
-      "action": "Pick a wolf to kill (or pass)"
+      "action": "Pick a wolf to kill (or pass)",
+      "tips": "Play like a normal wolf at first so the pack trusts you.\nOn even nights you can kill a wolf: do it while many are alive so no one guesses.\nYou only win as the last one standing, so let villagers and wolves wear each other down."
     },
     "serialKiller": {
       "name": "Serial Killer",
       "desc": "Solo. Kills one player every night and survives the wolves' bite. Wins only as the last one standing.",
-      "action": "Pick tonight's victim"
+      "action": "Pick tonight's victim",
+      "tips": "Wolf bites can't kill you, so you only need to avoid hanging.\nKill whoever is most dangerous to you: the Seer and anyone suspecting you.\nBy day pose as a villager and blame the wolves for your kills."
     },
     "arsonist": {
       "name": "Arsonist",
       "desc": "Solo. Each night douses one house in oil, or sets every doused house alight. Wins only as the last one standing.",
-      "action": "Douse a house, or ignite"
+      "action": "Douse a house, or ignite",
+      "tips": "Douse many houses quietly, then ignite once to burn them all.\nNobody dies on dousing nights, so you're hard to spot.\nIgnite before you're suspected: one well-timed fire can sweep the village."
     }
   },
   "phase": {
@@ -236,8 +260,8 @@
     "kick": "Kick",
     "rename": "Rename",
     "renamePrompt": "New name for {name}:",
-    "addBotsTo8": "Fill to 8 with bots",
-    "addOneBot": "+1 bot",
+    "botCount": "Number of bots",
+    "addBots": "Add {count, plural, one {# bot} other {# bots}}",
     "removeBots": "Remove bots",
     "botHint": "Bots play automatically — test a full game alone on one machine.",
     "roleConfig": "Role setup",
@@ -524,7 +548,9 @@
     "douse": "Douse",
     "dousedCount": "{count} living houses doused.",
     "youSilenced": "You are silenced today: no chat, no mic, no vote.",
-    "silencedToday": "{name} is silenced today: no talking, no vote."
+    "silencedToday": "{name} is silenced today: no talking, no vote.",
+    "tipsShow": "💡 Tips for this role",
+    "tipsHide": "Hide tips"
   },
   "profile": {
     "title": "Your profile",

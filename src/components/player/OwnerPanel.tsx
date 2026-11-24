@@ -10,6 +10,7 @@ import { totalRoles } from "@shared/roles";
 import type { OwnerAction, Settings } from "@shared/types";
 import type { ClientState } from "@shared/views";
 import { HostActionProvider } from "@/components/host/common";
+import { AddBots } from "@/components/host/AddBots";
 import { RoleConfig } from "@/components/host/HostLobby";
 import { RulesCard } from "@/components/host/RulesCard";
 import { PasswordCard } from "@/components/PasswordField";
@@ -111,14 +112,7 @@ export function OwnerSettings({ state }: { state: ClientState }) {
           ))}
         </ul>
         <div className="flex flex-wrap gap-2">
-          {n < 8 && (
-            <button className="btn-ghost btn-sm" onClick={() => act({ type: "addBots", count: 8 - n })}>
-              🤖 {t("host.addBotsTo8")}
-            </button>
-          )}
-          <button className="btn-ghost btn-sm" onClick={() => act({ type: "addBots", count: 1 })}>
-            {t("host.addOneBot")}
-          </button>
+          <AddBots players={n} onAdd={(count) => act({ type: "addBots", count })} />
           <button className="btn-ghost btn-sm" disabled={!bots} onClick={() => act({ type: "removeBots" })}>
             {t("host.removeBots")}
           </button>

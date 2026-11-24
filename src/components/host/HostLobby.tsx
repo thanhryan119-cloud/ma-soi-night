@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { MIN_PLAYERS } from "@shared/engine";
 import { PREMIUM_ROLES, ROLES, ROLE_IDS, isPremiumRole, totalRoles } from "@shared/roles";
 import { RoleUnlockButton } from "@/components/RoleShop";
+import { AddBots } from "./AddBots";
 import type { Locale, RoleId } from "@shared/types";
 import type { ClientState } from "@shared/views";
 import { Avatar, RoleBadge, StyledName } from "@/components/ui";
@@ -196,16 +197,7 @@ function PlayersCard({ state, hideRoles = false }: { state: ClientState; hideRol
         ))}
       </ul>
       <div className="mt-auto flex flex-wrap gap-2 border-t border-white/10 pt-3">
-        <button
-          className="btn-ghost btn-sm"
-          disabled={state.players.length >= 8}
-          onClick={() => act({ type: "addBots", count: 8 - state.players.length })}
-        >
-          🤖 {t("host.addBotsTo8")}
-        </button>
-        <button className="btn-ghost btn-sm" disabled={state.players.length >= 20} onClick={() => act({ type: "addBots", count: 1 })}>
-          {t("host.addOneBot")}
-        </button>
+        <AddBots players={state.players.length} onAdd={(count) => act({ type: "addBots", count })} />
         <button className="btn-ghost btn-sm" disabled={!state.players.some((p) => p.isBot)} onClick={() => act({ type: "removeBots" })}>
           {t("host.removeBots")}
         </button>
