@@ -521,20 +521,78 @@ export function emptyRoleCounts(): Record<RoleId, number> {
 }
 
 /**
- * Suggested standard setup by player count.
- * 8 players → 2 Werewolves, Seer, Bodyguard, Witch, 3 Villagers.
+ * When each role joins the suggested setup: [role, from this many players].
+ * Roles the room hasn't unlocked are skipped, so with only the free roles the
+ * setup stays the classic one (8 players → 2 Werewolves, Seer, Bodyguard,
+ * Witch, 3 Villagers).
  */
-export function suggestRoles(n: number): Record<RoleId, number> {
+const VILLAGE_PLAN: [RoleId, number][] = [
+  ["seer", 4], ["bodyguard", 6], ["witch", 7], ["mayor", 8], ["hunter", 9], ["medium", 10], ["cupid", 11],
+  ["elder", 12], ["knight", 13], ["lycan", 14], ["sister", 15], ["idiot", 17], ["wildChild", 18],
+];
+/** Special wolves take the place of plain Werewolves in the pack. */
+const PACK_PLAN: [RoleId, number][] = [["wolfSeer", 9], ["cursedWolf", 12], ["bigBadWolf", 14], ["silencer", 16]];
+const MINION_FROM = 10;
+/** Solo roles. A solo killer (Serial Killer, Arsonist) costs the pack one wolf; the White Wolf takes a pack seat. */
+const SOLO_PLAN: [RoleId, number][] = [["tanner", 11], ["serialKiller", 15], ["whiteWolf", 19], ["arsonist", 20]];
+
+export const FREE_ROLES = ROLE_IDS.filter((r) => !ROLES[r].premium);
+
+/**
+ * Suggested setup by player count, using every role in `available` (the free
+ * roles by default). With `rand` it deals a different setup of the same shape
+ * (as many special wolves, solo roles and village roles), picked at random
+ * from all available roles, so every role turns up.
+ */
+export function suggestRoles(n: number, available: readonly RoleId[] = FREE_ROLES, rand?: () => number): Record<RoleId, number> {
   const c = emptyRoleCounts();
   if (n <= 0) return c;
-  c.werewolf = Math.max(1, Math.floor((n + 1) / 4));
-  if (n >= 4) c.seer = 1;
-  if (n >= 6) c.bodyguard = 1;
-  if (n >= 7) c.witch = 1;
-  if (n >= 9) c.hunter = 1;
-  if (n >= 11) c.cupid = 1;
-  const used = ROLE_IDS.reduce((s, r) => s + c[r], 0);
-  c.villager = Math.max(0, n - used);
+  const open = new Set(available);
+  const due = (plan: [RoleId, number][]) => plan.filter(([r, from]) => open.has(r) && n >= from).map(([r]) => r);
+  const all = (plan: [RoleId, number][]) => plan.filter(([r]) => open.has(r)).map(([r]) => r);
+  const shuffled = <T,>(xs: T[]) => {
+    const a = [...xs];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rand!() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  /** The roles due at this size, or (random) as many picked from the whole plan. */
+  const choose = (plan: [RoleId, number][], keepFirst = false) => {
+    const fixed = due(plan);
+    if (!rand) return fixed;
+    const pool = all(plan);
+    const head = keepFirst && pool[0] === plan[0][0] && fixed.length ? [pool[0]] : [];
+    return [...head, ...shuffled(pool.filter((r) => !head.includes(r)))];
+  };
+  const take = (plan: [RoleId, number][], keepFirst = false) => choose(plan, keepFirst).slice(0, due(plan).length);
+
+  // Solo roles first: they decide how big the pack is.
+  const solos = take(SOLO_PLAN);
+  for (const r of solos) c[r] = 1;
+  let pack = Math.max(1, Math.floor((n + 1) / 4));
+  for (const r of solos) if (r === "serialKiller" || r === "arsonist") pack = Math.max(1, pack - 1);
+  const whiteWolf = c.whiteWolf;
+  // The pack keeps at least one plain Werewolf besides the White Wolf.
+  pack = Math.max(pack, whiteWolf + 1);
+  const specials = take(PACK_PLAN).slice(0, Math.max(0, pack - whiteWolf - 1));
+  for (const r of specials) c[r] = 1;
+  c.werewolf = Math.max(0, pack - whiteWolf - specials.length);
+  if (open.has("minion") && n >= MINION_FROM) c.minion = 1;
+
+  // The village: power roles in order while there is room, the rest plain villagers.
+  let seats = n - ROLE_IDS.reduce((s, r) => s + c[r], 0);
+  const wanted = due(VILLAGE_PLAN).reduce((s, r) => s + (r === "sister" ? 2 : 1), 0);
+  let units = 0;
+  for (const r of choose(VILLAGE_PLAN, true)) {
+    const size = r === "sister" ? 2 : 1;
+    if (units + size > wanted || size > seats) continue;
+    c[r] = size;
+    units += size;
+    seats -= size;
+  }
+  c.villager = Math.max(0, seats);
   return c;
 }
 

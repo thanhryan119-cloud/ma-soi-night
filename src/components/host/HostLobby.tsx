@@ -4,7 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { ShareRoom } from "@/components/ShareRoom";
 import { useEffect, useState } from "react";
 import { MIN_PLAYERS } from "@shared/engine";
-import { PREMIUM_ROLES, ROLES, ROLE_IDS, isPremiumRole, totalRoles } from "@shared/roles";
+import { PREMIUM_ROLES, ROLES, ROLE_IDS, isPremiumRole, suggestRoles, totalRoles } from "@shared/roles";
 import { RoleUnlockButton } from "@/components/RoleShop";
 import { AddBots } from "./AddBots";
 import type { Locale, RoleId } from "@shared/types";
@@ -216,9 +216,12 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
   const n = state.players.length;
   const assigned = state.players.filter((p) => p.assignedRole).length;
   const set = (r: RoleId, v: number) => act({ type: "setRoleCounts", roleCounts: { ...counts, [r]: Math.max(0, v) } });
-  const suggested = state.suggested;
-  const sameAsSuggested = suggested && ROLE_IDS.every((r) => suggested[r] === counts[r]);
   const unlocked = new Set(state.unlockedRoles ?? ROLE_IDS.filter((r) => !isPremiumRole(r)));
+  // "Another suggestion": a random setup of the same shape from every unlocked role,
+  // dealt here and sent as plain counts. Dropped when the player count changes.
+  const [alt, setAlt] = useState<{ n: number; counts: Record<RoleId, number> } | null>(null);
+  const suggested = alt?.n === n ? alt.counts : state.suggested;
+  const sameAsSuggested = suggested && ROLE_IDS.every((r) => suggested[r] === counts[r]);
   const anyLocked = PREMIUM_ROLES.some((r) => !unlocked.has(r));
 
   return (
@@ -270,8 +273,15 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
               {ROLES[r].emoji} ×{suggested[r]}
             </span>
           ))}
-          <button className="btn-ghost btn-sm" disabled={!!sameAsSuggested} onClick={() => act({ type: "useSuggested" })}>
+          <button
+            className="btn-ghost btn-sm"
+            disabled={!!sameAsSuggested}
+            onClick={() => act(alt?.n === n ? { type: "setRoleCounts", roleCounts: alt.counts } : { type: "useSuggested" })}
+          >
             {t("host.useSuggested")}
+          </button>
+          <button className="btn-ghost btn-sm" onClick={() => setAlt({ n, counts: suggestRoles(n, [...unlocked], Math.random) })}>
+            🎲 {t("host.otherSuggestion")}
           </button>
         </div>
       )}

@@ -1354,7 +1354,7 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
     }
     case "useSuggested":
       if (!inLobby) return fail("err.wrongPhase");
-      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length) };
+      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, unlockedRoles(room)) };
       return ok;
     case "assignRandom":
       if (!inLobby) return fail("err.wrongPhase");
@@ -1424,7 +1424,7 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       room.game = null;
       room.assignment = {};
       room.phase = { kind: "lobby", night: 0, day: 0, steps: [], stepIndex: 0, verdictIndex: 0 };
-      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length) };
+      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, unlockedRoles(room)) };
       room.log = [];
       resetTimer(room);
       log(room, "log.newGame");

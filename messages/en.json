@@ -267,6 +267,7 @@
     "roleConfig": "Role setup",
     "suggestedFor": "Suggested for {count}",
     "useSuggested": "Use suggestion",
+    "otherSuggestion": "Another setup",
     "totalRoles": "Total: {roles} roles / {players} players",
     "mismatch": "Role count ({roles}) doesn’t match player count ({players})!",
     "assignment": "Deal roles",

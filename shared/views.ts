@@ -514,14 +514,14 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
 
   // The owner of a machine-host room sets the roles up, so they get the suggestion too.
   if (!isHost && room.machineHost && meId && room.ownerId === meId) {
-    state.suggested = suggestRoles(room.players.length);
+    state.suggested = suggestRoles(room.players.length, unlockedRoles(room));
     state.unlockedRoles = unlockedRoles(room);
   }
   if (isHost) {
     state.unlockedRoles = unlockedRoles(room);
     state.pendingWin = game?.pendingWin ?? null;
     state.log = room.log;
-    state.suggested = suggestRoles(room.players.length);
+    state.suggested = suggestRoles(room.players.length, unlockedRoles(room));
     state.potions = game?.potions;
   } else if (room.phase.kind === "gameOver") {
     // The game is over, nothing is secret any more: everyone gets the full

@@ -267,6 +267,7 @@
     "roleConfig": "Cấu hình vai",
     "suggestedFor": "Gợi ý cho {count} người",
     "useSuggested": "Dùng gợi ý",
+    "otherSuggestion": "Gợi ý khác",
     "totalRoles": "Tổng: {roles} vai / {players} người",
     "mismatch": "Số vai ({roles}) khác số người chơi ({players})!",
     "assignment": "Chia vai",
