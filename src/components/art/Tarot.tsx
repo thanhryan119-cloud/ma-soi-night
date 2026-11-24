@@ -209,6 +209,19 @@ const NUMERAL: Record<RoleId, string> = {
   wolfSeer: "IX",
   elder: "V",
   idiot: "0",
+  lycan: "XIX",
+  sister: "III",
+  wildChild: "XXI",
+  medium: "XIII",
+  mayor: "IV",
+  minion: "X",
+  knight: "XI",
+  silencer: "XII",
+  bigBadWolf: "XVI",
+  whiteWolf: "XVII",
+  tanner: "XX",
+  serialKiller: "XXII",
+  arsonist: "XXIII",
 };
 
 /** Fold lines on a robe. */
@@ -707,6 +720,236 @@ const ART: Record<RoleId, (f: Fill) => React.ReactNode> = {
           <path d={`M${x - 1.4} ${y + 1} h2.8`} stroke={INK} strokeWidth="0.8" />
         </g>
       ))}
+    </>
+  ),
+  // A villager under the full moon with wolf ears pricking through the hair,
+  // slit eyes and claw marks torn across the sky: wolf blood, village heart.
+  lycan: (f) => (
+    <>
+      <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
+      <circle cx="60" cy="62" r="40" fill="none" stroke={PALE} strokeWidth="0.9" strokeDasharray="2 2.2" />
+      <Sparks pts={[[20, 32, 2], [100, 32, 2], [16, 120, 1.6], [104, 120, 1.6]]} />
+      {/* claw marks */}
+      <path d="M18 46 L30 74 M24 42 L36 70 M30 40 L42 66" stroke={PALE} strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M102 46 L90 74 M96 42 L84 70 M90 40 L78 66" stroke={PALE} strokeWidth="1.6" strokeLinecap="round" />
+      <Shoulders />
+      <path d="M30 150 Q60 162 90 150 L92 166 H28 Z" fill={f.hatch} stroke={PALE} strokeWidth="1" />
+      <HumanHead hair="curly" brows="angry" eyes="slit" mouth="stern" />
+      {/* wolf ears pricking through the curls */}
+      <path d="M36 66 L28 34 L52 54 Z M84 66 L92 34 L68 54 Z" fill={PALE} stroke={INK} strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M38 59 L33 42 L46 53 Z M82 59 L87 42 L74 53 Z" fill={INK} />
+    </>
+  ),
+  // Two sisters cheek to cheek under one shawl, a heart between them.
+  sister: (f) => (
+    <>
+      <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
+      <Crescent cx={20} cy={34} R={6} />
+      <SunFace cx={98} cy={32} r={6} />
+      <Sparks pts={[[44, 28, 1.8], [76, 28, 1.8], [16, 80, 1.6], [104, 80, 1.6]]} />
+      <path d="M14 166 Q16 128 40 120 Q60 128 80 120 Q104 128 106 166 Z" fill={INK} stroke={PALE} strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M14 166 Q16 128 40 120 Q60 128 80 120 Q104 128 106 166 Z" fill={f.dots} />
+      <At x={40} y={90} s={0.62}>
+        <HumanHead hair="long" eyes="closed" mouth="smile" />
+      </At>
+      <At x={80} y={90} s={0.62}>
+        <HumanHead hair="long" eyes="closed" mouth="smile" />
+      </At>
+      <Heart cx={60} cy={130} s={9} fill={PALE} />
+      <Heart cx={60} cy={60} s={5} fill={PALE} />
+    </>
+  ),
+  // A wild-haired child among the pines, wide-eyed, and behind them the
+  // shadow of the wolf they may become.
+  wildChild: (f) => (
+    <>
+      <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
+      <Crescent cx={96} cy={34} R={7} />
+      <Sparks pts={[[22, 30, 2], [44, 24, 1.6], [76, 24, 1.6]]} />
+      <g opacity="0.45">
+        <At x={60} y={66} s={0.8} ay={98}>
+          <WolfHead eyes="slit" />
+        </At>
+      </g>
+      <Pine x={18} y={166} h={60} />
+      <Pine x={102} y={166} h={60} />
+      <path d="M30 166 Q32 146 48 140 L60 145 L72 140 Q88 146 90 166 Z" fill={INK} stroke={PALE} strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M40 152 L46 146 L52 154 L58 147 L64 154 L70 147 L76 153" fill="none" stroke={PALE} strokeWidth="1" />
+      <At x={60} y={112} s={0.72}>
+        <HumanHead hair="curly" brows="raised" eyes="open" mouth="calm" />
+      </At>
+      <path d="M12 164 H108" stroke={PALE} strokeWidth="1" />
+      <path d="M12 166 H108 V164 Z" fill={f.hatch} />
+    </>
+  ),
+  // A hooded medium with eyes shut, a candle burning in her hands and the
+  // spirits of the dead curling up out of the smoke.
+  medium: (f) => (
+    <>
+      <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
+      <Crescent cx={22} cy={34} R={7} />
+      <Sparks pts={[[98, 30, 2.2], [40, 26, 1.6], [80, 26, 1.6]]} />
+      {/* hood */}
+      <path d="M22 166 Q18 80 60 44 Q102 80 98 166 Z" fill={INK} stroke={PALE} strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M22 166 Q18 80 60 44 Q102 80 98 166 Z" fill={f.hatch} opacity="0.5" />
+      <HumanHead hair="none" eyes="closed" mouth="none" />
+      {/* spirits of the dead rising out of the smoke */}
+      <path d="M14 128 Q8 100 18 86 Q28 76 28 92 Q28 100 24 106 Q32 114 24 130 Z" fill={PALE} stroke={INK} strokeWidth="1" />
+      <path d="M106 128 Q112 100 102 86 Q92 76 92 92 Q92 100 96 106 Q88 114 96 130 Z" fill={PALE} stroke={INK} strokeWidth="1" />
+      <circle cx="17" cy="92" r="1.4" fill={INK} />
+      <circle cx="22" cy="92" r="1.4" fill={INK} />
+      <circle cx="98" cy="92" r="1.4" fill={INK} />
+      <circle cx="103" cy="92" r="1.4" fill={INK} />
+      {/* candle */}
+      <Flames cx={60} cy={132} r1={4} r2={9} n={10} />
+      <path d="M60 124 Q55 130 60 136 Q65 130 60 124 Z" fill={PALE} />
+      <rect x="55" y="137" width="10" height="22" fill={PALE} stroke={INK} strokeWidth="1" />
+      <path d="M48 160 H72" stroke={PALE} strokeWidth="2.4" strokeLinecap="round" />
+    </>
+  ),
+  // The mayor in a tall hat, a sash across the chest and the village medal.
+  mayor: (f) => (
+    <>
+      <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
+      <SunFace cx={96} cy={32} r={7} />
+      <Sparks pts={[[22, 32, 2], [40, 26, 1.6], [16, 80, 1.6], [104, 84, 1.6]]} />
+      <Shoulders />
+      <path d="M40 134 L82 166 L72 166 L34 140 Z" fill={f.hatch} stroke={PALE} strokeWidth="1" />
+      <circle cx="60" cy="150" r="7" fill={PALE} stroke={INK} strokeWidth="1" />
+      <Spark x={60} y={150} s={3} fill={INK} />
+      <HumanHead hair="short" brows="bushy" mouth="stern" beard="short" />
+      {/* top hat */}
+      <path d="M40 66 H80 V62 H40 Z" fill={PALE} />
+      <path d="M46 62 V30 H74 V62 Z" fill={INK} stroke={PALE} strokeWidth="1.6" />
+      <path d="M46 54 H74 V58 H46 Z" fill={PALE} />
+    </>
+  ),
+  // A hooded schemer with a sly grin, a wolf mask hanging from one hand.
+  minion: (f) => (
+    <>
+      <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
+      <Crescent cx={22} cy={34} R={7} />
+      <Sparks pts={[[98, 30, 2], [80, 24, 1.6], [16, 80, 1.6]]} />
+      <path d="M24 166 Q20 84 60 50 Q100 84 96 166 Z" fill={INK} stroke={PALE} strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M24 166 Q20 84 60 50 Q100 84 96 166 Z" fill={f.hatch} opacity="0.5" />
+      <HumanHead hair="none" brows="angry" eyes="slit" mouth="crooked" />
+      <At x={94} y={142} s={0.34} ay={98}>
+        <WolfHead eyes="closed" />
+      </At>
+      <path d="M94 124 V112" stroke={PALE} strokeWidth="1" />
+    </>
+  ),
+  // A knight in a visored helm, holding a notched sword spotted with rust.
+  knight: (f) => (
+    <>
+      <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
+      <Crescent cx={96} cy={34} R={7} />
+      <Sparks pts={[[22, 30, 2], [40, 26, 1.6], [104, 84, 1.6]]} />
+      <Shoulders />
+      <path d="M30 140 Q60 150 90 140 L92 148 Q60 158 28 148 Z" fill={f.hatch} stroke={PALE} strokeWidth="1" />
+      <HumanHead hair="none" brows="plain" eyes="open" mouth="stern" />
+      {/* helm */}
+      <path d="M36 82 Q36 50 60 46 Q84 50 84 82 L78 82 Q76 60 60 58 Q44 60 42 82 Z" fill={PALE} stroke={INK} strokeWidth="1.2" />
+      <path d="M60 40 Q66 30 60 22" fill="none" stroke={PALE} strokeWidth="2.4" strokeLinecap="round" />
+      {/* the rusty sword */}
+      <path d="M18 160 L18 70 L21 62 L24 70 L24 160 Z" fill={PALE} stroke={INK} strokeWidth="1" />
+      <path d="M12 150 H30" stroke={PALE} strokeWidth="3" strokeLinecap="round" />
+      <path d="M18 92 l3 2 l-3 2 M24 112 l-3 2 l3 2" fill="none" stroke={INK} strokeWidth="1" />
+      <circle cx="21" cy="84" r="1.2" fill={INK} />
+      <circle cx="20" cy="104" r="1.4" fill={INK} />
+      <circle cx="22" cy="126" r="1.2" fill={INK} />
+    </>
+  ),
+  // The wolf with its own muzzle bound shut, a finger to the lips of the moon.
+  silencer: () => (
+    <>
+      <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
+      <Crescent cx={22} cy={36} R={7} face />
+      <Sparks pts={[[98, 30, 2], [40, 26, 1.6], [80, 26, 1.6], [16, 80, 1.6], [104, 80, 1.6]]} />
+      <WolfHead eyes="slit" />
+      {/* the gag */}
+      <path d="M36 118 Q60 110 84 118 L84 126 Q60 118 36 126 Z" fill={PALE} stroke={INK} strokeWidth="1.2" />
+      <path d="M50 114 l4 12 M58 113 l4 12 M66 113 l4 12" stroke={INK} strokeWidth="1" />
+      <Cloud cx={22} cy={152} s={1} />
+      <Cloud cx={98} cy={152} s={1} />
+    </>
+  ),
+  // A huge wolf head, slit-eyed, with a gnawed bone and two moons behind.
+  bigBadWolf: () => (
+    <>
+      <Rays cx={60} cy={92} r1={44} r2={64} n={56} w={0.9} />
+      <circle cx="24" cy="36" r="8" fill={PALE} />
+      <circle cx="96" cy="36" r="8" fill={PALE} />
+      <Sparks pts={[[44, 26, 1.8], [76, 26, 1.8], [14, 90, 1.6], [106, 90, 1.6]]} />
+      <At x={60} y={96} s={1.25} ay={98}>
+        <WolfHead eyes="slit" torn />
+      </At>
+      {/* gnawed bone */}
+      <path d="M30 152 H90" stroke={PALE} strokeWidth="5" strokeLinecap="round" />
+      <circle cx="28" cy="149" r="4" fill={PALE} />
+      <circle cx="28" cy="155" r="4" fill={PALE} />
+      <circle cx="92" cy="149" r="4" fill={PALE} />
+      <circle cx="92" cy="155" r="4" fill={PALE} />
+    </>
+  ),
+  // The black wolf turned white, alone on the snow under a black moon.
+  whiteWolf: (f) => (
+    <>
+      <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
+      <circle cx="60" cy="60" r="30" fill={INK} stroke={PALE} strokeWidth="1.2" />
+      <Sparks pts={[[20, 30, 2.2], [100, 30, 2.2], [16, 70, 1.8], [104, 70, 1.8], [30, 130, 1.6], [90, 130, 1.6]]} />
+      <WolfHead eyes="open" />
+      <path d="M12 154 Q36 146 60 150 Q84 146 108 154 V164 H12 Z" fill={PALE} />
+      <path d="M12 158 H108" stroke={INK} strokeWidth="0.8" strokeDasharray="2 3" />
+      <path d="M12 154 Q36 146 60 150 Q84 146 108 154" fill="none" stroke={INK} strokeWidth="0.6" />
+      <rect x="12" y="160" width="96" height="4" fill={f.hatch} />
+    </>
+  ),
+  // A man with a noose around his neck and a contented smile.
+  tanner: (f) => (
+    <>
+      <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
+      <SunFace cx={22} cy={34} r={6} />
+      <Sparks pts={[[98, 30, 2], [80, 26, 1.6], [104, 84, 1.6]]} />
+      {/* gallows beam and rope */}
+      <path d="M14 30 H70" stroke={PALE} strokeWidth="4" strokeLinecap="round" />
+      <path d="M60 30 V52" stroke={PALE} strokeWidth="2" strokeDasharray="3 1.5" />
+      <Shoulders />
+      <path d="M30 150 Q60 160 90 150 L92 166 H28 Z" fill={f.hatch} stroke={PALE} strokeWidth="1" />
+      <HumanHead hair="short" eyes="closed" mouth="smile" />
+      <path d="M44 128 Q60 140 76 128" fill="none" stroke={PALE} strokeWidth="3" />
+      <path d="M58 132 v8 l2 3 l2 -3 v-8" fill={PALE} stroke={INK} strokeWidth="0.8" />
+    </>
+  ),
+  // A shadow in a deep hood, eyes narrowed, a knife raised beside the face.
+  serialKiller: (f) => (
+    <>
+      <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
+      <Crescent cx={96} cy={34} R={7} />
+      <Sparks pts={[[22, 30, 2], [40, 26, 1.6], [16, 80, 1.6]]} />
+      <path d="M22 166 Q18 80 60 44 Q102 80 98 166 Z" fill={INK} stroke={PALE} strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M22 166 Q18 80 60 44 Q102 80 98 166 Z" fill={f.hatch} opacity="0.6" />
+      <HumanHead hair="none" brows="angry" eyes="slit" mouth="none" />
+      {/* knife */}
+      <path d="M100 66 L106 102 L96 102 Z" fill={PALE} stroke={INK} strokeWidth="1" />
+      <path d="M94 102 H108" stroke={PALE} strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M101 102 V118" stroke={PALE} strokeWidth="4" strokeLinecap="round" />
+      <path d="M101 72 L102.5 96" stroke={INK} strokeWidth="0.6" />
+    </>
+  ),
+  // A grinning firebug with a torch, the village roofs burning behind.
+  arsonist: (f) => (
+    <>
+      <Flames cx={60} cy={92} r1={40} r2={62} n={20} />
+      <Sparks pts={[[22, 30, 2], [98, 30, 2], [16, 80, 1.6], [104, 84, 1.6]]} />
+      {/* burning roofs */}
+      <path d="M12 140 L24 128 L36 140 Z M84 140 L96 128 L108 140 Z" fill={PALE} />
+      <Shoulders />
+      <path d="M30 150 Q60 160 90 150 L92 166 H28 Z" fill={f.hatch} stroke={PALE} strokeWidth="1" />
+      <HumanHead hair="curly" brows="raised" eyes="star" mouth="grin" />
+      {/* torch */}
+      <path d="M98 166 L92 112" stroke={PALE} strokeWidth="3" strokeLinecap="round" />
+      <path d="M92 112 Q84 100 91 88 Q92 98 96 96 Q94 88 100 82 Q104 96 98 108 Z" fill={PALE} stroke={INK} strokeWidth="0.8" />
     </>
   ),
 };

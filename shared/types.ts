@@ -17,12 +17,43 @@ export type RoleId =
   | "cursedWolf"
   | "wolfSeer"
   | "elder"
-  | "idiot";
+  | "idiot"
+  // Premium village roles (second set, also 50k each):
+  | "lycan"
+  | "sister"
+  | "wildChild"
+  | "medium"
+  // Premium roles, third set (votes, wolves with extra powers):
+  | "mayor"
+  | "bigBadWolf"
+  | "minion"
+  | "knight"
+  | "silencer"
+  // Premium roles, solo (they win alone):
+  | "tanner"
+  | "whiteWolf"
+  | "serialKiller"
+  | "arsonist";
 
-export type Team = "wolves" | "village";
+/** "solo": plays for itself and wins alone (Tanner, White Wolf, Serial Killer, Arsonist). */
+export type Team = "wolves" | "village" | "solo";
 
 /** Night steps are identified by the role that wakes up. */
-export type NightStepId = "cupid" | "bodyguard" | "werewolf" | "wolfSeer" | "cursedWolf" | "witch" | "seer";
+export type NightStepId =
+  | "cupid"
+  | "wildChild"
+  | "bodyguard"
+  | "werewolf"
+  | "wolfSeer"
+  | "cursedWolf"
+  | "witch"
+  | "seer"
+  | "medium"
+  | "bigBadWolf"
+  | "silencer"
+  | "whiteWolf"
+  | "serialKiller"
+  | "arsonist";
 
 export type PhaseKind =
   | "lobby"
@@ -38,9 +69,23 @@ export type PhaseKind =
   | "verdictResult"
   | "gameOver";
 
-export type DeathCause = "wolves" | "poison" | "heartbreak" | "hunter" | "execution" | "host";
+export type DeathCause =
+  | "wolves"
+  | "poison"
+  | "heartbreak"
+  | "hunter"
+  | "execution"
+  | "host"
+  /** The Knight's rusty sword: a wolf dies the night after biting him. */
+  | "rust"
+  /** The Serial Killer's knife. */
+  | "killer"
+  /** The Arsonist set the doused houses alight. */
+  | "fire";
 
-export type Winner = "wolves" | "village" | "lovers" | "draw";
+/** A solo role id when that player won alone. */
+export type SoloWinner = "tanner" | "whiteWolf" | "serialKiller" | "arsonist";
+export type Winner = "wolves" | "village" | "lovers" | "draw" | SoloWinner;
 
 export interface Death {
   playerId: string;
@@ -132,6 +177,20 @@ export interface NightState {
   wolfSeerTarget?: string | null;
   /** The Cursed Wolf turns tonight's victim into a werewolf instead of killing them. */
   curse?: boolean;
+  /** The Medium's pick tonight (a dead player). */
+  mediumTarget?: string | null;
+  /** The Big Bad Wolf's extra victim. */
+  bigBadTarget?: string | null;
+  /** The Silencer's pick: can't talk or vote tomorrow. */
+  silenceId?: string | null;
+  /** The White Wolf's victim (one of the pack). */
+  whiteWolfTarget?: string | null;
+  /** The Serial Killer's victim. */
+  killerTarget?: string | null;
+  /** The Arsonist douses this player tonight… */
+  douseId?: string | null;
+  /** …or sets every doused house alight. */
+  ignite?: boolean;
   /** Steps whose actor(s) have finished. */
   done: Partial<Record<NightStepId, boolean>>;
 }
@@ -140,7 +199,7 @@ export interface SeerResult {
   night: number;
   targetId: string;
   isWolf: boolean;
-  /** Wolf Seer only: the exact role seen. */
+  /** Wolf Seer and Medium: the exact role seen. */
   roleId?: RoleId;
 }
 
@@ -230,6 +289,18 @@ export interface Game {
   cursed?: { playerId: string; night: number }[];
   /** Elders who already took their one wolf bite. */
   elderHits?: string[];
+  /** Wild Child id -> the model they picked on the first night. */
+  wildModels?: Record<string, string>;
+  /** Wild Children who turned werewolf when their model died. */
+  wildTurned?: { playerId: string; night: number; day: number }[];
+  /** The Knight was bitten to death: a wolf dies at the end of this night. */
+  rustNight?: number | null;
+  /** Silenced by the Silencer for this day: no chat, no mic, no vote. */
+  silenced?: { playerId: string; day: number } | null;
+  /** Players the Arsonist has doused. */
+  doused?: string[];
+  /** The village hanged the Tanner. */
+  tannerWin?: boolean;
   /** Idiots the village voted to hang: revealed, alive, but no vote any more. */
   revealedIdiots?: string[];
   /** The finished game was added to the players' career stats (server side, once). */
@@ -297,7 +368,7 @@ export type OwnerAction =
 
 export type PlayerAction =
   | { type: "setLocale"; locale: Locale }
-  | { type: "night"; targets?: string[]; save?: boolean; poisonId?: string | null; curse?: boolean }
+  | { type: "night"; targets?: string[]; save?: boolean; poisonId?: string | null; curse?: boolean; ignite?: boolean }
   | { type: "vote"; choice: string }
   | { type: "endDefense" }
   | { type: "hunterShot"; targetId: string | null }

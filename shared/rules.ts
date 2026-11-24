@@ -1,6 +1,6 @@
 // Pure rule functions (no I/O) — covered by unit tests.
 
-import { ROLES, isWolf } from "./roles";
+import { ROLES, isSoloKiller, isWolf, teamOf } from "./roles";
 import type {
   Death,
   NominationSettings,
@@ -64,11 +64,27 @@ export interface NightInput extends DeathContext {
   curse?: boolean;
   /** Elders who can still take a bite. */
   sturdy?: string[];
+  /** The Big Bad Wolf's second bite (the Witch can't heal it). */
+  extraBite?: string | null;
+  /** Players the wolves' bite can't kill (the Serial Killer). */
+  immune?: string[];
+  /** The Serial Killer's victim (only the Bodyguard stops it). */
+  killerTarget?: string | null;
+  /** The White Wolf's victim, one of the pack (only the Bodyguard stops it). */
+  whiteWolfTarget?: string | null;
+  /** Burnt by the Arsonist (nothing stops the fire). */
+  fire?: string[];
+  /** Other deaths decided before the night resolves (the Knight's rusty sword). */
+  extra?: Death[];
 }
+
+export type BlockReason = "bodyguard" | "witch" | "elder" | "immune";
 
 export interface NightOutcome extends CascadeResult {
   /** Who the wolves attacked and why they survived, if they did. */
-  attackBlockedBy: "bodyguard" | "witch" | "elder" | null;
+  attackBlockedBy: BlockReason | null;
+  /** Every other attack that was stopped (the second bite, the knife, the White Wolf). */
+  blocked: { targetId: string; by: BlockReason }[];
   /** The victim the curse turned into a werewolf (alive). */
   cursedId: string | null;
 }
@@ -85,23 +101,48 @@ export interface NightOutcome extends CascadeResult {
  */
 export function resolveNight(input: NightInput): NightOutcome {
   const initial: Death[] = [];
+  const blocked: NightOutcome["blocked"] = [];
   let attackBlockedBy: NightOutcome["attackBlockedBy"] = null;
   let cursedId: string | null = null;
-  if (input.wolfTarget && input.alive.includes(input.wolfTarget)) {
-    if (input.protectId === input.wolfTarget) attackBlockedBy = "bodyguard";
+  const isAlive = (id: string | null | undefined): id is string => !!id && input.alive.includes(id);
+  const kill = (playerId: string, cause: Death["cause"]) => {
+    if (!initial.some((d) => d.playerId === playerId)) initial.push({ playerId, cause });
+  };
+  // An Elder takes one bite only, whichever wolf bites first.
+  const sturdy = new Set(input.sturdy ?? []);
+  if (isAlive(input.wolfTarget)) {
+    const t = input.wolfTarget;
+    if (input.protectId === t) attackBlockedBy = "bodyguard";
     else if (input.witchSave) attackBlockedBy = "witch";
-    else if (input.curse) cursedId = input.wolfTarget;
-    else if (input.sturdy?.includes(input.wolfTarget)) attackBlockedBy = "elder";
-    else initial.push({ playerId: input.wolfTarget, cause: "wolves" });
+    else if (input.immune?.includes(t)) attackBlockedBy = "immune";
+    else if (input.curse) cursedId = t;
+    else if (sturdy.has(t)) {
+      attackBlockedBy = "elder";
+      sturdy.delete(t);
+    } else kill(t, "wolves");
   }
-  if (input.witchPoisonId && input.alive.includes(input.witchPoisonId)) {
-    if (!initial.some((d) => d.playerId === input.witchPoisonId))
-      initial.push({ playerId: input.witchPoisonId, cause: "poison" });
+  if (isAlive(input.extraBite) && input.extraBite !== input.wolfTarget) {
+    const t = input.extraBite;
+    if (input.protectId === t) blocked.push({ targetId: t, by: "bodyguard" });
+    else if (input.immune?.includes(t)) blocked.push({ targetId: t, by: "immune" });
+    else if (sturdy.has(t)) blocked.push({ targetId: t, by: "elder" });
+    else kill(t, "wolves");
   }
+  for (const [t, cause] of [
+    [input.whiteWolfTarget, "wolves"],
+    [input.killerTarget, "killer"],
+  ] as const) {
+    if (!isAlive(t)) continue;
+    if (input.protectId === t) blocked.push({ targetId: t, by: "bodyguard" });
+    else kill(t, cause);
+  }
+  for (const d of input.extra ?? []) if (isAlive(d.playerId)) kill(d.playerId, d.cause);
+  for (const t of input.fire ?? []) if (isAlive(t)) kill(t, "fire");
+  if (isAlive(input.witchPoisonId)) kill(input.witchPoisonId, "poison");
   const res = cascadeDeaths(initial, input);
-  // Poisoned the same night: the curse never takes hold.
+  // Killed the same night: the curse never takes hold.
   if (cursedId && res.deaths.some((d) => d.playerId === cursedId)) cursedId = null;
-  return { ...res, attackBlockedBy, cursedId };
+  return { ...res, attackBlockedBy, blocked, cursedId };
 }
 
 /** Plurality of the pack's picks. Ties are broken by `pick` (random by default). */
@@ -128,15 +169,18 @@ export function wolfConsensus(
 
 export const SKIP = "skip";
 
+/** `weights`: voterId -> how many votes the ballot counts for (default 1; the Mayor 2). */
 export function tallyNomination(
   ballots: Record<string, string>,
   rules: NominationSettings,
+  weights: Record<string, number> = {},
 ): NominationTally {
   const counts: Record<string, number> = {};
   let skips = 0;
-  for (const choice of Object.values(ballots)) {
-    if (choice === SKIP) skips++;
-    else counts[choice] = (counts[choice] || 0) + 1;
+  for (const [voter, choice] of Object.entries(ballots)) {
+    const w = weights[voter] ?? 1;
+    if (choice === SKIP) skips += w;
+    else counts[choice] = (counts[choice] || 0) + w;
   }
   const ranked = Object.entries(counts)
     .filter(([, c]) => c > 0)
@@ -170,16 +214,19 @@ export function tallyNomination(
   return result;
 }
 
+/** `eligible` is the weighted number of votes that could be cast. */
 export function tallyVerdict(
   ballots: Record<string, string>,
   eligible: number,
   rules: Pick<VerdictSettings, "majority">,
+  weights: Record<string, number> = {},
 ): VerdictTally {
   let execute = 0;
   let spare = 0;
-  for (const v of Object.values(ballots)) {
-    if (v === "execute") execute++;
-    else if (v === "spare") spare++;
+  for (const [voter, v] of Object.entries(ballots)) {
+    const w = weights[voter] ?? 1;
+    if (v === "execute") execute += w;
+    else if (v === "spare") spare += w;
   }
   const abstain = Math.max(0, eligible - execute - spare);
   const executed =
@@ -202,9 +249,18 @@ export function checkWin(
     alive.length === 2 &&
     alive.includes(lovers[0]) &&
     alive.includes(lovers[1]) &&
-    isWolf(roles[lovers[0]]) !== isWolf(roles[lovers[1]])
+    (isWolf(roles[lovers[0]]) !== isWolf(roles[lovers[1]]) || teamOf(roles[lovers[0]]) !== teamOf(roles[lovers[1]]))
   )
     return "lovers";
+  // A solo killer wins as the last one standing, or one on one with someone who can't kill.
+  const killers = alive.filter((id) => isSoloKiller(roles[id]));
+  for (const k of killers) {
+    const rest = alive.filter((id) => id !== k);
+    if (rest.length === 0 || (rest.length === 1 && !isWolf(roles[rest[0]]) && !isSoloKiller(roles[rest[0]])))
+      return roles[k] as Winner;
+  }
+  // While a solo killer lives, nobody else has won yet.
+  if (killers.length) return null;
   const wolves = alive.filter((id) => isWolf(roles[id])).length;
   const others = alive.length - wolves;
   if (wolves === 0) return "village";

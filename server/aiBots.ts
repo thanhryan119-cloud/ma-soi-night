@@ -11,12 +11,13 @@ import type { ChatIntel } from "../shared/botIntel";
 import { personaOf, type Persona } from "../shared/botPersona";
 import type { ChatMessage } from "../shared/social";
 import { isWolf } from "../shared/roles";
+import { isSilenced } from "../shared/engine";
 import type { Player, Room, RoleId } from "../shared/types";
 
 const API = "https://generativelanguage.googleapis.com/v1beta/models";
 const ROLE_NAMES: Record<"vi" | "en", Record<RoleId, string>> = {
-  vi: { werewolf: "Ma Sói", villager: "Dân làng", seer: "Tiên tri", bodyguard: "Bảo vệ", witch: "Phù thủy", hunter: "Thợ săn", cupid: "Cupid", cursedWolf: "Sói Nguyền", wolfSeer: "Sói Tiên Tri", elder: "Già làng", idiot: "Thằng Ngốc" },
-  en: { werewolf: "Werewolf", villager: "Villager", seer: "Seer", bodyguard: "Bodyguard", witch: "Witch", hunter: "Hunter", cupid: "Cupid", cursedWolf: "Cursed Wolf", wolfSeer: "Wolf Seer", elder: "Elder", idiot: "Village Idiot" },
+  vi: { werewolf: "Ma Sói", villager: "Dân làng", seer: "Tiên tri", bodyguard: "Bảo vệ", witch: "Phù thủy", hunter: "Thợ săn", cupid: "Cupid", cursedWolf: "Sói Nguyền", wolfSeer: "Sói Tiên Tri", elder: "Già làng", idiot: "Thằng Ngốc", lycan: "Người Sói Lai", sister: "Chị Em", wildChild: "Đứa Trẻ Hoang", medium: "Thầy Đồng", mayor: "Trưởng Làng", bigBadWolf: "Sói To Xấu Xa", minion: "Kẻ Phản Bội", knight: "Hiệp Sĩ Rỉ Sét", silencer: "Sói Bịt Miệng", tanner: "Kẻ Chán Đời", whiteWolf: "Sói Trắng", serialKiller: "Sát Nhân Hàng Loạt", arsonist: "Kẻ Phóng Hỏa" },
+  en: { werewolf: "Werewolf", villager: "Villager", seer: "Seer", bodyguard: "Bodyguard", witch: "Witch", hunter: "Hunter", cupid: "Cupid", cursedWolf: "Cursed Wolf", wolfSeer: "Wolf Seer", elder: "Elder", idiot: "Village Idiot", lycan: "Lycan", sister: "Sister", wildChild: "Wild Child", medium: "Medium", mayor: "Mayor", bigBadWolf: "Big Bad Wolf", minion: "Minion", knight: "Rusty Knight", silencer: "Silencer", tanner: "Tanner", whiteWolf: "White Wolf", serialKiller: "Serial Killer", arsonist: "Arsonist" },
 };
 
 /** Calls budget per game, so a chatty table can't run up the bill. */
@@ -97,10 +98,14 @@ export function createAiBots(opts: {
     const role = game.roles[bot.id];
     const name = (id: string) => room.players.find((p) => p.id === id)?.name ?? "?";
     const lines = [`Your secret role: ${ROLE_NAMES[lang][role]}.`];
-    if (isWolf(role)) {
+    if (isWolf(role) || role === "minion") {
       const mates = room.players.filter((p) => p.id !== bot.id && isWolf(game.roles[p.id])).map((p) => `${p.name}${p.alive ? "" : " (dead)"}`);
       lines.push(mates.length ? `Your fellow wolves: ${mates.join(", ")}. Protect them, never reveal them.` : "You are the only wolf.");
     }
+    if (role === "minion") lines.push("You are human and the wolves don't know you, but you win with them: shield them and steer the vote onto villagers.");
+    if (role === "tanner") lines.push("You win alone if the village hangs you: act a little suspicious, but not too obviously.");
+    if (role === "whiteWolf" || role === "serialKiller" || role === "arsonist") lines.push("You play alone: you win only as the last one standing. Never reveal your role.");
+    if (role === "mayor") lines.push("Your vote secretly counts twice.");
     for (const r of game.seerResults[bot.id] ?? []) lines.push(`Night ${r.night} you checked ${name(r.targetId)}: ${r.roleId ? ROLE_NAMES[lang][r.roleId] : r.isWolf ? "WEREWOLF" : "not a werewolf"}.`);
     if (game.lovers?.includes(bot.id)) lines.push(`You are in love with ${name(game.lovers.find((id) => id !== bot.id)!)} (Cupid's arrow).`);
     return lines.join(" ");
@@ -174,7 +179,7 @@ export function createAiBots(opts: {
 
   /** Which bots answer: anyone named in the messages, otherwise one or two at random. */
   function responders(room: Room, msgs: { text: string }[]): Player[] {
-    const bots = room.players.filter((p) => p.isBot && p.alive);
+    const bots = room.players.filter((p) => p.isBot && p.alive && !isSilenced(room, p.id));
     if (!bots.length) return [];
     const text = msgs.map((m) => m.text.toLowerCase()).join(" ");
     const named = bots.filter((b) => text.includes(b.name.toLowerCase()));

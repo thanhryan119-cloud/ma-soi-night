@@ -217,13 +217,15 @@ describe("Village Idiot", () => {
 describe("night order", () => {
   it("slots new steps into an order saved before they existed", () => {
     expect(completeNightOrder(["cupid", "bodyguard", "werewolf", "witch", "seer"])).toEqual([
-      "cupid", "bodyguard", "werewolf", "wolfSeer", "cursedWolf", "witch", "seer",
+      "cupid", "wildChild", "bodyguard", "werewolf", "wolfSeer", "silencer", "cursedWolf", "bigBadWolf", "whiteWolf",
+      "witch", "seer", "medium", "serialKiller", "arsonist",
     ]);
     expect(completeNightOrder(["seer", "werewolf", "x", "seer"])).toEqual([
-      "cupid", "bodyguard", "seer", "werewolf", "wolfSeer", "cursedWolf", "witch",
+      "cupid", "wildChild", "bodyguard", "seer", "medium", "serialKiller", "arsonist", "werewolf", "wolfSeer",
+      "silencer", "cursedWolf", "bigBadWolf", "whiteWolf", "witch",
     ]);
     const room = createRoom("ORD", "vi");
     expect(hostAction(room, { type: "updateSettings", settings: { nightOrder: ["seer", "werewolf", "witch", "bodyguard", "cupid"] } }).ok).toBe(true);
-    expect(room.settings.nightOrder).toHaveLength(7);
+    expect(room.settings.nightOrder).toHaveLength(14);
   });
 });

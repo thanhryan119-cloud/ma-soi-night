@@ -88,7 +88,7 @@ describe("career stats", () => {
     expect(s).toMatchObject({ games: 5, wins: 3, losses: 1, draws: 1, survived: 4, streak: 1, bestStreak: 2 });
     expect(s.byRole.werewolf).toEqual({ games: 2, wins: 2 });
     expect(s.byRole.villager).toEqual({ games: 2, wins: 1 });
-    expect(s.byTeam).toEqual({ wolves: { games: 2, wins: 2 }, village: { games: 3, wins: 1 } });
+    expect(s.byTeam).toEqual({ wolves: { games: 2, wins: 2 }, village: { games: 3, wins: 1 }, solo: { games: 0, wins: 0 } });
     expect(s.lover).toEqual({ games: 1, wins: 1 });
     expect(winRate(s)).toBeCloseTo(0.6);
     expect(s.recent[0].lover).toBe(true);

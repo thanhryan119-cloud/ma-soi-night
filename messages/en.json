@@ -46,7 +46,8 @@
   },
   "teams": {
     "wolves": "Werewolf team",
-    "village": "Village team"
+    "village": "Village team",
+    "solo": "Solo"
   },
   "roles": {
     "werewolf": {
@@ -103,6 +104,71 @@
       "name": "Village Idiot",
       "desc": "A villager. If the village votes to hang you, you reveal your card and live, but you can never vote again.",
       "action": "No action"
+    },
+    "lycan": {
+      "name": "Lycan",
+      "desc": "A villager with wolf blood: the Seer sees you as a Werewolf, but you still win with the village.",
+      "action": "No action"
+    },
+    "sister": {
+      "name": "Sister",
+      "desc": "Two sisters on the village team who know each other from the start. Trust each other and find the wolves.",
+      "action": "No action"
+    },
+    "wildChild": {
+      "name": "Wild Child",
+      "desc": "On the first night, pick a role model. While they live you are a villager. If they die, you turn into a werewolf.",
+      "action": "Pick your role model"
+    },
+    "medium": {
+      "name": "Medium",
+      "desc": "A villager. Each night (once someone has died), contact one dead player to learn their exact role.",
+      "action": "Pick a dead player to contact"
+    },
+    "mayor": {
+      "name": "Mayor",
+      "desc": "A villager whose vote counts twice, in the nomination and in the verdict.",
+      "action": "No action"
+    },
+    "bigBadWolf": {
+      "name": "Big Bad Wolf",
+      "desc": "Bites with the pack, then bites a second victim every night. Loses that power as soon as a wolf dies.",
+      "action": "Pick a second victim"
+    },
+    "minion": {
+      "name": "Minion",
+      "desc": "A human who wins with the wolves. You know who the wolves are; they don't know you. The Seer sees you as a villager.",
+      "action": "No action"
+    },
+    "knight": {
+      "name": "Rusty Knight",
+      "desc": "A villager. If the wolves bite you to death, your rusty sword kills one of them the following night.",
+      "action": "No action"
+    },
+    "silencer": {
+      "name": "Silencer",
+      "desc": "Bites with the pack. Each night picks someone who can't chat, use the mic or vote the next day.",
+      "action": "Pick who is silenced tomorrow"
+    },
+    "tanner": {
+      "name": "Tanner",
+      "desc": "Solo. You just want to hang: if the village votes to hang you, you win alone.",
+      "action": "No action"
+    },
+    "whiteWolf": {
+      "name": "White Wolf",
+      "desc": "Solo. Bites with the pack, and every other night may kill one of the wolves. Wins only as the last one standing.",
+      "action": "Pick a wolf to kill (or pass)"
+    },
+    "serialKiller": {
+      "name": "Serial Killer",
+      "desc": "Solo. Kills one player every night and survives the wolves' bite. Wins only as the last one standing.",
+      "action": "Pick tonight's victim"
+    },
+    "arsonist": {
+      "name": "Arsonist",
+      "desc": "Solo. Each night douses one house in oil, or sets every doused house alight. Wins only as the last one standing.",
+      "action": "Douse a house, or ignite"
     }
   },
   "phase": {
@@ -131,7 +197,14 @@
       "witch": "Witch, wake up. This is tonight’s victim. Will you use your healing potion? Will you use your poison on anyone?… Witch, go back to sleep.",
       "seer": "Seer, wake up. Whose identity will you reveal tonight?… Seer, go back to sleep.",
       "wolfSeer": "Wolf Seer, open your eyes. Whose role do you want to see tonight?… Wolf Seer, go back to sleep.",
-      "cursedWolf": "Cursed Wolf, open your eyes. This is the pack's victim. Do you want to curse them into a werewolf?… Cursed Wolf, go back to sleep."
+      "cursedWolf": "Cursed Wolf, open your eyes. This is the pack's victim. Do you want to curse them into a werewolf?… Cursed Wolf, go back to sleep.",
+      "wildChild": "Wild Child, wake up. Choose someone to be your role model… Wild Child, go back to sleep.",
+      "medium": "Medium, wake up. Which of the dead do you want to contact?… Medium, go back to sleep.",
+      "bigBadWolf": "Big Bad Wolf, open your eyes. Who else do you want to bite?… Big Bad Wolf, go back to sleep.",
+      "silencer": "Silencer, open your eyes. Who do you want to silence tomorrow?… Silencer, go back to sleep.",
+      "whiteWolf": "White Wolf, open your eyes. Do you want to kill one of the wolves tonight?… White Wolf, go back to sleep.",
+      "serialKiller": "Serial Killer, wake up. Who do you want to kill tonight?… Serial Killer, go back to sleep.",
+      "arsonist": "Arsonist, wake up. Whose house do you douse, or do you strike the match tonight?… Arsonist, go back to sleep."
     },
     "stepNobody": "(This role is dead or absent — still read the line and pause a few seconds so nothing is given away.)",
     "dawnDeaths": "The sun rises — everyone, open your eyes. Sadly, last night {names} passed away.",
@@ -314,7 +387,9 @@
     "inspected": "Inspected",
     "potionHeal": "Heal potion left",
     "potionPoison": "Poison left",
-    "cursed": "Cursed"
+    "cursed": "Cursed",
+    "doused": "Doused",
+    "silenced": "Silenced"
   },
   "cause": {
     "wolves": "Devoured",
@@ -322,7 +397,10 @@
     "heartbreak": "Heartbreak",
     "hunter": "Shot by the Hunter",
     "execution": "Executed",
-    "host": "Removed by the Host"
+    "host": "Removed by the Host",
+    "rust": "The Knight's rusty sword",
+    "killer": "Killed by the Serial Killer",
+    "fire": "Burnt"
   },
   "vote": {
     "title": "Who voted for what",
@@ -433,7 +511,20 @@
     "idiotRevealedDesc": "{name} is the Village Idiot: lives on, but loses the vote.",
     "joinNoLogin": "Just type your name to join, no sign-in needed.",
     "playersPanel": "Players",
-    "chatOnRight": "Talk it over in the chat on the right."
+    "chatOnRight": "Talk it over in the chat on the right.",
+    "sisters": "Your sister",
+    "wildModel": "Your role model: {name}",
+    "wildTurnedTitle": "You turned into a wolf! 🐺",
+    "wildTurnedDesc": "Your role model {name} has died. You are on the pack's side now and wake up to bite with them.",
+    "mediumHistory": "Séance results",
+    "minionPack": "The pack (they don't know you)",
+    "pass": "Pass",
+    "noTargets": "Nobody to pick tonight.",
+    "ignite": "Ignite",
+    "douse": "Douse",
+    "dousedCount": "{count} living houses doused.",
+    "youSilenced": "You are silenced today: no chat, no mic, no vote.",
+    "silencedToday": "{name} is silenced today: no talking, no vote."
   },
   "profile": {
     "title": "Your profile",
@@ -572,6 +663,22 @@
     "draw": {
       "title": "Draw — nobody survived",
       "desc": "The village lies empty."
+    },
+    "tanner": {
+      "title": "The Tanner wins!",
+      "desc": "The village hanged exactly who he wanted: himself."
+    },
+    "whiteWolf": {
+      "title": "The White Wolf wins!",
+      "desc": "The lone wolf devoured the village and the pack."
+    },
+    "serialKiller": {
+      "title": "The Serial Killer wins!",
+      "desc": "Nobody is left to tell the tale."
+    },
+    "arsonist": {
+      "title": "The Arsonist wins!",
+      "desc": "The village is nothing but ashes."
     }
   },
   "err": {
@@ -585,7 +692,7 @@
     "unassigned": "{count, plural, one {# player has} other {# players have}} no role yet.",
     "noWolves": "At least one Werewolf is needed.",
     "invalidCounts": "Invalid role counts.",
-    "roleMax": "Only one player can have this role.",
+    "roleMax": "This role is already at its maximum.",
     "winPending": "Confirm the win (or choose to keep playing) first.",
     "notInRoom": "You are not in this room.",
     "unknownAction": "Invalid action.",
@@ -652,7 +759,10 @@
     "questUnknown": "Quest not found.",
     "notForGold": "This item can't be bought with gold.",
     "notEnoughGold": "Not enough gold.",
-    "chatSlow": "Easy there: wait {seconds}s before sending again."
+    "chatSlow": "Easy there: wait {seconds}s before sending again.",
+    "sistersPair": "The Sisters come as a pair (0 or 2).",
+    "silenced": "You are silenced today.",
+    "nothingToIgnite": "No house has been doused yet."
   },
   "log": {
     "join": "{name} joined",
@@ -684,7 +794,10 @@
       "heartbreak": "{name} ({role}) died of heartbreak",
       "hunter": "{name} ({role}) was shot by the Hunter",
       "execution": "{name} ({role}) was executed",
-      "host": "{name} ({role}) was removed by the Host"
+      "host": "{name} ({role}) was removed by the Host",
+      "rust": "{name} ({role}) died of the Knight's rusty sword",
+      "killer": "{name} ({role}) was killed by the Serial Killer",
+      "fire": "{name} ({role}) burnt to death"
     },
     "voteNominate": "{actor} nominates {target}",
     "voteSkip": "{actor} skips",
@@ -713,7 +826,11 @@
       "wolves": "🐺 The Werewolves win",
       "village": "🏡 The Village wins",
       "lovers": "💘 The Lovers win",
-      "draw": "Draw — nobody survived"
+      "draw": "Draw — nobody survived",
+      "tanner": "🪢 The Tanner wins",
+      "whiteWolf": "🤍 The White Wolf wins",
+      "serialKiller": "🔪 The Serial Killer wins",
+      "arsonist": "🔥 The Arsonist wins"
     },
     "wolfAutoTarget": "The Werewolves are offline — {target} was picked at random",
     "voteRandom": "{actor} didn't vote in time → counted as a random vote: {target}",
@@ -732,7 +849,20 @@
     "curseFailed": "The curse on {target} failed",
     "cursed": "{target} ({role}) was cursed and turned into a werewolf",
     "wolfSeer": "{actor} (Wolf Seer) inspects {target}: {role}",
-    "idiotRevealed": "{name} was voted to hang but revealed the Village Idiot: lives, loses the vote"
+    "idiotRevealed": "{name} was voted to hang but revealed the Village Idiot: lives, loses the vote",
+    "wildChild": "{actor} (Wild Child) picks {target} as role model",
+    "wildChildTurned": "Role model {target} died: {actor} (Wild Child) turns into a werewolf",
+    "medium": "{actor} (Medium) contacts {target}: {role}",
+    "bigBadWolf": "{actor} (Big Bad Wolf) also bites {target}",
+    "silencer": "{actor} (Silencer) silences {target}",
+    "whiteWolf": "{actor} (White Wolf) kills {target}",
+    "serialKiller": "{actor} (Serial Killer) goes after {target}",
+    "douse": "{actor} (Arsonist) douses {target}'s house",
+    "ignite": "{actor} (Arsonist) strikes the match",
+    "fire": "Fire breaks out at: {names}",
+    "stepPass": "{actor} ({step}) passes",
+    "biteImmune": "{target} shrugged off the bite",
+    "silenced": "{name} is silenced today"
   },
   "privacy": {
     "title": "Privacy policy",
@@ -771,7 +901,8 @@
     "mentionsYou": "Mentions you",
     "filterOn": "Only {name}'s messages",
     "filterOff": "Show all",
-    "filterBy": "Show only this player's messages"
+    "filterBy": "Show only this player's messages",
+    "silenced": "You are silenced today."
   },
   "voice": {
     "join": "Join mic",

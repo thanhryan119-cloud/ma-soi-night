@@ -3,7 +3,7 @@
 // When given what was said in the chat (ChatIntel), they vote and act on it.
 
 import { currentStep, getPlayer, isStepDone, playerAction, voteEligible } from "./engine";
-import { isWolf, wakesIn } from "./roles";
+import { isWolf, teamOf, wakesIn } from "./roles";
 import { validTargets } from "./engine";
 import { accusersOf, newChatIntel, ranked, suspicion, topThreat, type ChatIntel } from "./botIntel";
 import type { PlayerAction, Room } from "./types";
@@ -17,7 +17,8 @@ export function botDecide(room: Room, botId: string, intel: ChatIntel = newChatI
   if (!bot || !bot.isBot || !game) return null;
   const role = game.roles[bot.id];
   const kind = room.phase.kind;
-  const wolf = isWolf(role);
+  // The Minion votes like a wolf (he knows the pack).
+  const wolf = isWolf(role) || teamOf(role) === "wolves";
   const read = () => suspicion(room, intel, bot.id);
 
   if (kind === "night" && bot.alive) {
@@ -54,6 +55,46 @@ export function botDecide(room: Room, botId: string, intel: ChatIntel = newChatI
         // Hunt the Seer first: whoever is hurting the pack most in the chat.
         const threat = topThreat(room, intel, fresh.length ? fresh : targets);
         return { type: "night", targets: [threat && Math.random() < 0.7 ? threat : pick(fresh.length ? fresh : targets)!] };
+      }
+      case "wildChild": {
+        if (ns.done.wildChild || !targets.length) return null;
+        // Look up to someone who seems trustworthy, so the child stays in the village.
+        const trusted = ranked(read(), targets).reverse()[0];
+        return { type: "night", targets: [trusted && Math.random() < 0.6 ? trusted : pick(targets)!] };
+      }
+      case "medium": {
+        if (ns.done.medium || !targets.length) return null;
+        const checked = new Set((game.seerResults[bot.id] ?? []).map((r) => r.targetId));
+        const fresh = targets.filter((id) => !checked.has(id));
+        return { type: "night", targets: [pick(fresh.length ? fresh : targets)!] };
+      }
+      case "bigBadWolf":
+      case "silencer": {
+        if (ns.done[step]) return null;
+        if (!targets.length) return { type: "night", targets: [] };
+        const threat = topThreat(room, intel, targets);
+        return { type: "night", targets: [threat && Math.random() < 0.7 ? threat : pick(targets)!] };
+      }
+      case "whiteWolf": {
+        if (ns.done.whiteWolf) return null;
+        // Thin the pack once the village is weak enough to finish alone.
+        const alive = room.players.filter((p) => p.alive).length;
+        if (!targets.length || (alive > 5 && Math.random() < 0.6)) return { type: "night", targets: [] };
+        return { type: "night", targets: [pick(targets)!] };
+      }
+      case "serialKiller": {
+        if (ns.done.serialKiller) return null;
+        if (!targets.length) return { type: "night", targets: [] };
+        const threat = topThreat(room, intel, targets);
+        return { type: "night", targets: [threat && Math.random() < 0.5 ? threat : pick(targets)!] };
+      }
+      case "arsonist": {
+        if (ns.done.arsonist) return null;
+        const doused = (game.doused ?? []).filter((id) => getPlayer(room, id)?.alive);
+        const others = room.players.filter((p) => p.alive && p.id !== bot.id).length;
+        if (doused.length && (doused.length >= Math.ceil(others / 2) || !targets.length)) return { type: "night", ignite: true };
+        if (!targets.length) return { type: "night", targets: [] };
+        return { type: "night", targets: [pick(targets)!] };
       }
       case "cursedWolf": {
         if (ns.done.cursedWolf) return null;

@@ -48,7 +48,7 @@ export const mistakeChance = (room: Room, botId: string) => 0.15 + key(room, bot
 
 const T = {
   vi: {
-    roles: { werewolf: "Sói", villager: "Dân làng", seer: "Tiên tri", bodyguard: "Bảo vệ", witch: "Phù thủy", hunter: "Thợ săn", cupid: "Cupid", cursedWolf: "Sói Nguyền", wolfSeer: "Sói Tiên Tri", elder: "Già làng", idiot: "Thằng Ngốc" } as Record<RoleId, string>,
+    roles: { werewolf: "Sói", villager: "Dân làng", seer: "Tiên tri", bodyguard: "Bảo vệ", witch: "Phù thủy", hunter: "Thợ săn", cupid: "Cupid", cursedWolf: "Sói Nguyền", wolfSeer: "Sói Tiên Tri", elder: "Già làng", idiot: "Thằng Ngốc", lycan: "Người Sói Lai", sister: "Chị Em", wildChild: "Đứa Trẻ Hoang", medium: "Thầy Đồng", mayor: "Trưởng Làng", bigBadWolf: "Sói To Xấu Xa", minion: "Kẻ Phản Bội", knight: "Hiệp Sĩ Rỉ Sét", silencer: "Sói Bịt Miệng", tanner: "Kẻ Chán Đời", whiteWolf: "Sói Trắng", serialKiller: "Sát Nhân Hàng Loạt", arsonist: "Kẻ Phóng Hỏa" } as Record<RoleId, string>,
     claim: ["Nói thật nhé, mình là {role}.", "Mình là {role}, mọi người tin mình đi.", "Mình xin lộ bài: mình là {role}."],
     seerTrue: ["Đêm {n} mình soi {name}: {verdict}.", "Mình là Tiên tri. Đêm {n} soi {name}, kết quả: {verdict}."],
     isWolf: "là Sói",
@@ -85,7 +85,7 @@ const T = {
     ggTricked: ["Trời ơi tin nhầm {name} 😭", "{name} diễn đỉnh thật, gg."],
   },
   en: {
-    roles: { werewolf: "Werewolf", villager: "Villager", seer: "Seer", bodyguard: "Bodyguard", witch: "Witch", hunter: "Hunter", cupid: "Cupid", cursedWolf: "Cursed Wolf", wolfSeer: "Wolf Seer", elder: "Elder", idiot: "Village Idiot" } as Record<RoleId, string>,
+    roles: { werewolf: "Werewolf", villager: "Villager", seer: "Seer", bodyguard: "Bodyguard", witch: "Witch", hunter: "Hunter", cupid: "Cupid", cursedWolf: "Cursed Wolf", wolfSeer: "Wolf Seer", elder: "Elder", idiot: "Village Idiot", lycan: "Lycan", sister: "Sister", wildChild: "Wild Child", medium: "Medium", mayor: "Mayor", bigBadWolf: "Big Bad Wolf", minion: "Minion", knight: "Rusty Knight", silencer: "Silencer", tanner: "Tanner", whiteWolf: "White Wolf", serialKiller: "Serial Killer", arsonist: "Arsonist" } as Record<RoleId, string>,
     claim: ["Honestly, I'm the {role}.", "I'm the {role}, trust me.", "Cards on the table: I'm the {role}."],
     seerTrue: ["Night {n} I checked {name}: {verdict}.", "I'm the Seer. Night {n} I checked {name} — {verdict}."],
     isWolf: "a Werewolf",

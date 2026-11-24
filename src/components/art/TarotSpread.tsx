@@ -10,7 +10,7 @@ import { CardBack, RoleArt } from "./Tarot";
 type Slot = RoleId | "back";
 
 /** Left to right, with the Werewolf in the middle. */
-const ORDER: RoleId[] = ["villager", "seer", "witch", "bodyguard", "hunter", "werewolf", "cursedWolf", "wolfSeer", "cupid", "elder", "idiot"];
+const ORDER: RoleId[] = ["villager", "seer", "witch", "bodyguard", "hunter", "werewolf", "cursedWolf", "wolfSeer", "cupid", "elder", "idiot", "lycan", "sister", "wildChild", "medium", "mayor", "knight", "minion", "bigBadWolf", "silencer", "tanner", "whiteWolf", "serialKiller", "arsonist"];
 
 /**
  * Every role (a new one not in ORDER joins at the end). With an odd count one

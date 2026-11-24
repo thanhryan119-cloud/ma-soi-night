@@ -28,6 +28,12 @@ const ROLE_WORDS: [RoleId, RegExp][] = [
   ["cupid", /(cupid|thần tình yêu)/i],
   ["elder", /(già làng|gia lang|elder)/i],
   ["idiot", /(thằng ngốc|chàng ngốc|thang ngoc|(?<![\p{L}])ngốc(?![\p{L}])|idiot)/iu],
+  ["lycan", /(sói lai|soi lai|lycan)/i],
+  ["sister", /(chị em|chi em|sister)/i],
+  ["wildChild", /(trẻ hoang|tre hoang|wild child)/i],
+  ["medium", /(thầy đồng|thay dong|medium)/i],
+  ["mayor", /(trưởng làng|truong lang|mayor)/i],
+  ["knight", /(hiệp sĩ|hiep si|knight)/i],
   ["villager", /(dân làng|dân thường|dân lành|dan lang|\bdân\b|villager)/i],
   ["werewolf", /(ma sói|\bsói\b|werewolf|\bwolf\b)/i],
 ];
@@ -90,7 +96,7 @@ export function ingestChat(room: Room, intel: ChatIntel, fromId: string, text: s
   }
 }
 
-const UNIQUE: RoleId[] = ["seer", "bodyguard", "witch", "hunter", "cupid", "elder", "idiot"];
+const UNIQUE: RoleId[] = ["seer", "bodyguard", "witch", "hunter", "cupid", "elder", "idiot", "lycan", "wildChild", "medium", "mayor", "knight"];
 const lastClaim = (intel: ChatIntel, id: string) => intel.claims[id]?.at(-1);
 
 export interface Read {

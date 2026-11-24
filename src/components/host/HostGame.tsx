@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { NIGHT_STEP_ROLE, ROLES, ROLE_IDS } from "@shared/roles";
+import { NIGHT_STEP_ROLE, ROLES, ROLE_IDS, SOLO_ROLES } from "@shared/roles";
 import type { NightStepId, RoleId, Winner } from "@shared/types";
 import type { ClientState, PlayerView } from "@shared/views";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
@@ -70,7 +70,7 @@ export function HostGame({ state, offset, hideRoles }: Props) {
             <LogList state={state} hideRoles={hideRoles} />
           </div>
         </section>
-        <ManualEnd />
+        <ManualEnd state={state} />
         <RulesCard state={state} defaultOpen={false} />
       </div>
     </main>
@@ -452,6 +452,16 @@ function StepDetail({ state, step }: { state: ClientState; step: NightStepId }) 
   else if (step === "wolfSeer") text = `👁️ ${name(n.wolfSeerTarget)}`;
   else if (step === "cursedWolf") text = `🐺 ${name(n.wolfTarget)} · 🩸 ${n.curse ? "✓" : "—"}`;
   else if (step === "seer") text = `🔮 ${name(n.seerTarget)}`;
+  else if (step === "medium") text = `🕯️ ${name(n.mediumTarget)}`;
+  else if (step === "bigBadWolf") text = `🐗 ${name(n.bigBadTarget)}`;
+  else if (step === "silencer") text = `🤐 ${name(n.silenceId)}`;
+  else if (step === "whiteWolf") text = `🤍 ${name(n.whiteWolfTarget)}`;
+  else if (step === "serialKiller") text = `🔪 ${name(n.killerTarget)}`;
+  else if (step === "arsonist")
+    text = n.ignite
+      ? `🔥 ${(n.doused ?? []).map((id) => nameOf(state, id)).join(", ") || "—"}`
+      : `🛢️ ${name(n.douseId)} · ${(n.doused ?? []).map((id) => nameOf(state, id)).join(", ") || "—"}`;
+  else if (step === "wildChild") text = `🧒 ${name(Object.values(n.wildModels ?? {})[0])}`;
   else if (step === "witch")
     text = `🐺 ${name(n.wolfTarget)} · 💚 ${n.witchSave ? "✓" : "—"} · ☠️ ${n.witchPoisonId ? nameOf(state, n.witchPoisonId) : "—"}`;
   else if (step === "cupid") text = state.lovers ? `💘 ${nameOf(state, state.lovers[0])} & ${nameOf(state, state.lovers[1])}` : t("host.noneYet");
@@ -719,7 +729,7 @@ function VerdictResultPanel({ state }: { state: ClientState }) {
   );
 }
 
-function ManualEnd() {
+function ManualEnd({ state }: { state: ClientState }) {
   const t = useT();
   const act = useHostAction();
   return (
@@ -727,7 +737,7 @@ function ManualEnd() {
       <summary className="cursor-pointer font-bold">🛠️ {t("host.override")}</summary>
       <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
         <span className="text-white/60">{t("host.endGameAs")}</span>
-        {(["village", "wolves", "lovers", "draw"] as Winner[]).map((w) => (
+        {([...["village", "wolves", "lovers", "draw"], ...SOLO_ROLES.filter((r) => state.players.some((p) => p.roleId === r))] as Winner[]).map((w) => (
           <button
             key={w}
             className="btn-ghost btn-sm"

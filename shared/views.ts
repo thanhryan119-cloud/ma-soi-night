@@ -9,6 +9,7 @@ import {
   currentStep,
   getPlayer,
   hasLostVote,
+  isSilenced,
   isStepDone,
   stepActors,
   stepKey,
@@ -52,6 +53,8 @@ export type Effect =
   | "lover"
   | "inspected"
   | "cursed"
+  | "doused"
+  | "silenced"
   | "potionHeal"
   | "potionPoison";
 
@@ -69,6 +72,8 @@ export interface PlayerView {
   isBot: boolean;
   /** A revealed Idiot: alive, everyone knows his role, he cannot vote. */
   noVote?: boolean;
+  /** Silenced by the Silencer today: no chat, no mic, no vote (public). */
+  silenced?: boolean;
   /** Only present when the viewer is allowed to know it. */
   roleId?: RoleId;
   /** Host only. */
@@ -78,8 +83,10 @@ export interface PlayerView {
 
 export interface MyTurn {
   step: NightStepId;
-  kind: "pick" | "witch" | "curse";
+  kind: "pick" | "witch" | "curse" | "arson";
   picks: number;
+  /** The role may pass (pick nobody). */
+  optional: boolean;
   targets: string[];
   done: boolean;
   /** Current selection(s) already accepted by the server. */
@@ -90,6 +97,8 @@ export interface MyTurn {
   packVotes?: Record<string, string>;
   /** Cursed Wolf only: tonight's victim, and whether the curse is still unused. */
   curse?: { victimId: string | null; available: boolean; chosen: boolean };
+  /** Arsonist only: the doused players still alive, and whether tonight's choice was to ignite. */
+  arson?: { doused: string[]; ignited: boolean };
 }
 
 export interface MeView {
@@ -112,6 +121,10 @@ export interface MeView {
   cursedNight: number | null;
   /** A revealed Idiot cannot vote any more. */
   lostVote: boolean;
+  /** Wild Child: the model picked on the first night. */
+  wildModelId: string | null;
+  /** Wild Child: when the model died and the child turned werewolf. */
+  wildTurned: { night: number; day: number } | null;
 }
 
 export interface VoteView {
@@ -139,6 +152,16 @@ export interface NightView {
   witchPoisonId?: string | null;
   seerTarget?: string | null;
   wolfSeerTarget?: string | null;
+  mediumTarget?: string | null;
+  bigBadTarget?: string | null;
+  silenceId?: string | null;
+  whiteWolfTarget?: string | null;
+  killerTarget?: string | null;
+  douseId?: string | null;
+  ignite?: boolean;
+  doused?: string[];
+  /** Wild Child id -> model. */
+  wildModels?: Record<string, string>;
   curse?: boolean;
 }
 
@@ -203,9 +226,12 @@ function hostEffects(room: Room, id: string): Effect[] {
     if (ns.wolfTarget === id || (!ns.wolfFinalized && Object.values(ns.wolfVotes).includes(id))) out.push("bitten");
     if (ns.witchSave && ns.wolfTarget === id) out.push("healed");
     if (ns.witchPoisonId === id) out.push("poisoned");
-    if (ns.seerTarget === id || ns.wolfSeerTarget === id) out.push("inspected");
+    if (ns.seerTarget === id || ns.wolfSeerTarget === id || ns.mediumTarget === id) out.push("inspected");
     if (ns.curse && ns.wolfTarget === id) out.push("cursed");
+    if (ns.bigBadTarget === id || ns.whiteWolfTarget === id || ns.killerTarget === id) out.push("bitten");
   }
+  if ((game.doused ?? []).includes(id) || game.nightState.douseId === id) out.push("doused");
+  if (isSilenced(room, id) || (room.phase.kind === "night" && game.nightState.silenceId === id)) out.push("silenced");
   if (game.roles[id] === "witch") {
     if (game.potions.heal) out.push("potionHeal");
     if (game.potions.poison) out.push("potionPoison");
@@ -234,13 +260,21 @@ function buildMe(room: Room, meId: string): MeView | null {
     hunter: null,
     cursedNight: null,
     lostVote: false,
+    wildModelId: null,
+    wildTurned: null,
   };
   if (!game || !roleId) return view;
   view.cursedNight = game.cursed?.find((c) => c.playerId === me.id)?.night ?? null;
   view.lostVote = hasLostVote(room, me.id);
+  view.wildModelId = game.wildModels?.[me.id] ?? null;
+  const turned = game.wildTurned?.find((w) => w.playerId === me.id);
+  view.wildTurned = turned ? { night: turned.night, day: turned.day } : null;
 
-  if (isWolf(roleId))
+  if (isWolf(roleId) || roleId === "minion")
     view.teammates = room.players.filter((p) => p.id !== me.id && isWolf(game.roles[p.id])).map((p) => p.id);
+  // The Sisters know each other (by the card they were dealt).
+  else if (roleId === "sister")
+    view.teammates = room.players.filter((p) => p.id !== me.id && game.originalRoles[p.id] === "sister").map((p) => p.id);
   if (game.lovers?.includes(me.id)) view.loverId = game.lovers[0] === me.id ? game.lovers[1] : game.lovers[0];
   view.seerResults = game.seerResults[me.id] ?? [];
 
@@ -254,6 +288,7 @@ function buildMe(room: Room, meId: string): MeView | null {
         step,
         kind: def.kind,
         picks: def.picks ?? 1,
+        optional: !!def.optional,
         targets: validTargets(room, me, step),
         done: false,
         selected: [],
@@ -274,6 +309,21 @@ function buildMe(room: Room, meId: string): MeView | null {
       } else if (step === "wolfSeer") {
         turn.done = !!ns.done.wolfSeer;
         turn.selected = ns.wolfSeerTarget ? [ns.wolfSeerTarget] : [];
+      } else if (step === "wildChild") {
+        turn.done = !!ns.done.wildChild;
+        turn.selected = game.wildModels?.[me.id] ? [game.wildModels[me.id]] : [];
+      } else if (step === "medium") {
+        turn.done = !!ns.done.medium;
+        turn.selected = ns.mediumTarget ? [ns.mediumTarget] : [];
+      } else if (step === "bigBadWolf" || step === "silencer" || step === "whiteWolf" || step === "serialKiller") {
+        const field = { bigBadWolf: "bigBadTarget", silencer: "silenceId", whiteWolf: "whiteWolfTarget", serialKiller: "killerTarget" } as const;
+        turn.done = !!ns.done[step];
+        const sel = ns[field[step]];
+        turn.selected = sel ? [sel] : [];
+      } else if (step === "arsonist") {
+        turn.done = !!ns.done.arsonist;
+        turn.selected = ns.douseId ? [ns.douseId] : [];
+        turn.arson = { doused: (game.doused ?? []).filter((id) => getPlayer(room, id)?.alive), ignited: !!ns.ignite };
       } else if (step === "cursedWolf") {
         turn.done = !!ns.done.cursedWolf;
         turn.curse = { victimId: ns.wolfTarget, available: !game.curseUsed, chosen: !!ns.curse };
@@ -323,7 +373,8 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
   const visibleRoles = new Set<string>();
   if (me?.roleId) {
     visibleRoles.add(me.id);
-    me.teammates.forEach((id) => visibleRoles.add(id));
+    // A Sister sees her sister as the card she was dealt (a curse later stays secret).
+    if (me.roleId !== "sister") me.teammates.forEach((id) => visibleRoles.add(id));
   }
   // A revealed Idiot showed his card to the whole village.
   game?.revealedIdiots?.forEach((id) => visibleRoles.add(id));
@@ -342,9 +393,11 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
       isBot: p.isBot,
     };
     if (game && hasLostVote(room, p.id)) v.noVote = true;
+    if (game && isSilenced(room, p.id)) v.silenced = true;
     if (game) {
       const revealDead = !p.alive && room.settings.revealRoleOnDeath;
       if (allRoles || visibleRoles.has(p.id) || revealDead) v.roleId = game.roles[p.id];
+      else if (me?.roleId === "sister" && me.teammates.includes(p.id)) v.roleId = "sister";
     }
     if (isHost) {
       v.effects = hostEffects(room, p.id);
@@ -369,6 +422,15 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
     night.witchPoisonId = ns.witchPoisonId;
     night.seerTarget = ns.seerTarget;
     night.wolfSeerTarget = ns.wolfSeerTarget ?? null;
+    night.mediumTarget = ns.mediumTarget ?? null;
+    night.bigBadTarget = ns.bigBadTarget ?? null;
+    night.silenceId = ns.silenceId ?? null;
+    night.whiteWolfTarget = ns.whiteWolfTarget ?? null;
+    night.killerTarget = ns.killerTarget ?? null;
+    night.douseId = ns.douseId ?? null;
+    night.ignite = !!ns.ignite;
+    night.doused = [...(game.doused ?? [])];
+    night.wildModels = { ...(game.wildModels ?? {}) };
     night.curse = !!ns.curse;
   }
 

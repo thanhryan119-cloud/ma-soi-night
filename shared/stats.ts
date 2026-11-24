@@ -2,7 +2,7 @@
 // One record per account, updated once when a game ends. Guests and bots
 // have no stats: only a Google account gives a player a lasting identity.
 
-import { isWolf } from "./roles";
+import { SOLO_ROLES, teamOf } from "./roles";
 import type { PlayerStyle } from "./cosmetics";
 import type { Room, RoleId, Team, Winner } from "./types";
 
@@ -86,7 +86,7 @@ export function emptyStats(): UserStats {
     abandons: 0,
     survived: 0,
     byRole: {},
-    byTeam: { wolves: { games: 0, wins: 0 }, village: { games: 0, wins: 0 } },
+    byTeam: { wolves: { games: 0, wins: 0 }, village: { games: 0, wins: 0 }, solo: { games: 0, wins: 0 } },
     lover: { games: 0, wins: 0 },
     streak: 0,
     bestStreak: 0,
@@ -98,11 +98,15 @@ export function emptyStats(): UserStats {
 /** 0..1, or 0 when no game was played. */
 export const winRate = (s: Pick<WinCount, "games" | "wins">) => (s.games ? s.wins / s.games : 0);
 
-/** Did this player win? Lovers win together; everyone else wins with their team (by their final role). */
+/**
+ * Did this player win? Lovers win together, a solo role wins alone, everyone
+ * else wins with their team (by their final role).
+ */
 export function outcomeFor(winner: Winner, role: RoleId, lover: boolean): Outcome {
   if (winner === "draw") return "draw";
   if (winner === "lovers") return lover ? "win" : "loss";
-  const team: Team = isWolf(role) ? "wolves" : "village";
+  if ((SOLO_ROLES as readonly string[]).includes(winner)) return role === winner ? "win" : "loss";
+  const team: Team = teamOf(role);
   return winner === team ? "win" : "loss";
 }
 
@@ -187,7 +191,7 @@ export function applyResult(prev: UserStats | undefined, g: RecentGame): UserSta
   if (g.outcome === "abandon") s.abandons = (s.abandons ?? 0) + 1;
   if (g.survived) s.survived++;
   s.byRole[g.role] = bump(s.byRole[g.role], won);
-  const team: Team = isWolf(g.role) ? "wolves" : "village";
+  const team: Team = teamOf(g.role);
   s.byTeam[team] = bump(s.byTeam[team], won);
   if (g.lover) s.lover = bump(s.lover, won);
   s.streak = won ? s.streak + 1 : 0;

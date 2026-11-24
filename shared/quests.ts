@@ -9,7 +9,7 @@
 // Every finished game counts (bots at the table included); daily caps and
 // one-time rewards keep the total in check. Leaving a game counts as nothing.
 
-import { isWolf } from "./roles";
+import { teamOf } from "./roles";
 import type { ItemId } from "./cosmetics";
 import type { RoleId } from "./types";
 import type { RecentGame, UserStats } from "./stats";
@@ -20,6 +20,13 @@ import type { RecentGame, UserStats } from "./stats";
 export const GOLD_PRICES: Partial<Record<ItemId, number>> = {
   "role:elder": 3000,
   "role:idiot": 3000,
+  "role:lycan": 2500,
+  "role:sister": 2500,
+  "role:wildChild": 3000,
+  "role:medium": 3000,
+  "role:mayor": 3000,
+  "role:knight": 2500,
+  "role:tanner": 2500,
   "effect:glow": 1500,
   "effect:flicker": 1500,
   "font:serif": 1000,
@@ -171,7 +178,7 @@ export function applyGame(s: QuestState, g: RecentGame, t: number): QuestState {
     return s;
   }
   const won = g.outcome === "win";
-  const wolf = isWolf(g.role);
+  const wolf = teamOf(g.role) === "wolves";
   const bump = (c: keyof Tally, yes = true) => {
     if (!yes) return;
     s.today[c]++;
@@ -180,7 +187,7 @@ export function applyGame(s: QuestState, g: RecentGame, t: number): QuestState {
   bump("play");
   bump("win", won);
   bump("wolfWin", won && wolf);
-  bump("villageWin", won && !wolf);
+  bump("villageWin", won && teamOf(g.role) === "village");
   bump("survive", g.survived);
   bump("power", hasPower(g.role));
   s.life.streak = won ? s.life.streak + 1 : g.outcome === "draw" ? s.life.streak : 0;

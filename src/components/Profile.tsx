@@ -221,6 +221,7 @@ export function StatsView({ stats }: { stats: UserStats | null }) {
         <ul className="flex flex-col gap-2.5">
           <Bar label={`🐺 ${t("teams.wolves")}`} c={stats.byTeam.wolves} color={ROLES.werewolf.color} />
           <Bar label={`🏡 ${t("teams.village")}`} c={stats.byTeam.village} color="#57cc99" />
+          {(stats.byTeam.solo?.games ?? 0) > 0 && <Bar label={`🎭 ${t("teams.solo")}`} c={stats.byTeam.solo} color="#ea580c" />}
           {stats.lover.games > 0 && <Bar label={`💘 ${t("stats.asLover")}`} c={stats.lover} color="#f472b6" />}
         </ul>
       </section>

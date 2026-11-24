@@ -91,7 +91,7 @@ HTTP công khai: `GET /leaderboard` (mọi tài khoản; ai đủ `MIN_RANKED_GA
 
 Mỗi font/hiệu ứng/khung trừ mặc định là một món `<loại>:<id>` (ví dụ `effect:glow`), giá `ITEM_PRICE_VND` = 50.000đ. `User.owned` giữ các món đã mua; `limitStyle()` gỡ mọi món chưa sở hữu ở `addPlayer`, `updateProfile`, `PATCH /me`, hồ sơ công khai và bảng xếp hạng. `Player.owned` chỉ nằm trên server (không có trong view).
 
-**Vai đặc biệt** (`role:cursedWolf`, `role:wolfSeer`, `role:elder`, `role:idiot`, cũng 50.000đ/vai, `RoleDef.premium`): phòng chỉ được dùng vai mà người dựng phòng đã mua — quản trò người (tài khoản gửi kèm `host:create` / `host:resume` / `lobby:createRoom`, lưu ở `room.hostUserId` + `room.hostOwned`, chỉ trên server) hoặc trưởng phòng của phòng máy dẫn (`Player.owned`). `unlockedRoles(room)` quyết định; `setRoleCounts` không cho *tăng* vai chưa mở (giảm thì luôn được), `assignManual`, `changeRole` và `start` đều kiểm tra lại. Mỗi `host:action` / `owner:action` đọc lại món đã mua nên mua xong là dùng được ngay. View của quản trò và trưởng phòng có `unlockedRoles` để hiện 🔒 và nút "Mở khoá".
+**Vai đặc biệt** (`role:cursedWolf`, `role:wolfSeer`, `role:elder`, `role:idiot`, `role:lycan`, `role:sister`, `role:wildChild`, `role:medium`, `role:mayor`, `role:bigBadWolf`, `role:minion`, `role:knight`, `role:silencer`, `role:tanner`, `role:whiteWolf`, `role:serialKiller`, `role:arsonist`, cũng 50.000đ/vai, `RoleDef.premium`): phòng chỉ được dùng vai mà người dựng phòng đã mua — quản trò người (tài khoản gửi kèm `host:create` / `host:resume` / `lobby:createRoom`, lưu ở `room.hostUserId` + `room.hostOwned`, chỉ trên server) hoặc trưởng phòng của phòng máy dẫn (`Player.owned`). `unlockedRoles(room)` quyết định; `setRoleCounts` không cho *tăng* vai chưa mở (giảm thì luôn được), `assignManual`, `changeRole` và `start` đều kiểm tra lại. Mỗi `host:action` / `owner:action` đọc lại món đã mua nên mua xong là dùng được ngay. View của quản trò và trưởng phòng có `unlockedRoles` để hiện 🔒 và nút "Mở khoá".
 
 | Route | Ai gọi | Việc |
 |---|---|---|
@@ -118,6 +118,27 @@ Vai đặc biệt:
 - **Sói Tiên Tri** cắn cùng bầy và mỗi đêm soi được *chính xác vai* của một người (`SeerResult.roleId`).
 - **Già làng** chịu được nhát cắn đầu tiên (`game.elderHits`); độc và treo cổ vẫn chết.
 - **Thằng Ngốc** bị vote treo cổ thì lật bài, sống, nhưng mất quyền vote (`game.revealedIdiots`, `VerdictRecord.idiotRevealed`).
+
+Vai dân làng đặc biệt thêm (premium, 50.000đ hoặc 2.500–3.000 vàng):
+
+- **Người Sói Lai** (`lycan`) thuộc phe dân nhưng Tiên tri soi ra Sói (`seenAsWolf: true`).
+- **Chị Em** (`sister`, phải đủ 2 người, `err.sistersPair`) biết nhau từ đầu (`MeView.teammates`, thấy nhau là "Chị Em" theo vai được chia).
+- **Đứa Trẻ Hoang** (`wildChild`) đêm đầu chọn thần tượng (`game.wildModels`). Thần tượng chết (đêm, treo cổ, thợ săn, quản trò) thì `applyDeaths` đổi vai đứa trẻ thành `werewolf` (`game.wildTurned`).
+- **Thầy Đồng** (`medium`) mỗi đêm gọi hồn một người đã chết, biết chính xác vai (`SeerResult.roleId`). Bước này chỉ được gọi khi đã có người chết (`NightBehaviour.needsDead`).
+
+Phe và bầy Sói: `RoleDef.team` là phe thắng (`wolves` / `village` / `solo`, `teamOf()`), còn `isWolf()` là "thuộc bầy" (`RoleDef.pack`, mặc định = phe Sói): thức dậy cắn cùng bầy, biết nhau, không bị bầy cắn, được tính là Sói khi đếm đa số. Kẻ Phản Bội thuộc phe Sói nhưng không thuộc bầy; Sói Trắng thuộc bầy nhưng phe solo.
+
+- **Trưởng Làng** (`voteWeight: 2`): phiếu tính gấp đôi ở cả vote lên dàn lẫn vote treo (`tallyNomination` / `tallyVerdict` nhận `weights`).
+- **Sói To Xấu Xa** cắn cùng bầy, rồi bước riêng cắn thêm một người (`NightInput.extraBite`, Phù thủy không cứu được) cho tới khi có một con Sói chết (`packHasLost`).
+- **Kẻ Phản Bội** (`pack: false`) biết bầy Sói (`MeView.teammates`), bầy không biết hắn, Tiên tri soi ra dân. Khi đếm đa số hắn được tính là người.
+- **Hiệp Sĩ Rỉ Sét**: bị Sói cắn chết thì `game.rustNight` = đêm sau; cuối đêm đó một con Sói ngẫu nhiên chết (`cause: "rust"`).
+- **Sói Bịt Miệng** cắn cùng bầy và mỗi đêm chọn một người: hôm sau người đó không chat, không mic, không vote (`game.silenced`, `isSilenced`, `canSpeak` → `err.silenced`, công khai qua `PlayerView.silenced`).
+- **Kẻ Chán Đời** (solo): bị dân treo cổ thì thắng một mình (`game.tannerWin` → winner `tanner`).
+- **Sói Trắng** (solo, `pack: true`): cắn cùng bầy, đêm chẵn được giết một con Sói (`NightBehaviour.nights`).
+- **Sát Nhân Hàng Loạt** (solo): mỗi đêm giết một người (`cause: "killer"`, chỉ Bảo vệ chặn được), Sói cắn không chết (`biteImmune`).
+- **Kẻ Phóng Hỏa** (solo): mỗi đêm tưới xăng một nhà (`game.doused`) hoặc châm lửa đốt hết nhà đã tưới (`cause: "fire"`, không gì chặn được).
+
+Sát thủ solo (`soloKiller`) thắng khi chỉ còn mình, hoặc còn 1 đối 1 với người không giết được ai. Khi họ còn sống thì cả dân lẫn Sói đều chưa thắng. Winner của vai solo là id của vai đó (`SoloWinner`). Vai có thể bỏ lượt (`optional`) gửi `targets: []`.
 
 Thứ tự đêm đã lưu từ trước (thiếu bước mới) được `completeNightOrder()` tự chèn bước mới vào đúng chỗ.
 

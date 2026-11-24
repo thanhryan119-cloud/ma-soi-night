@@ -46,7 +46,8 @@
   },
   "teams": {
     "wolves": "Phe Sói",
-    "village": "Phe Dân làng"
+    "village": "Phe Dân làng",
+    "solo": "Phe độc lập"
   },
   "roles": {
     "werewolf": {
@@ -103,6 +104,71 @@
       "name": "Thằng Ngốc",
       "desc": "Dân làng. Nếu bị làng vote treo cổ, bạn lật bài và được sống, nhưng từ đó mất quyền vote.",
       "action": "Không có hành động"
+    },
+    "lycan": {
+      "name": "Người Sói Lai",
+      "desc": "Dân làng mang dòng máu Sói: Tiên tri soi bạn sẽ thấy là Sói, nhưng bạn vẫn thắng cùng dân làng.",
+      "action": "Không có hành động"
+    },
+    "sister": {
+      "name": "Chị Em",
+      "desc": "Hai chị em thuộc phe dân làng, biết nhau ngay từ đầu. Hãy tin nhau và cùng tìm ra Sói.",
+      "action": "Không có hành động"
+    },
+    "wildChild": {
+      "name": "Đứa Trẻ Hoang",
+      "desc": "Đêm đầu tiên, chọn một người làm thần tượng. Khi thần tượng còn sống, bạn là dân làng. Thần tượng chết thì bạn hóa thành Ma Sói.",
+      "action": "Chọn thần tượng của bạn"
+    },
+    "medium": {
+      "name": "Thầy Đồng",
+      "desc": "Dân làng. Mỗi đêm (khi đã có người chết), gọi hồn một người đã chết để biết chính xác vai của họ.",
+      "action": "Chọn một người đã chết để gọi hồn"
+    },
+    "mayor": {
+      "name": "Trưởng Làng",
+      "desc": "Dân làng. Phiếu của bạn tính gấp đôi, cả khi vote lên dàn lẫn khi vote treo cổ.",
+      "action": "Không có hành động"
+    },
+    "bigBadWolf": {
+      "name": "Sói To Xấu Xa",
+      "desc": "Cắn cùng bầy, rồi được cắn thêm một người nữa mỗi đêm. Mất khả năng này ngay khi có một con Sói chết.",
+      "action": "Chọn nạn nhân thứ hai"
+    },
+    "minion": {
+      "name": "Kẻ Phản Bội",
+      "desc": "Là người nhưng thắng cùng bầy Sói. Bạn biết ai là Sói, còn họ không biết bạn. Tiên tri soi bạn chỉ thấy dân thường.",
+      "action": "Không có hành động"
+    },
+    "knight": {
+      "name": "Hiệp Sĩ Rỉ Sét",
+      "desc": "Dân làng. Nếu bị Sói cắn chết, thanh gươm rỉ của bạn khiến một con Sói chết vào đêm hôm sau.",
+      "action": "Không có hành động"
+    },
+    "silencer": {
+      "name": "Sói Bịt Miệng",
+      "desc": "Cắn cùng bầy. Mỗi đêm chọn một người: hôm sau người đó không được chat, không được mở mic và không được vote.",
+      "action": "Chọn người bị bịt miệng ngày mai"
+    },
+    "tanner": {
+      "name": "Kẻ Chán Đời",
+      "desc": "Phe độc lập. Bạn chỉ muốn bị treo cổ: nếu dân làng vote treo bạn, bạn thắng một mình.",
+      "action": "Không có hành động"
+    },
+    "whiteWolf": {
+      "name": "Sói Trắng",
+      "desc": "Phe độc lập. Cắn cùng bầy Sói, và cứ hai đêm một lần được giết một con Sói. Chỉ thắng khi là người cuối cùng còn sống.",
+      "action": "Chọn một con Sói để giết (hoặc bỏ qua)"
+    },
+    "serialKiller": {
+      "name": "Sát Nhân Hàng Loạt",
+      "desc": "Phe độc lập. Mỗi đêm giết một người. Sói cắn bạn không chết. Chỉ thắng khi là người cuối cùng còn sống.",
+      "action": "Chọn nạn nhân đêm nay"
+    },
+    "arsonist": {
+      "name": "Kẻ Phóng Hỏa",
+      "desc": "Phe độc lập. Mỗi đêm tưới xăng một nhà, hoặc châm lửa đốt tất cả nhà đã tưới. Chỉ thắng khi là người cuối cùng còn sống.",
+      "action": "Tưới xăng một nhà, hoặc châm lửa"
     }
   },
   "phase": {
@@ -131,7 +197,14 @@
       "witch": "Phù thủy hãy thức dậy. Đây là người bị cắn đêm nay. Bạn có muốn dùng bình cứu không? Bạn có muốn dùng bình độc lên ai không?… Phù thủy hãy đi ngủ.",
       "seer": "Tiên tri hãy thức dậy. Bạn muốn soi ai đêm nay?… Tiên tri hãy đi ngủ.",
       "wolfSeer": "Sói Tiên Tri hãy mở mắt. Bạn muốn soi vai ai đêm nay?… Sói Tiên Tri hãy đi ngủ.",
-      "cursedWolf": "Sói Nguyền hãy mở mắt. Đây là người bầy Sói vừa cắn. Bạn có muốn nguyền người này thành Sói không?… Sói Nguyền hãy đi ngủ."
+      "cursedWolf": "Sói Nguyền hãy mở mắt. Đây là người bầy Sói vừa cắn. Bạn có muốn nguyền người này thành Sói không?… Sói Nguyền hãy đi ngủ.",
+      "wildChild": "Đứa Trẻ Hoang hãy thức dậy. Hãy chọn một người làm thần tượng của bạn… Đứa Trẻ Hoang hãy đi ngủ.",
+      "medium": "Thầy Đồng hãy thức dậy. Bạn muốn gọi hồn người đã chết nào?… Thầy Đồng hãy đi ngủ.",
+      "bigBadWolf": "Sói To Xấu Xa hãy mở mắt. Bạn muốn cắn thêm ai nữa?… Sói To Xấu Xa hãy đi ngủ.",
+      "silencer": "Sói Bịt Miệng hãy mở mắt. Ngày mai bạn muốn bịt miệng ai?… Sói Bịt Miệng hãy đi ngủ.",
+      "whiteWolf": "Sói Trắng hãy mở mắt. Đêm nay bạn có muốn giết một con Sói không?… Sói Trắng hãy đi ngủ.",
+      "serialKiller": "Sát Nhân Hàng Loạt hãy thức dậy. Đêm nay bạn muốn giết ai?… Sát Nhân hãy đi ngủ.",
+      "arsonist": "Kẻ Phóng Hỏa hãy thức dậy. Bạn muốn tưới xăng nhà ai, hay châm lửa đêm nay?… Kẻ Phóng Hỏa hãy đi ngủ."
     },
     "stepNobody": "(Vai này đã chết hoặc không còn ai — vẫn đọc lời dẫn và chờ vài giây để không lộ thông tin.)",
     "dawnDeaths": "Trời sáng rồi, cả làng hãy mở mắt. Thật đau buồn, đêm qua {names} đã ra đi.",
@@ -314,7 +387,9 @@
     "inspected": "Bị soi",
     "potionHeal": "Còn bình cứu",
     "potionPoison": "Còn bình độc",
-    "cursed": "Bị nguyền"
+    "cursed": "Bị nguyền",
+    "doused": "Bị tưới xăng",
+    "silenced": "Bị bịt miệng"
   },
   "cause": {
     "wolves": "Bị Sói cắn",
@@ -322,7 +397,10 @@
     "heartbreak": "Chết vì tình",
     "hunter": "Bị Thợ săn bắn",
     "execution": "Bị treo cổ",
-    "host": "Quản trò loại"
+    "host": "Quản trò loại",
+    "rust": "Gươm rỉ của Hiệp Sĩ",
+    "killer": "Bị Sát Nhân giết",
+    "fire": "Chết cháy"
   },
   "vote": {
     "title": "Ai đã vote gì",
@@ -433,7 +511,20 @@
     "idiotRevealedDesc": "{name} là Thằng Ngốc: được sống nhưng mất quyền vote.",
     "joinNoLogin": "Chỉ cần nhập tên để vào phòng, không cần đăng nhập.",
     "playersPanel": "Người chơi",
-    "chatOnRight": "Trò chuyện ở khung chat bên phải."
+    "chatOnRight": "Trò chuyện ở khung chat bên phải.",
+    "sisters": "Chị em của bạn",
+    "wildModel": "Thần tượng của bạn: {name}",
+    "wildTurnedTitle": "Bạn đã hóa Sói! 🐺",
+    "wildTurnedDesc": "Thần tượng {name} đã chết. Từ giờ bạn thuộc bầy Sói và thức dậy cắn người cùng cả bầy.",
+    "mediumHistory": "Kết quả gọi hồn",
+    "minionPack": "Bầy Sói (họ không biết bạn)",
+    "pass": "Bỏ qua",
+    "noTargets": "Đêm nay không có ai để chọn.",
+    "ignite": "Châm lửa",
+    "douse": "Tưới xăng",
+    "dousedCount": "Đã tưới xăng {count} nhà còn sống.",
+    "youSilenced": "Bạn bị bịt miệng hôm nay: không được chat, mở mic hay vote.",
+    "silencedToday": "{name} bị bịt miệng hôm nay: không được nói, không được vote."
   },
   "profile": {
     "title": "Hồ sơ của bạn",
@@ -572,6 +663,22 @@
     "draw": {
       "title": "Hòa — không ai sống sót",
       "desc": "Ngôi làng đã hoang tàn."
+    },
+    "tanner": {
+      "title": "Kẻ Chán Đời chiến thắng!",
+      "desc": "Dân làng đã treo cổ đúng người hắn muốn: chính hắn."
+    },
+    "whiteWolf": {
+      "title": "Sói Trắng chiến thắng!",
+      "desc": "Con Sói cô độc đã nuốt cả làng lẫn bầy."
+    },
+    "serialKiller": {
+      "title": "Sát Nhân chiến thắng!",
+      "desc": "Không còn ai sống sót để kể lại."
+    },
+    "arsonist": {
+      "title": "Kẻ Phóng Hỏa chiến thắng!",
+      "desc": "Ngôi làng chỉ còn là tro tàn."
     }
   },
   "err": {
@@ -585,7 +692,7 @@
     "unassigned": "Còn {count} người chưa có vai.",
     "noWolves": "Cần ít nhất một Ma Sói.",
     "invalidCounts": "Số lượng vai không hợp lệ.",
-    "roleMax": "Vai này chỉ được có một người.",
+    "roleMax": "Vai này đã đủ số lượng tối đa.",
     "winPending": "Hãy xác nhận kết quả thắng (hoặc chọn chơi tiếp) trước.",
     "notInRoom": "Bạn không ở trong phòng.",
     "unknownAction": "Hành động không hợp lệ.",
@@ -652,7 +759,10 @@
     "questUnknown": "Không tìm thấy nhiệm vụ.",
     "notForGold": "Món này không bán bằng vàng.",
     "notEnoughGold": "Bạn chưa đủ vàng.",
-    "chatSlow": "Chậm lại chút, đợi {seconds} giây rồi gửi tiếp."
+    "chatSlow": "Chậm lại chút, đợi {seconds} giây rồi gửi tiếp.",
+    "sistersPair": "Chị Em phải có đủ hai người (0 hoặc 2).",
+    "silenced": "Bạn bị bịt miệng hôm nay.",
+    "nothingToIgnite": "Chưa có nhà nào bị tưới xăng."
   },
   "log": {
     "join": "{name} vào phòng",
@@ -684,7 +794,10 @@
       "heartbreak": "{name} ({role}) chết theo người yêu",
       "hunter": "{name} ({role}) bị Thợ săn bắn",
       "execution": "{name} ({role}) bị treo cổ",
-      "host": "{name} ({role}) bị quản trò loại"
+      "host": "{name} ({role}) bị quản trò loại",
+      "rust": "{name} ({role}) chết vì gươm rỉ của Hiệp Sĩ",
+      "killer": "{name} ({role}) bị Sát Nhân giết",
+      "fire": "{name} ({role}) chết cháy"
     },
     "voteNominate": "{actor} đề cử {target}",
     "voteSkip": "{actor} bỏ qua",
@@ -713,7 +826,11 @@
       "wolves": "🐺 Ma Sói chiến thắng",
       "village": "🏡 Dân làng chiến thắng",
       "lovers": "💘 Cặp đôi chiến thắng",
-      "draw": "Hòa — không ai sống sót"
+      "draw": "Hòa — không ai sống sót",
+      "tanner": "🪢 Kẻ Chán Đời chiến thắng",
+      "whiteWolf": "🤍 Sói Trắng chiến thắng",
+      "serialKiller": "🔪 Sát Nhân chiến thắng",
+      "arsonist": "🔥 Kẻ Phóng Hỏa chiến thắng"
     },
     "wolfAutoTarget": "Sói mất kết nối — hệ thống chọn ngẫu nhiên {target}",
     "voteRandom": "{actor} không kịp vote → tính như vote ngẫu nhiên: {target}",
@@ -732,7 +849,20 @@
     "curseFailed": "Lời nguyền lên {target} không thành",
     "cursed": "{target} ({role}) bị nguyền, hóa thành Ma Sói",
     "wolfSeer": "{actor} (Sói Tiên Tri) soi {target}: {role}",
-    "idiotRevealed": "{name} bị vote treo cổ nhưng lật bài Thằng Ngốc: được sống, mất quyền vote"
+    "idiotRevealed": "{name} bị vote treo cổ nhưng lật bài Thằng Ngốc: được sống, mất quyền vote",
+    "wildChild": "{actor} (Đứa Trẻ Hoang) chọn {target} làm thần tượng",
+    "wildChildTurned": "Thần tượng {target} đã chết, {actor} (Đứa Trẻ Hoang) hóa thành Ma Sói",
+    "medium": "{actor} (Thầy Đồng) gọi hồn {target}: {role}",
+    "bigBadWolf": "{actor} (Sói To Xấu Xa) cắn thêm {target}",
+    "silencer": "{actor} (Sói Bịt Miệng) bịt miệng {target}",
+    "whiteWolf": "{actor} (Sói Trắng) giết {target}",
+    "serialKiller": "{actor} (Sát Nhân) nhắm vào {target}",
+    "douse": "{actor} (Kẻ Phóng Hỏa) tưới xăng nhà {target}",
+    "ignite": "{actor} (Kẻ Phóng Hỏa) châm lửa",
+    "fire": "Lửa bùng lên ở nhà: {names}",
+    "stepPass": "{actor} ({step}) bỏ qua",
+    "biteImmune": "{target} không hề hấn gì sau nhát cắn",
+    "silenced": "{name} bị bịt miệng hôm nay"
   },
   "privacy": {
     "title": "Chính sách quyền riêng tư",
@@ -771,7 +901,8 @@
     "mentionsYou": "Nhắc đến bạn",
     "filterOn": "Chỉ hiện tin của {name}",
     "filterOff": "Xem tất cả",
-    "filterBy": "Chỉ xem tin của người này"
+    "filterBy": "Chỉ xem tin của người này",
+    "silenced": "Bạn bị bịt miệng hôm nay."
   },
   "voice": {
     "join": "Bật mic",

@@ -540,9 +540,21 @@ function HoldCard({ me, players }: Ctx) {
                 <p className="mt-1 text-base leading-snug text-white">{t(`roles.${role.id}.desc`)}</p>
                 {role.team === "wolves" && (
                   <div className="mt-1.5 text-sm">
-                    <div className="font-bold text-blood-light">{t("player.teammates")}</div>
+                    <div className="font-bold text-blood-light">{t(role.id === "minion" ? "player.minionPack" : "player.teammates")}</div>
                     {me.teammates.length ? me.teammates.map((id) => players.get(id)?.name).join(", ") : t("player.noTeammates")}
                   </div>
+                )}
+                {role.id === "sister" && me.teammates.length > 0 && (
+                  <div className="mt-1.5 text-sm">
+                    <div className="font-bold text-pink-300">{t("player.sisters")}</div>
+                    {me.teammates.map((id) => players.get(id)?.name).join(", ")}
+                  </div>
+                )}
+                {me.wildModelId && !me.wildTurned && (
+                  <div className="mt-1.5 text-sm text-lime-300">{t("player.wildModel", { name: players.get(me.wildModelId)?.name ?? "?" })}</div>
+                )}
+                {me.wildTurned && me.wildModelId && (
+                  <div className="mt-1.5 text-sm text-blood-light">{t("player.wildTurnedDesc", { name: players.get(me.wildModelId)?.name ?? "?" })}</div>
                 )}
                 {me.loverId && (
                   <div className="mt-1.5 text-sm text-pink-300">{t("player.yourLover", { name: players.get(me.loverId)?.name ?? "?" })}</div>
@@ -566,7 +578,9 @@ function RoleSheet(ctx: Ctx) {
       </div>
       {me.seerResults.length > 0 && (
         <div>
-          <h4 className="mb-1 text-sm font-bold">{me.roleId === "wolfSeer" ? "👁️" : "🔮"} {t("player.seerHistory")}</h4>
+          <h4 className="mb-1 text-sm font-bold">
+            {me.roleId === "medium" ? `🕯️ ${t("player.mediumHistory")}` : `${me.roleId === "wolfSeer" ? "👁️" : "🔮"} ${t("player.seerHistory")}`}
+          </h4>
           <ul className="space-y-1 text-sm">
             {me.seerResults.map((r, i) => (
               <li key={i} className={r.isWolf ? "text-blood-light" : "text-emerald-300"}>
@@ -765,7 +779,7 @@ function NightTurn({ state, me, players }: Ctx) {
   const roleId = me.roleId!;
 
   if (turn.done) {
-    const last = turn.step === "seer" || turn.step === "wolfSeer" ? me.seerResults[me.seerResults.length - 1] : null;
+    const last = turn.step === "seer" || turn.step === "wolfSeer" || turn.step === "medium" ? me.seerResults[me.seerResults.length - 1] : null;
     return (
       <CloseEyes>
         {last && last.night === state.phase.night && (
@@ -813,6 +827,34 @@ function NightTurn({ state, me, players }: Ctx) {
               {t("player.curseYes")}
             </button>
           )}
+        </Actions>
+      </Fill>
+    );
+  }
+
+  if (turn.kind === "arson" && turn.arson) {
+    const a = turn.arson;
+    const marks: Record<string, React.ReactNode> = {};
+    for (const id of a.doused) marks[id] = <span className="rounded bg-orange-600/90 px-1 py-0.5">🛢️</span>;
+    return (
+      <Fill>
+        <TurnBanner
+          roleId="arsonist"
+          extra={<p className="mt-0.5 text-[11px] text-white/70">{t("player.dousedCount", { count: a.doused.length })}</p>}
+        />
+        <TargetGrid players={players} ids={turn.targets} selected={sel} marks={marks} onPick={(id) => setSel(sel[0] === id ? [] : [id])} />
+        <Actions>
+          <button className="btn-ghost flex-1" onClick={() => act({ type: "night", targets: [] })}>
+            {t("player.pass")}
+          </button>
+          {a.doused.length > 0 && (
+            <button className="btn flex-1 bg-orange-600 font-bold text-white" onClick={() => act({ type: "night", ignite: true })}>
+              🔥 {t("player.ignite")}
+            </button>
+          )}
+          <button className="btn-primary flex-1 py-3" disabled={sel.length !== 1} onClick={() => act({ type: "night", targets: sel })}>
+            🛢️ {t("player.douse")}
+          </button>
         </Actions>
       </Fill>
     );
@@ -909,11 +951,22 @@ function NightTurn({ state, me, players }: Ctx) {
   return (
     <Fill>
       <TurnBanner roleId={NIGHT_STEP_ROLE[turn.step] ?? roleId} extra={max > 1 ? <p className="text-[11px] text-white/70">{t("player.pickTwo")}</p> : null} />
-      <TargetGrid players={players} ids={turn.targets} selected={sel} onPick={toggle} />
+      {turn.targets.length ? (
+        <TargetGrid players={players} ids={turn.targets} selected={sel} onPick={toggle} />
+      ) : (
+        <p className="flex-1 text-center text-sm text-white/60">{t("player.noTargets")}</p>
+      )}
       <Actions>
-        <button className="btn-primary flex-1 py-3" disabled={sel.length !== max} onClick={() => act({ type: "night", targets: sel })}>
-          {t("player.confirm")}
-        </button>
+        {turn.optional && (
+          <button className="btn-ghost flex-1" onClick={() => act({ type: "night", targets: [] })}>
+            {t("player.pass")}
+          </button>
+        )}
+        {turn.targets.length > 0 && (
+          <button className="btn-primary flex-1 py-3" disabled={sel.length !== max} onClick={() => act({ type: "night", targets: sel })}>
+            {t("player.confirm")}
+          </button>
+        )}
       </Actions>
     </Fill>
   );
@@ -932,6 +985,17 @@ function Dawn({ state, me, players }: Ctx) {
       <SceneArt scene="dawn" className="w-full max-w-[260px]" />
       <h2 className="font-display text-3xl font-bold text-moon">{t("player.dawn")}</h2>
       {iDied && <p className="rounded-lg bg-blood/25 px-4 py-2 text-xl font-bold text-blood-light">{t("player.youDied")}</p>}
+      {state.players.filter((p) => p.silenced).map((p) => (
+        <p key={p.id} className="rise rounded-lg border border-rose-400/50 bg-rose-500/15 px-4 py-2 text-center text-sm font-semibold text-rose-200">
+          🤐 {p.id === me.id ? t("player.youSilenced") : t("player.silencedToday", { name: p.name })}
+        </p>
+      ))}
+      {me.wildTurned && state.phase.day === me.wildTurned.day + 1 && (
+        <div className="rise max-w-sm rounded-lg border border-blood bg-blood/20 px-4 py-3 text-center">
+          <p className="text-xl font-bold text-blood-light">{t("player.wildTurnedTitle")}</p>
+          <p className="mt-1 text-sm leading-snug">{t("player.wildTurnedDesc", { name: players.get(me.wildModelId ?? "")?.name ?? "?" })}</p>
+        </div>
+      )}
       {me.cursedNight !== null && me.cursedNight === state.phase.day && (
         <div className="rise max-w-sm rounded-lg border border-blood bg-blood/20 px-4 py-3 text-center">
           <p className="text-xl font-bold text-blood-light">{t("player.cursedTitle")}</p>

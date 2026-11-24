@@ -10,6 +10,7 @@ import {
   completeNightOrder,
   defaultSettings,
   emptyRoleCounts,
+  SOLO_ROLES,
   isPremiumRole,
   isWolf,
   roleItem,
@@ -240,6 +241,8 @@ export function validateRoleCounts(counts: Record<RoleId, number>): string | nul
     const max = ROLES[r].max;
     if (max !== undefined && c > max) return "err.roleMax";
   }
+  // The Sisters come as a pair.
+  if ((counts.sister ?? 0) === 1) return "err.sistersPair";
   return null;
 }
 
@@ -270,6 +273,13 @@ function newNightState(): NightState {
     seerTarget: null,
     wolfSeerTarget: null,
     curse: false,
+    mediumTarget: null,
+    bigBadTarget: null,
+    silenceId: null,
+    whiteWolfTarget: null,
+    killerTarget: null,
+    douseId: null,
+    ignite: false,
     done: {},
   };
 }
@@ -329,6 +339,8 @@ export function buildNightSteps(room: Room, night: number): NightStepId[] {
     const role = ROLES[NIGHT_STEP_ROLE[step]];
     if (!stepRoles(step).some((r) => present.has(r))) return false;
     if (role.night?.firstNightOnly && night !== 1) return false;
+    if (role.night?.needsDead && room.players.every((p) => p.alive)) return false;
+    if (role.night?.nights && !role.night.nights(night)) return false;
     return true;
   });
 }
@@ -397,6 +409,14 @@ function resolveDawn(room: Room) {
   const game = room.game!;
   const ns = game.nightState;
   if (!ns.wolfFinalized) leaveStep(room, "werewolf");
+  // The Knight's rusty sword: a wolf dies at the end of the night after the bite.
+  const extra: Death[] = [];
+  if (game.rustNight === room.phase.night) {
+    game.rustNight = null;
+    const pack = aliveIds(room).filter((id) => isWolf(game.roles[id]));
+    if (pack.length) extra.push({ playerId: pack[Math.floor(Math.random() * pack.length)], cause: "rust" });
+  }
+  const doused = (game.doused ?? []).filter((id) => getPlayer(room, id)?.alive);
   const outcome = resolveNight({
     alive: aliveIds(room),
     roles: game.roles,
@@ -408,10 +428,31 @@ function resolveDawn(room: Room) {
     witchPoisonId: ns.witchPoisonId,
     curse: !!ns.curse,
     sturdy: aliveIds(room).filter((id) => game.roles[id] === "elder" && !(game.elderHits ?? []).includes(id)),
+    extraBite: ns.bigBadTarget,
+    immune: aliveIds(room).filter((id) => ROLES[game.roles[id]]?.biteImmune),
+    killerTarget: ns.killerTarget,
+    whiteWolfTarget: ns.whiteWolfTarget,
+    fire: ns.ignite ? doused : [],
+    extra,
   });
-  const blockedKey = { bodyguard: "log.savedByGuard", witch: "log.savedByWitch", elder: "log.savedByElder" } as const;
+  const blockedKey = {
+    bodyguard: "log.savedByGuard",
+    witch: "log.savedByWitch",
+    elder: "log.savedByElder",
+    immune: "log.biteImmune",
+  } as const;
   if (outcome.attackBlockedBy) log(room, blockedKey[outcome.attackBlockedBy], { target: nameOf(room, ns.wolfTarget) });
   if (outcome.attackBlockedBy === "elder" && ns.wolfTarget) (game.elderHits ??= []).push(ns.wolfTarget);
+  for (const b of outcome.blocked) {
+    log(room, blockedKey[b.by], { target: nameOf(room, b.targetId) });
+    if (b.by === "elder") (game.elderHits ??= []).push(b.targetId);
+  }
+  if (ns.ignite) {
+    game.doused = [];
+    log(room, "log.fire", { names: doused.map((id) => nameOf(room, id)).join(", ") || "—" });
+  } else if (ns.douseId) (game.doused ??= []).push(ns.douseId);
+  // Bitten to death, the Knight leaves his rusty sword in a wolf: it dies the next night.
+  if (outcome.deaths.some((d) => d.cause === "wolves" && game.roles[d.playerId] === "knight")) game.rustNight = room.phase.night + 1;
   if (ns.curse && !outcome.cursedId) log(room, "log.curseFailed", { target: nameOf(room, ns.wolfTarget) });
   if (outcome.cursedId) {
     const id = outcome.cursedId;
@@ -424,6 +465,11 @@ function resolveDawn(room: Room) {
   applyDeaths(room, outcome.deaths);
   game.lastDeaths = outcome.deaths;
   if (!outcome.deaths.length) log(room, "log.noDeath", {}, true);
+  game.silenced = null;
+  if (ns.silenceId && getPlayer(room, ns.silenceId)?.alive) {
+    game.silenced = { playerId: ns.silenceId, day: room.phase.night };
+    log(room, "log.silenced", { name: nameOf(room, ns.silenceId) }, true);
+  }
   game.pendingHunters = [...outcome.hunters];
   game.hunterReturn = "discussion";
   room.phase = { ...room.phase, kind: "dawn", day: room.phase.night };
@@ -438,6 +484,19 @@ function applyDeaths(room: Room, deaths: Death[]) {
     if (!p) continue;
     p.alive = false;
     log(room, `log.death.${d.cause}`, { name: p.name, role: room.game!.roles[p.id] }, true);
+  }
+  turnWildChildren(room);
+}
+
+/** A Wild Child whose model has died turns werewolf (and keeps it, even if the model is revived). */
+function turnWildChildren(room: Room) {
+  const game = room.game!;
+  for (const [childId, modelId] of Object.entries(game.wildModels ?? {})) {
+    const child = getPlayer(room, childId);
+    if (!child?.alive || game.roles[childId] !== "wildChild" || getPlayer(room, modelId)?.alive !== false) continue;
+    game.roles[childId] = "werewolf";
+    (game.wildTurned ??= []).push({ playerId: childId, night: room.phase.night, day: room.phase.day });
+    log(room, "log.wildChildTurned", { actor: child.name, target: nameOf(room, modelId) });
   }
 }
 
@@ -457,7 +516,7 @@ export function aliveSignature(room: Room): string {
 export function evaluateWin(room: Room) {
   const game = room.game;
   if (!game || game.winner) return;
-  const w = checkWin(aliveIds(room), game.roles, game.lovers);
+  const w: Winner | null = game.tannerWin ? "tanner" : checkWin(aliveIds(room), game.roles, game.lovers);
   game.pendingWin = w && aliveSignature(room) !== game.dismissedWinSig ? w : null;
 }
 
@@ -482,10 +541,25 @@ export function verdictEligible(room: Room): string[] {
   return aliveIds(room).filter((id) => !nominees.has(id));
 }
 
-/** A revealed Idiot lives on but has lost his vote. */
-export function hasLostVote(room: Room, id: string): boolean {
-  return !!room.game?.revealedIdiots?.includes(id);
+/** The Silencer's victim can't talk or vote today. */
+export function isSilenced(room: Room, id: string): boolean {
+  const s = room.game?.silenced;
+  return !!s && s.playerId === id && s.day === room.phase.day && room.phase.kind !== "night" && room.phase.kind !== "gameOver";
 }
+
+/** A revealed Idiot lives on but has lost his vote; the silenced can't vote today. */
+export function hasLostVote(room: Room, id: string): boolean {
+  return !!room.game?.revealedIdiots?.includes(id) || isSilenced(room, id);
+}
+
+/** How many votes a player's ballot counts for (the Mayor: 2). */
+export function voteWeight(room: Room, id: string): number {
+  const role = room.game?.roles[id];
+  return (role && ROLES[role]?.voteWeight) || 1;
+}
+
+const voteWeights = (room: Room): Record<string, number> =>
+  Object.fromEntries(room.players.map((p) => [p.id, voteWeight(room, p.id)]));
 
 export function voteEligible(room: Room): string[] {
   const vote = room.game?.vote;
@@ -499,11 +573,15 @@ function closeNomination(room: Room): "defense" | "revote" | "none" {
   vote.closed = true;
   const rules = room.settings.nomination;
   const isRevote = !!vote.candidates;
-  const tally = tallyNomination(vote.ballots, {
-    ...rules,
-    // A second tie in a revote sends nobody up.
-    tie: isRevote && rules.tie === "revote" ? "none" : rules.tie,
-  });
+  const tally = tallyNomination(
+    vote.ballots,
+    {
+      ...rules,
+      // A second tie in a revote sends nobody up.
+      tie: isRevote && rules.tie === "revote" ? "none" : rules.tie,
+    },
+    voteWeights(room),
+  );
   game.nomination = tally;
   // Record the full count for the end-of-game story.
   const counts = Object.entries(tally.counts)
@@ -529,8 +607,10 @@ function closeVerdict(room: Room) {
   const game = room.game!;
   const vote = game.vote!;
   vote.closed = true;
-  const eligible = verdictEligible(room).length;
-  const tally = tallyVerdict(vote.ballots, eligible, room.settings.verdict);
+  const eligible = verdictEligible(room)
+    .filter((id) => !hasLostVote(room, id))
+    .reduce((n, id) => n + voteWeight(room, id), 0);
+  const tally = tallyVerdict(vote.ballots, eligible, room.settings.verdict, voteWeights(room));
   const nomineeId = vote.nomineeId!;
   let deaths: Death[] = [];
   const idiotSpared = tally.executed && game.roles[nomineeId] === "idiot" && !hasLostVote(room, nomineeId);
@@ -539,6 +619,8 @@ function closeVerdict(room: Room) {
     (game.revealedIdiots ??= []).push(nomineeId);
     log(room, "log.idiotRevealed", { name: nameOf(room, nomineeId) }, true);
   } else if (tally.executed && getPlayer(room, nomineeId)?.alive) {
+    // The Tanner wanted nothing more than to hang.
+    if (game.roles[nomineeId] === "tanner") game.tannerWin = true;
     const res = cascadeDeaths([{ playerId: nomineeId, cause: "execution" }], deathCtx(room));
     deaths = res.deaths;
     applyDeaths(room, deaths);
@@ -632,9 +714,9 @@ function enforceWolfBite(room: Room): ActionResult | null {
   if (ns.wolfFinalized) return null;
   const wolves = stepActors(room, "werewolf");
   if (!wolves.length || wolves.some((w) => ns.wolfVotes[w.id])) return null;
-  if (wolves.some((w) => w.connected || w.isBot)) return fail("err.wolvesMustBite");
   const targets = validTargets(room, wolves[0], "werewolf");
   if (!targets.length) return null;
+  if (wolves.some((w) => w.connected || w.isBot)) return fail("err.wolvesMustBite");
   const target = targets[Math.floor(Math.random() * targets.length)];
   ns.wolfVotes[wolves[0].id] = target;
   log(room, "log.wolfAutoTarget", { target: nameOf(room, target) });
@@ -683,6 +765,8 @@ export function awaitingConfirmation(room: Room): ActionResult | null {
     const ns = game.nightState;
     if (step === "werewolf") {
       if (room.settings.wolvesMustBite === false || ns.wolfFinalized) return null;
+      // Nobody left to bite (only the pack and the White Wolf alive): nothing to wait for.
+      if (!validTargets(room, online[0], step).length) return null;
       const votes = online.map((w) => ns.wolfVotes[w.id]);
       return votes.every((v) => !!v) && new Set(votes).size === 1 ? null : fail("err.roleNotDone", { role: NIGHT_STEP_ROLE[step] });
     }
@@ -864,6 +948,14 @@ function nightAction(
   const ns = game.nightState;
   const valid = new Set(validTargets(room, actor, step));
   const targets = Array.isArray(action.targets) ? action.targets.map(String) : [];
+  const def = ROLES[NIGHT_STEP_ROLE[step]].night!;
+  // Roles that may pass: picking nobody ends their turn.
+  if (def.optional && def.kind === "pick" && !targets.length) {
+    if (ns.done[step]) return fail("err.alreadyActed");
+    ns.done[step] = true;
+    log(room, "log.stepPass", { actor: actor.name, step });
+    return ok;
+  }
 
   switch (step) {
     case "cupid": {
@@ -937,6 +1029,52 @@ function nightAction(
       log(room, "log.wolfSeer", { actor: actor.name, target: nameOf(room, targets[0]), role: roleId });
       return ok;
     }
+    case "wildChild": {
+      if (ns.done.wildChild) return fail("err.alreadyActed");
+      if (targets.length !== 1 || !valid.has(targets[0])) return fail("err.invalidTarget");
+      (game.wildModels ??= {})[actor.id] = targets[0];
+      ns.done.wildChild = true;
+      log(room, "log.wildChild", { actor: actor.name, target: nameOf(room, targets[0]) });
+      return ok;
+    }
+    case "medium": {
+      if (ns.done.medium) return fail("err.alreadyActed");
+      if (targets.length !== 1 || !valid.has(targets[0])) return fail("err.invalidTarget");
+      const roleId = game.roles[targets[0]];
+      ns.mediumTarget = targets[0];
+      ns.done.medium = true;
+      (game.seerResults[actor.id] ??= []).push({ night: room.phase.night, targetId: targets[0], isWolf: isWolf(roleId), roleId });
+      log(room, "log.medium", { actor: actor.name, target: nameOf(room, targets[0]), role: roleId });
+      return ok;
+    }
+    case "bigBadWolf":
+    case "silencer":
+    case "whiteWolf":
+    case "serialKiller": {
+      if (ns.done[step]) return fail("err.alreadyActed");
+      if (targets.length !== 1 || !valid.has(targets[0])) return fail("err.invalidTarget");
+      const field = { bigBadWolf: "bigBadTarget", silencer: "silenceId", whiteWolf: "whiteWolfTarget", serialKiller: "killerTarget" } as const;
+      ns[field[step]] = targets[0];
+      ns.done[step] = true;
+      log(room, `log.${step}`, { actor: actor.name, target: nameOf(room, targets[0]) });
+      return ok;
+    }
+    case "arsonist": {
+      if (ns.done.arsonist) return fail("err.alreadyActed");
+      if (action.ignite) {
+        if (!(game.doused ?? []).some((id) => getPlayer(room, id)?.alive)) return fail("err.nothingToIgnite");
+        ns.ignite = true;
+        log(room, "log.ignite", { actor: actor.name });
+      } else if (!targets.length) {
+        log(room, "log.stepPass", { actor: actor.name, step });
+      } else {
+        if (targets.length !== 1 || !valid.has(targets[0])) return fail("err.invalidTarget");
+        ns.douseId = targets[0];
+        log(room, "log.douse", { actor: actor.name, target: nameOf(room, targets[0]) });
+      }
+      ns.done.arsonist = true;
+      return ok;
+    }
     case "cursedWolf": {
       if (ns.done.cursedWolf) return fail("err.alreadyActed");
       const curse = !!action.curse;
@@ -958,6 +1096,7 @@ function castVote(room: Room, voter: Player, choice: string): ActionResult {
   const kind = room.phase.kind;
   if (!game || !vote || vote.closed || (kind !== "nominate" && kind !== "verdict")) return fail("err.wrongPhase");
   if (!voter.alive) return fail("err.dead");
+  if (isSilenced(room, voter.id)) return fail("err.silenced");
   if (hasLostVote(room, voter.id)) return fail("err.noVoteIdiot");
   if (voter.id in vote.ballots) return fail("err.alreadyVoted");
   if (vote.kind === "nominate") {
@@ -1277,7 +1416,7 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
     }
     case "endGame":
       if (!room.game || room.phase.kind === "gameOver") return fail("err.wrongPhase");
-      if (!["wolves", "village", "lovers", "draw"].includes(action.winner)) return fail("err.invalidTarget");
+      if (!([...["wolves", "village", "lovers", "draw"], ...SOLO_ROLES] as string[]).includes(action.winner)) return fail("err.invalidTarget");
       return endGame(room, action.winner);
     case "newGame":
       if (room.phase.kind === "lobby") return fail("err.wrongPhase");

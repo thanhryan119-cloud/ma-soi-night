@@ -4,6 +4,12 @@
 
 import type { Room } from "./types";
 
+/** The Silencer's victim of the day (same rule as engine.isSilenced, kept here to stay import-free). */
+function silencedNow(room: Room, id: string): boolean {
+  const s = room.game?.silenced;
+  return !!s && s.playerId === id && s.day === room.phase.day && room.phase.kind !== "night" && room.phase.kind !== "gameOver";
+}
+
 /** Chat is open in these phases; during the defense only the players on the stand may speak. */
 export const SOCIAL_PHASES = ["lobby", "discussion", "defense", "gameOver"] as const;
 export const CHAT_MAX_LEN = 200;
@@ -49,6 +55,7 @@ export function canSpeak(room: Room, who: Speaker): string | null {
   if (!socialOpen(room) && !defenderChat(room)) return "err.chatClosed";
   if (room.game && !p.alive && room.phase.kind !== "gameOver") return "err.deadNoChat";
   if (defenders && !room.game?.nominees.includes(p.id)) return "err.onlyNominees";
+  if (silencedNow(room, p.id)) return "err.silenced";
   return null;
 }
 
@@ -60,7 +67,7 @@ export function voiceAccess(room: Room, who: Speaker): { ok: boolean; listenOnly
   const p = room.players.find((x) => x.id === who.playerId);
   if (!p) return { ok: false, listenOnly: true, error: "err.notInRoom" };
   const onlyNominees = room.phase.kind === "defense" && !room.game?.nominees.includes(p.id);
-  return { ok: true, listenOnly: (!!room.game && !p.alive && room.phase.kind !== "gameOver") || onlyNominees };
+  return { ok: true, listenOnly: (!!room.game && !p.alive && room.phase.kind !== "gameOver") || onlyNominees || silencedNow(room, p.id) };
 }
 
 export function sanitizeChat(text: unknown): string | null {
