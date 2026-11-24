@@ -651,7 +651,8 @@
     "questNotDone": "This quest isn't finished yet.",
     "questUnknown": "Quest not found.",
     "notForGold": "This item can't be bought with gold.",
-    "notEnoughGold": "Not enough gold."
+    "notEnoughGold": "Not enough gold.",
+    "chatSlow": "Easy there: wait {seconds}s before sending again."
   },
   "log": {
     "join": "{name} joined",
@@ -764,7 +765,13 @@
     "showBoard": "Show board",
     "onlyNominees": "Defense in progress — only the players on the stand may speak.",
     "newMessages": "{n} new messages",
-    "typing": "{count, plural, =1 {{names} is typing…} other {{names} are typing…}}"
+    "typing": "{count, plural, =1 {{names} is typing…} other {{names} are typing…}}",
+    "slowWait": "{seconds}s",
+    "newMentions": "{n, plural, one {# mention} other {# mentions}}",
+    "mentionsYou": "Mentions you",
+    "filterOn": "Only {name}'s messages",
+    "filterOff": "Show all",
+    "filterBy": "Show only this player's messages"
   },
   "voice": {
     "join": "Join mic",

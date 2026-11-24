@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { BOARD_COLORS, BRUSH_SIZES, SOCIAL_PHASES, STROKE_MAX_POINTS, type Stroke } from "@shared/social";
+import {
+  BOARD_COLORS,
+  BRUSH_SIZES,
+  CHAT_MIN_GAP_MS,
+  SOCIAL_PHASES,
+  STROKE_MAX_POINTS,
+  chatWaitMs,
+  mentionsName,
+  recentSends,
+  type ChatMessage,
+  type Stroke,
+} from "@shared/social";
 import type { ClientState, PlayerView } from "@shared/views";
 import { useT } from "@/lib/i18n";
 import { useSocial } from "@/lib/social";
@@ -150,30 +161,93 @@ function Chat({
   const showError = useErrorToast();
   const [text, setText] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
+  const myName = players.get(viewer)?.name ?? "";
+  const mentionsMe = (m: ChatMessage) => !!myName && m.from !== viewer && mentionsName(m.text, myName);
+
+  // Tap a name to read only that person's messages; tap again (or "show all") to see everyone.
+  const [filter, setFilter] = useState<string | null>(null);
+  const shown = filter ? social.chat.filter((m) => m.from === filter) : social.chat;
+  useEffect(() => {
+    if (filter && !social.chat.some((m) => m.from === filter)) setFilter(null);
+  }, [social.chat, filter]);
+
   // Only follow new messages when you are already at the bottom (or wrote it
   // yourself); if you scrolled up to read, stay put and show a "new messages" pill.
   const atBottom = useRef(true);
   const [unread, setUnread] = useState(0);
+  const [unreadMentions, setUnreadMentions] = useState(0);
+  const toBottom = () => {
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  };
   const last = social.chat[social.chat.length - 1];
   useEffect(() => {
-    const el = listRef.current;
-    if (!el) return;
-    if (atBottom.current || last?.from === viewer) {
-      el.scrollTop = el.scrollHeight;
+    if (!last) {
       setUnread(0);
-    } else setUnread((n) => n + 1);
-  }, [social.chat.length]); // eslint-disable-line react-hooks/exhaustive-deps
+      setUnreadMentions(0);
+      return;
+    }
+    const visible = !filter || last.from === filter;
+    if (last.from === viewer || (atBottom.current && visible)) {
+      toBottom();
+      // While filtered, keep counting what the filter hides until "show all".
+      if (!filter) {
+        setUnread(0);
+        setUnreadMentions(0);
+      }
+    } else {
+      setUnread((n) => n + 1);
+      if (mentionsMe(last)) setUnreadMentions((n) => n + 1);
+    }
+    // Keyed on the last id: the list stays at 200 lines once full.
+  }, [last?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    toBottom();
+    atBottom.current = true;
+    // Back to everyone at the bottom: everything has been seen.
+    if (!filter) {
+      setUnread(0);
+      setUnreadMentions(0);
+    }
+  }, [filter]);
   const onScroll = () => {
     const el = listRef.current;
     if (!el) return;
     atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-    if (atBottom.current) setUnread(0);
+    if (atBottom.current && !filter) {
+      setUnread(0);
+      setUnreadMentions(0);
+    }
   };
   const jumpDown = () => {
+    // New messages may be from people the filter hides: show everyone again.
+    if (filter) setFilter(null);
     const el = listRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
     setUnread(0);
+    setUnreadMentions(0);
   };
+
+  // Slow mode: a few messages, then a short wait (the server enforces the same rule).
+  const limited = viewer !== "host";
+  const sends = useRef<number[]>([]);
+  const [waitUntil, setWaitUntil] = useState(0);
+  const [clock, setClock] = useState(0);
+  const startWait = (ms: number) => {
+    const now = Date.now();
+    setClock(now);
+    setWaitUntil(now + ms);
+  };
+  useEffect(() => {
+    if (waitUntil <= Date.now()) return;
+    const i = setInterval(() => {
+      const now = Date.now();
+      setClock(now);
+      if (now >= waitUntil) clearInterval(i);
+    }, 250);
+    return () => clearInterval(i);
+  }, [waitUntil]);
+  const waitS = Math.ceil(Math.max(0, waitUntil - clock) / 1000);
 
   // Let the room see "… is typing" (at most every 3 s, and "stopped" after a pause).
   const lastTyping = useRef(0);
@@ -194,27 +268,53 @@ function Chat({
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
-    if (!text.trim()) return;
+    if (!text.trim() || waitS > 0) return;
+    if (limited) {
+      const wait = chatWaitMs(sends.current, Date.now());
+      if (wait > 0) return startWait(wait);
+    }
     const r = await social.sendChat(text);
-    if (showError(r)) {
+    if (r.ok) {
+      const now = Date.now();
+      sends.current = [...recentSends(sends.current, now), now];
       setText("");
       clearTimeout(stopTimer.current);
       lastTyping.current = 0;
-    }
+      // Used up the burst: show the wait right away instead of after the next try.
+      const next = limited ? chatWaitMs(sends.current, now) : 0;
+      if (next > CHAT_MIN_GAP_MS) startWait(next);
+    } else if (r.error === "err.chatSlow") startWait(Number(r.retryMs) || 1000);
+    else showError(r);
   }
   const typers = social.typingIds.filter((id) => id !== viewer).map((id) => players.get(id)?.name).filter(Boolean) as string[];
+  const filterName = filter ? (filter === "host" ? t("social.host") : players.get(filter)?.name ?? "?") : "";
 
   return (
     <>
+      {filter && (
+        <div className="flex shrink-0 items-center gap-2 border-b border-gold/25 bg-night-800/80 px-2 py-1 text-xs">
+          <span className="min-w-0 flex-1 truncate text-gold">🔎 {t("social.filterOn", { name: filterName })}</span>
+          <button type="button" className="btn-ghost btn-sm shrink-0 px-2 py-0.5 text-xs" onClick={() => setFilter(null)}>
+            ✕ {t("social.filterOff")}
+          </button>
+        </div>
+      )}
       <div className="relative flex min-h-0 flex-1 flex-col">
-      <div ref={listRef} onScroll={onScroll} className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-2 py-1.5">
+      <div ref={listRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-0.5 pb-1.5">
         {!social.chat.length && <p className="py-6 text-center text-sm text-white/40">{t("social.empty")}</p>}
-        {social.chat.map((m) => {
+        {shown.map((m, i) => {
           const p = players.get(m.from);
           const mine = m.from === viewer;
+          // Several lines in a row from the same person share one avatar and name.
+          const prev = shown[i - 1];
+          const followUp = !!prev && prev.from === m.from && m.t - prev.t < 60_000;
+          const mention = mentionsMe(m);
+          const mark = mention ? "outline-2 outline-offset-1 outline-gold" : "";
           return (
-            <div key={m.id} className={`flex items-start gap-1.5 ${mine ? "flex-row-reverse text-right" : ""}`}>
-              {p ? (
+            <div key={m.id} className={`flex items-start gap-1.5 ${followUp ? "mt-0.5" : "mt-1.5"} ${mine ? "flex-row-reverse text-right" : ""}`}>
+              {followUp ? (
+                <span className="w-7 shrink-0" aria-hidden />
+              ) : p ? (
                 <ProfileLink playerId={p.id} className="shrink-0">
                   <Avatar p={p} size="sm" />
                 </ProfileLink>
@@ -222,22 +322,34 @@ function Chat({
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blood text-xs">🎙️</span>
               )}
               <div className="min-w-0 max-w-[80%]">
-                <div className="truncate text-[11px] leading-tight text-white/50">
+                {!followUp && (
+                  <div className="truncate text-[11px] leading-tight text-white/50">
+                    <button
+                      type="button"
+                      onClick={() => setFilter(filter === m.from ? null : m.from)}
+                      title={t("social.filterBy")}
+                      aria-label={`${p?.name ?? t("social.host")}: ${t("social.filterBy")}`}
+                      aria-pressed={filter === m.from}
+                      className="max-w-full truncate hover:underline"
+                    >
+                      {p ? <StyledName p={p} className="truncate" /> : t("social.host")}
+                    </button>
+                  </div>
+                )}
+                <div className={`flex items-center gap-1 ${mine ? "flex-row-reverse" : ""}`}>
                   {p ? (
-                    <ProfileLink playerId={p.id} className="max-w-full">
-                      <StyledName p={p} className="truncate" />
-                    </ProfileLink>
+                    <ChatBubble color={p.chatColor} deco={p.style.chat} className={mark}>
+                      {m.text}
+                    </ChatBubble>
                   ) : (
-                    t("social.host")
+                    <div className={`inline-block rounded-lg bg-night-700 px-2 py-1 text-sm leading-snug break-words ring-1 ring-gold/50 ${mark}`}>{m.text}</div>
+                  )}
+                  {mention && (
+                    <span className="shrink-0 text-xs font-black text-gold" aria-label={t("social.mentionsYou")}>
+                      @
+                    </span>
                   )}
                 </div>
-                {p ? (
-                  <ChatBubble color={p.chatColor} deco={p.style.chat}>
-                    {m.text}
-                  </ChatBubble>
-                ) : (
-                  <div className="inline-block rounded-lg bg-night-700 px-2 py-1 text-sm leading-snug break-words ring-1 ring-gold/50">{m.text}</div>
-                )}
               </div>
             </div>
           );
@@ -249,8 +361,9 @@ function Chat({
         </p>
       )}
       {unread > 0 && (
-        <button type="button" onClick={jumpDown} className="btn-primary btn-sm absolute bottom-2 left-1/2 -translate-x-1/2 shadow-lg">
+        <button type="button" onClick={jumpDown} className="btn-primary btn-sm absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap shadow-lg">
           ↓ {t("social.newMessages", { n: unread })}
+          {unreadMentions > 0 && <span className="ml-1 font-black">· {t("social.newMentions", { n: unreadMentions })}</span>}
         </button>
       )}
       </div>
@@ -264,8 +377,12 @@ function Chat({
             onChange={(e) => onType(e.target.value)}
             enterKeyHint="send"
           />
-          <button className="btn-primary shrink-0 px-3" disabled={!text.trim()}>
-            {t("social.send")}
+          <button
+            className="btn-primary shrink-0 px-3 tabular-nums"
+            disabled={!text.trim() || waitS > 0}
+            title={waitS > 0 ? t("err.chatSlow", { seconds: waitS }) : undefined}
+          >
+            {waitS > 0 ? `⏳ ${t("social.slowWait", { seconds: waitS })}` : t("social.send")}
           </button>
         </form>
       ) : (

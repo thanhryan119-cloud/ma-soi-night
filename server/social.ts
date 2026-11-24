@@ -7,6 +7,8 @@ import {
   BOARD_MAX_STROKES,
   CHAT_HISTORY,
   canSpeak,
+  chatWaitMs,
+  recentSends,
   sanitizeChat,
   sanitizeStroke,
   voiceAccess,
@@ -26,7 +28,8 @@ interface VoicePeer {
 interface RoomSocial {
   chat: ChatMessage[];
   strokes: Stroke[];
-  lastChat: Map<string, number>;
+  /** Recent send times per sender, for slow mode. */
+  lastChat: Map<string, number[]>;
   voice: Map<string, VoicePeer>;
 }
 
@@ -108,8 +111,11 @@ export function createSocial(
       if (!text) return ack({ ok: false, error: "err.chatEmpty" });
       const key = fromKey(c.who);
       const now = Date.now();
-      if (now - (c.s.lastChat.get(key) ?? 0) < 400) return ack({ ok: false, error: "err.tooFast" });
-      c.s.lastChat.set(key, now);
+      // Slow mode for players (the host may always speak).
+      const sent = recentSends(c.s.lastChat.get(key) ?? [], now);
+      const retryMs = c.who.kind === "player" ? chatWaitMs(sent, now) : 0;
+      if (retryMs > 0) return ack({ ok: false, error: "err.chatSlow", retryMs, params: { seconds: Math.ceil(retryMs / 1000) } });
+      c.s.lastChat.set(key, [...sent, now]);
       const msg: ChatMessage = { id: randomId(10), from: key, text, t: now };
       c.s.chat.push(msg);
       if (c.who.kind === "player") onChat(c.room, key, text);

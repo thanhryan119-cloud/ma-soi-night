@@ -651,7 +651,8 @@
     "questNotDone": "Nhiệm vụ chưa hoàn thành.",
     "questUnknown": "Không tìm thấy nhiệm vụ.",
     "notForGold": "Món này không bán bằng vàng.",
-    "notEnoughGold": "Bạn chưa đủ vàng."
+    "notEnoughGold": "Bạn chưa đủ vàng.",
+    "chatSlow": "Chậm lại chút, đợi {seconds} giây rồi gửi tiếp."
   },
   "log": {
     "join": "{name} vào phòng",
@@ -764,7 +765,13 @@
     "showBoard": "Mở bảng vẽ",
     "onlyNominees": "Đang biện hộ — chỉ người lên dàn được nói.",
     "newMessages": "{n} tin nhắn mới",
-    "typing": "{count, plural, =1 {{names} đang nhập…} other {{names} đang nhập…}}"
+    "typing": "{count, plural, =1 {{names} đang nhập…} other {{names} đang nhập…}}",
+    "slowWait": "{seconds}s",
+    "newMentions": "{n, plural, other {# nhắc bạn}}",
+    "mentionsYou": "Nhắc đến bạn",
+    "filterOn": "Chỉ hiện tin của {name}",
+    "filterOff": "Xem tất cả",
+    "filterBy": "Chỉ xem tin của người này"
   },
   "voice": {
     "join": "Bật mic",

@@ -72,6 +72,44 @@ export function sanitizeChat(text: unknown): string | null {
   return clean || null;
 }
 
+/**
+ * Slow mode: a player may send at most CHAT_BURST messages per CHAT_WINDOW_MS,
+ * and never two within CHAT_MIN_GAP_MS, so a busy table stays readable.
+ */
+export const CHAT_BURST = 3;
+export const CHAT_WINDOW_MS = 8000;
+export const CHAT_MIN_GAP_MS = 400;
+
+/** Drops send times that no longer count (older than the window). */
+export const recentSends = (times: readonly number[], now: number) => times.filter((t) => now - t < CHAT_WINDOW_MS);
+
+/** 0 when a player who sent at `times` may send now, otherwise how many ms they must wait. */
+export function chatWaitMs(times: readonly number[], now: number): number {
+  const recent = recentSends(times, now).sort((a, b) => a - b);
+  let wait = 0;
+  const last = recent[recent.length - 1];
+  if (last !== undefined) wait = Math.max(wait, CHAT_MIN_GAP_MS - (now - last));
+  if (recent.length >= CHAT_BURST) wait = Math.max(wait, CHAT_WINDOW_MS - (now - recent[recent.length - CHAT_BURST]));
+  return Math.max(0, wait);
+}
+
+/** People are talking a lot right now (4+ lines from humans in 10 s): bots hold back. */
+export const BUSY_LINES = 4;
+export const BUSY_WINDOW_MS = 10_000;
+export function tableBusy(chat: readonly ChatMessage[], isHuman: (from: string) => boolean, now: number): boolean {
+  let n = 0;
+  for (let i = chat.length - 1; i >= 0 && now - chat[i].t < BUSY_WINDOW_MS; i--) if (isHuman(chat[i].from) && ++n >= BUSY_LINES) return true;
+  return false;
+}
+
+/** True when `text` names the player `name` as a whole word ("An" is not in "Anh"), or as "@name". */
+export function mentionsName(text: string, name: string): boolean {
+  const n = name.trim();
+  if ([...n].length < 2) return false;
+  const esc = n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(String.raw`(?<![\p{L}\p{N}])${esc}(?![\p{L}\p{N}])`, "iu").test(text);
+}
+
 export function sanitizeStroke(input: unknown, by: string, id: string): Stroke | null {
   const s = (input ?? {}) as Partial<Stroke>;
   if (!BOARD_COLORS.includes(s.color as (typeof BOARD_COLORS)[number])) return null;
