@@ -4,7 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { ShareRoom } from "@/components/ShareRoom";
 import { useEffect, useState } from "react";
 import { MIN_PLAYERS } from "@shared/engine";
-import { PREMIUM_ROLES, ROLES, ROLE_IDS, isPremiumRole, suggestRoles, totalRoles } from "@shared/roles";
+import { PREMIUM_ROLES, ROLES, ROLE_IDS, SOLO_ROLES, isPremiumRole, suggestRoles, totalRoles } from "@shared/roles";
 import { RoleUnlockButton } from "@/components/RoleShop";
 import { AddBots } from "./AddBots";
 import type { Locale, RoleId } from "@shared/types";
@@ -224,43 +224,46 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
   const sameAsSuggested = suggested && ROLE_IDS.every((r) => suggested[r] === counts[r]);
   const anyLocked = PREMIUM_ROLES.some((r) => !unlocked.has(r));
 
+  const grid = `grid grid-cols-1 gap-1.5 ${owner ? "" : "sm:grid-cols-2"}`;
+  const row = (r: RoleId) => {
+    const locked = !unlocked.has(r);
+    return (
+      <li
+        key={r}
+        className={`flex items-center gap-2 rounded-xl p-2 ${isPremiumRole(r) ? "border border-gold/25 bg-gold/[0.04]" : "bg-white/5"}`}
+        title={t(`roles.${r}.desc`)}
+      >
+        <span className={`min-w-0 flex-1 ${locked ? "opacity-60" : ""}`}>
+          <RoleBadge roleId={r} />
+        </span>
+        {locked && counts[r] === 0 ? (
+          <RoleUnlockButton roleId={r} />
+        ) : (
+          <>
+            <button className="btn-ghost btn-sm w-8" onClick={() => set(r, counts[r] - 1)} disabled={counts[r] <= 0} aria-label="-">
+              −
+            </button>
+            <span className="w-6 text-center font-mono text-lg font-bold">{counts[r]}</span>
+            <button
+              className="btn-ghost btn-sm w-8"
+              onClick={() => set(r, counts[r] + 1)}
+              disabled={locked || (ROLES[r].max !== undefined && counts[r] >= ROLES[r].max!)}
+              aria-label="+"
+            >
+              +
+            </button>
+          </>
+        )}
+      </li>
+    );
+  };
+
   return (
     <section className="card flex flex-col gap-3">
       <h2 className="text-xl font-bold">{t("host.roleConfig")}</h2>
-      <ul className={`grid grid-cols-1 gap-1.5 ${owner ? "" : "sm:grid-cols-2"}`}>
-        {ROLE_IDS.map((r) => {
-          const locked = !unlocked.has(r);
-          return (
-            <li
-              key={r}
-              className={`flex items-center gap-2 rounded-xl p-2 ${isPremiumRole(r) ? "border border-gold/25 bg-gold/[0.04]" : "bg-white/5"}`}
-              title={t(`roles.${r}.desc`)}
-            >
-              <span className={`min-w-0 flex-1 ${locked ? "opacity-60" : ""}`}>
-                <RoleBadge roleId={r} />
-              </span>
-              {locked && counts[r] === 0 ? (
-                <RoleUnlockButton roleId={r} />
-              ) : (
-                <>
-                  <button className="btn-ghost btn-sm w-8" onClick={() => set(r, counts[r] - 1)} disabled={counts[r] <= 0} aria-label="-">
-                    −
-                  </button>
-                  <span className="w-6 text-center font-mono text-lg font-bold">{counts[r]}</span>
-                  <button
-                    className="btn-ghost btn-sm w-8"
-                    onClick={() => set(r, counts[r] + 1)}
-                    disabled={locked || (ROLES[r].max !== undefined && counts[r] >= ROLES[r].max!)}
-                    aria-label="+"
-                  >
-                    +
-                  </button>
-                </>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      <ul className={grid}>{BASIC_ROLES.map(row)}</ul>
+      <RoleGroup title={t("host.groupAdvanced")} roles={ADVANCED_ROLES} counts={counts} grid={grid} row={row} />
+      <RoleGroup title={t("host.groupSolo")} roles={SOLO_GROUP} counts={counts} grid={grid} row={row} />
       {anyLocked && <p className="text-xs text-white/50">{t("host.premiumHint")}</p>}
       <div className={`rounded-xl p-2 text-sm ${total === n ? "bg-emerald-500/10 text-emerald-300" : "bg-blood/15 text-blood-light"}`}>
         {total === n ? t("host.totalRoles", { roles: total, players: n }) : t("host.mismatch", { roles: total, players: n })}
@@ -305,5 +308,51 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
       </>
       )}
     </section>
+  );
+}
+
+const SOLO_GROUP: RoleId[] = [...SOLO_ROLES];
+/** The free roles: always shown. */
+const BASIC_ROLES = ROLE_IDS.filter((r) => !isPremiumRole(r) && !SOLO_GROUP.includes(r));
+/** Premium roles of the village and the wolves: folded away until opened. */
+const ADVANCED_ROLES = ROLE_IDS.filter((r) => !BASIC_ROLES.includes(r) && !SOLO_GROUP.includes(r));
+
+/** A folded group of roles. The header lists the ones in play, so nothing in the setup is hidden. */
+function RoleGroup({
+  title,
+  roles,
+  counts,
+  grid,
+  row,
+}: {
+  title: string;
+  roles: RoleId[];
+  counts: Record<RoleId, number>;
+  grid: string;
+  row: (r: RoleId) => React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const inPlay = roles.filter((r) => counts[r] > 0);
+  return (
+    <div className="rounded-xl border border-white/10">
+      <button
+        type="button"
+        className="flex w-full flex-wrap items-center gap-2 p-2 text-left"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span className="font-bold">
+          {open ? "▾" : "▸"} {title}
+        </span>
+        <span className="text-xs text-white/40">({roles.length})</span>
+        {!open &&
+          inPlay.map((r) => (
+            <span key={r} className="chip">
+              {ROLES[r].emoji} ×{counts[r]}
+            </span>
+          ))}
+      </button>
+      {open && <ul className={`${grid} px-2 pb-2`}>{roles.map(row)}</ul>}
+    </div>
   );
 }

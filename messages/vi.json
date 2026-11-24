@@ -265,6 +265,8 @@
     "removeBots": "Xóa bot",
     "botHint": "Bot tự động chơi — dùng để thử một mình trên một máy.",
     "roleConfig": "Cấu hình vai",
+    "groupAdvanced": "Vai nâng cao",
+    "groupSolo": "Phe thứ 3",
     "suggestedFor": "Gợi ý cho {count} người",
     "useSuggested": "Dùng gợi ý",
     "otherSuggestion": "Gợi ý khác",

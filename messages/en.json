@@ -265,6 +265,8 @@
     "removeBots": "Remove bots",
     "botHint": "Bots play automatically — test a full game alone on one machine.",
     "roleConfig": "Role setup",
+    "groupAdvanced": "Advanced roles",
+    "groupSolo": "Third party",
     "suggestedFor": "Suggested for {count}",
     "useSuggested": "Use suggestion",
     "otherSuggestion": "Another setup",
