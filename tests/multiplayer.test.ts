@@ -188,6 +188,21 @@ describe("leaving", () => {
     expect(gameResults(room).map((r) => r.userId)).not.toContain("u-quit");
   });
 
+  it("leaving after dying: the game still counts, a win if their side wins", () => {
+    const { room, ids } = running([null, "u-dead"]);
+    const seat = room.players.find((p) => p.id === ids[1])!;
+    seat.alive = false;
+    const role = "villager";
+    room.game!.roles[ids[1]] = role;
+    const res = leaveRoom(room, ids[1], "left");
+    expect(res.ok).toBe(true);
+    expect(res.abandon).toBeNull();
+    expect(seat.isBot).toBe(true);
+    hostAction(room, { type: "endGame", winner: "village" });
+    const mine = gameResults(room).find((r) => r.userId === "u-dead");
+    expect(mine?.game).toMatchObject({ role, outcome: "win", survived: false });
+  });
+
   it("the owner leaving hands the room to the next player", () => {
     const { room, owner, ids } = running();
     leaveRoom(room, owner, "away");

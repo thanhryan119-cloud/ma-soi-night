@@ -19,6 +19,8 @@ import { useSocial } from "@/lib/social";
 import { storage } from "@/lib/socket";
 import { useVoice } from "@/lib/voice";
 import { Avatar, ChatBubble, StyledName, useErrorToast } from "./ui";
+import { GhostLog, useGhostChat } from "./GhostChat";
+import { GlobalChatLog, useGlobalChat } from "./GlobalChat";
 import { ProfileLink } from "./Profile";
 
 /** True when the message starts a new day (or night, or the lobby / game over) compared with the one before. */
@@ -54,7 +56,11 @@ export function ChatMilestone({ m }: { m: ChatMessage }) {
   );
 }
 
-/** Who is using the panel: the host, or a player id. */
+/**
+ * The room's chat box. Tabs: the room chat (with the drawing board), the dead
+ * players' chat when this viewer may read it, and the server-wide chat.
+ * Who is using the panel: the host, or a player id.
+ */
 export function SocialPanel({
   state,
   viewer,
@@ -104,32 +110,77 @@ export function SocialPanel({
     setBoardOpen(!boardOpen);
   };
 
+  const [tab, setTab] = useState<Tab>("room");
+  const over = state.phase.kind === "gameOver";
+  const ghost = useGhostChat(state, viewer);
+  const anyDead = state.players.some((p) => !p.alive);
+  // Same rule as before: the server says who may read; once the game is over
+  // the tab only shows if the dead said something.
+  const ghostShown =
+    ghost.allowed && (ghost.messages.length > 0 || (!over && (!isHost || anyDead)));
+  const global = useGlobalChat(tab === "server");
+  useEffect(() => {
+    if (tab === "ghost" && !ghostShown) setTab("room");
+  }, [tab, ghostShown]);
+
+  // Unread counts for the tabs you are not looking at.
+  const [roomSince, setRoomSince] = useState(() => Date.now());
+  const [ghostSeen, setGhostSeen] = useState(0);
+  useEffect(() => {
+    if (tab === "room") setRoomSince(Date.now());
+  }, [tab, social.chat.length]);
+  useEffect(() => {
+    if (tab === "ghost") setGhostSeen(ghost.messages.length);
+  }, [tab, ghost.messages.length]);
+  const roomUnread =
+    tab === "room" ? 0 : social.chat.filter((m) => m.t > roomSince && m.from !== viewer).length;
+  const ghostUnread =
+    tab === "ghost" ? 0 : ghost.messages.slice(ghostSeen).filter((m) => m.from !== viewer).length;
+
+  const tabs: { id: Tab; label: string; unread: number }[] = [
+    { id: "room", label: `💬 ${t("social.tabRoom")}`, unread: roomUnread },
+    ...(ghostShown
+      ? [{ id: "ghost" as Tab, label: `👻 ${over ? t("ghostChat.endTitle") : t("social.tabGhost")}`, unread: ghostUnread }]
+      : []),
+    { id: "server", label: `🌐 ${t("social.tabServer")}`, unread: global.unread },
+  ];
+
   return (
     <div
       className={`tarot-frame flex min-h-0 flex-col overflow-hidden rounded-lg border border-gold/40 bg-night-900/85 ${className}`}
     >
-      <div className="flex shrink-0 items-center justify-center gap-2 border-b border-gold/25 px-2 py-1.5">
-        <span className="w-24 shrink-0" aria-hidden />
-        <span className="ml-auto text-gold/60">✦</span>
-        <h3 className="font-display text-lg leading-none text-gold">
-          {t("social.title")}
-        </h3>
-        <span className="text-gold/60">✦</span>
-        <button
-          type="button"
-          className="btn-ghost btn-sm ml-auto px-2 py-0.5 text-xs"
-          onClick={toggleBoard}
-          aria-expanded={boardOpen}
-        >
-          {boardOpen
-            ? `▴ ${t("social.hideBoard")}`
-            : `▾ ${t("social.showBoard")}`}
-        </button>
+      <div className="flex shrink-0 items-center gap-1 border-b border-gold/25 px-1.5 py-1" role="tablist" aria-label={t("social.title")}>
+        {tabs.map((x) => (
+          <button
+            key={x.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === x.id}
+            onClick={() => setTab(x.id)}
+            className={`flex min-w-0 items-center gap-1 rounded-md px-2 py-1 text-sm font-bold whitespace-nowrap ${tab === x.id ? "bg-gold/15 text-gold ring-1 ring-gold/40" : "text-white/60 hover:text-white"}`}
+          >
+            <span className="truncate">{x.label}</span>
+            {x.unread > 0 && (
+              <span className="rounded-full bg-blood px-1.5 text-[10px] font-bold text-white">{x.unread > 99 ? "99+" : x.unread}</span>
+            )}
+          </button>
+        ))}
+        {tab === "room" && (
+          <button
+            type="button"
+            className="btn-ghost btn-sm ml-auto shrink-0 px-2 py-0.5 text-xs"
+            onClick={toggleBoard}
+            aria-expanded={boardOpen}
+            title={boardOpen ? t("social.hideBoard") : t("social.showBoard")}
+          >
+            {boardOpen ? "▴" : "▾"} 🎨
+          </button>
+        )}
       </div>
       {state.settings.voiceChat !== false && (
         <VoiceBar state={state} players={players} enabled={phaseOpen} />
       )}
-      {boardOpen && (
+      {tab === "room" && boardOpen && (
         <div className="flex min-h-0 shrink-0 basis-[24%] flex-col border-b border-gold/25">
           <Board
             social={social}
@@ -139,7 +190,8 @@ export function SocialPanel({
           />
         </div>
       )}
-      <div className="flex min-h-0 flex-1 flex-col">
+      {/* Kept mounted while hidden so the room chat keeps its scroll and filter. */}
+      <div className={`min-h-0 flex-1 flex-col ${tab === "room" ? "flex" : "hidden"}`}>
         <Chat
           social={social}
           players={players}
@@ -148,9 +200,20 @@ export function SocialPanel({
           viewer={viewer}
         />
       </div>
+      {tab === "ghost" && (
+        <div className="flex min-h-0 flex-1 flex-col gap-2 p-2">
+          {!over && (
+            <p className="shrink-0 text-xs text-white/50">{isHost ? t("ghostChat.hostHint") : t("ghostChat.hint")}</p>
+          )}
+          <GhostLog state={state} ghost={ghost} className="flex-1" />
+        </div>
+      )}
+      {tab === "server" && <GlobalChatLog chat={global} className="flex-1 p-2" />}
     </div>
   );
 }
+
+type Tab = "room" | "ghost" | "server";
 
 // ---------------------------------------------------------------------------
 // Voice

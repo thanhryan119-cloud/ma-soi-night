@@ -3,6 +3,7 @@
 // Every version and what it changed, newest first.
 
 import Link from "next/link";
+import { GlobalChat } from "@/components/GlobalChat";
 import { APP_VERSION, CHANGELOG } from "@shared/changelog";
 import { ReleaseItems, releaseDate } from "@/components/Mailbox";
 import { useLocale, useT } from "@/lib/i18n";
@@ -12,6 +13,7 @@ export default function ChangelogPage() {
   const { locale } = useLocale();
   return (
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-4 px-4 py-10">
+      <GlobalChat />
       <Link href="/" className="btn-ghost btn-sm self-start">
         ← {t("common.back")}
       </Link>

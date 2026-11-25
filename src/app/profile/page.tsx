@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { GlobalChat } from "@/components/GlobalChat";
 import { useEffect, useRef, useState } from "react";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { QuestsLink } from "@/components/Quests";
@@ -31,6 +32,7 @@ export default function ProfilePage() {
   const backTo = usePaymentReturn(setProfile);
   return (
     <main className="mx-auto flex min-h-dvh max-w-lg flex-col gap-6 px-4 pt-16 pb-10">
+      <GlobalChat />
       <LangSwitch />
       <div className="flex items-center gap-3">
         <Link href="/" className="btn-ghost btn-sm">

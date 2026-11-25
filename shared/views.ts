@@ -346,12 +346,12 @@ function buildMe(room: Room, meId: string): MeView | null {
   const vote = game.vote;
   if (vote) {
     view.myVote = vote.ballots[me.id] ?? null;
-    view.onStand = game.nominees.includes(me.id) && vote.kind === "verdict";
     view.canVote = !vote.closed && voteEligible(room).includes(me.id) && view.myVote === null;
-  } else if (room.phase.kind === "defense" || room.phase.kind === "verdictResult") {
-    view.onStand = game.nominees.includes(me.id);
-    view.defenseDone = (game.defenseDone ?? []).includes(me.id);
   }
+  // The closed nomination vote is still kept during the defense, so go by the phase too.
+  const defending = room.phase.kind === "defense" || room.phase.kind === "verdictResult";
+  view.onStand = game.nominees.includes(me.id) && (defending || vote?.kind === "verdict");
+  if (defending) view.defenseDone = (game.defenseDone ?? []).includes(me.id);
 
   if (room.phase.kind === "hunter" && game.pendingHunters[0] === me.id) {
     const shot = me.id in game.hunterShots ? game.hunterShots[me.id] : null;

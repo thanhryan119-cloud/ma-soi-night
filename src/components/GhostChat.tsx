@@ -1,7 +1,8 @@
 "use client";
 
-// The dead players' own chat. While the game runs only the dead (and a human
-// host) can read it; when the game is over everyone can.
+// The dead players' own chat, a tab of the room chat box (SocialPanel). While
+// the game runs only the dead (and a human host) can read it; when the game is
+// over everyone can. The server decides who may read and who may write.
 
 import { Fragment, useEffect, useRef, useState } from "react";
 import { CHAT_MAX_LEN, type ChatMessage } from "@shared/social";
@@ -60,7 +61,7 @@ export function useGhostChat(state: ClientState, viewer: "host" | string) {
 type Ghost = ReturnType<typeof useGhostChat>;
 
 /** The list of messages and (for the dead) the box to write in. */
-function GhostLog({
+export function GhostLog({
   state,
   ghost,
   className = "",
@@ -160,91 +161,5 @@ function GhostLog({
         </form>
       )}
     </div>
-  );
-}
-
-/**
- * A player's button for the dead players' chat (shown once they died, and for
- * everyone after the game if anything was said), opening a floating panel.
- */
-export function GhostChatButton({
-  state,
-  viewer,
-}: {
-  state: ClientState;
-  viewer: string;
-}) {
-  const t = useT();
-  const ghost = useGhostChat(state, viewer);
-  const [open, setOpen] = useState(false);
-  const [seen, setSeen] = useState(0);
-  const count = ghost.messages.length;
-  useEffect(() => {
-    if (open) setSeen(count);
-  }, [open, count]);
-  const over = state.phase.kind === "gameOver";
-  if (!ghost.allowed || (over && !count)) return null;
-  const unread = open
-    ? 0
-    : ghost.messages.slice(seen).filter((m) => m.from !== viewer).length;
-
-  return (
-    <>
-      <button
-        type="button"
-        className="btn-ghost btn-sm relative shrink-0 gap-1.5"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        title={t("ghostChat.title")}
-      >
-        👻{" "}
-        <span className="hidden sm:inline">
-          {over ? t("ghostChat.endTitle") : t("ghostChat.button")}
-        </span>
-        {unread > 0 && (
-          <span className="rounded-full bg-blood px-1.5 text-[10px] font-bold text-white">
-            {unread > 99 ? "99+" : unread}
-          </span>
-        )}
-      </button>
-      {open && (
-        <section
-          className="rise fixed inset-x-2 top-14 z-[70] flex h-[min(480px,65dvh)] flex-col gap-2 rounded-lg border border-violet-300/40 bg-night-800/95 p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6),inset_0_0_0_3px_#1a153d] backdrop-blur sm:inset-x-auto sm:right-4 sm:w-96"
-          aria-label={t("ghostChat.title")}
-        >
-          <div className="flex items-center gap-2">
-            <h2 className="min-w-0 flex-1 truncate font-display text-lg font-black text-moon">
-              👻 {over ? t("ghostChat.endTitle") : t("ghostChat.title")}
-            </h2>
-            <button
-              className="btn-ghost btn-sm"
-              onClick={() => setOpen(false)}
-              aria-label={t("common.close")}
-            >
-              ✕
-            </button>
-          </div>
-          {!over && (
-            <p className="text-xs text-white/50">{t("ghostChat.hint")}</p>
-          )}
-          <GhostLog state={state} ghost={ghost} className="flex-1" />
-        </section>
-      )}
-    </>
-  );
-}
-
-/** The human host's read-only view of the dead players' chat. */
-export function HostGhostChat({ state }: { state: ClientState }) {
-  const t = useT();
-  const ghost = useGhostChat(state, "host");
-  const dead = state.players.some((p) => !p.alive);
-  if (!ghost.allowed || (!dead && !ghost.messages.length)) return null;
-  return (
-    <section className="card flex max-h-[40dvh] min-h-[160px] flex-col gap-2">
-      <h3 className="font-bold">👻 {t("ghostChat.title")}</h3>
-      <p className="text-xs text-white/50">{t("ghostChat.hostHint")}</p>
-      <GhostLog state={state} ghost={ghost} className="flex-1" />
-    </section>
   );
 }

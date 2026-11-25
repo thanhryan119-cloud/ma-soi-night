@@ -108,6 +108,10 @@ function phrasing(lines: string[]): Phrase[] {
 }
 
 let session = 0;
+let heard = false;
+
+/** True once this page has actually started speaking (the browser let it). */
+export const ttsHeard = () => heard;
 
 /**
  * Reads the narration in a deep, warm male voice: phrase by phrase, with the
@@ -143,6 +147,9 @@ export function speak(lines: string[], locale: Locale, rate = 1, onDone?: () => 
       if (moved) return;
       moved = true;
       setTimeout(() => next(k + 1), p.pause / Math.max(0.5, rate));
+    };
+    u.onstart = () => {
+      heard = true;
     };
     u.onend = go;
     u.onerror = go;
