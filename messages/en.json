@@ -534,6 +534,7 @@
     "leave": "Leave room",
     "leaveGame": "Quit",
     "leaveConfirm": "Leave this room?",
+    "leaveConfirmDead": "Leave the room? You are dead, so this game still counts, and if your side wins you win too. You can't come back to this game.",
     "leaveConfirmGame": "Quit the game? It counts as a loss (quit), a bot will play your character and you can't come back to this game.",
     "abandoned": "You left this game (or were away for over 5 minutes). A bot is playing your character.",
     "pack": "Your pack",
@@ -931,6 +932,9 @@
     "p6": "Questions or data deletion requests:"
   },
   "social": {
+    "tabRoom": "Room",
+    "tabGhost": "The dead",
+    "tabServer": "Everyone",
     "markDay": "Day {n}",
     "markNight": "Night {n}",
     "markLobby": "Lobby",

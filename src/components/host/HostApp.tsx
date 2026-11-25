@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { GlobalChat } from "@/components/GlobalChat";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ConnectionDot, LangSwitch, Spinner, toast } from "@/components/ui";
 import { Ambient } from "@/lib/ambient";
@@ -163,7 +162,6 @@ export default function HostApp({ code }: { code: string }) {
         <span className="rounded-lg bg-white/10 px-3 py-1 font-mono text-lg font-bold tracking-widest text-gold">{code}</span>
         <ConnectionDot connected={connected} />
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <GlobalChat compact />
           <a className="btn-ghost btn-sm" href={`/screen/${code}`} target="_blank" rel="noreferrer">
             📽️ {t("host.openScreen")}
           </a>

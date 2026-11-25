@@ -16,8 +16,6 @@ import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown
 import { scriptLines } from "@/components/host/common";
 import { SocialPanel } from "@/components/SocialPanel";
 import { RolesInPlay } from "@/components/RolesInPlay";
-import { GhostChatButton } from "@/components/GhostChat";
-import { GlobalChat } from "@/components/GlobalChat";
 import { useSocial } from "@/lib/social";
 import { ShareRoom } from "@/components/ShareRoom";
 import { SceneArt } from "@/components/art/Woodcut";
@@ -91,9 +89,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
           <div className="truncate text-xs text-white/50">{phaseLabel(t, state)}</div>
         </div>
         {!connected && <ConnectionDot connected={false} />}
-        <GlobalChat compact />
         {!wide && !INLINE_CHAT.has(kind) && <PhoneChatButton state={state} viewer={me.id} />}
-        {kind !== "lobby" && <GhostChatButton state={state} viewer={me.id} />}
         <LeaveButton state={state} />
       </header>
 
@@ -347,7 +343,9 @@ function LeaveButton({ state }: { state: ClientState }) {
   const showError = useErrorToast();
   const running = state.phase.kind !== "lobby" && state.phase.kind !== "gameOver";
   async function leave() {
-    if (!confirm(running ? t("player.leaveConfirmGame") : t("player.leaveConfirm"))) return;
+    const dead = running && state.players.some((p) => p.id === state.me?.id && !p.alive);
+    const ask = dead ? "player.leaveConfirmDead" : running ? "player.leaveConfirmGame" : "player.leaveConfirm";
+    if (!confirm(t(ask))) return;
     const res = await emitAck("player:leave");
     if (!showError(res)) return;
     storage.remove(playerKey(state.code));

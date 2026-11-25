@@ -534,6 +534,7 @@
     "leave": "Rời phòng",
     "leaveGame": "Thoát",
     "leaveConfirm": "Rời phòng này?",
+    "leaveConfirmDead": "Rời phòng? Bạn đã chết nên ván này vẫn được tính, phe bạn thắng thì bạn cũng thắng. Bạn sẽ không vào lại ván này được.",
     "leaveConfirmGame": "Thoát ván đang chơi? Bạn sẽ bị tính 1 trận thua (thoát), bot sẽ chơi thay nhân vật của bạn và bạn không vào lại ván này được.",
     "abandoned": "Bạn đã thoát khỏi ván này (hoặc vắng quá 5 phút). Bot đang chơi thay nhân vật của bạn.",
     "pack": "Đồng đội",
@@ -931,6 +932,9 @@
     "p6": "Câu hỏi hoặc yêu cầu xóa dữ liệu:"
   },
   "social": {
+    "tabRoom": "Phòng",
+    "tabGhost": "Người chết",
+    "tabServer": "Toàn server",
     "markDay": "Sáng ngày {n}",
     "markNight": "Đêm {n}",
     "markLobby": "Phòng chờ",

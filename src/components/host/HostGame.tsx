@@ -12,7 +12,6 @@ import { formatLog, useLocale, useT } from "@/lib/i18n";
 import { speak, stopSpeaking, useTtsSupported } from "@/lib/tts";
 import { SocialPanel } from "@/components/SocialPanel";
 import { RolesInPlay } from "@/components/RolesInPlay";
-import { HostGhostChat } from "@/components/GhostChat";
 import { nameOf, scriptLines, useHostAction } from "./common";
 import { RulesCard } from "./RulesCard";
 
@@ -73,7 +72,10 @@ export function HostGame({ state, offset, hideRoles }: Props) {
             <LogList state={state} hideRoles={hideRoles} />
           </div>
         </section>
-        <HostGhostChat state={state} />
+        {/* The chat box (room, dead, server) when the main panel is not already it. */}
+        {state.phase.kind !== "discussion" && state.phase.kind !== "defense" && (
+          <SocialPanel state={state} viewer="host" className="h-[min(60dvh,560px)]" />
+        )}
         <ManualEnd state={state} />
         <RulesCard state={state} defaultOpen={false} />
       </div>

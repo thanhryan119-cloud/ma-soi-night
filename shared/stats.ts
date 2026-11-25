@@ -123,17 +123,20 @@ export function gameResults(room: Room, t = Date.now()): GameResult[] {
   if (!game?.winner || room.phase.kind !== "gameOver") return [];
   const winner = game.winner;
   const lovers = new Set(game.lovers ?? []);
-  const humans = room.players.filter((p) => !p.isBot).length;
+  const leftDead = game.leftDead ?? {};
+  const humans = room.players.filter((p) => !p.isBot || leftDead[p.id]).length;
   const counted = humans >= MIN_HUMANS_FOR_STATS;
   const seen = new Set<string>();
   const out: GameResult[] = [];
   for (const p of room.players) {
     const role = game.roles[p.id];
-    if (p.isBot || !p.userId || !role || seen.has(p.userId)) continue;
-    seen.add(p.userId);
+    // A player who left after dying: a bot sits in the seat, the result is still theirs.
+    const userId = p.isBot ? leftDead[p.id] : p.userId;
+    if (!userId || !role || seen.has(userId)) continue;
+    seen.add(userId);
     const lover = lovers.has(p.id);
     out.push({
-      userId: p.userId,
+      userId,
       game: {
         t,
         role,

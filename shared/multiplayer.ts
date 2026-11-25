@@ -143,7 +143,9 @@ export type LeaveResult = ActionResult & {
 /**
  * A player leaves. Before the game or once it is over they simply go. During
  * a game they are out for good: a bot plays their seat (same name and role)
- * and it counts as a loss for them. `away`: they were offline too long.
+ * and it counts as a loss for them. Someone who leaves after dying has nothing
+ * left to play, so their game still counts at the end (a win if their side
+ * wins). `away`: they were offline too long.
  */
 export function leaveRoom(room: Room, playerId: string, reason: "left" | "away", now = Date.now()): LeaveResult {
   const p = getPlayer(room, playerId);
@@ -159,7 +161,10 @@ export function leaveRoom(room: Room, playerId: string, reason: "left" | "away",
     return { ok: true, removed: true };
   }
 
-  const abandon = abandonResult(room, p.id, now);
+  const game = room.game!;
+  const leftDead = !p.alive && !!p.userId;
+  if (leftDead) game.leftDead = { ...game.leftDead, [p.id]: p.userId! };
+  const abandon = leftDead ? null : abandonResult(room, p.id, now);
   if (wasOwner) room.ownerId = nextOwner(room);
   p.isBot = true;
   p.connected = true;
