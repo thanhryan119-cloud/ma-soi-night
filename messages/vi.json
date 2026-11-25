@@ -1005,8 +1005,11 @@
   "lobby": {
     "title": "Sảnh chờ online",
     "desc": "Xem ai đang online, vào một phòng đang mở hoặc tự tạo phòng.",
-    "homeTitle": "Chơi online",
-    "homeDesc": "Vào sảnh chờ: xem ai đang online, chọn phòng đang mở, hoặc tạo phòng có máy làm quản trò.",
+    "homeTitle": "Chơi ngay",
+    "homeDesc": "Bấm Vào liền để nhảy vào một phòng đang mở bất kỳ, hoặc vào sảnh để xem ai đang online và tự chọn phòng.",
+    "quickButton": "Vào liền",
+    "quickNone": "Chưa có phòng nào đang mở. Tạo một phòng rồi rủ mọi người vào nhé!",
+    "quickJoining": "Đang tìm phòng…",
     "homeButton": "Vào sảnh",
     "you": "Bạn",
     "online": "Đang online",
