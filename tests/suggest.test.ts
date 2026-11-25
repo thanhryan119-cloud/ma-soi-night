@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { FREE_ROLES, ROLE_IDS, isPremiumRole, suggestRoles, totalRoles } from "../shared/roles";
+import { CORE_ROLES, ROLE_IDS, isAdvancedRole, suggestRoles, totalRoles } from "../shared/roles";
 
 describe("suggestRoles", () => {
   it("keeps the classic setup with only the free roles", () => {
     const c = suggestRoles(8);
     expect([c.werewolf, c.seer, c.bodyguard, c.witch, c.villager]).toEqual([2, 1, 1, 1, 3]);
-    expect(ROLE_IDS.filter((r) => isPremiumRole(r) && c[r])).toEqual([]);
+    expect(ROLE_IDS.filter((r) => isAdvancedRole(r) && c[r])).toEqual([]);
   });
 
-  it("uses unlocked premium roles and fills every seat", () => {
+  it("uses the advanced roles too and fills every seat", () => {
     const c = suggestRoles(15, ROLE_IDS);
-    expect(ROLE_IDS.filter((r) => isPremiumRole(r) && c[r]).length).toBeGreaterThan(5);
+    expect(ROLE_IDS.filter((r) => isAdvancedRole(r) && c[r]).length).toBeGreaterThan(5);
     expect(totalRoles(c)).toBe(15);
   });
 
@@ -29,8 +29,8 @@ describe("suggestRoles", () => {
 
   it("never suggests a role that isn't available", () => {
     for (let n = 4; n <= 20; n++) {
-      const c = suggestRoles(n, FREE_ROLES, Math.random);
-      expect(ROLE_IDS.filter((r) => !FREE_ROLES.includes(r) && c[r])).toEqual([]);
+      const c = suggestRoles(n, CORE_ROLES, Math.random);
+      expect(ROLE_IDS.filter((r) => !CORE_ROLES.includes(r) && c[r])).toEqual([]);
     }
   });
 });

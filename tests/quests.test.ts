@@ -35,12 +35,8 @@ const game = (role: RoleId, outcome: RecentGame["outcome"], survived = true): Re
 });
 
 describe("gold prices", () => {
-  it("only some items sell for gold, and the two wolf roles stay paid-only", () => {
+  it("only some shop items sell for gold", () => {
     for (const id of Object.keys(GOLD_PRICES)) expect(SHOP_ITEMS).toContain(id);
-    expect(GOLD_PRICES["role:elder"]).toBeGreaterThan(0);
-    expect(GOLD_PRICES["role:idiot"]).toBeGreaterThan(0);
-    expect(GOLD_PRICES["role:cursedWolf"]).toBeUndefined();
-    expect(GOLD_PRICES["role:wolfSeer"]).toBeUndefined();
     expect(Object.keys(GOLD_PRICES).length).toBeLessThan(SHOP_ITEMS.length);
   });
 });
@@ -182,9 +178,9 @@ describe("quests server", () => {
     expect(r.body.quests.gold).toBe(CHECKIN_GOLD + 200 + 300 + 300 + 400);
 
     // Paid-only items and items beyond the balance are refused.
-    r = await call(quests.handle, "POST", "/quests/buy", { itemId: "role:cursedWolf" }, "tok1");
+    r = await call(quests.handle, "POST", "/quests/buy", { itemId: "effect:blood" }, "tok1");
     expect(r.body.error).toBe("err.notForGold");
-    r = await call(quests.handle, "POST", "/quests/buy", { itemId: "role:elder" }, "tok1");
+    r = await call(quests.handle, "POST", "/quests/buy", { itemId: "effect:glow" }, "tok1");
     expect(r.body.error).toBe("err.notEnoughGold");
 
     r = await call(quests.handle, "POST", "/quests/buy", { itemId: "chat:stars" }, "tok1");

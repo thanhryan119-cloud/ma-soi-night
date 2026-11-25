@@ -24,11 +24,10 @@ describe("shop catalog", () => {
     expect(SHOP_ITEMS).not.toContain("effect:none");
     expect(SHOP_ITEMS).not.toContain("frame:none");
     expect(SHOP_ITEMS).not.toContain("font:default");
-    expect(SHOP_ITEMS).toContain("role:cursedWolf");
-    expect(SHOP_ITEMS).toContain("role:medium");
+    expect(SHOP_ITEMS.some((id) => id.startsWith("role:"))).toBe(false);
     expect(SHOP_ITEMS).toContain("chat:stars");
     expect(SHOP_ITEMS).not.toContain("chat:plain");
-    expect(SHOP_ITEMS).toHaveLength(39);
+    expect(SHOP_ITEMS).toHaveLength(22);
   });
 
   it("strips paid parts of a style the player does not own", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addPlayer, createRoom, hostAction, isSilenced, playerAction } from "../shared/engine";
-import { PREMIUM_ROLES, isWolf, roleItem, teamOf } from "../shared/roles";
+import { isAdvancedRole, isWolf, teamOf } from "../shared/roles";
 import { checkWin, resolveNight, tallyNomination, tallyVerdict } from "../shared/rules";
 import { outcomeFor } from "../shared/stats";
 import { canSpeak } from "../shared/social";
@@ -10,7 +10,6 @@ import type { RoleId, Room } from "../shared/types";
 /** A started game with exactly these roles, on night 1 (everyone offline so nothing blocks the narrator). */
 function game(roles: RoleId[]): { room: Room; id: (r: RoleId, n?: number) => string } {
   const room = createRoom("MORE", "vi");
-  room.hostOwned = PREMIUM_ROLES.map(roleItem);
   room.settings.mandatoryVote = false;
   roles.forEach((_, i) => addPlayer(room, { name: `P${i}` }));
   for (const p of room.players) p.connected = false;
@@ -55,7 +54,7 @@ describe("teams", () => {
     expect([isWolf("whiteWolf"), teamOf("whiteWolf")]).toEqual([true, "solo"]);
     expect([isWolf("bigBadWolf"), isWolf("silencer"), isWolf("serialKiller")]).toEqual([true, true, false]);
     for (const r of ["mayor", "bigBadWolf", "minion", "knight", "silencer", "tanner", "whiteWolf", "serialKiller", "arsonist"] as RoleId[])
-      expect(PREMIUM_ROLES).toContain(r);
+      expect(isAdvancedRole(r)).toBe(true);
   });
 
   it("scores solo winners alone and the Minion with the wolves", () => {

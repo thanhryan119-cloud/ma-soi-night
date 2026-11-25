@@ -1,18 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { addPlayer, createRoom, hostAction, playerAction } from "../shared/engine";
 import { buildView } from "../shared/views";
-import { PREMIUM_ROLES, roleItem } from "../shared/roles";
 import type { RoleId, Room } from "../shared/types";
 
 const EXTRA: RoleId[] = ["lycan", "sister", "wildChild", "medium"];
 
-describe("the extra village roles are sold in the shop", () => {
-  it("are premium and locked until the host owns them", () => {
-    for (const r of EXTRA) expect(PREMIUM_ROLES).toContain(r);
+describe("the extra village roles", () => {
+  it("are open to every host", () => {
     const room = createRoom("XLCK", "vi");
     for (let i = 0; i < 6; i++) addPlayer(room, { name: `P${i}` });
-    expect(hostAction(room, { type: "setRoleCounts", roleCounts: { ...room.settings.roleCounts, medium: 1 } }).error).toBe("err.roleLocked");
-    room.hostOwned = [roleItem("medium")];
     expect(hostAction(room, { type: "setRoleCounts", roleCounts: { ...room.settings.roleCounts, medium: 1 } }).ok).toBe(true);
   });
 });
@@ -20,7 +16,6 @@ describe("the extra village roles are sold in the shop", () => {
 /** A started game with exactly these roles, on night 1. */
 function game(roles: RoleId[]): { room: Room; id: (r: RoleId, n?: number) => string } {
   const room = createRoom("XTRA", "vi");
-  room.hostOwned = EXTRA.map(roleItem);
   room.settings.mandatoryVote = false;
   roles.forEach((_, i) => addPlayer(room, { name: `P${i}` }));
   // Offline players never block the narrator, so the script only acts where it matters.
@@ -64,7 +59,6 @@ describe("Lycan", () => {
 describe("Sisters", () => {
   it("must be dealt as a pair", () => {
     const room = createRoom("SIS1", "vi");
-    room.hostOwned = [roleItem("sister")];
     for (let i = 0; i < 6; i++) addPlayer(room, { name: `P${i}` });
     const counts = room.settings.roleCounts;
     expect(hostAction(room, { type: "setRoleCounts", roleCounts: { ...counts, sister: 1 } }).error).toBe("err.sistersPair");

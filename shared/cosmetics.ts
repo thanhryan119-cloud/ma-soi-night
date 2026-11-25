@@ -1,4 +1,3 @@
-import { PREMIUM_ROLES } from "./roles";
 
 // Profile cosmetics a player can pick: name font, name effect, avatar frame and
 // chat bubble decoration.
@@ -72,13 +71,12 @@ export function sanitizeAvatarUrl(url: unknown): string | null {
 }
 
 // ---------------------------------------------------------------------------
-// Shop: every font, effect, frame and chat decoration except the defaults is sold through payOS,
-// and so is every premium role (Cursed Wolf, Wolf Seer, Elder, Idiot).
-// An item id is "<kind>:<value>", e.g. "effect:glow" or "role:cursedWolf".
+// Shop: every font, effect, frame and chat decoration except the defaults is sold through payOS.
+// An item id is "<kind>:<value>", e.g. "effect:glow". Every role is free for everyone.
 // ---------------------------------------------------------------------------
 
 export type StyleKind = keyof PlayerStyle;
-export type ItemKind = StyleKind | "role";
+export type ItemKind = StyleKind;
 export type ItemId = `${ItemKind}:${string}`;
 
 /** Price of one item, in VND. */
@@ -89,7 +87,6 @@ const OPTIONS: Record<ItemKind, readonly string[]> = {
   effect: NAME_EFFECTS,
   frame: AVATAR_FRAMES,
   chat: CHAT_DECOS,
-  role: PREMIUM_ROLES,
 };
 
 /** What everyone gets for free (the defaults). */
@@ -133,6 +130,5 @@ export function limitStyle(style: PlayerStyle, owned: readonly string[] | "all")
 /** Equips an item: the style with that one part swapped in. */
 export function equip(style: PlayerStyle, id: ItemId): PlayerStyle {
   const [kind, value] = id.split(":") as [ItemKind, string];
-  if (kind === "role") return style;
   return sanitizeStyle({ ...style, [kind]: value });
 }

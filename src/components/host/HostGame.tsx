@@ -324,14 +324,11 @@ function PlayerRow({
               onChange={(e) => e.target.value && act({ type: "override", action: { kind: "changeRole", playerId: p.id, roleId: e.target.value as RoleId } })}
             >
               {hideRoles && <option value="">•••</option>}
-              {ROLE_IDS.map((r) => {
-                const locked = !!state.unlockedRoles && !state.unlockedRoles.includes(r);
-                return (
-                  <option key={r} value={r} disabled={locked}>
-                    {locked ? "🔒" : ROLES[r].emoji} {t(`roles.${r}.name`)}
-                  </option>
-                );
-              })}
+              {ROLE_IDS.map((r) => (
+                <option key={r} value={r}>
+                  {ROLES[r].emoji} {t(`roles.${r}.name`)}
+                </option>
+              ))}
             </select>
           </label>
           <button
