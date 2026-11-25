@@ -20,6 +20,7 @@ import {
   type Stroke,
 } from "../shared/social";
 import type { Room } from "../shared/types";
+import { describeIce, iceServers } from "./ice";
 
 interface VoicePeer {
   socketId: string;
@@ -52,6 +53,7 @@ export function createSocial(
   /** Called for every player/bot chat line (bots learn from the table talk). */
   onChat: (room: Room, fromId: string, text: string) => void = () => {},
 ) {
+  console.log(`[voice] ICE: ${describeIce()}`);
   const social = new Map<string, RoomSocial>();
   const of = (code: string) => {
     let s = social.get(code);
@@ -182,7 +184,13 @@ export function createSocial(
     });
 
     // ------------------------------------------------------------- voice --
-    on("voice:join", (p, ack) => {
+    // Joining the call means listening; the mic is a separate switch (voice:state).
+    on("voice:join", async (p, ack) => {
+      const first = ctx();
+      if (!first) return ack({ ok: false, error: "err.notInRoom" });
+      if (!voiceAccess(first.room, first.who).ok) return ack({ ok: false, error: voiceAccess(first.room, first.who).error });
+      const ice = await iceServers();
+      // The room may have moved on while the TURN credentials were fetched.
       const c = ctx();
       if (!c) return ack({ ok: false, error: "err.notInRoom" });
       const access = voiceAccess(c.room, c.who);
@@ -190,13 +198,13 @@ export function createSocial(
       const peer: VoicePeer = {
         socketId: socket.id,
         from: fromKey(c.who),
-        muted: access.listenOnly || !!p.muted,
+        muted: access.listenOnly || p.muted !== false,
         listenOnly: access.listenOnly,
       };
       const others = [...c.s.voice.values()].filter((v) => v.socketId !== socket.id);
       c.s.voice.set(socket.id, peer);
       socket.to(channel(c.room.code)).emit("voice:peer-joined", peer);
-      ack({ ok: true, self: peer, peers: others });
+      ack({ ok: true, self: peer, peers: others, iceServers: ice });
     });
 
     on("voice:leave", (_p, ack) => {
@@ -223,13 +231,26 @@ export function createSocial(
     socket.on("disconnect", () => leaveVoice(socket));
   }
 
-  /** Called after every room change: ends the call when the phase no longer allows voice. */
+  /**
+   * Called after every room change: ends the call when the phase no longer allows
+   * voice, and mutes anyone who may only listen now (e.g. not on the stand, or dead).
+   */
   function afterChange(room: Room) {
     const s = social.get(room.code);
     if (!s || !s.voice.size) return;
     if (!voiceAccess(room, { kind: "host" }).ok) {
       s.voice.clear();
       io.to(channel(room.code)).emit("voice:end");
+      return;
+    }
+    for (const peer of s.voice.values()) {
+      const who: Speaker = peer.from === "host" ? { kind: "host" } : { kind: "player", playerId: peer.from };
+      const access = voiceAccess(room, who);
+      const listenOnly = !access.ok || access.listenOnly;
+      if (listenOnly === peer.listenOnly) continue;
+      peer.listenOnly = listenOnly;
+      if (listenOnly) peer.muted = true;
+      io.to(channel(room.code)).emit("voice:peer-state", peer);
     }
   }
 

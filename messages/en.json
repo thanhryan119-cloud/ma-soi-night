@@ -774,7 +774,7 @@
     "chatEmpty": "The message is empty.",
     "tooFast": "Slow down a little.",
     "voiceDisabled": "The Host has turned the mic off.",
-    "micDenied": "Couldn’t use your microphone — you’re listening only. Allow mic access and try again.",
+    "micDenied": "Couldn’t use your microphone, so you’re listening only. Allow mic access and try again.",
     "seatTaken": "That player is online or cannot be rejoined.",
     "onlyNominees": "During the defense only the players on the stand can chat.",
     "notOnStand": "You are not on the stand.",
@@ -960,8 +960,10 @@
     "silenced": "You are silenced today."
   },
   "voice": {
-    "join": "Join mic",
-    "leave": "Leave mic",
+    "join": "Turn on mic",
+    "listen": "Listen in",
+    "tapToHear": "Tap to hear",
+    "leave": "Stop listening",
     "mute": "Talking",
     "unmute": "Muted",
     "listenOnly": "Listening only",

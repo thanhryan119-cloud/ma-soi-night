@@ -172,35 +172,50 @@ function VoiceBar({
   const label = (from: string) =>
     from === "host" ? t("social.host") : (players.get(from)?.name ?? "?");
 
+  // Everyone listens on their own while voice is open, so whoever talks is heard.
   // The server ends the call when the phase changes; also leave locally.
   useEffect(() => {
+    if (enabled && voice.wantListen && !voice.joined && !voice.joining) void voice.join();
     if (!enabled && voice.joined) voice.leave();
-  }, [enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enabled, voice.wantListen, voice.joined]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!enabled) return null;
 
+  const run = async (fn: () => Promise<{ ok: boolean; error?: string }>) => {
+    setBusy(true);
+    const r = await fn();
+    if (r.error) showError(r);
+    setBusy(false);
+  };
+
   const people = voice.self ? [voice.self, ...voice.peers] : voice.peers;
   return (
-    <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-2 py-1.5">
+    <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 px-2 py-1.5">
       {!voice.joined ? (
         <button
           type="button"
           className="btn-ghost btn-sm"
-          disabled={busy}
-          onClick={async () => {
-            setBusy(true);
-            showError(await voice.join());
-            setBusy(false);
+          disabled={busy || voice.joining}
+          onClick={() => {
+            voice.setWantListen(true);
+            void run(voice.join);
           }}
         >
-          🎙️ {t("voice.join")}
+          🔈 {t("voice.listen")}
         </button>
       ) : (
         <>
+          {voice.blocked && (
+            <button type="button" className="btn btn-sm bg-gold text-night-950" onClick={() => voice.unlock()}>
+              🔈 {t("voice.tapToHear")}
+            </button>
+          )}
           {voice.self?.listenOnly ? (
-            <span className="chip text-white/60">
-              🎧 {t("voice.listenOnly")}
-            </span>
+            <span className="chip text-white/60">🎧 {t("voice.listenOnly")}</span>
+          ) : !voice.micOn ? (
+            <button type="button" className="btn-ghost btn-sm" disabled={busy} onClick={() => void run(voice.enableMic)}>
+              🎙️ {t("voice.join")}
+            </button>
           ) : (
             <button
               type="button"
@@ -215,7 +230,10 @@ function VoiceBar({
           <button
             type="button"
             className="btn-ghost btn-sm"
-            onClick={() => voice.leave()}
+            onClick={() => {
+              voice.setWantListen(false);
+              voice.leave();
+            }}
           >
             {t("voice.leave")}
           </button>
