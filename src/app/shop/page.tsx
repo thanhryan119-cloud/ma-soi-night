@@ -1,7 +1,8 @@
 "use client";
 
 // The shop: everything that can be bought, in one place: name effects, name
-// fonts, avatar frames and chat decorations (every role is free). 50.000đ each, bought once per Google
+// fonts, avatar frames and chat decorations. The special roles are listed too,
+// at 100% off: every role is open to everyone, nothing to buy. 50.000đ each, bought once per Google
 // account through payOS (the buyer comes back to /profile, which confirms it).
 // Some items can also be bought with gold earned from quests (GOLD_PRICES).
 
@@ -9,6 +10,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DEFAULT_STYLE, ITEM_PRICE_VND, SHOP_ITEMS, equip, type ChatDeco, type ItemId, type ItemKind, type PlayerStyle } from "@shared/cosmetics";
 import { goldPrice } from "@shared/quests";
+import { ROLES, ROLE_IDS, isAdvancedRole } from "@shared/roles";
+import { RoleArt } from "@/components/art/Tarot";
 import { CheckoutDialog, usePrice } from "@/components/Checkout";
 import { GoogleButton } from "@/components/ProfileEditor";
 import { GoldChip, QuestsLink, useGoldFormat } from "@/components/Quests";
@@ -104,6 +107,9 @@ export default function ShopPage() {
           </div>
         )}
         <nav className="flex flex-wrap gap-2" aria-label={t("shop.title")}>
+          <a href="#shop-role" className="chip hover:border-gold/60">
+            🃏 {t("shop.rolesTitle")}
+          </a>
           {SECTIONS.map((s) => (
             <a key={s.kind} href={`#shop-${s.kind}`} className="chip hover:border-gold/60">
               {s.icon} {t(s.title)}
@@ -111,6 +117,8 @@ export default function ShopPage() {
           ))}
         </nav>
       </section>
+
+      <FreeRoles />
 
       {SECTIONS.map((s) => {
         const items = SHOP_ITEMS.filter((id) => split(id)[0] === s.kind);
@@ -142,6 +150,46 @@ export default function ShopPage() {
         );
       })}
     </main>
+  );
+}
+
+/** Every special role is free for everyone: shown at 100% off, nothing to buy. */
+const SPECIAL_ROLES = ROLE_IDS.filter(isAdvancedRole);
+
+function FreeRoles() {
+  const t = useT();
+  const price = usePrice();
+  return (
+    <section id="shop-role" className="card flex scroll-mt-4 flex-col gap-3">
+      <div className="flex flex-wrap items-baseline gap-2">
+        <h2 className="text-xl font-bold">🃏 {t("shop.rolesTitle")}</h2>
+        <span className="chip border-emerald-500/50 py-0 font-bold text-emerald-300">-100%</span>
+      </div>
+      <p className="text-xs text-white/60">{t("shop.rolesFreeHint")}</p>
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {SPECIAL_ROLES.map((r) => (
+          <li key={r} className="flex flex-col gap-2 rounded-lg border p-3" style={{ borderColor: `${ROLES[r].color}66` }}>
+            <div className="flex gap-3">
+              <RoleArt role={r} className="w-24 shrink-0 sm:w-28" />
+              <div className="flex min-w-0 flex-col gap-1">
+                <span className="font-bold">
+                  {ROLES[r].emoji} {t(`roles.${r}.name`)}
+                </span>
+                <span className="text-[11px] font-semibold tracking-wider text-white/50 uppercase">{t(`teams.${ROLES[r].team}`)}</span>
+                <p className="text-xs leading-snug text-white/70">{t(`roles.${r}.desc`)}</p>
+              </div>
+            </div>
+            <div className="mt-auto flex items-center justify-between gap-2">
+              <span className="flex items-baseline gap-2">
+                <span className="text-xs text-white/40 line-through">{price(ITEM_PRICE_VND)}</span>
+                <span className="text-sm font-bold text-emerald-300">{t("shop.free")}</span>
+              </span>
+              <span className="text-xs font-bold text-emerald-300">✓ {t("shop.openForAll")}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
