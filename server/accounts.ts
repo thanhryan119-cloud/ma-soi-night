@@ -20,6 +20,7 @@ import {
 import { bearer, cors as corsFor, json, readBody } from "./http";
 import {
   applyResult,
+  casualOf,
   rankLeaderboard,
   winRate,
   type GameResult,
@@ -132,6 +133,10 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
           wins: s?.wins ?? 0,
           winRate: s ? winRate(s) : 0,
           wolfGames: s?.byRole.werewolf?.games ?? 0,
+          casual: (() => {
+            const c = casualOf(s);
+            return { games: c.games, wins: c.wins, winRate: winRate(c), wolfGames: c.byRole.werewolf?.games ?? 0 };
+          })(),
           createdAt: u.createdAt ?? 0,
         };
       }),

@@ -1098,7 +1098,8 @@
     "you": "Bạn",
     "empty": "Chưa có tài khoản nào. Đăng nhập Google ở trang Hồ sơ để là người đầu tiên.",
     "unavailable": "Không tải được bảng xếp hạng.",
-    "unranked": "Chưa đủ {min} ván, tài khoản mới nhất ở trên"
+    "unranked": "Chưa đủ {min} ván, tài khoản mới nhất ở trên",
+    "mode": "Chế độ"
   },
   "lobby": {
     "watch": "Xem",

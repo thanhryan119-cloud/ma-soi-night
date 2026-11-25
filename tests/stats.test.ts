@@ -5,6 +5,7 @@ import {
   casualOf,
   gameResults,
   isRanked,
+  lineOf,
   outcomeFor,
   MIN_HUMANS_FOR_STATS,
   MIN_RANKED_GAMES,
@@ -168,5 +169,20 @@ describe("leaderboard", () => {
     const ranked = rankLeaderboard([row("new", 0, 0, 3), row("lucky", 1, 1, 2), row("almost", 4, 4, 1), row("steady", 10, 5)]);
     expect(ranked.map((r) => r.name)).toEqual(["steady", "new", "lucky", "almost"]);
     expect(ranked.map(isRanked)).toEqual([true, false, false, false]);
+  });
+
+  it("ranks by casual or standard numbers, each needing its own games", () => {
+    const casual = (games: number, wins: number) => ({ games, wins, winRate: games ? wins / games : 0, wolfGames: 0 });
+    const rows = [
+      { ...row("pro", 10, 8), casual: casual(2, 2) },
+      { ...row("botfan", 1, 0), casual: casual(20, 15) },
+      { ...row("mixed", 6, 3), casual: casual(6, 3) },
+      row("oldServer", 7, 7),
+    ];
+    expect(rankLeaderboard(rows, "standard").map((r) => r.name)).toEqual(["oldServer", "pro", "mixed", "botfan"]);
+    const byCasual = rankLeaderboard(rows, "casual");
+    expect(byCasual.map((r) => r.name)).toEqual(["botfan", "mixed", "oldServer", "pro"]);
+    expect(byCasual.map((r) => isRanked(lineOf(r, "casual")))).toEqual([true, true, false, false]);
+    expect(lineOf(rows[3], "casual")).toEqual({ games: 0, wins: 0, winRate: 0, wolfGames: 0 });
   });
 });

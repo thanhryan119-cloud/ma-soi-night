@@ -79,18 +79,33 @@ export interface PublicProfile {
   stats: UserStats | null;
 }
 
-export interface LeaderboardRow {
-  userId: string;
-  name: string;
-  avatarUrl: string | null;
-  style: PlayerStyle | null;
+/** One mode's numbers on the leaderboard. */
+export interface LeaderboardLine {
   games: number;
   wins: number;
   winRate: number;
   wolfGames: number;
+}
+
+export type StatsMode = "casual" | "standard";
+
+/** The top-level numbers are standard; `casual` holds the casual ones. */
+export interface LeaderboardRow extends LeaderboardLine {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  style: PlayerStyle | null;
+  /** Missing from servers older than casual stats. */
+  casual?: LeaderboardLine;
   /** When the account was made (ms), so the newest unranked accounts show first. */
   createdAt: number;
 }
+
+const NO_LINE: LeaderboardLine = { games: 0, wins: 0, winRate: 0, wolfGames: 0 };
+
+/** A row's numbers in one mode. */
+export const lineOf = (r: LeaderboardRow, mode: StatsMode): LeaderboardLine =>
+  mode === "casual" ? (r.casual ?? NO_LINE) : r;
 
 export const RECENT_GAMES = 10;
 /** A game counts toward the numbers (games, wins, win rate, roles…) only with this many real people. */
@@ -251,18 +266,21 @@ export function applyResult(prev: UserStats | undefined, g: RecentGame): UserSta
 /** Games needed before a win rate counts on the leaderboard (1 win out of 1 is not 100%). */
 export const MIN_RANKED_GAMES = 5;
 
-export const isRanked = (r: Pick<LeaderboardRow, "games">) => r.games >= MIN_RANKED_GAMES;
+/** Enough games in that mode (pass a row's line, or a row for standard). */
+export const isRanked = (r: Pick<LeaderboardLine, "games">) => r.games >= MIN_RANKED_GAMES;
 
 /**
- * Accounts with at least MIN_RANKED_GAMES games come first, by win rate; on a
+ * In one mode (standard by default), accounts with at least MIN_RANKED_GAMES games come first, by win rate; on a
  * tie, more wins first, then more games, then name. Below them, every other
  * account, newest first.
  */
-export function rankLeaderboard(rows: LeaderboardRow[]): LeaderboardRow[] {
-  return [...rows].sort((a, b) => {
+export function rankLeaderboard(rows: LeaderboardRow[], mode: StatsMode = "standard"): LeaderboardRow[] {
+  return [...rows].sort((ra, rb) => {
+    const a = lineOf(ra, mode);
+    const b = lineOf(rb, mode);
     const ranked = Number(isRanked(b)) - Number(isRanked(a));
     if (ranked) return ranked;
-    if (!isRanked(a)) return b.createdAt - a.createdAt || a.name.localeCompare(b.name);
-    return b.winRate - a.winRate || b.wins - a.wins || b.games - a.games || a.name.localeCompare(b.name);
+    if (!isRanked(a)) return rb.createdAt - ra.createdAt || ra.name.localeCompare(rb.name);
+    return b.winRate - a.winRate || b.wins - a.wins || b.games - a.games || ra.name.localeCompare(rb.name);
   });
 }

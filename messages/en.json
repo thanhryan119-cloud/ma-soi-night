@@ -1098,7 +1098,8 @@
     "you": "You",
     "empty": "No accounts yet. Sign in with Google on the Profile page to be the first.",
     "unavailable": "Couldn't load the leaderboard.",
-    "unranked": "Fewer than {min} games, newest accounts first"
+    "unranked": "Fewer than {min} games, newest accounts first",
+    "mode": "Mode"
   },
   "lobby": {
     "watch": "Watch",
