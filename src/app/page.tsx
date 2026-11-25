@@ -61,17 +61,21 @@ export default function Home() {
         <p className="mt-3 max-w-xl text-lg text-white/70">{t("app.tagline")}</p>
       </header>
 
-      <Link
-        href="/lobby"
-        className="card mb-6 flex flex-col items-start gap-3 border-gold/40 p-6 transition hover:bg-white/5 sm:flex-row sm:items-center"
-      >
+      <section className="card mb-6 flex flex-col items-start gap-3 border-gold/40 p-6 sm:flex-row sm:items-center">
         <span className="text-4xl">🌐</span>
         <span className="min-w-0 flex-1">
           <span className="block text-2xl font-bold text-moon">{t("lobby.homeTitle")}</span>
           <span className="mt-1 block text-white/60">{t("lobby.homeDesc")}</span>
         </span>
-        <span className="btn-gold shrink-0 px-6 py-3 text-lg">{t("lobby.homeButton")} →</span>
-      </Link>
+        <div className="flex w-full shrink-0 gap-2 sm:w-auto">
+          <Link href="/lobby?quick=1" className="btn-gold flex-1 px-6 py-3 text-lg sm:flex-none">
+            ⚡ {t("lobby.quickButton")}
+          </Link>
+          <Link href="/lobby" className="btn-ghost flex-1 px-6 py-3 text-lg sm:flex-none">
+            {t("lobby.homeButton")} →
+          </Link>
+        </div>
+      </section>
 
       <div className="grid gap-6 md:grid-cols-2">
         <section className="card flex flex-col gap-4 p-6">

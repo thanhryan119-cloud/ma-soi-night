@@ -1005,8 +1005,11 @@
   "lobby": {
     "title": "Online lobby",
     "desc": "See who's online, join an open room or make your own.",
-    "homeTitle": "Play online",
-    "homeDesc": "Enter the lobby: see who's online, pick an open room, or make a room with the machine as host.",
+    "homeTitle": "Play now",
+    "homeDesc": "Hit Quick join to jump into any open room, or enter the lobby to see who's online and pick a room yourself.",
+    "quickButton": "Quick join",
+    "quickNone": "No open rooms right now. Make one and invite people in!",
+    "quickJoining": "Finding a room…",
     "homeButton": "Enter lobby",
     "you": "You",
     "online": "Online now",

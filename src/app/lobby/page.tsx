@@ -13,7 +13,8 @@ import type { Locale } from "@shared/types";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { ProfileLink } from "@/components/Profile";
 import { PasswordField } from "@/components/PasswordField";
-import { Avatar, ConnectionDot, LangSwitch, Spinner, useErrorToast } from "@/components/ui";
+import { Avatar, ConnectionDot, LangSwitch, Spinner, toast, useErrorToast } from "@/components/ui";
+import { shuffle } from "@shared/engine";
 import { getAuth, loadLocalProfile, saveLocalProfile, type LocalProfile } from "@/lib/account";
 import { useLocale, useT } from "@/lib/i18n";
 import { useLobby } from "@/lib/lobby";
@@ -25,11 +26,59 @@ export default function LobbyPage() {
   const [profile, setProfile] = useState<LocalProfile | null>(null);
   useEffect(() => setProfile(loadLocalProfile()), []);
   const { state, connected } = useLobby(profile);
+  const router = useRouter();
+  const { locale } = useLocale();
+  const showError = useErrorToast();
+  // "Quick join" from the home page: join a random open room once the lobby loads.
+  const [quickPending, setQuickPending] = useState(false);
+  const [quickBusy, setQuickBusy] = useState(false);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("quick")) {
+      setQuickPending(true);
+      window.history.replaceState(null, "", "/lobby");
+    }
+  }, []);
 
   const change = (p: LocalProfile) => {
     setProfile(p);
     saveLocalProfile(p);
   };
+
+  async function quickJoin() {
+    if (!profile?.name.trim()) return showError({ ok: false, error: "err.nameRequired" });
+    const open = (state?.rooms ?? []).filter((r) => r.status === "waiting" && r.players < r.max && !r.locked);
+    // Random order, rooms in your language first.
+    const picks = shuffle(open).sort((a, b) => Number(b.locale === locale) - Number(a.locale === locale));
+    if (!picks.length) return toast(t("lobby.quickNone"), "info");
+    setQuickBusy(true);
+    for (const room of picks) {
+      const res = await emitAck<{ playerId: string; token: string }>("player:join", {
+        code: room.code,
+        name: profile.name,
+        avatar: profile.avatar,
+        style: profile.style,
+        authToken: getAuth()?.token,
+        locale,
+        password: "",
+      });
+      if (res.ok && res.playerId && res.token) {
+        storage.set(playerKey(room.code), { playerId: res.playerId, token: res.token });
+        router.push(`/join/${room.code}`);
+        return;
+      }
+    }
+    // Every room filled up or started meanwhile.
+    setQuickBusy(false);
+    toast(t("lobby.quickNone"), "info");
+  }
+
+  useEffect(() => {
+    if (!quickPending || !state || !profile) return;
+    setQuickPending(false);
+    void quickJoin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quickPending, state, profile]);
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col gap-4 px-4 pt-16 pb-10">
@@ -62,7 +111,7 @@ export default function LobbyPage() {
         </div>
         <div className="flex flex-col gap-4">
           <CreateRoomCard profile={profile} />
-          <RoomsCard rooms={state?.rooms ?? null} profile={profile} />
+          <RoomsCard rooms={state?.rooms ?? null} profile={profile} onQuick={quickJoin} quickBusy={quickBusy} />
         </div>
       </div>
     </main>
@@ -200,13 +249,26 @@ function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
   );
 }
 
-function RoomsCard({ rooms, profile }: { rooms: RoomSummary[] | null; profile: LocalProfile | null }) {
+function RoomsCard({
+  rooms,
+  profile,
+  onQuick,
+  quickBusy,
+}: {
+  rooms: RoomSummary[] | null;
+  profile: LocalProfile | null;
+  onQuick: () => void;
+  quickBusy: boolean;
+}) {
   const t = useT();
   return (
     <section className="card flex flex-col gap-3 p-5">
       <div className="flex items-center gap-2">
         <h2 className="text-xl font-bold">🚪 {t("lobby.rooms")}</h2>
         {rooms && <span className="chip">{rooms.length}</span>}
+        <button className="btn-gold btn-sm ml-auto" onClick={onQuick} disabled={!rooms || !profile || quickBusy}>
+          ⚡ {quickBusy ? t("lobby.quickJoining") : t("lobby.quickButton")}
+        </button>
       </div>
       {!rooms ? (
         <Spinner />
