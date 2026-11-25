@@ -12,7 +12,6 @@ const BOOLS = [
   "autoAdvance",
   "noScreen",
   "autoKickAway",
-  "aiBots",
   "wolvesMustBite",
   "mandatoryVote",
   "voiceChat",

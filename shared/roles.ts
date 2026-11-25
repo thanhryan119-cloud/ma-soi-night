@@ -608,7 +608,7 @@ export function defaultSettings(playerCount = 8): Settings {
   return {
     nightOrder: [...DEFAULT_NIGHT_ORDER],
     roleCounts: suggestRoles(playerCount),
-    nomination: { mode: "top1", n: 2, threshold: 3, tie: "allTied" },
+    nomination: { mode: "top1", n: 2, threshold: 3, tie: "revote" },
     verdict: { majority: "simple", anonymous: false },
     bodyguardSelf: true,
     witchSelfSave: true,

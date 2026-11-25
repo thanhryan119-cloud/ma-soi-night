@@ -400,7 +400,6 @@
     "mandatoryVote": "Everyone must vote (no skipping)",
     "voiceChat": "Allow open mic (lobby and discussion)",
     "autoAdvance": "Auto narrator: runs the whole game — reads each step, moves on by itself, closes discussion/votes when time runs out, skips players who don't act",
-    "aiBots": "AI bots answer chat messages (Gemini — needs GEMINI_API_KEY on the server)",
     "noScreen": "No projector: show the narration and public info on everyone's phone",
     "autoKickAway": "Offline for 5 minutes during a game means out (a bot takes over, it counts as a loss)",
     "botSpeed": "Bot speed"
