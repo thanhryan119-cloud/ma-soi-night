@@ -675,7 +675,13 @@
     "badge": "Đang xem",
     "leave": "Thoát",
     "chat": "Chat",
-    "back": "Về sảnh"
+    "back": "Về sảnh",
+    "lookAtRole": "Mọi người đang xem vai của mình",
+    "nominateTitle": "Cả làng đang chọn người đưa lên dàn",
+    "revoteTitle": "Cả làng đang vote lại giữa những người hòa phiếu",
+    "verdictVoting": "Cả làng đang chọn treo cổ hay tha",
+    "waitingNext": "Ván đã xong, phòng đang chờ ván mới",
+    "joinNext": "Vào sảnh để chơi cùng"
   },
   "screen": {
     "waitingPlayers": "Đang chờ người chơi…",

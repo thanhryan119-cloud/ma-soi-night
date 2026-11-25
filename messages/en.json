@@ -675,7 +675,13 @@
     "badge": "Watching",
     "leave": "Leave",
     "chat": "Chat",
-    "back": "Back to the lobby"
+    "back": "Back to the lobby",
+    "lookAtRole": "Everyone is looking at their role",
+    "nominateTitle": "The village is choosing who goes on the stand",
+    "revoteTitle": "The village is voting again between the tied players",
+    "verdictVoting": "The village is choosing to hang or spare",
+    "waitingNext": "The game is over, the room waits for the next one",
+    "joinNext": "Go to the lobby to play"
   },
   "screen": {
     "waitingPlayers": "Waiting for players…",

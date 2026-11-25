@@ -51,6 +51,9 @@ function Bi({
 
 const BilingualCtx = createContext(false);
 const useBilingual = () => useContext(BilingualCtx);
+/** True on the watch page: one person on their own device, not a room's shared screen. */
+const SpectatorCtx = createContext(false);
+const useSpectator = () => useContext(SpectatorCtx);
 
 /**
  * The shared screen of a room. `spectate`: someone watching a running game
@@ -98,7 +101,8 @@ export default function ScreenApp({ code, spectate = false }: { code: string; sp
     );
 
   const screen = (
-    <BilingualCtx.Provider value={!!state?.settings.bilingualScreen}>
+    <SpectatorCtx.Provider value={spectate}>
+    <BilingualCtx.Provider value={!spectate && !!state?.settings.bilingualScreen}>
     <div className="flex min-h-dvh flex-col">
       {(!state || state.phase.kind === "lobby") && <LangSwitch />}
       <div className={`fixed top-3 z-40 font-display text-lg font-black text-moon/70 ${!state || state.phase.kind === "lobby" ? "left-28" : "left-4"}`}>
@@ -117,6 +121,7 @@ export default function ScreenApp({ code, spectate = false }: { code: string; sp
       </main>
     </div>
     </BilingualCtx.Provider>
+    </SpectatorCtx.Provider>
   );
   if (!spectate) return screen;
   return <Spectating state={state} code={code} screen={screen} />;
@@ -193,16 +198,21 @@ function Progress({ state }: { state: ClientState }) {
 function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; t: T }) {
   const players = new Map(state.players.map((p) => [p.id, p]));
   const k = state.phase.kind;
-  const title = "font-display text-6xl font-black text-moon md:text-7xl";
+  const spectator = useSpectator();
+  // The shared screen is read from across the room; a spectator holds their own device.
+  const title = spectator
+    ? "font-display text-4xl font-black text-moon md:text-6xl"
+    : "font-display text-6xl font-black text-moon md:text-7xl";
+  const bigTimer = spectator ? "text-7xl leading-none md:text-9xl" : "text-[10rem] leading-none";
 
   switch (k) {
     case "lobby":
-      return <LobbyScreen state={state} />;
+      return spectator ? <WatchLobby state={state} /> : <LobbyScreen state={state} />;
     case "roleReveal":
       return (
         <div className="flex flex-col items-center gap-8">
           <CardBack className="h-64 w-auto" />
-          <Bi k="screen.lookAtRole" className={title} />
+          <Bi k={spectator ? "watch.lookAtRole" : "screen.lookAtRole"} className={title} />
         </div>
       );
     case "night": {
@@ -261,14 +271,21 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
       return (
         <div className="flex w-full max-w-3xl flex-col items-center gap-8">
           <Bi k="phase.discussion" className={title} />
-          <TimerDisplay timer={state.timer} offset={offset} className="text-[10rem] leading-none" />
+          <TimerDisplay timer={state.timer} offset={offset} className={bigTimer} />
           <AliveRow state={state} />
         </div>
       );
     case "nominate":
       return (
         <div className="flex w-full flex-col items-center gap-10">
-          <Bi k={state.vote?.candidates ? "player.revoteTitle" : "player.nominateTitle"} className={title} />
+          <Bi
+            k={
+              state.vote?.candidates
+                ? spectator ? "watch.revoteTitle" : "player.revoteTitle"
+                : spectator ? "watch.nominateTitle" : "player.nominateTitle"
+            }
+            className={title}
+          />
           <Progress state={state} />
           <Bi k="screen.waitingVotes" className="text-2xl text-white/50" />
         </div>
@@ -297,10 +314,14 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
         <div className="flex w-full flex-col items-center gap-8">
           {p && <PlayerBubble p={p} size="xl" />}
           {p && <Bi k="player.verdictTitle" params={{ name: p.name }} className={title} />}
-          <div className="flex gap-6 text-3xl font-black">
-            <span className="rounded-lg bg-blood px-6 py-3">🪢 {t("player.execute")}</span>
-            <span className="rounded-lg bg-emerald-500 px-6 py-3 text-night-950">🕊️ {t("player.spare")}</span>
-          </div>
+          {spectator ? (
+            <Bi k="watch.verdictVoting" className="text-2xl text-white/70" />
+          ) : (
+            <div className="flex gap-6 text-3xl font-black">
+              <span className="rounded-lg bg-blood px-6 py-3">🪢 {t("player.execute")}</span>
+              <span className="rounded-lg bg-emerald-500 px-6 py-3 text-night-950">🕊️ {t("player.spare")}</span>
+            </div>
+          )}
           <Progress state={state} />
         </div>
       );
@@ -351,6 +372,24 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
         </div>
       );
   }
+}
+
+/** A spectator once the game is over and the room waits for the next one: no QR code, a way in instead. */
+function WatchLobby({ state }: { state: ClientState }) {
+  const t = useT();
+  return (
+    <div className="flex w-full max-w-3xl flex-col items-center gap-6">
+      <Bi k="watch.waitingNext" className="font-display text-4xl font-black text-moon md:text-5xl" />
+      <div className="flex flex-wrap justify-center gap-4">
+        {state.players.map((p) => (
+          <PlayerBubble key={p.id} p={p} />
+        ))}
+      </div>
+      <a className="btn-gold" href="/lobby">
+        {t("watch.joinNext")}
+      </a>
+    </div>
+  );
 }
 
 function LobbyScreen({ state }: { state: ClientState }) {
