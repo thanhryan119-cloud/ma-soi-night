@@ -57,6 +57,8 @@ Log và thông báo hệ thống lưu **key i18n + tham số**, client tự dị
 | `owner:action` | `OwnerAction` | Trưởng phòng của phòng máy dẫn |
 | `room:setPassword` | `{ withPassword, password }` | Quản trò, hoặc trưởng phòng |
 | `profile:get` | `{ playerId }` → `{ profile: PublicProfile }` | Bất kỳ ai trong phòng (bấm avatar/tên) |
+| `global:join` | `{ authToken? }` → `{ messages, online, dms, peers }` | Ô Chat chung (gọi lại khi đăng nhập/đăng xuất). Server nhớ socket nào là tài khoản nào để làm danh sách Online |
+| `dm:send` | `{ to, text, authToken }` → `{ msg, peer }` | Nhắn riêng giữa hai tài khoản. Bị chặn khi cả hai đang ngồi cùng một ván đang chạy |
 
 `HostAction`: `setLocale`, `kick`, `rename`, `updateSettings`, `setRoleCounts`, `useSuggested`, `assignRandom`, `assignManual`, `addBots`, `removeBots`, `start`, `next`, `timer`, `override` (`kill`/`revive`/`changeRole`/`cancelVote`/`revote`), `actAs`, `confirmWin`, `dismissWin`, `endGame`, `newGame`.
 
@@ -69,6 +71,8 @@ Log và thông báo hệ thống lưu **key i18n + tham số**, client tự dị
 | `state` | `ClientState` đã lọc theo người xem (host / player / screen) — gửi lại sau *mỗi* thay đổi |
 | `kicked` | Người chơi bị mời ra |
 | `roomClosed` | Phòng hết hạn (12 giờ không hoạt động) |
+| `global:online` | Danh sách tài khoản đang mở Chat chung và số khách (gộp 300 ms, chỉ gửi khi khác) |
+| `dm:new` | `{ msg, peer }` một tin nhắn riêng, gửi tới mọi máy của người gửi và người nhận |
 
 ### Chơi online (`shared/multiplayer.ts`, `server/lobby.ts`)
 

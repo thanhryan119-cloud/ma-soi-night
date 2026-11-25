@@ -823,7 +823,9 @@
     "chatSlow": "Easy there: wait {seconds}s before sending again.",
     "sistersPair": "The Sisters come as a pair (0 or 2).",
     "silenced": "You are silenced today.",
-    "nothingToIgnite": "No house has been doused yet."
+    "nothingToIgnite": "No house has been doused yet.",
+    "dmNoUser": "This player could not be found.",
+    "dmSameGame": "You're both in the same game, so private messages wait until it ends."
   },
   "log": {
     "standIn": "{name} is away, a bot plays for them until they are back.",
@@ -1044,7 +1046,18 @@
     "placeholder": "Message the whole server…",
     "send": "Send",
     "signIn": "Sign in with Google to chat.",
-    "remove": "Remove"
+    "remove": "Remove",
+    "tabGeneral": "General",
+    "tabOnline": "Online",
+    "onlineEmpty": "Nobody signed in is online right now.",
+    "guests": "And {n} guests not signed in",
+    "message": "Message",
+    "you": "you",
+    "offline": "Offline, they'll see it when they're back",
+    "dmHint": "Only the two of you can see these messages.",
+    "dmEmpty": "No messages yet. Say hi!",
+    "dmPlaceholder": "Message {name}…",
+    "dmSignIn": "Sign in with Google to message other players."
   },
   "mail": {
     "button": "Mail",

@@ -205,3 +205,36 @@ export interface GlobalMessage {
 export const GLOBAL_CHAT_HISTORY = 100;
 /** Least time between two lines from one account. */
 export const GLOBAL_CHAT_WAIT_MS = 3000;
+
+/** A signed-in account with the server chat open (the "Online" tab). */
+export interface OnlineUser {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  style: PlayerStyle | null;
+}
+
+export interface OnlineList {
+  users: OnlineUser[];
+  /** People reading without an account: counted, not listed. */
+  guests: number;
+}
+
+/** A private line between two accounts, shown as a tab of the server chat. */
+export interface DirectMessage {
+  id: string;
+  t: number;
+  from: string;
+  to: string;
+  text: string;
+}
+
+/** Lines kept per pair of accounts. */
+export const DM_HISTORY = 100;
+/** Least time between two private lines from one account. */
+export const DM_WAIT_MS = 1000;
+
+/** The other account in a private line. */
+export const dmPeer = (m: Pick<DirectMessage, "from" | "to">, me: string) => (m.from === me ? m.to : m.from);
+/** One key per pair of accounts, the same whoever writes. */
+export const dmKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);

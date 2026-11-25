@@ -205,6 +205,16 @@ const globalChat = createGlobalChat(io, {
     const u = accounts.userForToken(token);
     return u ? accounts.publicUser(u) : null;
   },
+  userById: (id) => accounts.userById(id),
+  // Two players of one running game must not talk privately (a wolf telling a friend).
+  sameRunningGame: (a, b) => {
+    for (const room of rooms.values()) {
+      if (!room.game || room.phase.kind === "lobby" || room.phase.kind === "gameOver") continue;
+      const seated = (id: string) => room.players.some((p) => !p.isBot && p.userId === id);
+      if (seated(a) && seated(b)) return true;
+    }
+    return false;
+  },
 });
 const social = createSocial(io, (code) => rooms.get(code), channel, (room, fromId, text) => {
   if (!room.game) return;

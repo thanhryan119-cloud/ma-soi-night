@@ -318,6 +318,8 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
     publicUser,
     isAdmin,
     hasUser: (userId: string) => !!store.users[userId],
+    /** What anyone may see of an account (null when it does not exist). */
+    userById: (userId: string) => (store.users[userId] ? publicUser(store.users[userId]) : null),
     statsOf: (userId: string) => stats[userId] ?? null,
     /** Shop items a user owns (empty for guests). */
     ownedFor: (userId: string | null | undefined) => ownedOf(userId ? store.users[userId] : null),

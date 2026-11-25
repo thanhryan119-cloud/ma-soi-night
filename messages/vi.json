@@ -823,7 +823,9 @@
     "chatSlow": "Chậm lại chút, đợi {seconds} giây rồi gửi tiếp.",
     "sistersPair": "Chị Em phải có đủ hai người (0 hoặc 2).",
     "silenced": "Bạn bị bịt miệng hôm nay.",
-    "nothingToIgnite": "Chưa có nhà nào bị tưới xăng."
+    "nothingToIgnite": "Chưa có nhà nào bị tưới xăng.",
+    "dmNoUser": "Không tìm thấy người này.",
+    "dmSameGame": "Hai bạn đang ở cùng một ván, không nhắn riêng được tới khi ván kết thúc."
   },
   "log": {
     "standIn": "{name} vắng mặt, bot chơi hộ cho tới khi quay lại.",
@@ -1044,7 +1046,18 @@
     "placeholder": "Nhắn cho cả server…",
     "send": "Gửi",
     "signIn": "Đăng nhập Google để chat.",
-    "remove": "Xóa"
+    "remove": "Xóa",
+    "tabGeneral": "Chung",
+    "tabOnline": "Online",
+    "onlineEmpty": "Chưa có ai đăng nhập đang online.",
+    "guests": "Và {n} khách chưa đăng nhập",
+    "message": "Nhắn riêng",
+    "you": "bạn",
+    "offline": "Đang offline, sẽ thấy khi quay lại",
+    "dmHint": "Chỉ hai bạn thấy tin nhắn này.",
+    "dmEmpty": "Chưa có tin nhắn nào. Gửi lời chào đi!",
+    "dmPlaceholder": "Nhắn cho {name}…",
+    "dmSignIn": "Đăng nhập Google để nhắn riêng với người khác."
   },
   "mail": {
     "button": "Thư",
