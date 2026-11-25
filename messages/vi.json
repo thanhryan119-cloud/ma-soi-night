@@ -671,6 +671,18 @@
     "boughtWithGold": "Đã mua {item} bằng vàng!",
     "needGold": "Còn thiếu {gold} vàng"
   },
+  "watch": {
+    "badge": "Đang xem",
+    "leave": "Thoát",
+    "chat": "Chat",
+    "back": "Về sảnh",
+    "lookAtRole": "Mọi người đang xem vai của mình",
+    "nominateTitle": "Cả làng đang chọn người đưa lên dàn",
+    "revoteTitle": "Cả làng đang vote lại giữa những người hòa phiếu",
+    "verdictVoting": "Cả làng đang chọn treo cổ hay tha",
+    "waitingNext": "Ván đã xong, phòng đang chờ ván mới",
+    "joinNext": "Vào sảnh để chơi cùng"
+  },
   "screen": {
     "waitingPlayers": "Đang chờ người chơi…",
     "joinAt": "Vào tại",
@@ -724,6 +736,8 @@
     }
   },
   "err": {
+    "spectatorReadOnly": "Người xem chỉ chat được với người đã chết.",
+    "notPlayingYet": "Phòng này chưa vào ván, hãy vào phòng để chơi cùng.",
     "ghostsOnly": "Chỉ người đã chết mới chat được ở đây.",
     "signInToChat": "Cần đăng nhập Google để chat.",
     "inOtherRoom": "Bạn đang chơi ở phòng {code}. Mỗi người chỉ ở một phòng cùng lúc.",
@@ -932,6 +946,7 @@
     "p6": "Câu hỏi hoặc yêu cầu xóa dữ liệu:"
   },
   "social": {
+    "spectatorReadOnly": "Bạn đang xem nên chỉ đọc được chat phòng. Hãy nói chuyện ở tab Người chết.",
     "tabRoom": "Phòng",
     "tabGhost": "Người chết",
     "tabServer": "Toàn server",
@@ -1049,9 +1064,11 @@
     "footer": "Bản {version} · Có gì mới"
   },
   "ghostChat": {
+    "spectatorHint": "Bạn đang xem ván này. Người chết và người xem nói chuyện ở đây, người còn sống không đọc được.",
+    "spectator": "người xem",
     "button": "Chat người chết",
     "title": "Chat của người đã chết",
-    "hint": "Người còn sống không đọc được, cả làng sẽ thấy khi ván kết thúc.",
+    "hint": "Người còn sống không đọc được, người xem thì có. Cả làng sẽ thấy khi ván kết thúc.",
     "hostHint": "Người chết đang nói với nhau, người sống không thấy.",
     "empty": "Chưa ai lên tiếng. Chào những linh hồn khác đi!",
     "placeholder": "Nhắn cho người đã chết…",
@@ -1080,6 +1097,8 @@
     "unranked": "Chưa đủ {min} ván, tài khoản mới nhất ở trên"
   },
   "lobby": {
+    "watch": "Xem",
+    "watchHint": "Xem ván đang chơi và chat với người đã chết",
     "title": "Sảnh chờ online",
     "desc": "Xem ai đang online, vào một phòng đang mở hoặc tự tạo phòng.",
     "homeTitle": "Chơi ngay",

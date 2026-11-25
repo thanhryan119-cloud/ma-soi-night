@@ -59,7 +59,7 @@ export function ChatMilestone({ m }: { m: ChatMessage }) {
 /**
  * The room's chat box. Tabs: the room chat (with the drawing board), the dead
  * players' chat when this viewer may read it, and the server-wide chat.
- * Who is using the panel: the host, or a player id.
+ * Who is using the panel: the host, a spectator, or a player id.
  */
 export function SocialPanel({
   state,
@@ -67,14 +67,15 @@ export function SocialPanel({
   className = "",
 }: {
   state: ClientState;
-  viewer: "host" | string;
+  viewer: "host" | "spectator" | string;
   className?: string;
 }) {
   const t = useT();
   const social = useSocial(state.code);
   const players = new Map(state.players.map((p) => [p.id, p]));
   const isHost = viewer === "host";
-  const me = isHost ? null : players.get(viewer);
+  const spectator = viewer === "spectator";
+  const me = isHost || spectator ? null : players.get(viewer);
   // The players on the stand keep the chat during the verdict vote.
   const defenderChat = state.phase.kind === "verdict";
   const phaseOpen =
@@ -89,8 +90,10 @@ export function SocialPanel({
     (state.phase.kind === "defense" || defenderChat) && !state.me?.onStand;
   const silenced = !!me?.silenced;
   const canSpeak =
-    isHost || (phaseOpen && !dead && !defenseLocked && !silenced);
-  const reason = !phaseOpen
+    isHost || (!spectator && phaseOpen && !dead && !defenseLocked && !silenced);
+  const reason = spectator
+    ? t("social.spectatorReadOnly")
+    : !phaseOpen
     ? t("social.closed")
     : dead
       ? t("social.deadReadOnly")
@@ -110,14 +113,16 @@ export function SocialPanel({
     setBoardOpen(!boardOpen);
   };
 
-  const [tab, setTab] = useState<Tab>("room");
+  // Spectators talk in the dead players' chat, so they start there.
+  const [tab, setTab] = useState<Tab>(spectator ? "ghost" : "room");
   const over = state.phase.kind === "gameOver";
   const ghost = useGhostChat(state, viewer);
   const anyDead = state.players.some((p) => !p.alive);
   // Same rule as before: the server says who may read; once the game is over
   // the tab only shows if the dead said something.
-  const ghostShown =
-    ghost.allowed && (ghost.messages.length > 0 || (!over && (!isHost || anyDead)));
+  const ghostShown = spectator
+    ? !over || ghost.messages.length > 0
+    : ghost.allowed && (ghost.messages.length > 0 || (!over && (!isHost || anyDead)));
   const global = useGlobalChat(tab === "server");
   useEffect(() => {
     if (tab === "ghost" && !ghostShown) setTab("room");
@@ -137,17 +142,17 @@ export function SocialPanel({
   const ghostUnread =
     tab === "ghost" ? 0 : ghost.messages.slice(ghostSeen).filter((m) => m.from !== viewer).length;
 
-  const tabs: { id: Tab; label: string; unread: number }[] = [
-    { id: "room", label: `💬 ${t("social.tabRoom")}`, unread: roomUnread },
+  const tabs: { id: Tab; icon: string; label: string; unread: number }[] = [
+    { id: "room", icon: "💬", label: t("social.tabRoom"), unread: roomUnread },
     ...(ghostShown
-      ? [{ id: "ghost" as Tab, label: `👻 ${over ? t("ghostChat.endTitle") : t("social.tabGhost")}`, unread: ghostUnread }]
+      ? [{ id: "ghost" as Tab, icon: "👻", label: over ? t("ghostChat.endTitle") : t("social.tabGhost"), unread: ghostUnread }]
       : []),
-    { id: "server", label: `🌐 ${t("social.tabServer")}`, unread: global.unread },
+    { id: "server", icon: "🌐", label: t("social.tabServer"), unread: global.unread },
   ];
 
   return (
     <div
-      className={`tarot-frame flex min-h-0 flex-col overflow-hidden rounded-lg border border-gold/40 bg-night-900/85 ${className}`}
+      className={`@container tarot-frame flex min-h-0 flex-col overflow-hidden rounded-lg border border-gold/40 bg-night-900/85 ${className}`}
     >
       <div className="flex shrink-0 items-center gap-1 border-b border-gold/25 px-1.5 py-1" role="tablist" aria-label={t("social.title")}>
         {tabs.map((x) => (
@@ -157,9 +162,13 @@ export function SocialPanel({
             role="tab"
             aria-selected={tab === x.id}
             onClick={() => setTab(x.id)}
+            aria-label={x.label}
+            title={x.label}
             className={`flex min-w-0 items-center gap-1 rounded-md px-2 py-1 text-sm font-bold whitespace-nowrap ${tab === x.id ? "bg-gold/15 text-gold ring-1 ring-gold/40" : "text-white/60 hover:text-white"}`}
           >
-            <span className="truncate">{x.label}</span>
+            <span aria-hidden>{x.icon}</span>
+            {/* In a narrow box only the open tab spells out its name. */}
+            <span className={`truncate ${tab === x.id ? "" : "hidden @[30rem]:inline"}`}>{x.label}</span>
             {x.unread > 0 && (
               <span className="rounded-full bg-blood px-1.5 text-[10px] font-bold text-white">{x.unread > 99 ? "99+" : x.unread}</span>
             )}
@@ -177,7 +186,7 @@ export function SocialPanel({
           </button>
         )}
       </div>
-      {state.settings.voiceChat !== false && (
+      {state.settings.voiceChat !== false && !spectator && (
         <VoiceBar state={state} players={players} enabled={phaseOpen} />
       )}
       {tab === "room" && boardOpen && (
@@ -203,7 +212,9 @@ export function SocialPanel({
       {tab === "ghost" && (
         <div className="flex min-h-0 flex-1 flex-col gap-2 p-2">
           {!over && (
-            <p className="shrink-0 text-xs text-white/50">{isHost ? t("ghostChat.hostHint") : t("ghostChat.hint")}</p>
+            <p className="shrink-0 text-xs text-white/50">
+              {isHost ? t("ghostChat.hostHint") : spectator ? t("ghostChat.spectatorHint") : t("ghostChat.hint")}
+            </p>
           )}
           <GhostLog state={state} ghost={ghost} className="flex-1" />
         </div>

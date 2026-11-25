@@ -22,7 +22,7 @@ import { useLobby } from "@/lib/lobby";
 import { GlobalChat } from "@/components/GlobalChat";
 import { Mailbox } from "@/components/Mailbox";
 import { rememberRoomPassword } from "@/components/ShareRoom";
-import { emitAck, getDeviceId, playerKey, storage } from "@/lib/socket";
+import { emitAck, getDeviceId, playerKey, storage, watchPasswordKey } from "@/lib/socket";
 
 export default function LobbyPage() {
   const t = useT();
@@ -311,16 +311,25 @@ function RoomRow({ room, profile }: { room: RoomSummary; profile: LocalProfile |
   const router = useRouter();
   const { locale } = useLocale();
   const showError = useErrorToast();
-  const [asking, setAsking] = useState(false);
+  // What the password box is for: taking a seat, or watching the game.
+  const [asking, setAsking] = useState<"join" | "watch" | null>(null);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const other = useOtherRoom();
   const full = room.players >= room.max;
   const canJoin = room.status === "waiting" && !full;
+  const canWatch = room.status === "playing";
+
+  function watch() {
+    if (!profile?.name.trim()) return showError({ ok: false, error: "err.nameRequired" });
+    if (room.locked && asking !== "watch") return setAsking("watch");
+    storage.set(watchPasswordKey(room.code), password);
+    router.push(`/watch/${room.code}`);
+  }
 
   async function join(leaveOther = false) {
     if (!profile?.name.trim()) return showError({ ok: false, error: "err.nameRequired" });
-    if (room.locked && !asking) return setAsking(true);
+    if (room.locked && asking !== "join") return setAsking("join");
     setBusy(true);
     const res = await emitAck<{ playerId: string; token: string }>("player:join", {
       code: room.code,
@@ -361,16 +370,23 @@ function RoomRow({ room, profile }: { room: RoomSummary; profile: LocalProfile |
             <span className={`chip py-0 ${room.status === "waiting" && !full ? "text-emerald-300" : "text-white/50"}`}>{status}</span>
           </div>
         </div>
-        <button className="btn-gold btn-sm shrink-0" disabled={!canJoin || busy} onClick={() => join()}>
-          {t("lobby.join")}
-        </button>
+        {canWatch ? (
+          <button className="btn-ghost btn-sm shrink-0 border-sky-300/40 text-sky-200" onClick={watch} title={t("lobby.watchHint")}>
+            👁️ {t("lobby.watch")}
+          </button>
+        ) : (
+          <button className="btn-gold btn-sm shrink-0" disabled={!canJoin || busy} onClick={() => join()}>
+            {t("lobby.join")}
+          </button>
+        )}
       </div>
-      {asking && canJoin && (
+      {((asking === "join" && canJoin) || (asking === "watch" && canWatch)) && (
         <form
           className="flex gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            void join();
+            if (asking === "watch") watch();
+            else void join();
           }}
         >
           <input

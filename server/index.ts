@@ -12,6 +12,7 @@ import {
   addPlayer,
   isSilenced,
   advance,
+  AVATARS,
   autoReady,
   createRoom,
   getPlayer,
@@ -20,6 +21,7 @@ import {
   makeRoomCode,
   playerAction,
   randomToken,
+  sanitizeName,
   fillVotesIfTimeUp,
   stepKey,
   timerOp,
@@ -74,6 +76,8 @@ try {
 const botTimers = new Map<string, NodeJS.Timeout>();
 const autoTimers = new Map<string, { key: string; timer: NodeJS.Timeout }>();
 const AUTO_DELAY_MS = 3000;
+/** At night the countdown between role calls is shorter: nobody needs to get ready. */
+const NIGHT_AUTO_DELAY_MS = 1500;
 const botChatTimers = new Map<string, NodeJS.Timeout>();
 const botChatMemory = new Map<string, BotChatMemory>();
 
@@ -131,6 +135,8 @@ interface SocketData {
   code?: string;
   kind?: Viewer;
   playerId?: string;
+  /** Set for a spectator: who they are in the dead players' chat. */
+  spectator?: { id: string; name: string; avatar: string };
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Events = Record<string, (...args: any[]) => void>;
@@ -463,7 +469,8 @@ interface StepTiming {
   confirmedAt: number | null;
 }
 const stepTiming = new Map<string, StepTiming>();
-const NIGHT_MIN_MS: [number, number] = [12_000, 20_000];
+/** Each night call lasts at least a random time in this range, so a quick (or dead) role can't be told apart. */
+const NIGHT_MIN_MS: [number, number] = [6_000, 10_000];
 /** If the host never reports the narration (tab closed), assume it took this long. */
 const NARRATION_FALLBACK_MS = 20_000;
 const VOTE_SECONDS = Number(process.env.VOTE_SECONDS) || 60;
@@ -565,7 +572,7 @@ function autoStep(room: Room): boolean {
 
 /**
  * Auto narrator: runs the whole game once the host has started it. Each step
- * moves on 3 seconds after it is due (see dueAt). The 3-second countdown
+ * moves on 3 seconds after it is due (1.5 at night, see dueAt). The countdown
  * (room.autoAt) only shows once everything else is satisfied.
  */
 function scheduleAuto(room: Room) {
@@ -580,10 +587,11 @@ function scheduleAuto(room: Room) {
   const now = Date.now();
   const due = dueAt(room, st, now);
   // Nothing to wait for yet (e.g. a paused timer): look again in a few seconds.
-  const goAt = due === null ? null : due + AUTO_DELAY_MS;
+  const delay = room.phase.kind === "night" ? NIGHT_AUTO_DELAY_MS : AUTO_DELAY_MS;
+  const goAt = due === null ? null : due + delay;
   const key = st.key;
-  if (goAt === null || now < goAt - AUTO_DELAY_MS) {
-    const wait = goAt === null ? 2_000 : goAt - AUTO_DELAY_MS - now;
+  if (goAt === null || now < goAt - delay) {
+    const wait = goAt === null ? 2_000 : goAt - delay - now;
     autoTimers.set(room.code, {
       key,
       timer: setTimeout(() => {
@@ -1097,6 +1105,25 @@ io.on("connection", (raw) => {
       if (!room) return { ok: false, error: "err.roomNotFound" };
       attach(socket, room, "screen");
       socket.emit("state", buildView(room, "screen"));
+      return { ok: true };
+    }, ack),
+  );
+
+  // Watching a running game: what the shared screen shows, plus the dead players' chat.
+  on("spectator:watch", (p, ack) =>
+    guard(() => {
+      const room = rooms.get(normCode(p.code));
+      if (!room) return { ok: false, error: "err.roomNotFound" };
+      if (!room.game || room.phase.kind === "lobby") return { ok: false, error: "err.notPlayingYet" };
+      if (!checkPassword(room.passwordHash, p.password))
+        return { ok: false, error: p.password ? "err.wrongPassword" : "err.passwordRequired" };
+      const user = accounts.userForToken(p.authToken);
+      const name = sanitizeName(p.name) || user?.name || "";
+      if (!name) return { ok: false, error: "err.nameRequired" };
+      const avatar = AVATARS.includes(String(p.avatar)) ? String(p.avatar) : "👁️";
+      attach(socket, room, "spectator");
+      socket.data.spectator = { id: randomToken().slice(0, 10), name, avatar };
+      socket.emit("state", buildView(room, "spectator"));
       return { ok: true };
     }, ack),
   );

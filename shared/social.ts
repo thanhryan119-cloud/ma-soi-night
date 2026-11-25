@@ -20,12 +20,26 @@ export const STROKE_MAX_POINTS = 600;
 export const BOARD_COLORS = ["#f2f2f2", "#e5383b", "#f4c542", "#4cc9f0", "#57cc99", "#b388eb"] as const;
 export const BRUSH_SIZES = [2, 5, 12] as const;
 
-export type Speaker = { kind: "host" } | { kind: "player"; playerId: string };
+/** A spectator watches a running game: they read along and talk in the dead players' chat only. */
+export interface Spectator {
+  id: string;
+  name: string;
+  avatar: string;
+}
+
+export type Speaker = { kind: "host" } | { kind: "player"; playerId: string } | ({ kind: "spectator" } & Spectator);
+
+/** Chat lines from spectators are marked with this prefix on `from`. */
+export const SPECTATOR_PREFIX = "spec:";
+export const isSpectatorId = (from: string) => from.startsWith(SPECTATOR_PREFIX);
 
 export interface ChatMessage {
   id: string;
-  /** "host" or a player id */
+  /** "host", a player id, or SPECTATOR_PREFIX + a spectator id */
   from: string;
+  /** Spectators are not seated: their name and avatar travel with the line. */
+  name?: string;
+  avatar?: string;
   text: string;
   t: number;
   /** When in the game it was said (the chat shows a marker where the day changes). */
@@ -65,6 +79,7 @@ export const defenderChat = (room: Pick<Room, "phase">) => room.phase.kind === "
 /** null when the speaker may chat/draw now, otherwise an i18n error key. */
 export function canSpeak(room: Room, who: Speaker): string | null {
   if (who.kind === "host") return null;
+  if (who.kind === "spectator") return "err.spectatorReadOnly";
   const p = room.players.find((x) => x.id === who.playerId);
   if (!p) return "err.notInRoom";
   const defenders = room.phase.kind === "defense" || defenderChat(room);
@@ -76,13 +91,13 @@ export function canSpeak(room: Room, who: Speaker): string | null {
 }
 
 /**
- * The dead have a chat of their own while the game runs: only they (and a
- * human host) read it, and the living never see it until the game is over,
- * when everyone can read it.
+ * The dead have a chat of their own while the game runs: only they, the
+ * spectators (and a human host) read it, and the living never see it until the
+ * game is over, when everyone can read it.
  */
 export function canReadGhosts(room: Room, who: Speaker): boolean {
   if (!room.game) return false;
-  if (who.kind === "host" || room.phase.kind === "gameOver") return true;
+  if (who.kind !== "player" || room.phase.kind === "gameOver") return true;
   const p = room.players.find((x) => x.id === who.playerId);
   return !!p && !p.alive;
 }
@@ -90,6 +105,7 @@ export function canReadGhosts(room: Room, who: Speaker): boolean {
 /** null when the speaker may post in the dead players' chat, otherwise an i18n error key. */
 export function canGhostSpeak(room: Room, who: Speaker): string | null {
   if (who.kind === "host") return "err.ghostsOnly";
+  if (who.kind === "spectator") return room.game && room.phase.kind !== "gameOver" ? null : "err.ghostsOnly";
   const p = room.players.find((x) => x.id === who.playerId);
   if (!p) return "err.notInRoom";
   if (!room.game || room.phase.kind === "gameOver" || p.alive) return "err.ghostsOnly";
@@ -101,6 +117,7 @@ export function voiceAccess(room: Room, who: Speaker): { ok: boolean; listenOnly
   if (room.settings.voiceChat === false) return { ok: false, listenOnly: true, error: "err.voiceDisabled" };
   if (!socialOpen(room) && !defenderChat(room)) return { ok: false, listenOnly: true, error: "err.chatClosed" };
   if (who.kind === "host") return { ok: true, listenOnly: false };
+  if (who.kind === "spectator") return { ok: false, listenOnly: true, error: "err.spectatorReadOnly" };
   const p = room.players.find((x) => x.id === who.playerId);
   if (!p) return { ok: false, listenOnly: true, error: "err.notInRoom" };
   const onlyNominees = (room.phase.kind === "defense" || defenderChat(room)) && !room.game?.nominees.includes(p.id);

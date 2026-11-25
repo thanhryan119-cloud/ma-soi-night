@@ -671,6 +671,18 @@
     "boughtWithGold": "Bought {item} with gold!",
     "needGold": "{gold} more gold needed"
   },
+  "watch": {
+    "badge": "Watching",
+    "leave": "Leave",
+    "chat": "Chat",
+    "back": "Back to the lobby",
+    "lookAtRole": "Everyone is looking at their role",
+    "nominateTitle": "The village is choosing who goes on the stand",
+    "revoteTitle": "The village is voting again between the tied players",
+    "verdictVoting": "The village is choosing to hang or spare",
+    "waitingNext": "The game is over, the room waits for the next one",
+    "joinNext": "Go to the lobby to play"
+  },
   "screen": {
     "waitingPlayers": "Waiting for players…",
     "joinAt": "Join at",
@@ -724,6 +736,8 @@
     }
   },
   "err": {
+    "spectatorReadOnly": "Spectators can only chat with the dead.",
+    "notPlayingYet": "This room has not started a game yet. Join it to play.",
     "ghostsOnly": "Only dead players can chat here.",
     "signInToChat": "Sign in with Google to chat.",
     "inOtherRoom": "You're playing in room {code}. You can be in one room at a time.",
@@ -932,6 +946,7 @@
     "p6": "Questions or data deletion requests:"
   },
   "social": {
+    "spectatorReadOnly": "You are watching, so the room chat is read only. Talk in the 👻 tab.",
     "tabRoom": "Room",
     "tabGhost": "The dead",
     "tabServer": "Everyone",
@@ -1049,9 +1064,11 @@
     "footer": "Version {version} · What's new"
   },
   "ghostChat": {
+    "spectatorHint": "You are watching this game. The dead and the spectators talk here, the living can't read it.",
+    "spectator": "spectator",
     "button": "Ghost chat",
     "title": "The dead players' chat",
-    "hint": "The living can't read this, everyone sees it when the game ends.",
+    "hint": "The living can't read this, spectators can. Everyone sees it when the game ends.",
     "hostHint": "The dead are talking among themselves, the living can't see it.",
     "empty": "Nobody has spoken yet. Say hello to the other ghosts!",
     "placeholder": "Message the dead…",
@@ -1080,6 +1097,8 @@
     "unranked": "Fewer than {min} games, newest accounts first"
   },
   "lobby": {
+    "watch": "Watch",
+    "watchHint": "Watch the game and chat with the dead",
     "title": "Online lobby",
     "desc": "See who's online, join an open room or make your own.",
     "homeTitle": "Play now",

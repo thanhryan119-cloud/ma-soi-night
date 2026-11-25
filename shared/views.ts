@@ -37,7 +37,8 @@ import type {
   Winner,
 } from "./types";
 
-export type Viewer = "host" | "player" | "screen";
+/** "spectator": someone watching a running game; sees what the shared screen shows. */
+export type Viewer = "host" | "player" | "screen" | "spectator";
 
 export interface PublicDeath {
   playerId: string;

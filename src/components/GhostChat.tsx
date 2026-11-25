@@ -115,7 +115,9 @@ export function GhostLog({
                     {p ? (
                       <Avatar p={p} size="sm" />
                     ) : (
-                      <span className="text-xl">👻</span>
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-night-700 text-base">
+                        {m.avatar ?? "👻"}
+                      </span>
                     )}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline gap-2">
@@ -124,6 +126,10 @@ export function GhostLog({
                             p={p}
                             className="truncate text-sm font-bold"
                           />
+                        ) : m.name ? (
+                          <span className="truncate text-sm font-bold text-sky-200">
+                            {m.name} <span className="text-[10px] font-normal text-white/50">👁️ {t("ghostChat.spectator")}</span>
+                          </span>
                         ) : (
                           <b className="text-sm">?</b>
                         )}

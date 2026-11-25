@@ -76,6 +76,8 @@ export function getDeviceId(): string {
 
 export const hostKey = (code: string) => `msn:host:${code}`;
 export const playerKey = (code: string) => `msn:player:${code}`;
+/** Where the lobby leaves a room's password for the watch page. */
+export const watchPasswordKey = (code: string) => `msn:watchPw:${code}`;
 export interface PlayerSession {
   playerId: string;
   token: string;
