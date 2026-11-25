@@ -286,6 +286,8 @@ function memoryFor(room: Room): BotChatMemory {
     mem = {
       ...newBotChatMemory(),
       claims: mem?.claims ?? {},
+      fakeChecks: mem?.fakeChecks ?? {},
+      told: mem?.told ?? {},
       day: room.phase.day,
       // Yesterday's verdict is new to react to; older ones were seen already.
       seenVerdicts: mem?.verdictsAtDayStart ?? 0,
