@@ -1,6 +1,6 @@
 {
   "name": "ma-soi-night",
-  "version": "1.0.0",
+  "version": "1.6.0",
   "private": true,
   "description": "Ma Sói Online — realtime Werewolf host & player app",
   "scripts": {

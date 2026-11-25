@@ -16,10 +16,13 @@ import { PasswordField } from "@/components/PasswordField";
 import { Avatar, ConnectionDot, LangSwitch, Spinner, toast, useErrorToast } from "@/components/ui";
 import { shuffle } from "@shared/engine";
 import { getAuth, loadLocalProfile, saveLocalProfile, type LocalProfile } from "@/lib/account";
+import { ExistingRoomDialog, SignInToCreate, useEnterRoom, useNeedsSignInToCreate, useOtherRoom } from "@/components/CreateRoomGate";
 import { useLocale, useT } from "@/lib/i18n";
 import { useLobby } from "@/lib/lobby";
+import { GlobalChat } from "@/components/GlobalChat";
+import { Mailbox } from "@/components/Mailbox";
 import { rememberRoomPassword } from "@/components/ShareRoom";
-import { emitAck, hostKey, playerKey, storage } from "@/lib/socket";
+import { emitAck, getDeviceId, playerKey, storage } from "@/lib/socket";
 
 export default function LobbyPage() {
   const t = useT();
@@ -32,6 +35,7 @@ export default function LobbyPage() {
   // "Quick join" from the home page: join a random open room once the lobby loads.
   const [quickPending, setQuickPending] = useState(false);
   const [quickBusy, setQuickBusy] = useState(false);
+  const quickOther = useOtherRoom();
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has("quick")) {
@@ -45,7 +49,8 @@ export default function LobbyPage() {
     saveLocalProfile(p);
   };
 
-  async function quickJoin() {
+  /** `leaveOther`: leave the game this person is still in elsewhere (asked first). */
+  async function quickJoin(leaveOther = false) {
     if (!profile?.name.trim()) return showError({ ok: false, error: "err.nameRequired" });
     const open = (state?.rooms ?? []).filter((r) => r.status === "waiting" && r.players < r.max && !r.locked);
     // Random order, rooms in your language first.
@@ -59,9 +64,12 @@ export default function LobbyPage() {
         avatar: profile.avatar,
         style: profile.style,
         authToken: getAuth()?.token,
+        deviceId: getDeviceId(),
+        leaveOther,
         locale,
         password: "",
       });
+      if (quickOther.caught(res, () => quickJoin(true))) return setQuickBusy(false);
       if (res.ok && res.playerId && res.token) {
         storage.set(playerKey(room.code), { playerId: res.playerId, token: res.token });
         router.push(`/join/${room.code}`);
@@ -83,13 +91,15 @@ export default function LobbyPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col gap-4 px-4 pt-16 pb-10">
       <LangSwitch />
+      <GlobalChat />
       <div className="fixed top-3 right-3 z-50 flex gap-2">
+        <Mailbox />
         <QuestsLink />
         <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold">
-          🛒 {t("shop.open")}
+          🛒 <span className="max-sm:sr-only">{t("shop.open")}</span>
         </Link>
         <Link href="/profile" className="btn-ghost btn-sm">
-          👤 {t("profile.open")}
+          👤 <span className="max-sm:sr-only">{t("profile.open")}</span>
         </Link>
       </div>
       <div className="flex flex-wrap items-center gap-3">
@@ -111,7 +121,8 @@ export default function LobbyPage() {
         </div>
         <div className="flex flex-col gap-4">
           <CreateRoomCard profile={profile} />
-          <RoomsCard rooms={state?.rooms ?? null} profile={profile} onQuick={quickJoin} quickBusy={quickBusy} />
+          <RoomsCard rooms={state?.rooms ?? null} profile={profile} onQuick={() => quickJoin()} quickBusy={quickBusy} />
+          {quickOther.dialog}
         </div>
       </div>
     </main>
@@ -162,7 +173,11 @@ function OnlineCard({ online }: { online: LobbyPerson[] | null }) {
 
 function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
   const t = useT();
-  const router = useRouter();
+  const enter = useEnterRoom();
+  const needsSignIn = useNeedsSignInToCreate();
+  /** The room this account already runs, when it tried to make another. */
+  const [existing, setExisting] = useState<string | null>(null);
+  const other = useOtherRoom();
   const { locale } = useLocale();
   const showError = useErrorToast();
   const [machine, setMachine] = useState(true);
@@ -172,7 +187,7 @@ function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
   const [busy, setBusy] = useState(false);
   useEffect(() => setRoomLocale(locale), [locale]);
 
-  async function create() {
+  async function create(replace = false, leaveOther = false) {
     if (!profile?.name.trim()) return showError({ ok: false, error: "err.nameRequired" });
     if (withPassword && !password.trim()) return showError({ ok: false, error: "err.passwordRequired" });
     setBusy(true);
@@ -186,18 +201,18 @@ function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
       authToken: getAuth()?.token,
       // Online rooms start from the online defaults; a human host keeps their usual rules.
       settings: machine ? undefined : (saved ?? undefined),
+      replace,
+      deviceId: getDeviceId(),
+      leaveOther,
     });
     setBusy(false);
+    if (other.caught(res, () => create(replace, true))) return;
+    if (!res.ok && res.error === "err.oneRoom" && res.params?.code) return setExisting(String(res.params.code));
     if (!showError(res) || !res.code) return;
+    setExisting(null);
     // So the room's invite link can carry the password (friends then only type a name).
     if (withPassword) rememberRoomPassword(res.code, password);
-    if (res.playerId && res.token) {
-      storage.set(playerKey(res.code), { playerId: res.playerId, token: res.token });
-      router.push(`/join/${res.code}`);
-    } else if (res.hostToken) {
-      storage.set(hostKey(res.code), res.hostToken);
-      router.push(`/host/${res.code}`);
-    }
+    enter(res);
   }
 
   const choice = (on: boolean, icon: string, title: string, desc: string, pick: () => void) => (
@@ -242,9 +257,15 @@ function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
         </div>
       </div>
       <PasswordField enabled={withPassword} onEnabled={setWithPassword} value={password} onChange={setPassword} />
-      <button className="btn-primary py-3 text-lg" onClick={create} disabled={busy || !profile}>
-        {busy ? t("home.creating") : t("home.createButton")}
-      </button>
+      {needsSignIn ? (
+        <SignInToCreate />
+      ) : (
+        <button className="btn-primary py-3 text-lg" onClick={() => create()} disabled={busy || !profile}>
+          {busy ? t("home.creating") : t("home.createButton")}
+        </button>
+      )}
+      {existing && <ExistingRoomDialog code={existing} busy={busy} onReplace={() => create(true)} onClose={() => setExisting(null)} />}
+      {other.dialog}
     </section>
   );
 }
@@ -293,10 +314,11 @@ function RoomRow({ room, profile }: { room: RoomSummary; profile: LocalProfile |
   const [asking, setAsking] = useState(false);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const other = useOtherRoom();
   const full = room.players >= room.max;
   const canJoin = room.status === "waiting" && !full;
 
-  async function join() {
+  async function join(leaveOther = false) {
     if (!profile?.name.trim()) return showError({ ok: false, error: "err.nameRequired" });
     if (room.locked && !asking) return setAsking(true);
     setBusy(true);
@@ -306,10 +328,13 @@ function RoomRow({ room, profile }: { room: RoomSummary; profile: LocalProfile |
       avatar: profile.avatar,
       style: profile.style,
       authToken: getAuth()?.token,
+      deviceId: getDeviceId(),
+      leaveOther,
       locale,
       password,
     });
     setBusy(false);
+    if (other.caught(res, () => join(true))) return;
     if (!showError(res) || !res.playerId || !res.token) return;
     storage.set(playerKey(room.code), { playerId: res.playerId, token: res.token });
     router.push(`/join/${room.code}`);
@@ -318,6 +343,7 @@ function RoomRow({ room, profile }: { room: RoomSummary; profile: LocalProfile |
   const status = room.status === "waiting" ? (full ? t("lobby.full") : t("lobby.waiting")) : room.status === "playing" ? t("lobby.playing") : t("lobby.over");
   return (
     <li className="flex flex-col gap-2 rounded-xl bg-white/5 p-3">
+      {other.dialog}
       <div className="flex flex-wrap items-center gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 font-semibold">
@@ -335,7 +361,7 @@ function RoomRow({ room, profile }: { room: RoomSummary; profile: LocalProfile |
             <span className={`chip py-0 ${room.status === "waiting" && !full ? "text-emerald-300" : "text-white/50"}`}>{status}</span>
           </div>
         </div>
-        <button className="btn-gold btn-sm shrink-0" disabled={!canJoin || busy} onClick={join}>
+        <button className="btn-gold btn-sm shrink-0" disabled={!canJoin || busy} onClick={() => join()}>
           {t("lobby.join")}
         </button>
       </div>

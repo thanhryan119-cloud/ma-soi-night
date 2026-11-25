@@ -15,14 +15,17 @@ import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
 import { scriptLines } from "@/components/host/common";
 import { SocialPanel } from "@/components/SocialPanel";
+import { RolesInPlay } from "@/components/RolesInPlay";
+import { GhostChatButton } from "@/components/GhostChat";
 import { ShareRoom } from "@/components/ShareRoom";
 import { SceneArt } from "@/components/art/Woodcut";
 import { CardBack, RoleCardFull } from "@/components/art/Tarot";
 import { useLocale, useT } from "@/lib/i18n";
 import { emitAck, playerKey, storage } from "@/lib/socket";
+import { loadLocalProfile, saveLocalProfile } from "@/lib/account";
 import { useRouter } from "next/navigation";
-import { speak, stopSpeaking, useTtsSupported } from "@/lib/tts";
-import { OwnerBar, OwnerSettings } from "./OwnerPanel";
+import { speak, stopSpeaking, unlockTts, useTtsSupported } from "@/lib/tts";
+import { LobbySetup, OwnerBar, OwnerSettings } from "./OwnerPanel";
 
 type Props = { state: ClientState; offset: number; connected: boolean };
 type Ctx = { state: ClientState; me: MeView; players: Map<string, PlayerView> };
@@ -82,16 +85,28 @@ export function PlayerGame({ state, offset, connected }: Props) {
           <Avatar p={self} size="sm" />
         </ProfileLink>
         <div className="min-w-0 flex-1 leading-tight">
-          <div className="truncate text-sm font-bold">
-            <ProfileLink playerId={self.id}>
-              <StyledName p={self} />
-            </ProfileLink>
-          </div>
+          <RenameMe self={self} />
           <div className="truncate text-xs text-white/50">{phaseLabel(t, state)}</div>
         </div>
         {!connected && <ConnectionDot connected={false} />}
+        {kind !== "lobby" && <GhostChatButton state={state} viewer={me.id} />}
         <LeaveButton state={state} />
       </header>
+
+      {self.standIn && kind !== "gameOver" && (
+        <div className="flex shrink-0 items-center gap-2 border-b border-gold/30 bg-gold/10 px-3 py-1.5 text-sm">
+          <span className="min-w-0 flex-1">🤖 {t("player.standInYou")}</span>
+          <button className="btn-primary btn-sm shrink-0" onClick={() => emitAck("player:action", { type: "back" })}>
+            {t("player.standInBack")}
+          </button>
+        </div>
+      )}
+
+      {kind !== "lobby" && kind !== "gameOver" && (
+        <div className={`mx-auto w-full shrink-0 px-3 pt-2 ${wide ? "max-w-[1600px] lg:px-4" : "max-w-md"}`}>
+          <RolesInPlay state={state} />
+        </div>
+      )}
 
       {!me.alive && kind !== "gameOver" && (
         <div className="flex shrink-0 items-center gap-2 border-b border-blood/30 bg-blood/10 px-3 py-1.5 text-xs">
@@ -113,7 +128,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
         <div className="mx-auto grid min-h-0 w-full max-w-[1600px] flex-1 grid-cols-[260px_minmax(0,1fr)_360px] gap-4 p-4 xl:grid-cols-[300px_minmax(0,1fr)_420px]">
           <PlayersPanel state={state} me={me} onRole={showRoleButton ? () => setSheet("role") : null} />
           <div className="flex min-h-0 flex-col gap-3">
-            {state.settings.noScreen && <NarrationBanner state={state} />}
+            <NarrationBanner state={state} />
             <main ref={mainRef} className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-lg border border-white/10 bg-night-900/50 p-5">
               <PhaseBody
                 state={state}
@@ -129,7 +144,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
         </div>
       ) : (
         <>
-          {state.settings.noScreen && <NarrationBanner state={state} />}
+          <NarrationBanner state={state} />
 
           <main ref={mainRef} className="relative mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-3 px-3 py-3">
             <PhaseBody
@@ -203,7 +218,7 @@ function PlayersPanel({ state, me, onRole }: { state: ClientState; me: MeView; o
             </span>
             {/* Only roles the whole table knows: never your own or your pack mates, which someone could read off the screen. */}
             {p.roleId && p.id !== me.id && (!p.alive || p.noVote || state.phase.kind === "gameOver") && <RoleBadge roleId={p.roleId} />}
-            <span className="shrink-0 text-xs">{!p.alive ? "💀" : p.isBot ? "🤖" : !p.connected ? <span className="text-white/40">⏸</span> : null}</span>
+            <span className="shrink-0 text-xs">{!p.alive ? "💀" : p.isBot ? "🤖" : p.standIn ? <span title={t("player.standInBadge")}>🤖</span> : !p.connected ? <span className="text-white/40">⏸</span> : null}</span>
           </li>
         ))}
       </ul>
@@ -222,6 +237,69 @@ function PlayersPanel({ state, me, onRole }: { state: ClientState; me: MeView; o
  * Leave the room. During a game it is for good: a bot takes the seat and it
  * counts as a loss, so it asks first.
  */
+/** My name in the header, with a pencil to change it at any time (everyone is told). */
+function RenameMe({ self }: { self: PlayerView }) {
+  const t = useT();
+  const showError = useErrorToast();
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(self.name);
+  const [busy, setBusy] = useState(false);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    const next = name.trim();
+    if (!next || next === self.name) return setEditing(false);
+    setBusy(true);
+    const res = await emitAck("player:action", { type: "updateProfile", name: next });
+    setBusy(false);
+    if (!showError(res)) return;
+    // The next room starts with this name too.
+    const profile = loadLocalProfile();
+    saveLocalProfile({ ...profile, name: next });
+    setEditing(false);
+  }
+
+  if (editing)
+    return (
+      <form onSubmit={save} className="flex items-center gap-1">
+        <input
+          className="ui-input min-w-0 flex-1 px-2 py-1 text-sm"
+          value={name}
+          maxLength={24}
+          autoFocus
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Escape" && setEditing(false)}
+          aria-label={t("player.rename")}
+        />
+        <button className="btn-gold btn-sm shrink-0 px-2" disabled={busy || !name.trim()} aria-label={t("common.save")}>
+          ✓
+        </button>
+        <button type="button" className="btn-ghost btn-sm shrink-0 px-2" onClick={() => setEditing(false)} aria-label={t("common.cancel")}>
+          ✕
+        </button>
+      </form>
+    );
+  return (
+    <div className="flex min-w-0 items-center gap-1 text-sm font-bold">
+      <ProfileLink playerId={self.id} className="min-w-0">
+        <StyledName p={self} className="truncate" />
+      </ProfileLink>
+      <button
+        type="button"
+        className="shrink-0 rounded px-1 text-xs text-white/50 hover:text-gold"
+        onClick={() => {
+          setName(self.name);
+          setEditing(true);
+        }}
+        title={t("player.rename")}
+        aria-label={t("player.rename")}
+      >
+        ✏️
+      </button>
+    </div>
+  );
+}
+
 function LeaveButton({ state }: { state: ClientState }) {
   const t = useT();
   const router = useRouter();
@@ -242,8 +320,9 @@ function LeaveButton({ state }: { state: ClientState }) {
 }
 
 /**
- * No projector in the room: the narrator's words for the current step show on
- * every phone (never the line saying a role has nobody left alive).
+ * The narrator's words for the current step, as subtitles on every phone
+ * (never the line saying a role has nobody left alive), with a speaker button
+ * to hear them read aloud on this phone (off until the player turns it on).
  */
 function NarrationBanner({ state }: { state: ClientState }) {
   const t = useT();
@@ -255,26 +334,39 @@ function NarrationBanner({ state }: { state: ClientState }) {
   const [rate, setRate] = useState(1.25);
   useEffect(() => setRate(storage.get<number>("msn:voiceRate") ?? 1.25), []);
   const silent = t("script.stepNobody");
-  const off = state.phase.kind === "lobby" || state.phase.kind === "gameOver";
+  const lobby = state.phase.kind === "lobby";
+  const off = lobby || state.phase.kind === "gameOver";
   const lines = off ? [] : scriptLines(state, t).filter((l) => l !== silent);
   const linesKey = lines.join("|");
-  // With the machine as host, each phone can read the narration aloud for its player.
+  // Voice left on from before: the phone may only speak after a tap, so the first tap anywhere unlocks it.
   useEffect(() => {
-    if (!voice || !state.machineHost || !linesKey) return;
+    if (!voice) return;
+    const once = () => unlockTts();
+    document.addEventListener("pointerdown", once, { once: true });
+    return () => document.removeEventListener("pointerdown", once);
+  }, [voice]);
+  // Each phone can read the narration aloud for its player.
+  useEffect(() => {
+    if (!voice || !linesKey) return;
     speak(linesKey.split("|"), locale, rate);
     return () => stopSpeaking();
-  }, [voice, linesKey, locale, state.machineHost, rate]);
-  if (!lines.length) return null;
-  const toggle = () =>
-    setVoice((v) => {
-      storage.set("msn:phoneVoice", !v);
-      if (v) stopSpeaking();
-      return !v;
-    });
+  }, [voice, linesKey, locale, rate]);
+  // Before the game: just the speaker, so it can be turned on in advance.
+  if (!lines.length && !(lobby && canTts)) return null;
+  const toggle = () => {
+    const next = !voice;
+    storage.set("msn:phoneVoice", next);
+    if (next) {
+      // Start speaking inside this tap, or phones keep the voice muted.
+      unlockTts();
+      if (linesKey) speak(linesKey.split("|"), locale, rate);
+    } else stopSpeaking();
+    setVoice(next);
+  };
   return (
     <div className="mx-auto w-full max-w-md shrink-0 px-3 pt-2">
       <div className="max-h-28 overflow-y-auto rounded-lg border border-gold/40 bg-night-900/80 px-3 py-2 text-sm leading-snug">
-        {state.machineHost && canTts && (
+        {canTts && (
           <button
             type="button"
             onClick={toggle}
@@ -285,7 +377,7 @@ function NarrationBanner({ state }: { state: ClientState }) {
             {voice ? "🔊" : "🔇"}
           </button>
         )}
-        {state.machineHost && canTts && voice && (
+        {canTts && voice && (
           <select
             className="ui-select float-right ml-1 w-auto px-1 py-0 text-xs"
             value={rate}
@@ -305,7 +397,7 @@ function NarrationBanner({ state }: { state: ClientState }) {
           </select>
         )}
         <span className="mr-1 font-bold text-gold">📜 {t("player.narration")}:</span>
-        {lines.join(" ")}
+        {lines.length ? lines.join(" ") : <span className="text-white/50">{t("player.narrationSoon")}</span>}
       </div>
     </div>
   );
@@ -461,13 +553,16 @@ function Lobby({ state, onOwnerSettings }: { state: ClientState; onOwnerSettings
       <OwnerBar state={state} onSettings={onOwnerSettings} />
       <ShareRoom code={state.code} className="shrink-0" />
       {wide ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center">
-          <SceneArt scene="hero" className="max-h-full w-full max-w-2xl" />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <LobbySetup state={state} />
         </div>
       ) : (
         <>
+          <div className="max-h-[42dvh] shrink-0 overflow-y-auto">
+            <LobbySetup state={state} />
+          </div>
           <AliveStrip state={state} />
-          {state.me && <SocialPanel state={state} viewer={state.me.id} className="flex-1" />}
+          {state.me && <SocialPanel state={state} viewer={state.me.id} className="min-h-48 flex-1" />}
         </>
       )}
     </Fill>
@@ -1180,7 +1275,7 @@ function Verdict({ state, me, players }: Ctx) {
   // Online rooms: the defender can still plead in the chat while everyone votes
   // (on a desktop the chat is already open on the right).
   const wide = useWideLayout();
-  const chat = state.machineHost && !wide;
+  const chat = !wide;
   return (
     <Fill>
       {nominee && (

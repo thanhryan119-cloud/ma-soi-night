@@ -6,7 +6,10 @@ import { randomId } from "../shared/engine";
 import {
   BOARD_MAX_STROKES,
   CHAT_HISTORY,
+  canGhostSpeak,
+  canReadGhosts,
   canSpeak,
+  chatStage,
   chatWaitMs,
   recentSends,
   sanitizeChat,
@@ -27,6 +30,8 @@ interface VoicePeer {
 
 interface RoomSocial {
   chat: ChatMessage[];
+  /** The dead players' own chat (read by the dead and the host until the game ends). */
+  ghost: ChatMessage[];
   strokes: Stroke[];
   /** Recent send times per sender, for slow mode. */
   lastChat: Map<string, number[]>;
@@ -50,7 +55,7 @@ export function createSocial(
   const social = new Map<string, RoomSocial>();
   const of = (code: string) => {
     let s = social.get(code);
-    if (!s) social.set(code, (s = { chat: [], strokes: [], lastChat: new Map(), voice: new Map() }));
+    if (!s) social.set(code, (s = { chat: [], ghost: [], strokes: [], lastChat: new Map(), voice: new Map() }));
     return s;
   };
 
@@ -102,6 +107,37 @@ export function createSocial(
       socket.to(channel(c.room.code)).emit("chat:typing", { from: c.who.playerId, on: !!p.on });
     });
 
+    on("ghost:sync", (_p, ack) => {
+      const c = ctx();
+      if (!c || !canReadGhosts(c.room, c.who)) return ack({ ok: true, allowed: false, messages: [] });
+      ack({ ok: true, allowed: true, messages: c.s.ghost, canSpeak: canGhostSpeak(c.room, c.who) === null });
+    });
+
+    on("ghost:send", (p, ack) => {
+      const c = ctx();
+      if (!c) return ack({ ok: false, error: "err.notInRoom" });
+      const err = canGhostSpeak(c.room, c.who);
+      if (err) return ack({ ok: false, error: err });
+      const text = sanitizeChat(p.text);
+      if (!text) return ack({ ok: false, error: "err.chatEmpty" });
+      const key = "ghost:" + fromKey(c.who);
+      const now = Date.now();
+      const sent = recentSends(c.s.lastChat.get(key) ?? [], now);
+      const retryMs = chatWaitMs(sent, now);
+      if (retryMs > 0) return ack({ ok: false, error: "err.chatSlow", retryMs, params: { seconds: Math.ceil(retryMs / 1000) } });
+      c.s.lastChat.set(key, [...sent, now]);
+      const msg: ChatMessage = { id: randomId(10), from: fromKey(c.who), text, t: now, ...chatStage(c.room) };
+      c.s.ghost.push(msg);
+      if (c.s.ghost.length > CHAT_HISTORY) c.s.ghost.splice(0, c.s.ghost.length - CHAT_HISTORY);
+      // Only to the sockets allowed to read it (never to the living).
+      for (const id of io.sockets.adapter.rooms.get(channel(c.room.code)) ?? []) {
+        const sock = io.sockets.sockets.get(id);
+        const who = sock && speakerOf(sock.data as Data);
+        if (sock && who && canReadGhosts(c.room, who)) sock.emit("ghost:new", msg);
+      }
+      ack({ ok: true });
+    });
+
     on("chat:send", (p, ack) => {
       const c = ctx();
       if (!c) return ack({ ok: false, error: "err.notInRoom" });
@@ -116,7 +152,7 @@ export function createSocial(
       const retryMs = c.who.kind === "player" ? chatWaitMs(sent, now) : 0;
       if (retryMs > 0) return ack({ ok: false, error: "err.chatSlow", retryMs, params: { seconds: Math.ceil(retryMs / 1000) } });
       c.s.lastChat.set(key, [...sent, now]);
-      const msg: ChatMessage = { id: randomId(10), from: key, text, t: now };
+      const msg: ChatMessage = { id: randomId(10), from: key, text, t: now, ...chatStage(c.room) };
       c.s.chat.push(msg);
       if (c.who.kind === "player") onChat(c.room, key, text);
       if (c.s.chat.length > CHAT_HISTORY) c.s.chat.splice(0, c.s.chat.length - CHAT_HISTORY);
@@ -207,7 +243,7 @@ export function createSocial(
     const text = sanitizeChat(raw);
     if (!text) return;
     const s = of(room.code);
-    const msg: ChatMessage = { id: randomId(10), from: playerId, text, t: Date.now() };
+    const msg: ChatMessage = { id: randomId(10), from: playerId, text, t: Date.now(), ...chatStage(room) };
     s.chat.push(msg);
     onChat(room, playerId, text);
     if (s.chat.length > CHAT_HISTORY) s.chat.splice(0, s.chat.length - CHAT_HISTORY);
@@ -223,9 +259,11 @@ export function createSocial(
     const s = social.get(code);
     if (!s) return;
     s.chat = [];
+    s.ghost = [];
     s.strokes = [];
     s.lastChat.clear();
     io.to(channel(code)).emit("chat:clear");
+    io.to(channel(code)).emit("ghost:clear");
     io.to(channel(code)).emit("board:clear");
   }
 

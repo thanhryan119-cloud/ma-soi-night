@@ -1,0 +1,173 @@
+// What changed in each version, newest first. The first entry is the app's
+// version. Every version also lands in each player's mailbox as a letter.
+// Add a new entry at the top for every release.
+
+export interface Release {
+  version: string;
+  /** yyyy-mm-dd */
+  date: string;
+  title: { vi: string; en: string };
+  items: { vi: string[]; en: string[] };
+}
+
+export const CHANGELOG: Release[] = [
+  {
+    version: "1.6.0",
+    date: "2026-11-26",
+    title: { vi: "Phòng chơi gọn gàng, bot chơi hộ, chat người chết", en: "Tidier rooms, stand-in bots, a chat for the dead" },
+    items: {
+      vi: [
+        "Tạo phòng cần đăng nhập Google, mỗi tài khoản giữ 1 phòng. Người vào chơi thì không cần.",
+        "Quản trò thoát thì người chơi tiếp theo lên làm quản trò, phòng không bị hủy.",
+        "Mỗi người chỉ ngồi 1 phòng một lúc. Phòng tự đóng 10 phút sau khi hết ván hoặc khi mọi người đã rời đi.",
+        "Chat chung toàn server ở trang chủ và sảnh online.",
+        "Đổi tên thoải mái, cả khi đang chơi.",
+        "Thêm bot và phân vai hiện ngay trong phòng chờ, ai cũng thấy.",
+        "Loa bật tắt giọng quản trò và phụ đề có ở cả màn người chơi.",
+        "Ai không vote thì hết giờ sẽ được vote ngẫu nhiên.",
+        "Thanh vai trong ván, ẩn hiện được, giơ chuột hoặc chạm vào vai để xem giải thích.",
+        "Người bị đưa lên dàn được biện hộ trên chat suốt lúc biện hộ và lúc vote treo cổ.",
+        "Người chết có khung chat riêng, người sống không đọc được. Hết ván ai cũng xem được.",
+        "Mất kết nối hoặc không làm lượt của mình quá 1 phút thì bot chơi hộ. Vào lại là chơi tiếp.",
+        "Khung chat có mốc Sáng ngày, Đêm để biết ai nói lúc nào.",
+        "Có số phiên bản, trang Có gì mới và hộp thư nhận tin cập nhật.",
+      ],
+      en: [
+        "Making a room needs a Google account, one room per account. Joining needs nothing.",
+        "If the host leaves, the next player takes over instead of the room closing.",
+        "Everyone sits in one room at a time. Rooms close 10 minutes after the game or once everyone has left.",
+        "A server-wide chat on the home page and the online lobby.",
+        "Change your name any time, even mid-game.",
+        "Bots and role setup show right in the lobby, for everyone.",
+        "The narrator's speaker and subtitles show on the player screen too.",
+        "Anyone who hasn't voted when time runs out votes at random.",
+        "A bar with the roles in the game. Fold it away, hover or tap a role to read what it does.",
+        "Players on trial can plead in the chat through the defense and the verdict vote.",
+        "The dead have a chat of their own the living can't read. Everyone can read it after the game.",
+        "Offline or idle on your turn for a minute and a bot plays for you. Come back and carry on.",
+        "Day and night markers in the chat show when things were said.",
+        "Version numbers, a What's new page and a mailbox for updates.",
+      ],
+    },
+  },
+  {
+    version: "1.5.0",
+    date: "2026-11-25",
+    title: { vi: "Mở toàn bộ vai cho mọi người", en: "Every role open to everyone" },
+    items: {
+      vi: [
+        "Mọi vai đều miễn phí cho tất cả. Cửa hàng giữ đồ trang trí.",
+        "Gợi ý cách chơi cho từng vai.",
+        "Chia vai theo 3 nhóm cơ bản, nâng cao, phe thứ ba. Gợi ý vai dùng mọi vai đã mở.",
+        "Bot nói thật hay nói dối tùy phe, và vote theo đó.",
+        "Nút Chơi ngay vào thẳng một phòng đang mở.",
+        "Bảng xếp hạng hiện mọi tài khoản, ai chơi đủ 5 trận lên đầu.",
+        "Lá bài trang chủ nhiều hơn, giơ chuột xem vai làm gì, bấm để rút lá khác.",
+      ],
+      en: [
+        "Every role is free for everyone. The shop keeps the cosmetics.",
+        "Play tips for every role.",
+        "Roles in three groups, basic, advanced and third party. Suggestions use every open role.",
+        "Bots lie or tell the truth by their side, and vote like it.",
+        "A Play now button drops you into an open room.",
+        "The leaderboard shows every account, players with 5+ games on top.",
+        "More home page cards. Hover to see what a role does, click to draw another.",
+      ],
+    },
+  },
+  {
+    version: "1.4.0",
+    date: "2026-11-24",
+    title: { vi: "Nhiệm vụ hằng ngày và 13 vai mới", en: "Daily quests and 13 new roles" },
+    items: {
+      vi: [
+        "Nhiệm vụ hằng ngày nhận vàng.",
+        "13 vai mới như Người Sói Lai, Chị Em, Đứa Trẻ Hoang, Trưởng Làng, Sói Trắng, Kẻ Phóng Hỏa và nhiều vai khác.",
+        "Chat dễ đọc hơn khi cả bàn nói cùng lúc.",
+      ],
+      en: [
+        "Daily quests that pay gold.",
+        "13 new roles including the Lycan, the Sisters, the Wild Child, the Mayor, the White Wolf and the Arsonist.",
+        "Easier to read chat when everyone talks at once.",
+      ],
+    },
+  },
+  {
+    version: "1.3.0",
+    date: "2026-11-23",
+    title: { vi: "Cửa hàng, thẻ bài mới, màn máy tính", en: "Shop, new cards, desktop layout" },
+    items: {
+      vi: [
+        "Cửa hàng trang trí tên, khung ảnh, kiểu chat.",
+        "Luật Sói Nguyền và các vai Sói Tiên Tri, Già làng, Thằng Ngốc.",
+        "Thẻ bài vẽ lại theo phong cách stencil.",
+        "Mỗi người một màu chat, link chia sẻ phòng cho cả nhóm.",
+        "Bố cục riêng cho màn hình máy tính.",
+      ],
+      en: [
+        "A shop for name styles, avatar frames and chat looks.",
+        "The Cursed Wolf rule plus the Wolf Seer, the Elder and the Village Idiot.",
+        "Role cards redrawn in a stencil style.",
+        "A chat colour per player and a share link for rooms.",
+        "A desktop layout for the game screen.",
+      ],
+    },
+  },
+  {
+    version: "1.2.0",
+    date: "2026-11-20",
+    title: { vi: "Sảnh online và quản trò tự động", en: "Online lobby and auto narrator" },
+    items: {
+      vi: [
+        "Sảnh online với phòng máy làm quản trò và mật khẩu phòng.",
+        "Quản trò tự động dẫn cả ván.",
+        "Bot đọc chat và trả lời.",
+        "Lúc biện hộ chỉ người lên dàn được nói.",
+        "Thống kê, hồ sơ người chơi và bảng xếp hạng.",
+      ],
+      en: [
+        "An online lobby with machine-hosted rooms and passwords.",
+        "The auto narrator runs the whole game.",
+        "Bots read and answer the chat.",
+        "During the defense only the players on trial may speak.",
+        "Stats, player profiles and a leaderboard.",
+      ],
+    },
+  },
+  {
+    version: "1.1.0",
+    date: "2026-11-19",
+    title: { vi: "Chat, bảng vẽ, mic và giao diện tarot", en: "Chat, board, mic and the tarot look" },
+    items: {
+      vi: [
+        "Chat, bảng vẽ chung và mic mở lúc thảo luận.",
+        "Giọng quản trò đọc từng bước.",
+        "Giao diện tarot gothic với mắt sói rình trong đêm.",
+      ],
+      en: [
+        "Chat, a shared drawing board and an open mic during the discussion.",
+        "A narrator voice reads every step.",
+        "A gothic tarot look with wolf eyes lurking in the dark.",
+      ],
+    },
+  },
+  {
+    version: "1.0.0",
+    date: "2026-11-18",
+    title: { vi: "Ra mắt Ma Sói Online", en: "Ma Soi Online launches" },
+    items: {
+      vi: [
+        "Chơi Ma Sói theo thời gian thực, quản trò một máy, người chơi trên điện thoại.",
+        "Tài khoản Google, ảnh đại diện và trang trí hồ sơ.",
+        "Xem ai vote cho ai sau khi vote kín.",
+      ],
+      en: [
+        "Realtime Werewolf with one host screen and players on their phones.",
+        "Google accounts, photo avatars and profile cosmetics.",
+        "See who voted for whom after secret votes.",
+      ],
+    },
+  },
+];
+
+export const APP_VERSION = CHANGELOG[0].version;

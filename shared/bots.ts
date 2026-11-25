@@ -15,10 +15,14 @@ const CERTAIN = 50;
 const pick = <T,>(arr: T[]): T | undefined => arr[Math.floor(Math.random() * arr.length)];
 
 /** Returns the next action a bot wants to take right now, or null. */
-export function botDecide(room: Room, botId: string, intel: ChatIntel = newChatIntel()): PlayerAction | null {
+/**
+ * What a bot (or a bot standing in for an away player) does next. `anyone`:
+ * asks for a human too (is there something they should be doing?).
+ */
+export function botDecide(room: Room, botId: string, intel: ChatIntel = newChatIntel(), anyone = false): PlayerAction | null {
   const bot = getPlayer(room, botId);
   const game = room.game;
-  if (!bot || !bot.isBot || !game) return null;
+  if (!bot || !(bot.isBot || bot.standIn || anyone) || !game) return null;
   const role = game.roles[bot.id];
   const kind = room.phase.kind;
   // The Minion votes like a wolf (he knows the pack); the White Wolf too, but
@@ -214,7 +218,7 @@ export function botDecide(room: Room, botId: string, intel: ChatIntel = newChatI
 export function runBots(room: Room, intel?: ChatIntel): boolean {
   let changed = false;
   for (const p of room.players) {
-    if (!p.isBot) continue;
+    if (!p.isBot && !p.standIn) continue;
     const action = botDecide(room, p.id, intel);
     if (action && playerAction(room, p.id, action).ok) changed = true;
   }

@@ -6,7 +6,7 @@
 
 import { MIN_PLAYERS } from "@shared/engine";
 import { MACHINE_FORCED } from "@shared/multiplayer";
-import { totalRoles } from "@shared/roles";
+import { ROLE_IDS, totalRoles } from "@shared/roles";
 import type { OwnerAction, Settings } from "@shared/types";
 import type { ClientState } from "@shared/views";
 import { HostActionProvider } from "@/components/host/common";
@@ -15,7 +15,7 @@ import { RoleConfig } from "@/components/host/HostLobby";
 import { RulesCard } from "@/components/host/RulesCard";
 import { PasswordCard } from "@/components/PasswordField";
 import { ProfileLink } from "@/components/Profile";
-import { Avatar, StyledName, useErrorToast } from "@/components/ui";
+import { Avatar, RoleBadge, StyledName, useErrorToast } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { emitAck } from "@/lib/socket";
 
@@ -80,12 +80,71 @@ export function OwnerBar({ state, onSettings }: { state: ClientState; onSettings
   );
 }
 
-/** Everything the owner can change before the game. */
+/**
+ * Bots and roles, right in the lobby for everyone to see: the owner of a
+ * machine-host room changes them here, everyone else sees what is set.
+ */
+export function LobbySetup({ state }: { state: ClientState }) {
+  const t = useT();
+  const act = useOwnerAction();
+  const iOwn = !!state.machineHost && !!state.me && state.ownerId === state.me.id;
+  const n = state.players.length;
+  const bots = state.players.filter((p) => p.isBot).length;
+  const counts = state.settings.roleCounts;
+  const total = totalRoles(counts);
+
+  const botsRow = (
+    <section className="card flex flex-col gap-2 p-3">
+      <div className="flex items-center gap-2">
+        <h3 className="min-w-0 flex-1 font-bold">🤖 {t("lobbySetup.bots", { count: bots })}</h3>
+        {iOwn && (
+          <button className="btn-ghost btn-sm" disabled={!bots} onClick={() => act({ type: "removeBots" })}>
+            {t("host.removeBots")}
+          </button>
+        )}
+      </div>
+      {iOwn && <AddBots players={n} onAdd={(count) => act({ type: "addBots", count })} />}
+    </section>
+  );
+
+  if (iOwn)
+    return (
+      <HostActionProvider value={(a) => sendOwner(a as OwnerAction)}>
+        <div className="flex flex-col gap-3">
+          {botsRow}
+          <RoleConfig state={state} owner />
+        </div>
+      </HostActionProvider>
+    );
+
+  return (
+    <div className="flex flex-col gap-3">
+      {botsRow}
+      <section className="card flex flex-col gap-2 p-3">
+        <h3 className="font-bold">🃏 {t("host.roleConfig")}</h3>
+        {total ? (
+          <ul className="flex flex-wrap gap-1.5">
+            {ROLE_IDS.filter((r) => counts[r] > 0).map((r) => (
+              <li key={r} className="flex items-center gap-1 rounded-lg bg-white/5 px-2 py-1 text-sm" title={t(`roles.${r}.desc`)}>
+                <RoleBadge roleId={r} /> <b className="font-mono">×{counts[r]}</b>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-white/50">{t("lobbySetup.noRoles")}</p>
+        )}
+        <p className={`rounded-lg p-1.5 text-xs ${total === n ? "bg-emerald-500/10 text-emerald-300" : "bg-blood/15 text-blood-light"}`}>
+          {total === n ? t("host.totalRoles", { roles: total, players: n }) : t("host.mismatch", { roles: total, players: n })}
+        </p>
+      </section>
+    </div>
+  );
+}
+
+/** What the owner can change before the game besides bots and roles (shown in the lobby). */
 export function OwnerSettings({ state }: { state: ClientState }) {
   const t = useT();
   const act = useOwnerAction();
-  const n = state.players.length;
-  const bots = state.players.filter((p) => p.isBot).length;
   return (
     <HostActionProvider value={(a) => sendOwner(a as OwnerAction)}>
       <section className="card flex flex-col gap-3">
@@ -111,14 +170,7 @@ export function OwnerSettings({ state }: { state: ClientState }) {
             </li>
           ))}
         </ul>
-        <div className="flex flex-wrap gap-2">
-          <AddBots players={n} onAdd={(count) => act({ type: "addBots", count })} />
-          <button className="btn-ghost btn-sm" disabled={!bots} onClick={() => act({ type: "removeBots" })}>
-            {t("host.removeBots")}
-          </button>
-        </div>
       </section>
-      <RoleConfig state={state} owner />
       <PasswordCard locked={state.locked} />
       <RulesCard state={state} defaultOpen={false} hidden={LOCKED} />
     </HostActionProvider>

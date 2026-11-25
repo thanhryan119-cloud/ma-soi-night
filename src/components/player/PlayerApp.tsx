@@ -7,7 +7,8 @@ import { LangSwitch, Spinner, toast, useErrorToast } from "@/components/ui";
 import { useLocale, useT } from "@/lib/i18n";
 import { getAuth, loadLocalProfile, saveLocalProfile, type LocalProfile } from "@/lib/account";
 import { ProfileEditor } from "@/components/ProfileEditor";
-import { emitAck, getSocket, playerKey, storage, type PlayerSession } from "@/lib/socket";
+import { emitAck, getSocket, playerKey, storage, type PlayerSession, getDeviceId } from "@/lib/socket";
+import { useOtherRoom } from "@/components/CreateRoomGate";
 import { useRoomState } from "@/lib/useRoom";
 import { PlayerGame } from "./PlayerGame";
 import { passwordFromLink, rememberRoomPassword } from "@/components/ShareRoom";
@@ -70,11 +71,15 @@ export default function PlayerApp({ code }: { code: string }) {
 
   useEffect(() => {
     const s = getSocket();
-    const kicked = () => {
+    // Events name their room: one from a room this browser just left is not about this one.
+    const ours = (e?: { code?: string }) => !e?.code || e.code === code;
+    const kicked = (e?: { code?: string }) => {
+      if (!ours(e)) return;
       storage.remove(playerKey(code));
       setStatus("kicked");
     };
-    const closed = () => {
+    const closed = (e?: { code?: string }) => {
+      if (!ours(e)) return;
       storage.remove(playerKey(code));
       setStatus("closed");
     };
@@ -237,6 +242,7 @@ function JoinForm({
   const [profile, setProfile] = useState<LocalProfile | null>(null);
   const [busy, setBusy] = useState(false);
   const [password, setPassword] = useState("");
+  const other = useOtherRoom();
 
   useEffect(() => setProfile(loadLocalProfile()), []);
   // An invite link from a password room carries the password: nothing to type.
@@ -245,8 +251,13 @@ function JoinForm({
     if (pw) setPassword(pw);
   }, []);
 
-  async function submit(e: React.FormEvent) {
+  function submit(e: React.FormEvent) {
     e.preventDefault();
+    void join(false);
+  }
+
+  /** `leaveOther`: leave the game this person is still in elsewhere (asked first). */
+  async function join(leaveOther: boolean) {
     if (!profile) return;
     setBusy(true);
     const res = await emitAck<{ ok: boolean; playerId: string; token: string }>("player:join", {
@@ -255,10 +266,13 @@ function JoinForm({
       avatar: profile.avatar,
       style: profile.style,
       authToken: getAuth()?.token,
+      deviceId: getDeviceId(),
+      leaveOther,
       locale,
       password,
     });
     setBusy(false);
+    if (other.caught(res, () => join(true))) return;
     if (!showError(res) || !res.playerId || !res.token) return;
     saveLocalProfile(profile);
     if (locked) rememberRoomPassword(code, password);
@@ -269,6 +283,7 @@ function JoinForm({
     <main className="fixed inset-0 mx-auto flex max-w-md flex-col px-4 pt-14 pb-4">
       <h1 className="shrink-0 text-center font-display text-2xl font-black text-moon">{t("player.joinTitle", { code })}</h1>
       <p className="mt-1 shrink-0 text-center text-sm text-white/60">{t("player.joinNoLogin")}</p>
+      {other.dialog}
       <form onSubmit={submit} className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
         {locked && (

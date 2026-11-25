@@ -29,6 +29,11 @@
     "en": "English"
   },
   "home": {
+    "signInToCreate": "Đăng nhập Google để tạo phòng. Người vào chơi thì không cần đăng nhập.",
+    "oneRoomTitle": "Bạn đang có một phòng",
+    "oneRoomDesc": "Phòng {code} của bạn vẫn đang mở. Mỗi tài khoản chỉ mở được một phòng cùng lúc. Nếu tạo phòng mới, phòng cũ sẽ chuyển cho người chơi tiếp theo làm trưởng phòng và máy dẫn tiếp.",
+    "oneRoomBack": "Vào lại phòng {code}",
+    "oneRoomReplace": "Rời phòng {code} và tạo phòng mới",
     "cardRedraw": "Bấm vào lá để rút lá khác",
     "createTitle": "Tôi là quản trò",
     "createDesc": "Tạo phòng mới, chiếu mã QR cho mọi người quét.",
@@ -249,6 +254,8 @@
     "gameOver": "Trò chơi kết thúc! Hãy cùng lật bài và xem lại diễn biến của ván chơi."
   },
   "host": {
+    "roomClosed": "Phòng đã đóng.",
+    "handedOver": "Bạn đã rời phòng này nên máy đã dẫn tiếp cho mọi người, người chơi tiếp theo giờ là trưởng phòng.",
     "roomCode": "Mã phòng",
     "scanToJoin": "Quét mã để vào phòng",
     "orGoTo": "hoặc vào",
@@ -398,7 +405,7 @@
     "voiceChat": "Cho phép mở mic (phòng chờ và lúc thảo luận)",
     "autoAdvance": "Quản trò tự động: tự dẫn cả ván — đọc xong lời dẫn rồi tự chuyển bước, hết giờ thảo luận/vote tự chốt, ai không hành động sẽ bị bỏ qua",
     "noScreen": "Không có màn hình chiếu: hiện lời dẫn và thông tin chung trên điện thoại mọi người",
-    "autoKickAway": "Mất kết nối quá 5 phút khi đang chơi thì bị loại (bot chơi thay, tính là thua)",
+    "autoKickAway": "Mất kết nối quá 5 phút khi đang chơi thì bị loại hẳn, không vào lại được (tính là thua)",
     "botSpeed": "Tốc độ bot"
   },
   "effects": {
@@ -434,6 +441,16 @@
     "votes": "{count} phiếu"
   },
   "player": {
+    "standInYou": "Bạn vắng mặt hơn 1 phút nên bot đang chơi hộ.",
+    "standInBack": "Tôi quay lại rồi",
+    "standInBadge": "Bot đang chơi hộ",
+    "narrationSoon": "Lời dẫn của quản trò sẽ hiện ở đây khi ván bắt đầu. Bấm 🔇 để nghe đọc thành tiếng.",
+    "rename": "Đổi tên",
+    "otherRoomTitle": "Bạn đang chơi ở phòng {code}",
+    "otherRoomDesc": "Mỗi người chỉ ở một phòng cùng lúc. Rời ván đang chơi sẽ tính là thua, và một bot sẽ chơi tiếp chỗ của bạn.",
+    "otherRoomBack": "Về phòng {code}",
+    "otherRoomLeave": "Rời phòng {code} và vào phòng này",
+    "roomAutoClose": "Phòng sẽ tự đóng sau {min} phút nếu không chơi ván mới.",
     "joinTitle": "Vào phòng {code}",
     "yourName": "Tên của bạn",
     "namePlaceholder": "Nhập tên…",
@@ -484,7 +501,7 @@
     "votedSkip": "Bạn đã bỏ qua",
     "voteProgress": "{voted}/{eligible} người đã vote",
     "defenseTitle": "Đang biện hộ",
-    "onStandYou": "Bạn đang trên dàn — hãy biện hộ!",
+    "onStandYou": "Bạn đang trên dàn, hãy biện hộ trong chat!",
     "onStandNoVote": "Bạn đang trên dàn nên không được vote.",
     "verdictTitle": "Số phận của {name}",
     "execute": "TREO CỔ",
@@ -706,6 +723,12 @@
     }
   },
   "err": {
+    "ghostsOnly": "Chỉ người đã chết mới chat được ở đây.",
+    "signInToChat": "Cần đăng nhập Google để chat.",
+    "inOtherRoom": "Bạn đang chơi ở phòng {code}. Mỗi người chỉ ở một phòng cùng lúc.",
+    "hostHandedOver": "Phòng này đã chuyển cho người chơi khác và máy đang dẫn tiếp.",
+    "signInToCreate": "Cần đăng nhập Google để tạo phòng.",
+    "oneRoom": "Bạn đang có phòng {code}. Mỗi tài khoản chỉ mở được một phòng.",
     "gameInProgress": "Ván chơi đã bắt đầu, không thể vào thêm.",
     "roomFull": "Phòng đã đủ {max} người.",
     "nameRequired": "Vui lòng nhập tên.",
@@ -788,6 +811,10 @@
     "nothingToIgnite": "Chưa có nhà nào bị tưới xăng."
   },
   "log": {
+    "standIn": "{name} vắng mặt, bot chơi hộ cho tới khi quay lại.",
+    "standInBack": "{name} đã quay lại và tự chơi tiếp.",
+    "renamed": "{old} đổi tên thành {name}",
+    "hostLeft": "Quản trò đã rời phòng. Máy sẽ dẫn tiếp, {name} giờ là trưởng phòng.",
     "join": "{name} vào phòng",
     "kick": "{name} bị mời ra",
     "rename": "{old} đổi tên thành {name}",
@@ -904,19 +931,23 @@
     "p6": "Câu hỏi hoặc yêu cầu xóa dữ liệu:"
   },
   "social": {
+    "markDay": "Sáng ngày {n}",
+    "markNight": "Đêm {n}",
+    "markLobby": "Phòng chờ",
+    "markOver": "Hết ván",
     "chat": "Trò chuyện",
     "board": "Bảng vẽ",
     "placeholder": "Nhập tin nhắn…",
     "send": "Gửi",
     "empty": "Chưa có tin nhắn nào. Hãy chào mọi người!",
-    "closed": "Chat, vẽ và mic chỉ mở trong phòng chờ và lúc thảo luận.",
+    "closed": "Chat, vẽ và mic mở trong phòng chờ, lúc thảo luận, và cho người lên dàn lúc biện hộ.",
     "deadReadOnly": "Bạn đã chết nên chỉ được xem và nghe.",
     "host": "Quản trò",
     "clear": "Xóa bảng",
     "title": "Bàn tròn đêm trăng",
     "hideBoard": "Thu bảng vẽ",
     "showBoard": "Mở bảng vẽ",
-    "onlyNominees": "Đang biện hộ — chỉ người lên dàn được nói.",
+    "onlyNominees": "Đang biện hộ, chỉ người lên dàn được nói.",
     "newMessages": "{n} tin nhắn mới",
     "slowWait": "{seconds}s",
     "newMentions": "{n, plural, other {# nhắc bạn}}",
@@ -983,6 +1014,53 @@
     "humansCount": "{n} người thật",
     "abandons": "Thoát giữa chừng",
     "left": "Đã thoát"
+  },
+  "globalChat": {
+    "button": "Chat chung",
+    "title": "Chat toàn server",
+    "hint": "Mọi người đang ở trang chủ và sảnh online đều thấy. Hãy lịch sự nhé.",
+    "empty": "Chưa có ai nói gì. Chào mọi người đi!",
+    "placeholder": "Nhắn cho cả server…",
+    "send": "Gửi",
+    "signIn": "Đăng nhập Google để chat.",
+    "remove": "Xóa"
+  },
+  "mail": {
+    "button": "Thư",
+    "title": "Hộp thư",
+    "readAll": "Đọc hết",
+    "new": "Mới",
+    "fromTeam": "Từ Ma Sói Online",
+    "allChanges": "Xem mọi thay đổi (bản {version})",
+    "welcomeTitle": "Chào mừng tới Ma Sói Online!",
+    "welcome1": "Bấm Chơi ngay để vào một phòng đang mở, hoặc đăng nhập Google để tạo phòng riêng rồi gửi link cho bạn bè.",
+    "welcome2": "Mỗi vai có gợi ý cách chơi, giơ chuột hoặc chạm vào tên vai để đọc. Lỡ rớt mạng thì bot chơi hộ, vào lại là chơi tiếp.",
+    "welcome3": "Mỗi lần game cập nhật, thư mới sẽ gửi tới đây. Chúc bạn sống sót qua đêm!"
+  },
+  "changelog": {
+    "title": "Có gì mới",
+    "current": "Bạn đang dùng bản {version}.",
+    "footer": "Bản {version} · Có gì mới"
+  },
+  "ghostChat": {
+    "button": "Chat người chết",
+    "title": "Chat của người đã chết",
+    "hint": "Người còn sống không đọc được, cả làng sẽ thấy khi ván kết thúc.",
+    "hostHint": "Người chết đang nói với nhau, người sống không thấy.",
+    "empty": "Chưa ai lên tiếng. Chào những linh hồn khác đi!",
+    "placeholder": "Nhắn cho người đã chết…",
+    "send": "Gửi",
+    "endTitle": "Người chết đã nói gì"
+  },
+  "rolesBar": {
+    "title": "Vai trong ván",
+    "count": "{count} vai",
+    "show": "Hiện",
+    "hide": "Ẩn"
+  },
+  "lobbySetup": {
+    "bots": "Bot trong phòng: {count}",
+    "noRoles": "Chưa chọn vai nào."
   },
   "leaderboard": {
     "title": "Bảng xếp hạng",

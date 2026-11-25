@@ -29,6 +29,11 @@
     "en": "English"
   },
   "home": {
+    "signInToCreate": "Sign in with Google to make a room. Players joining a room don't need to sign in.",
+    "oneRoomTitle": "You already have a room",
+    "oneRoomDesc": "Your room {code} is still open. Each account can run one room at a time. If you make a new one, the next player takes over the old room and the machine runs it.",
+    "oneRoomBack": "Back to room {code}",
+    "oneRoomReplace": "Leave room {code} and make a new one",
     "cardRedraw": "Click the card to draw another",
     "createTitle": "I’m the Host",
     "createDesc": "Create a new room and show the QR code for everyone to scan.",
@@ -249,6 +254,8 @@
     "gameOver": "The game is over! Let’s reveal every role and look back at what happened."
   },
   "host": {
+    "roomClosed": "The room has closed.",
+    "handedOver": "You left this room, so the machine runs the game now and the next player owns the room.",
     "roomCode": "Room code",
     "scanToJoin": "Scan to join",
     "orGoTo": "or go to",
@@ -398,7 +405,7 @@
     "voiceChat": "Allow open mic (lobby and discussion)",
     "autoAdvance": "Auto narrator: runs the whole game — reads each step, moves on by itself, closes discussion/votes when time runs out, skips players who don't act",
     "noScreen": "No projector: show the narration and public info on everyone's phone",
-    "autoKickAway": "Offline for 5 minutes during a game means out (a bot takes over, it counts as a loss)",
+    "autoKickAway": "Offline for 5 minutes during a game means out for good, no coming back (it counts as a loss)",
     "botSpeed": "Bot speed"
   },
   "effects": {
@@ -434,6 +441,16 @@
     "votes": "{count, plural, one {# vote} other {# votes}}"
   },
   "player": {
+    "standInYou": "You were away for over a minute, so a bot is playing for you.",
+    "standInBack": "I'm back",
+    "standInBadge": "A bot is playing for them",
+    "narrationSoon": "The narrator's words show here once the game starts. Tap 🔇 to hear them read aloud.",
+    "rename": "Change name",
+    "otherRoomTitle": "You're playing in room {code}",
+    "otherRoomDesc": "You can be in one room at a time. Leaving a running game counts as a loss, and a bot plays on in your seat.",
+    "otherRoomBack": "Back to room {code}",
+    "otherRoomLeave": "Leave room {code} and join this one",
+    "roomAutoClose": "The room closes by itself in {min} minutes unless a new game starts.",
     "joinTitle": "Join room {code}",
     "yourName": "Your name",
     "namePlaceholder": "Type your name…",
@@ -484,7 +501,7 @@
     "votedSkip": "You skipped",
     "voteProgress": "{voted}/{eligible} have voted",
     "defenseTitle": "Defense",
-    "onStandYou": "You are on trial — defend yourself!",
+    "onStandYou": "You are on trial, defend yourself in the chat!",
     "onStandNoVote": "You are on trial, so you can’t vote.",
     "verdictTitle": "The fate of {name}",
     "execute": "EXECUTE",
@@ -706,6 +723,12 @@
     }
   },
   "err": {
+    "ghostsOnly": "Only dead players can chat here.",
+    "signInToChat": "Sign in with Google to chat.",
+    "inOtherRoom": "You're playing in room {code}. You can be in one room at a time.",
+    "hostHandedOver": "This room was handed to another player and the machine runs it now.",
+    "signInToCreate": "Sign in with Google to make a room.",
+    "oneRoom": "You already have room {code} open. Each account can run one room.",
     "gameInProgress": "The game has already started — you can’t join now.",
     "roomFull": "The room is full ({max} players).",
     "nameRequired": "Please enter a name.",
@@ -788,6 +811,10 @@
     "nothingToIgnite": "No house has been doused yet."
   },
   "log": {
+    "standIn": "{name} is away, a bot plays for them until they are back.",
+    "standInBack": "{name} is back and playing again.",
+    "renamed": "{old} is now called {name}",
+    "hostLeft": "The host left. The machine runs the game now, and {name} owns the room.",
     "join": "{name} joined",
     "kick": "{name} was kicked",
     "rename": "{old} was renamed to {name}",
@@ -904,19 +931,23 @@
     "p6": "Questions or data deletion requests:"
   },
   "social": {
+    "markDay": "Day {n}",
+    "markNight": "Night {n}",
+    "markLobby": "Lobby",
+    "markOver": "Game over",
     "chat": "Chat",
     "board": "Board",
     "placeholder": "Type a message…",
     "send": "Send",
     "empty": "No messages yet. Say hi!",
-    "closed": "Chat, drawing and mic are only open in the lobby and during the discussion.",
+    "closed": "Chat, drawing and mic are open in the lobby, during the discussion, and for the players on trial while they defend.",
     "deadReadOnly": "You’re dead, so you can only watch and listen.",
     "host": "Host",
     "clear": "Clear board",
     "title": "The moonlit table",
     "hideBoard": "Hide board",
     "showBoard": "Show board",
-    "onlyNominees": "Defense in progress — only the players on the stand may speak.",
+    "onlyNominees": "Defense in progress, only the players on the stand may speak.",
     "newMessages": "{n} new messages",
     "slowWait": "{seconds}s",
     "newMentions": "{n, plural, one {# mention} other {# mentions}}",
@@ -983,6 +1014,53 @@
     "humansCount": "{n} real people",
     "abandons": "Quit mid-game",
     "left": "Quit"
+  },
+  "globalChat": {
+    "button": "Chat",
+    "title": "Server chat",
+    "hint": "Everyone on the home page and in the online lobby sees this. Be kind.",
+    "empty": "Nobody has said anything yet. Say hi!",
+    "placeholder": "Message the whole server…",
+    "send": "Send",
+    "signIn": "Sign in with Google to chat.",
+    "remove": "Remove"
+  },
+  "mail": {
+    "button": "Mail",
+    "title": "Mailbox",
+    "readAll": "Read all",
+    "new": "New",
+    "fromTeam": "From Ma Soi Online",
+    "allChanges": "See every change (version {version})",
+    "welcomeTitle": "Welcome to Ma Soi Online!",
+    "welcome1": "Press Play now to join an open room, or sign in with Google to make your own room and send the link to your friends.",
+    "welcome2": "Every role has play tips, hover or tap a role's name to read them. If you drop out a bot plays for you, come back and carry on.",
+    "welcome3": "Each time the game is updated a new letter arrives here. Good luck surviving the night!"
+  },
+  "changelog": {
+    "title": "What's new",
+    "current": "You are on version {version}.",
+    "footer": "Version {version} · What's new"
+  },
+  "ghostChat": {
+    "button": "Ghost chat",
+    "title": "The dead players' chat",
+    "hint": "The living can't read this, everyone sees it when the game ends.",
+    "hostHint": "The dead are talking among themselves, the living can't see it.",
+    "empty": "Nobody has spoken yet. Say hello to the other ghosts!",
+    "placeholder": "Message the dead…",
+    "send": "Send",
+    "endTitle": "What the dead said"
+  },
+  "rolesBar": {
+    "title": "Roles in this game",
+    "count": "{count} cards",
+    "show": "Show",
+    "hide": "Hide"
+  },
+  "lobbySetup": {
+    "bots": "Bots in the room: {count}",
+    "noRoles": "No roles picked yet."
   },
   "leaderboard": {
     "title": "Leaderboard",

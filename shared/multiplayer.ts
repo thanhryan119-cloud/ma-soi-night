@@ -59,8 +59,9 @@ export function sortRooms(rooms: RoomSummary[]): RoomSummary[] {
 export function makeMachineRoom(room: Room, ownerId: string) {
   room.machineHost = true;
   room.ownerId = ownerId;
-  // Online play: someone gone for 5 minutes is out (the owner can turn it off).
-  room.settings = { ...room.settings, autoKickAway: true, ...MACHINE_FORCED };
+  // Online play: someone away gets a bot playing for them and may come back,
+  // so being away for 5 minutes no longer puts them out (the owner can turn it on).
+  room.settings = { ...room.settings, autoKickAway: false, ...MACHINE_FORCED };
 }
 
 export const isOwner = (room: Room, playerId: string | null | undefined) =>

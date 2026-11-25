@@ -7,7 +7,7 @@ import { Ambient } from "@/lib/ambient";
 import { useLocale, useT } from "@/lib/i18n";
 import { hasVoiceFor, speak, stopSpeaking, useTtsSupported, whenVoicesReady } from "@/lib/tts";
 import { scriptLines } from "./common";
-import { emitAck, hostKey, storage } from "@/lib/socket";
+import { emitAck, getSocket, hostKey, storage } from "@/lib/socket";
 import { getAuth, useAccount } from "@/lib/account";
 import { useRoomState } from "@/lib/useRoom";
 import { HostGame } from "./HostGame";
@@ -15,16 +15,31 @@ import { HostLobby } from "./HostLobby";
 
 export default function HostApp({ code }: { code: string }) {
   const t = useT();
-  const [denied, setDenied] = useState(false);
+  /** Why this page can't run the room (a message key), or false. */
+  const [denied, setDenied] = useState<string | false>(false);
   const [hideRoles, setHideRoles] = useState(false);
   const [sound, setSound] = useState(false);
   const ambient = useRef<Ambient | null>(null);
 
   const resume = useCallback(async () => {
     const hostToken = storage.get<string>(hostKey(code));
-    if (!hostToken) return setDenied(true);
+    if (!hostToken) return setDenied("host.notHost");
     const res = await emitAck("host:resume", { code, hostToken, authToken: getAuth()?.token });
-    if (!res.ok && res.error !== "err.disconnected") setDenied(true);
+    if (!res.ok && res.error !== "err.disconnected") setDenied(res.error === "err.hostHandedOver" ? "host.handedOver" : "host.notHost");
+  }, [code]);
+
+  // The host was gone too long (or left for a new room): the next player took the room over.
+  useEffect(() => {
+    const s = getSocket();
+    const ours = (e?: { code?: string }) => !e?.code || e.code === code;
+    const replaced = (e?: { code?: string }) => ours(e) && setDenied("host.handedOver");
+    const closed = (e?: { code?: string }) => ours(e) && setDenied("host.roomClosed");
+    s.on("hostReplaced", replaced);
+    s.on("roomClosed", closed);
+    return () => {
+      s.off("hostReplaced", replaced);
+      s.off("roomClosed", closed);
+    };
   }, [code]);
 
   const { state, connected, offset } = useRoomState(resume);
@@ -129,7 +144,7 @@ export default function HostApp({ code }: { code: string }) {
         <LangSwitch />
         <div className="card max-w-md text-center">
           <div className="text-5xl">🔒</div>
-          <p className="mt-4">{t("host.notHost")}</p>
+          <p className="mt-4">{t(denied)}</p>
           <Link href="/" className="btn-gold mt-6">
             {t("host.goHome")}
           </Link>

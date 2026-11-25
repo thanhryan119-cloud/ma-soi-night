@@ -163,6 +163,7 @@ export function addPlayer(
     /** Shop items the player's account owns; paid styles outside it are dropped. */
     owned?: readonly string[];
     userId?: string | null;
+    deviceId?: unknown;
   },
   now = Date.now(),
 ): ActionResult & { player?: Player } {
@@ -182,6 +183,7 @@ export function addPlayer(
     owned: sanitizeOwned(input.owned),
     chatColor: freeChatColor(room.players.map((p) => p.chatColor)),
     userId: input.userId ?? null,
+    deviceId: typeof input.deviceId === "string" && /^[\w-]{8,64}$/.test(input.deviceId) ? input.deviceId : null,
     locale: input.locale === "en" ? "en" : "vi",
     isBot: !!input.isBot,
     connected: !!input.isBot,
@@ -668,6 +670,19 @@ function fillMissingBallots(room: Room) {
 }
 
 /**
+ * Once the vote's countdown is over, everyone who still hasn't voted votes at
+ * random right away (the vote stays open until it is closed). True when it
+ * added any ballot.
+ */
+export function fillVotesIfTimeUp(room: Room, now = Date.now()): boolean {
+  const vote = room.game?.vote;
+  if (!vote || vote.closed || !voteTimeUp(room, now)) return false;
+  const before = Object.keys(vote.ballots).length;
+  fillMissingBallots(room);
+  return Object.keys(vote.ballots).length !== before;
+}
+
+/**
  * Votes can't be closed while people (online) still haven't voted and the
  * vote time hasn't run out. When it runs out, missing votes count as random.
  */
@@ -830,6 +845,7 @@ export function advance(room: Room): ActionResult {
       game.nominationOutcome = null;
       if (outcome === "revote") {
         room.phase = { ...room.phase, kind: "nominate" };
+        resetTimer(room);
         openNomination(room, game.nomination?.tiedIds ?? null);
       } else if (outcome === "defense") enterTimed(room, "defense");
       else startNight(room);
@@ -866,17 +882,21 @@ export function playerAction(room: Room, playerId: string, action: PlayerAction)
       player.locale = action.locale === "en" ? "en" : "vi";
       return ok;
     case "updateProfile": {
-      if (room.phase.kind !== "lobby") return fail("err.wrongPhase");
-      if (action.avatar && AVATARS.includes(action.avatar)) player.avatar = action.avatar;
-      if (action.style)
-        player.style = limitStyle(sanitizeStyle({ ...player.style, ...action.style }), player.isBot ? "all" : player.owned ?? []);
+      // A new name is fine at any time (everyone is told); the look only before the game.
       if (action.name !== undefined) {
         const name = sanitizeName(action.name);
         if (!name) return fail("err.nameRequired");
         if (room.players.some((p) => p.id !== player.id && p.name.toLowerCase() === name.toLowerCase()))
           return fail("err.nameTaken");
-        player.name = name;
+        if (name !== player.name) {
+          log(room, "log.renamed", { old: player.name, name }, true);
+          player.name = name;
+        }
       }
+      if (room.phase.kind !== "lobby") return ok;
+      if (action.avatar && AVATARS.includes(action.avatar)) player.avatar = action.avatar;
+      if (action.style)
+        player.style = limitStyle(sanitizeStyle({ ...player.style, ...action.style }), player.isBot ? "all" : player.owned ?? []);
       return ok;
     }
     case "night":
@@ -1252,6 +1272,7 @@ function override(room: Room, o: OverrideAction): ActionResult {
     case "revote": {
       const kind = room.phase.kind;
       if (kind === "nominate") {
+        resetTimer(room);
         openNomination(room, game.vote?.candidates ?? null);
       } else if (kind === "defense" || kind === "nominateResult") {
         room.phase = { ...room.phase, kind: "nominate" };

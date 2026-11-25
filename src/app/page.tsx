@@ -8,9 +8,13 @@ import { useEffect, useState } from "react";
 import type { Locale } from "@shared/types";
 import { LangSwitch, useErrorToast } from "@/components/ui";
 import { Leaderboard } from "@/components/Leaderboard";
+import { GlobalChat } from "@/components/GlobalChat";
+import { Mailbox } from "@/components/Mailbox";
+import { APP_VERSION } from "@shared/changelog";
 import { useLocale, useT } from "@/lib/i18n";
 import { emitAck, hostKey, storage } from "@/lib/socket";
 import { getAuth } from "@/lib/account";
+import { ExistingRoomDialog, SignInToCreate, useNeedsSignInToCreate } from "@/components/CreateRoomGate";
 
 export default function Home() {
   const t = useT();
@@ -20,14 +24,23 @@ export default function Home() {
   const [roomLocale, setRoomLocale] = useState<Locale>(locale);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+  /** The room this account already runs, when it tried to make another. */
+  const [existing, setExisting] = useState<string | null>(null);
+  const needsSignIn = useNeedsSignInToCreate();
 
   useEffect(() => setRoomLocale(locale), [locale]);
 
-  async function createRoom() {
+  async function createRoom(replace = false) {
     setBusy(true);
-    const res = await emitAck<{ ok: boolean; code: string; hostToken: string }>("host:create", { locale: roomLocale, authToken: getAuth()?.token });
+    const res = await emitAck<{ ok: boolean; code: string; hostToken: string }>("host:create", {
+      locale: roomLocale,
+      authToken: getAuth()?.token,
+      replace,
+    });
     setBusy(false);
+    if (!res.ok && res.error === "err.oneRoom" && res.params?.code) return setExisting(String(res.params.code));
     if (!showError(res) || !res.code) return;
+    setExisting(null);
     storage.set(hostKey(res.code), res.hostToken);
     const saved = storage.get<Record<string, unknown>>("msn:hostSettings");
     if (saved) {
@@ -46,13 +59,15 @@ export default function Home() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-5xl flex-col px-4 py-10 sm:py-16">
       <LangSwitch />
+      <GlobalChat />
       <div className="fixed top-3 right-3 z-50 flex gap-2">
+        <Mailbox />
         <QuestsLink />
         <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold">
-          🛒 {t("shop.open")}
+          🛒 <span className="max-sm:sr-only">{t("shop.open")}</span>
         </Link>
         <Link href="/profile" className="btn-ghost btn-sm">
-          👤 {t("profile.open")}
+          👤 <span className="max-sm:sr-only">{t("profile.open")}</span>
         </Link>
       </div>
       <header className="mb-10 flex flex-col items-center text-center">
@@ -98,9 +113,18 @@ export default function Home() {
               ))}
             </div>
           </div>
-          <button className="btn-primary mt-auto py-4 text-lg" onClick={createRoom} disabled={busy}>
-            {busy ? t("home.creating") : t("home.createButton")}
-          </button>
+          {needsSignIn ? (
+            <div className="mt-auto">
+              <SignInToCreate />
+            </div>
+          ) : (
+            <button className="btn-primary mt-auto py-4 text-lg" onClick={() => createRoom()} disabled={busy}>
+              {busy ? t("home.creating") : t("home.createButton")}
+            </button>
+          )}
+          {existing && (
+            <ExistingRoomDialog code={existing} busy={busy} onReplace={() => createRoom(true)} onClose={() => setExisting(null)} />
+          )}
         </section>
 
         <form className="card flex flex-col gap-4 p-6" onSubmit={join}>
@@ -136,7 +160,10 @@ export default function Home() {
         </ol>
       </section>
       <Leaderboard />
-      <footer className="mt-10 text-center text-sm text-white/40">
+      <footer className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-sm text-white/40">
+        <Link href="/changelog" className="hover:text-white">
+          {t("changelog.footer", { version: APP_VERSION })}
+        </Link>
         <Link href="/privacy" className="hover:text-white">
           {t("privacy.link")}
         </Link>

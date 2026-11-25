@@ -8,6 +8,20 @@ import type { Locale } from "@shared/types";
 
 export const ttsSupported = () => typeof window !== "undefined" && "speechSynthesis" in window;
 
+/**
+ * Phones (iOS Safari above all) only let a page speak once a tap has started
+ * speech. Call this inside a tap: it speaks a silent word, after which the
+ * narration can be read aloud on its own.
+ */
+export function unlockTts() {
+  if (!ttsSupported()) return;
+  try {
+    const u = new SpeechSynthesisUtterance(" ");
+    u.volume = 0;
+    window.speechSynthesis.speak(u);
+  } catch {}
+}
+
 /** Same as ttsSupported() but safe for server rendering (false until mounted). */
 export function useTtsSupported() {
   const [ok, setOk] = useState(false);

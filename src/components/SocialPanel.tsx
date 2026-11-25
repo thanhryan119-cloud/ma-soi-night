@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   BOARD_COLORS,
   BRUSH_SIZES,
@@ -21,20 +21,69 @@ import { useVoice } from "@/lib/voice";
 import { Avatar, ChatBubble, StyledName, useErrorToast } from "./ui";
 import { ProfileLink } from "./Profile";
 
+/** True when the message starts a new day (or night, or the lobby / game over) compared with the one before. */
+export function newStage(
+  m: ChatMessage,
+  prev: ChatMessage | undefined,
+): boolean {
+  if (!m.stage) return false;
+  if (!prev) return m.stage !== "lobby";
+  return prev.stage !== m.stage || prev.n !== m.n;
+}
+
+/** The marker line between days in a chat: "Sáng ngày 2", "Đêm 3"… */
+export function ChatMilestone({ m }: { m: ChatMessage }) {
+  const t = useT();
+  const label =
+    m.stage === "day"
+      ? `☀️ ${t("social.markDay", { n: m.n ?? 1 })}`
+      : m.stage === "night"
+        ? `🌙 ${t("social.markNight", { n: m.n ?? 1 })}`
+        : m.stage === "over"
+          ? `🏁 ${t("social.markOver")}`
+          : `🏠 ${t("social.markLobby")}`;
+  return (
+    <div
+      className="my-2 flex items-center gap-2 text-[11px] font-semibold tracking-wide text-gold/80"
+      role="separator"
+    >
+      <span className="h-px flex-1 bg-gold/25" />
+      <span className="shrink-0">{label}</span>
+      <span className="h-px flex-1 bg-gold/25" />
+    </div>
+  );
+}
+
 /** Who is using the panel: the host, or a player id. */
-export function SocialPanel({ state, viewer, className = "" }: { state: ClientState; viewer: "host" | string; className?: string }) {
+export function SocialPanel({
+  state,
+  viewer,
+  className = "",
+}: {
+  state: ClientState;
+  viewer: "host" | string;
+  className?: string;
+}) {
   const t = useT();
   const social = useSocial(state.code);
   const players = new Map(state.players.map((p) => [p.id, p]));
   const isHost = viewer === "host";
   const me = isHost ? null : players.get(viewer);
-  // Online rooms: the players on the stand keep the chat during the verdict vote.
-  const defenderChat = state.machineHost && state.phase.kind === "verdict";
-  const phaseOpen = (SOCIAL_PHASES as readonly string[]).includes(state.phase.kind) || defenderChat;
-  const dead = !!me && state.phase.kind !== "lobby" && state.phase.kind !== "gameOver" && !me.alive;
-  const defenseLocked = (state.phase.kind === "defense" || defenderChat) && !state.me?.onStand;
+  // The players on the stand keep the chat during the verdict vote.
+  const defenderChat = state.phase.kind === "verdict";
+  const phaseOpen =
+    (SOCIAL_PHASES as readonly string[]).includes(state.phase.kind) ||
+    defenderChat;
+  const dead =
+    !!me &&
+    state.phase.kind !== "lobby" &&
+    state.phase.kind !== "gameOver" &&
+    !me.alive;
+  const defenseLocked =
+    (state.phase.kind === "defense" || defenderChat) && !state.me?.onStand;
   const silenced = !!me?.silenced;
-  const canSpeak = isHost || (phaseOpen && !dead && !defenseLocked && !silenced);
+  const canSpeak =
+    isHost || (phaseOpen && !dead && !defenseLocked && !silenced);
   const reason = !phaseOpen
     ? t("social.closed")
     : dead
@@ -46,31 +95,58 @@ export function SocialPanel({ state, viewer, className = "" }: { state: ClientSt
           : null;
   // The board can be folded away so the chat gets the whole panel.
   const [boardOpen, setBoardOpen] = useState(true);
-  useEffect(() => setBoardOpen(storage.get<boolean>("msn:boardOpen") ?? true), []);
+  useEffect(
+    () => setBoardOpen(storage.get<boolean>("msn:boardOpen") ?? true),
+    [],
+  );
   const toggleBoard = () => {
     storage.set("msn:boardOpen", !boardOpen);
     setBoardOpen(!boardOpen);
   };
 
   return (
-    <div className={`tarot-frame flex min-h-0 flex-col overflow-hidden rounded-lg border border-gold/40 bg-night-900/85 ${className}`}>
+    <div
+      className={`tarot-frame flex min-h-0 flex-col overflow-hidden rounded-lg border border-gold/40 bg-night-900/85 ${className}`}
+    >
       <div className="flex shrink-0 items-center justify-center gap-2 border-b border-gold/25 px-2 py-1.5">
         <span className="w-24 shrink-0" aria-hidden />
         <span className="ml-auto text-gold/60">✦</span>
-        <h3 className="font-display text-lg leading-none text-gold">{t("social.title")}</h3>
+        <h3 className="font-display text-lg leading-none text-gold">
+          {t("social.title")}
+        </h3>
         <span className="text-gold/60">✦</span>
-        <button type="button" className="btn-ghost btn-sm ml-auto px-2 py-0.5 text-xs" onClick={toggleBoard} aria-expanded={boardOpen}>
-          {boardOpen ? `▴ ${t("social.hideBoard")}` : `▾ ${t("social.showBoard")}`}
+        <button
+          type="button"
+          className="btn-ghost btn-sm ml-auto px-2 py-0.5 text-xs"
+          onClick={toggleBoard}
+          aria-expanded={boardOpen}
+        >
+          {boardOpen
+            ? `▴ ${t("social.hideBoard")}`
+            : `▾ ${t("social.showBoard")}`}
         </button>
       </div>
-      {state.settings.voiceChat !== false && <VoiceBar state={state} players={players} enabled={phaseOpen} />}
+      {state.settings.voiceChat !== false && (
+        <VoiceBar state={state} players={players} enabled={phaseOpen} />
+      )}
       {boardOpen && (
         <div className="flex min-h-0 shrink-0 basis-[24%] flex-col border-b border-gold/25">
-          <Board social={social} canDraw={canSpeak} isHost={isHost} reason={null} />
+          <Board
+            social={social}
+            canDraw={canSpeak}
+            isHost={isHost}
+            reason={null}
+          />
         </div>
       )}
       <div className="flex min-h-0 flex-1 flex-col">
-        <Chat social={social} players={players} canSpeak={canSpeak} reason={isHost ? null : reason} viewer={viewer} />
+        <Chat
+          social={social}
+          players={players}
+          canSpeak={canSpeak}
+          reason={isHost ? null : reason}
+          viewer={viewer}
+        />
       </div>
     </div>
   );
@@ -80,12 +156,21 @@ export function SocialPanel({ state, viewer, className = "" }: { state: ClientSt
 // Voice
 // ---------------------------------------------------------------------------
 
-function VoiceBar({ state, players, enabled }: { state: ClientState; players: Map<string, PlayerView>; enabled: boolean }) {
+function VoiceBar({
+  state,
+  players,
+  enabled,
+}: {
+  state: ClientState;
+  players: Map<string, PlayerView>;
+  enabled: boolean;
+}) {
   const t = useT();
   const voice = useVoice();
   const showError = useErrorToast();
   const [busy, setBusy] = useState(false);
-  const label = (from: string) => (from === "host" ? t("social.host") : players.get(from)?.name ?? "?");
+  const label = (from: string) =>
+    from === "host" ? t("social.host") : (players.get(from)?.name ?? "?");
 
   // The server ends the call when the phase changes; also leave locally.
   useEffect(() => {
@@ -113,17 +198,25 @@ function VoiceBar({ state, players, enabled }: { state: ClientState; players: Ma
       ) : (
         <>
           {voice.self?.listenOnly ? (
-            <span className="chip text-white/60">🎧 {t("voice.listenOnly")}</span>
+            <span className="chip text-white/60">
+              🎧 {t("voice.listenOnly")}
+            </span>
           ) : (
             <button
               type="button"
               className={`btn btn-sm ${voice.self?.muted ? "btn-ghost" : "bg-blood text-white"}`}
               onClick={() => voice.setMuted(!voice.self?.muted)}
             >
-              {voice.self?.muted ? `🔇 ${t("voice.unmute")}` : `🎙️ ${t("voice.mute")}`}
+              {voice.self?.muted
+                ? `🔇 ${t("voice.unmute")}`
+                : `🎙️ ${t("voice.mute")}`}
             </button>
           )}
-          <button type="button" className="btn-ghost btn-sm" onClick={() => voice.leave()}>
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={() => voice.leave()}
+          >
             {t("voice.leave")}
           </button>
         </>
@@ -131,19 +224,34 @@ function VoiceBar({ state, players, enabled }: { state: ClientState; players: Ma
       <div className="flex min-w-0 flex-1 items-center justify-end gap-1 overflow-hidden">
         {people.slice(0, 8).map((p) => {
           const pv = players.get(p.from);
-          const talking = voice.speaking(p === voice.self ? "self" : p.socketId) && !p.muted;
+          const talking =
+            voice.speaking(p === voice.self ? "self" : p.socketId) && !p.muted;
           return (
             <span
               key={p.socketId}
               title={`${label(p.from)}${p.muted ? " 🔇" : ""}`}
               className={`relative rounded-full ${talking ? "ring-2 ring-emerald-400" : ""}`}
             >
-              {pv ? <Avatar p={pv} size="sm" /> : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night-700">🎙️</span>}
-              {p.muted && <span className="absolute -right-1 -bottom-1 text-[10px]">🔇</span>}
+              {pv ? (
+                <Avatar p={pv} size="sm" />
+              ) : (
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night-700">
+                  🎙️
+                </span>
+              )}
+              {p.muted && (
+                <span className="absolute -right-1 -bottom-1 text-[10px]">
+                  🔇
+                </span>
+              )}
             </span>
           );
         })}
-        {people.length > 0 && <span className="text-[11px] text-white/50">{t("voice.inCall", { count: people.length })}</span>}
+        {people.length > 0 && (
+          <span className="text-[11px] text-white/50">
+            {t("voice.inCall", { count: people.length })}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -171,11 +279,14 @@ function Chat({
   const [text, setText] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
   const myName = players.get(viewer)?.name ?? "";
-  const mentionsMe = (m: ChatMessage) => !!myName && m.from !== viewer && mentionsName(m.text, myName);
+  const mentionsMe = (m: ChatMessage) =>
+    !!myName && m.from !== viewer && mentionsName(m.text, myName);
 
   // Tap a name to read only that person's messages; tap again (or "show all") to see everyone.
   const [filter, setFilter] = useState<string | null>(null);
-  const shown = filter ? social.chat.filter((m) => m.from === filter) : social.chat;
+  const shown = filter
+    ? social.chat.filter((m) => m.from === filter)
+    : social.chat;
   useEffect(() => {
     if (filter && !social.chat.some((m) => m.from === filter)) setFilter(null);
   }, [social.chat, filter]);
@@ -280,12 +391,15 @@ function Chat({
   }
   // Everyone who has said something, for the "read one person" picker.
   const speakers = [...new Set(social.chat.map((m) => m.from))];
-  const nameOf = (id: string) => (id === "host" ? t("social.host") : players.get(id)?.name ?? "?");
+  const nameOf = (id: string) =>
+    id === "host" ? t("social.host") : (players.get(id)?.name ?? "?");
 
   return (
     <>
       {speakers.length > 1 && (
-        <div className={`flex shrink-0 items-center gap-1.5 border-b px-2 py-0.5 text-xs ${filter ? "border-gold/25 bg-night-800/80 text-gold" : "border-white/10 text-white/50"}`}>
+        <div
+          className={`flex shrink-0 items-center gap-1.5 border-b px-2 py-0.5 text-xs ${filter ? "border-gold/25 bg-night-800/80 text-gold" : "border-white/10 text-white/50"}`}
+        >
           <label htmlFor="chat-filter" className="shrink-0">
             🔎 {t("social.filterLabel")}
           </label>
@@ -303,81 +417,137 @@ function Chat({
             ))}
           </select>
           {filter && (
-            <button type="button" className="btn-ghost btn-sm shrink-0 px-2 py-0.5 text-xs" onClick={() => setFilter(null)}>
+            <button
+              type="button"
+              className="btn-ghost btn-sm shrink-0 px-2 py-0.5 text-xs"
+              onClick={() => setFilter(null)}
+            >
               ✕ {t("social.filterOff")}
             </button>
           )}
         </div>
       )}
       <div className="relative flex min-h-0 flex-1 flex-col">
-      <div ref={listRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-0.5 pb-1.5">
-        {!social.chat.length && <p className="py-6 text-center text-sm text-white/40">{t("social.empty")}</p>}
-        {shown.map((m, i) => {
-          const p = players.get(m.from);
-          const mine = m.from === viewer;
-          // Several lines in a row from the same person share one avatar and name.
-          const prev = shown[i - 1];
-          const followUp = !!prev && prev.from === m.from && m.t - prev.t < 60_000;
-          const mention = mentionsMe(m);
-          const mark = mention ? "outline-2 outline-offset-1 outline-gold" : "";
-          return (
-            <div key={m.id} className={`flex items-start gap-1.5 ${followUp ? "mt-0.5" : "mt-1.5"} ${mine ? "flex-row-reverse text-right" : ""}`}>
-              {followUp ? (
-                <span className="w-7 shrink-0" aria-hidden />
-              ) : p ? (
-                <ProfileLink playerId={p.id} className="shrink-0">
-                  <Avatar p={p} size="sm" />
-                </ProfileLink>
-              ) : (
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blood text-xs">🎙️</span>
-              )}
-              <div className="min-w-0 max-w-[80%]">
-                {!followUp && (
-                  <div className="truncate text-[11px] leading-tight text-white/50">
-                    <button
-                      type="button"
-                      onClick={() => setFilter(filter === m.from ? null : m.from)}
-                      title={t("social.filterBy")}
-                      aria-label={`${p?.name ?? t("social.host")}: ${t("social.filterBy")}`}
-                      aria-pressed={filter === m.from}
-                      className="max-w-full truncate hover:underline"
-                    >
-                      {p ? <StyledName p={p} className="truncate" /> : t("social.host")}
-                    </button>
-                  </div>
-                )}
+        <div
+          ref={listRef}
+          onScroll={onScroll}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-0.5 pb-1.5"
+        >
+          {!social.chat.length && (
+            <p className="py-6 text-center text-sm text-white/40">
+              {t("social.empty")}
+            </p>
+          )}
+          {shown.map((m, i) => {
+            const p = players.get(m.from);
+            const mine = m.from === viewer;
+            // Several lines in a row from the same person share one avatar and name.
+            const prev = shown[i - 1];
+            const marker = newStage(m, prev);
+            const followUp =
+              !marker &&
+              !!prev &&
+              prev.from === m.from &&
+              m.t - prev.t < 60_000;
+            const mention = mentionsMe(m);
+            const mark = mention
+              ? "outline-2 outline-offset-1 outline-gold"
+              : "";
+            return (
+              <Fragment key={m.id}>
+                {marker && <ChatMilestone m={m} />}
                 <div
-                  className={`flex cursor-pointer items-center gap-1 ${mine ? "flex-row-reverse" : ""}`}
-                  onClick={() => setFilter(filter === m.from ? null : m.from)}
-                  title={t("social.filterBy")}
+                  className={`flex items-start gap-1.5 ${followUp ? "mt-0.5" : "mt-1.5"} ${mine ? "flex-row-reverse text-right" : ""}`}
                 >
-                  {p ? (
-                    <ChatBubble color={p.chatColor} deco={p.style.chat} className={mark}>
-                      {m.text}
-                    </ChatBubble>
+                  {followUp ? (
+                    <span className="w-7 shrink-0" aria-hidden />
+                  ) : p ? (
+                    <ProfileLink playerId={p.id} className="shrink-0">
+                      <Avatar p={p} size="sm" />
+                    </ProfileLink>
                   ) : (
-                    <div className={`inline-block rounded-lg bg-night-700 px-2 py-1 text-sm leading-snug break-words ring-1 ring-gold/50 ${mark}`}>{m.text}</div>
-                  )}
-                  {mention && (
-                    <span className="shrink-0 text-xs font-black text-gold" aria-label={t("social.mentionsYou")}>
-                      @
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blood text-xs">
+                      🎙️
                     </span>
                   )}
+                  <div className="min-w-0 max-w-[80%]">
+                    {!followUp && (
+                      <div className="truncate text-[11px] leading-tight text-white/50">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFilter(filter === m.from ? null : m.from)
+                          }
+                          title={t("social.filterBy")}
+                          aria-label={`${p?.name ?? t("social.host")}: ${t("social.filterBy")}`}
+                          aria-pressed={filter === m.from}
+                          className="max-w-full truncate hover:underline"
+                        >
+                          {p ? (
+                            <StyledName p={p} className="truncate" />
+                          ) : (
+                            t("social.host")
+                          )}
+                        </button>
+                      </div>
+                    )}
+                    <div
+                      className={`flex cursor-pointer items-center gap-1 ${mine ? "flex-row-reverse" : ""}`}
+                      onClick={() =>
+                        setFilter(filter === m.from ? null : m.from)
+                      }
+                      title={t("social.filterBy")}
+                    >
+                      {p ? (
+                        <ChatBubble
+                          color={p.chatColor}
+                          deco={p.style.chat}
+                          className={mark}
+                        >
+                          {m.text}
+                        </ChatBubble>
+                      ) : (
+                        <div
+                          className={`inline-block rounded-lg bg-night-700 px-2 py-1 text-sm leading-snug break-words ring-1 ring-gold/50 ${mark}`}
+                        >
+                          {m.text}
+                        </div>
+                      )}
+                      {mention && (
+                        <span
+                          className="shrink-0 text-xs font-black text-gold"
+                          aria-label={t("social.mentionsYou")}
+                        >
+                          @
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      {unread > 0 && (
-        <button type="button" onClick={jumpDown} className="btn-primary btn-sm absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap shadow-lg">
-          ↓ {t("social.newMessages", { n: unread })}
-          {unreadMentions > 0 && <span className="ml-1 font-black">· {t("social.newMentions", { n: unreadMentions })}</span>}
-        </button>
-      )}
+              </Fragment>
+            );
+          })}
+        </div>
+        {unread > 0 && (
+          <button
+            type="button"
+            onClick={jumpDown}
+            className="btn-primary btn-sm absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap shadow-lg"
+          >
+            ↓ {t("social.newMessages", { n: unread })}
+            {unreadMentions > 0 && (
+              <span className="ml-1 font-black">
+                · {t("social.newMentions", { n: unreadMentions })}
+              </span>
+            )}
+          </button>
+        )}
       </div>
       {canSpeak ? (
-        <form onSubmit={send} className="flex shrink-0 gap-1.5 border-t border-white/10 p-1.5">
+        <form
+          onSubmit={send}
+          className="flex shrink-0 gap-1.5 border-t border-white/10 p-1.5"
+        >
           <input
             className="ui-input py-2 text-base"
             value={text}
@@ -389,13 +559,21 @@ function Chat({
           <button
             className="btn-primary shrink-0 px-3 tabular-nums"
             disabled={!text.trim() || waitS > 0}
-            title={waitS > 0 ? t("err.chatSlow", { seconds: waitS }) : undefined}
+            title={
+              waitS > 0 ? t("err.chatSlow", { seconds: waitS }) : undefined
+            }
           >
-            {waitS > 0 ? `⏳ ${t("social.slowWait", { seconds: waitS })}` : t("social.send")}
+            {waitS > 0
+              ? `⏳ ${t("social.slowWait", { seconds: waitS })}`
+              : t("social.send")}
           </button>
         </form>
       ) : (
-        reason && <p className="shrink-0 border-t border-white/10 p-2 text-center text-xs text-white/50">{reason}</p>
+        reason && (
+          <p className="shrink-0 border-t border-white/10 p-2 text-center text-xs text-white/50">
+            {reason}
+          </p>
+        )
       )}
     </>
   );
@@ -405,7 +583,12 @@ function Chat({
 // Drawing board
 // ---------------------------------------------------------------------------
 
-function drawStroke(ctx: CanvasRenderingContext2D, s: Pick<Stroke, "color" | "size" | "points">, w: number, h: number) {
+function drawStroke(
+  ctx: CanvasRenderingContext2D,
+  s: Pick<Stroke, "color" | "size" | "points">,
+  w: number,
+  h: number,
+) {
   const pts = s.points;
   if (pts.length < 2) return;
   ctx.strokeStyle = s.color;
@@ -421,7 +604,8 @@ function drawStroke(ctx: CanvasRenderingContext2D, s: Pick<Stroke, "color" | "si
   }
   ctx.beginPath();
   ctx.moveTo(pts[0] * w, pts[1] * h);
-  for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i] * w, pts[i + 1] * h);
+  for (let i = 2; i < pts.length; i += 2)
+    ctx.lineTo(pts[i] * w, pts[i + 1] * h);
   ctx.stroke();
 }
 
@@ -471,7 +655,13 @@ function Board({
     ctx.fillStyle = "#0d0d0d";
     ctx.fillRect(0, 0, size.w, size.h);
     for (const s of social.strokes) drawStroke(ctx, s, size.w, size.h);
-    if (current.current) drawStroke(ctx, { color, size: brush, points: current.current }, size.w, size.h);
+    if (current.current)
+      drawStroke(
+        ctx,
+        { color, size: brush, points: current.current },
+        size.w,
+        size.h,
+      );
   };
   useEffect(redraw); // cheap enough: re-render on any change
 
@@ -490,7 +680,10 @@ function Board({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-1.5 p-1.5">
-      <div ref={wrapRef} className="flex min-h-0 flex-1 items-center justify-center">
+      <div
+        ref={wrapRef}
+        className="flex min-h-0 flex-1 items-center justify-center"
+      >
         <canvas
           ref={canvasRef}
           style={{ width: size.w, height: size.h }}
@@ -540,17 +733,26 @@ function Board({
               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md border ${brush === b ? "border-white" : "border-white/10"}`}
               aria-label={`${b}px`}
             >
-              <span className="rounded-full bg-white" style={{ width: b + 2, height: b + 2 }} />
+              <span
+                className="rounded-full bg-white"
+                style={{ width: b + 2, height: b + 2 }}
+              />
             </button>
           ))}
           {isHost && (
-            <button type="button" className="btn-ghost btn-sm ml-auto" onClick={async () => showError(await social.clearBoard())}>
+            <button
+              type="button"
+              className="btn-ghost btn-sm ml-auto"
+              onClick={async () => showError(await social.clearBoard())}
+            >
               {t("social.clear")}
             </button>
           )}
         </div>
       ) : (
-        reason && <p className="shrink-0 text-center text-xs text-white/50">{reason}</p>
+        reason && (
+          <p className="shrink-0 text-center text-xs text-white/50">{reason}</p>
+        )
       )}
     </div>
   );

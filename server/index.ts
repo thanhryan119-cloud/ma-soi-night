@@ -20,6 +20,7 @@ import {
   makeRoomCode,
   playerAction,
   randomToken,
+  fillVotesIfTimeUp,
   stepKey,
   timerOp,
 } from "../shared/engine";
@@ -34,6 +35,7 @@ import { payOSFromEnv } from "./payos";
 import { createQuests } from "./quests";
 import { createShop } from "./shop";
 import { createSocial } from "./social";
+import { createGlobalChat } from "./globalChat";
 import { tableBusy } from "../shared/social";
 import { gameResults, type PublicProfile } from "../shared/stats";
 import {
@@ -169,11 +171,14 @@ function roomSockets(code: string): AppSocket[] {
   return [...ids].map((id) => io.sockets.sockets.get(id) as AppSocket | undefined).filter((s): s is AppSocket => !!s);
 }
 
+/** Someone is in the room: a human player online, or the host of a human-host room. */
+const roomAlive = (room: Room) =>
+  room.players.some((p) => !p.isBot && p.connected) || (!room.machineHost && roomSockets(room.code).some((s) => s.data.kind === "host"));
+
 /** The online lobby: people not in a room yet, and the listed rooms someone is still in. */
 const lobby = createLobby(io, {
   rooms: () => rooms.values(),
-  isAlive: (room) =>
-    room.players.some((p) => !p.isBot && p.connected) || (!room.machineHost && roomSockets(room.code).some((s) => s.data.kind === "host")),
+  isAlive: roomAlive,
   accountFor: (token) => {
     const u = accounts.userForToken(token);
     return u ? { id: u.id, avatarUrl: u.avatarUrl } : null;
@@ -188,6 +193,13 @@ function intelFor(room: Room): ChatIntel {
   if (!i) chatIntel.set(game, (i = newChatIntel()));
   return i;
 }
+const globalChat = createGlobalChat(io, {
+  dataDir: dirname(DATA_FILE),
+  accountFor: (token) => {
+    const u = accounts.userForToken(token);
+    return u ? accounts.publicUser(u) : null;
+  },
+});
 const social = createSocial(io, (code) => rooms.get(code), channel, (room, fromId, text) => {
   if (!room.game) return;
   ingestChat(room, intelFor(room), fromId, text);
@@ -240,8 +252,39 @@ function recordStats(room: Room) {
   }
 }
 
+/** Votes that already got their countdown (a revote is a new vote object). */
+const timedVotes = new WeakSet<object>();
+const voteTimers = new Map<string, NodeJS.Timeout>();
+
+/**
+ * Every vote, in every room, gets a countdown when it opens; when it ends,
+ * whoever still hasn't voted votes at random (the host may pause or change it).
+ */
+function scheduleVotes(room: Room) {
+  clearTimeout(voteTimers.get(room.code));
+  voteTimers.delete(room.code);
+  const vote = room.game?.vote;
+  const k = room.phase.kind;
+  if ((k !== "nominate" && k !== "verdict") || !vote || vote.closed) return;
+  if (!timedVotes.has(vote)) {
+    timedVotes.add(vote);
+    if (!room.timer.running && !room.timer.durationMs) timerOp(room, "start", VOTE_SECONDS);
+  }
+  const end = room.timer.running ? room.timer.endsAt : null;
+  if (!end) return; // paused: nothing runs out
+  const timer = setTimeout(() => {
+    voteTimers.delete(room.code);
+    if (rooms.get(room.code) !== room || room.game?.vote !== vote) return;
+    if (fillVotesIfTimeUp(room)) touch(room);
+  }, Math.max(0, end - Date.now()) + 50);
+  timer.unref();
+  voteTimers.set(room.code, timer);
+}
+
 function touch(room: Room) {
   room.lastActivity = Date.now();
+  scheduleVotes(room);
+  scheduleStandIns(room);
   recordStats(room);
   scheduleAuto(room);
   broadcast(room);
@@ -423,7 +466,7 @@ const stepTiming = new Map<string, StepTiming>();
 const NIGHT_MIN_MS: [number, number] = [12_000, 20_000];
 /** If the host never reports the narration (tab closed), assume it took this long. */
 const NARRATION_FALLBACK_MS = 20_000;
-const VOTE_SECONDS = 60;
+const VOTE_SECONDS = Number(process.env.VOTE_SECONDS) || 60;
 /** Time to look at your role card before the first night. */
 const ROLE_REVEAL_MS = 15_000;
 /** Pause after reading a result (dawn, nomination, verdict, winner) before moving on. */
@@ -432,6 +475,8 @@ const AFTER_READING_MS = 2_000;
 const MACHINE_READ_MS = 6_000;
 /** Machine-host rooms: how long the owner may be offline before someone else takes over. */
 const OWNER_GRACE_MS = 30_000;
+/** Human-host rooms: how long the host may be gone before the machine takes over (HOST_GRACE_MS env for testing). */
+const HOST_GRACE_MS = Number(process.env.HOST_GRACE_MS) || 2 * 60_000;
 
 function timingFor(room: Room): StepTiming {
   const key = stepKey(room);
@@ -572,7 +617,7 @@ const botDelay = (room: Room, ms: number) => ms / (room.settings.botSpeed || DEF
 /** One bot acts per tick, with a human-ish delay, until no bot has anything to do. */
 function scheduleBots(room: Room) {
   if (botTimers.has(room.code)) return;
-  const bots = room.players.filter((p) => p.isBot);
+  const bots = room.players.filter((p) => p.isBot || p.standIn);
   if (!bots.length || !room.game) return;
   const ready = bots.filter((b) => botDecide(room, b.id, intelFor(room)));
   if (!ready.length) return;
@@ -600,7 +645,54 @@ function setConnected(room: Room, playerId: string) {
     lobby.changed();
     if (!online && isOwner(room, p.id)) scheduleOwnerHandover(room, p.id);
     if (!online) scheduleAwayKick(room, p.id);
+    if (online && p.standIn) back(room, p);
+    scheduleStandIns(room);
   }
+}
+
+/** How long someone may be offline, or idle on their turn, before a bot plays for them. */
+const STAND_IN_MS = Number(process.env.STAND_IN_MS) || 60_000;
+const standInTimers = new Map<string, { key: string; timer: NodeJS.Timeout }>();
+
+/**
+ * Anyone offline for a minute during a game, or online but not doing what
+ * their turn asks for a minute, gets a bot playing for them. They take their
+ * seat back by coming online again or doing anything.
+ */
+function scheduleStandIns(room: Room) {
+  const running = gameRunning(room);
+  for (const p of room.players) {
+    const id = `${room.code}:${p.id}`;
+    let key: string | null = null;
+    if (running && !p.isBot && !p.standIn) {
+      if (!p.connected) key = "offline";
+      else if (botDecide(room, p.id, intelFor(room), true)) key = "idle:" + stepKey(room);
+    }
+    const cur = standInTimers.get(id);
+    if (cur?.key === key) continue;
+    if (cur) clearTimeout(cur.timer);
+    standInTimers.delete(id);
+    if (!key) continue;
+    const game = room.game;
+    const timer = setTimeout(() => {
+      standInTimers.delete(id);
+      const q = getPlayer(room, p.id);
+      if (rooms.get(room.code) !== room || room.game !== game || !q || q.isBot || q.standIn || !gameRunning(room)) return;
+      q.standIn = true;
+      log(room, "log.standIn", { name: q.name }, true);
+      console.log(`[room ${room.code}] ${q.name} is away: a bot plays for them`);
+      touch(room);
+    }, STAND_IN_MS);
+    timer.unref();
+    standInTimers.set(id, { key, timer });
+  }
+}
+
+/** The player is back: the bot gives the seat back. */
+function back(room: Room, p: Player) {
+  if (!p.standIn) return;
+  p.standIn = false;
+  log(room, "log.standInBack", { name: p.name }, true);
 }
 
 /** One pending "away too long" check per offline player. */
@@ -664,7 +756,7 @@ function scheduleOwnerHandover(room: Room, ownerId: string) {
 function kickSockets(room: Room, playerId: string) {
   for (const s of roomSockets(room.code)) {
     if (s.data.playerId === playerId) {
-      s.emit("kicked");
+      s.emit("kicked", { code: room.code });
       s.leave(channel(room.code));
       s.data = {};
     }
@@ -705,6 +797,153 @@ function refreshOwned(room: Room, playerId: string) {
   if (p?.userId) p.owned = accounts.ownedFor(p.userId);
 }
 
+/**
+ * The room an account made and still runs: a human-host room it created, or a
+ * machine-host room where it is still the owner (an owner who left or handed
+ * the room over is free to make another).
+ */
+function roomOfCreator(userId: string): Room | undefined {
+  for (const room of rooms.values()) {
+    if (room.creatorId !== userId) continue;
+    if (!room.machineHost) return room;
+    if (getPlayer(room, room.ownerId ?? "")?.userId === userId) return room;
+  }
+  return undefined;
+}
+
+/**
+ * The human host is gone for good (left for a new room, or away too long):
+ * the room carries on with the machine as host and the longest-seated online
+ * player as its owner. The old host view stops working. False when nobody is
+ * left to take it over.
+ */
+function hostHandOver(room: Room): boolean {
+  if (room.machineHost) return false;
+  const next = nextOwner(room);
+  if (!next) return false;
+  const owner = getPlayer(room, next)!;
+  makeMachineRoom(room, next);
+  room.creatorId = owner.userId ?? null;
+  room.hostToken = randomToken();
+  for (const s of roomSockets(room.code)) {
+    if (s.data.kind !== "host") continue;
+    s.emit("hostReplaced", { code: room.code });
+    s.leave(channel(room.code));
+    s.data = {};
+  }
+  // The old host will never finish reading this step aloud.
+  stepTiming.delete(room.code);
+  log(room, "log.hostLeft", { name: owner.name });
+  console.log(`[room ${room.code}] host left: the machine runs it, ${owner.name} owns it`);
+  touch(room);
+  return true;
+}
+
+/** Hands the room over once its host has been gone for HOST_GRACE_MS. */
+function scheduleHostCheck(room: Room) {
+  setTimeout(() => {
+    if (rooms.get(room.code) !== room || room.machineHost) return;
+    if (roomSockets(room.code).some((s) => s.data.kind === "host")) return;
+    hostHandOver(room);
+  }, HOST_GRACE_MS).unref();
+}
+
+/**
+ * The creator makes a new room and leaves this one: the next player takes it
+ * over (the machine hosts it from then on). Closed only when nobody is left.
+ */
+function leaveCreatedRoom(room: Room, userId: string) {
+  if (!room.machineHost) {
+    if (!hostHandOver(room)) closeRoom(room.code);
+    return;
+  }
+  const owner = getPlayer(room, room.ownerId ?? "");
+  if (owner?.userId === userId) {
+    const res = leaveRoom(room, owner.id, "left");
+    if (res.ok) {
+      recordAbandon(res);
+      kickSockets(room, owner.id);
+    }
+  }
+  if (!room.ownerId || !room.players.some((p) => !p.isBot && p.connected)) return closeRoom(room.code);
+  room.creatorId = getPlayer(room, room.ownerId)?.userId ?? null;
+  log(room, "log.ownerChanged", { name: getPlayer(room, room.ownerId)!.name });
+  touch(room);
+}
+
+/** Where this person already sits in another room: by Google account, or by browser for guests. */
+function seatElsewhere(userId: string | null | undefined, deviceId: unknown, except: string) {
+  const device = typeof deviceId === "string" && deviceId ? deviceId : null;
+  if (!userId && !device) return undefined;
+  for (const room of rooms.values()) {
+    if (room.code === except) continue;
+    const player = room.players.find((p) => !p.isBot && ((userId && p.userId === userId) || (device && p.deviceId === device)));
+    if (player) return { room, player };
+  }
+  return undefined;
+}
+
+/** Takes a player out of a room (a running game: a bot plays on and it counts as a loss). */
+function leaveSeat(room: Room, playerId: string) {
+  const wasOwner = isOwner(room, playerId);
+  const res = leaveRoom(room, playerId, "left");
+  if (!res.ok) return;
+  recordAbandon(res);
+  kickSockets(room, playerId);
+  if (wasOwner && room.ownerId) log(room, "log.ownerChanged", { name: getPlayer(room, room.ownerId)!.name });
+  touch(room);
+}
+
+/**
+ * One room at a time: someone seated in another room leaves it once they get
+ * the new seat (`leave`). A room that hasn't started or is over is left
+ * without asking; leaving a running game (a loss) needs `leaveOther`,
+ * otherwise `error` asks them first.
+ */
+function otherSeat(p: Record<string, unknown>, userId: string | null | undefined, except: string) {
+  const seat = seatElsewhere(userId, p.deviceId, except);
+  const error =
+    seat && gameRunning(seat.room) && !p.leaveOther
+      ? { ok: false as const, error: "err.inOtherRoom", params: { code: seat.room.code } }
+      : null;
+  const leave = () => {
+    if (!seat || rooms.get(seat.room.code) !== seat.room) return;
+    console.log(`[room ${seat.room.code}] ${seat.player.name} moved to another room`);
+    leaveSeat(seat.room, seat.player.id);
+  };
+  return { error, leave };
+}
+
+/** Ends a room for everyone in it (expired, or replaced by its creator's new room). */
+function closeRoom(code: string) {
+  io.to(channel(code)).emit("roomClosed", { code });
+  io.in(channel(code)).socketsLeave(channel(code));
+  clearTimeout(botTimers.get(code));
+  botTimers.delete(code);
+  rooms.delete(code);
+  social.dispose(code);
+  lobby.changed();
+  saveSoon();
+}
+
+/**
+ * Who may make a room: a signed-in Google account without another open room.
+ * `replace` leaves that other room first (the next player takes it over). Without Google sign-in set up on the
+ * server (local play), anyone may.
+ */
+function creatorFor(p: Record<string, unknown>): { ok: true; userId: string | null } | { ok: false; error: string; params?: Record<string, string> } {
+  if (!accounts.enabled) return { ok: true, userId: null };
+  const user = accounts.userForToken(p.authToken);
+  if (!user) return { ok: false, error: "err.signInToCreate" };
+  const old = roomOfCreator(user.id);
+  if (old && !p.replace) return { ok: false, error: "err.oneRoom", params: { code: old.code } };
+  if (old) {
+    console.log(`[room ${old.code}] its creator left to make a new room`);
+    leaveCreatedRoom(old, user.id);
+  }
+  return { ok: true, userId: user.id };
+}
+
 function guard(fn: () => ActionResult & Record<string, unknown>, ack: Ack) {
   try {
     ack(fn());
@@ -718,6 +957,7 @@ io.on("connection", (raw) => {
   const socket = raw as AppSocket;
   social.register(raw);
   lobby.register(raw);
+  globalChat.register(raw);
   const on = (event: string, handler: (payload: Record<string, unknown>, ack: Ack) => void) =>
     socket.on(event, (payload: unknown, ack: unknown) =>
       handler((payload ?? {}) as Record<string, unknown>, safeAck(ack)));
@@ -735,12 +975,15 @@ io.on("connection", (raw) => {
   // the room owner; otherwise they become the human host, as on the home page.
   on("lobby:createRoom", (p, ack) =>
     guard(() => {
+      const creator = creatorFor(p);
+      if (!creator.ok) return creator;
       const locale: Locale = p.locale === "en" ? "en" : "vi";
       const profile = (p.profile ?? {}) as Record<string, unknown>;
       const user = accounts.userForToken(p.authToken);
       const name = String(profile.name ?? "") || user?.name || "";
       const room = createRoom(makeRoomCode((c) => rooms.has(c)), locale);
       room.listed = true;
+      room.creatorId = creator.userId;
       room.title = name.trim().slice(0, 24) || room.code;
       const password = p.withPassword ? cleanPassword(p.password) : null;
       room.passwordHash = password ? hashPassword(password) : null;
@@ -753,6 +996,8 @@ io.on("connection", (raw) => {
         console.log(`[room ${room.code}] created from the lobby (human host)`);
         return { ok: true, code: room.code, hostToken: room.hostToken };
       }
+      const other = otherSeat(p, user?.id, room.code);
+      if (other.error) return other.error;
       const res = addPlayer(room, {
         name,
         avatar: String(profile.avatar ?? ""),
@@ -761,8 +1006,10 @@ io.on("connection", (raw) => {
         style: profile.style,
         owned: accounts.ownedFor(user?.id),
         userId: user?.id ?? null,
+        deviceId: p.deviceId,
       });
       if (!res.ok || !res.player) return { ok: false, error: res.error, params: res.params };
+      other.leave();
       makeMachineRoom(room, res.player.id);
       res.player.connected = true;
       rooms.set(room.code, room);
@@ -806,8 +1053,11 @@ io.on("connection", (raw) => {
 
   on("host:create", (p, ack) =>
     guard(() => {
+      const creator = creatorFor(p);
+      if (!creator.ok) return creator;
       const locale: Locale = p.locale === "en" ? "en" : "vi";
       const room = createRoom(makeRoomCode((c) => rooms.has(c)), locale);
+      room.creatorId = creator.userId;
       rooms.set(room.code, room);
       attach(socket, room, "host");
       touch(room);
@@ -816,11 +1066,25 @@ io.on("connection", (raw) => {
     }, ack),
   );
 
+  // Back to the room this account made (e.g. from another device): the host
+  // view of a human-host room, or the owner's seat in a machine-host room.
+  on("room:reclaim", (p, ack) =>
+    guard(() => {
+      const user = accounts.userForToken(p.authToken);
+      if (!user) return { ok: false, error: "err.signInToCreate" };
+      const room = roomOfCreator(user.id);
+      if (!room) return { ok: false, error: "err.roomNotFound" };
+      if (!room.machineHost) return { ok: true, code: room.code, hostToken: room.hostToken };
+      const playerId = room.ownerId!;
+      return { ok: true, code: room.code, playerId, token: grantSeat(room, playerId) };
+    }, ack),
+  );
+
   on("host:resume", (p, ack) =>
     guard(() => {
       const room = rooms.get(normCode(p.code));
       if (!room) return { ok: false, error: "err.roomNotFound" };
-      if (p.hostToken !== room.hostToken) return { ok: false, error: "err.notHost" };
+      if (p.hostToken !== room.hostToken) return { ok: false, error: room.machineHost ? "err.hostHandedOver" : "err.notHost" };
       attach(socket, room, "host");
       touch(room);
       return { ok: true };
@@ -845,7 +1109,10 @@ io.on("connection", (raw) => {
         return { ok: false, error: p.password ? "err.wrongPassword" : "err.passwordRequired" };
       // Signed-in players get their photo from the account (never trusted from the client).
       const user = accounts.userForToken(p.authToken);
+      const other = otherSeat(p, user?.id, room.code);
+      if (other.error) return other.error;
       const res = addPlayer(room, {
+        deviceId: p.deviceId,
         name: String(p.name ?? "") || user?.name || "",
         avatar: String(p.avatar ?? ""),
         locale: p.locale === "en" ? "en" : "vi",
@@ -855,6 +1122,7 @@ io.on("connection", (raw) => {
         userId: user?.id ?? null,
       });
       if (!res.ok || !res.player) return { ok: false, error: res.error, params: res.params };
+      other.leave();
       res.player.connected = true;
       attach(socket, room, "player", res.player.id);
       touch(room);
@@ -873,6 +1141,7 @@ io.on("connection", (raw) => {
       refreshOwned(room, player.id);
       attach(socket, room, "player", player.id);
       player.connected = true;
+      back(room, player); // coming back takes the seat back from the stand-in bot
       touch(room);
       return { ok: true, playerId: player.id, locale: player.locale };
     }, ack),
@@ -966,8 +1235,17 @@ io.on("connection", (raw) => {
       // Items bought since joining count right away.
       const me = getPlayer(room, playerId);
       if (me?.userId && (p as { type?: string })?.type === "updateProfile") me.owned = accounts.ownedFor(me.userId);
+      // "I'm back": the stand-in bot gives the seat back.
+      if ((p as { type?: string })?.type === "back") {
+        if (!me?.standIn) return { ok: true };
+        back(room, me);
+        touch(room);
+        return { ok: true };
+      }
+      const wasAway = !!me?.standIn;
       const res = playerAction(room, playerId, p as unknown as PlayerAction);
-      if (res.ok) touch(room);
+      if (res.ok && me && wasAway && (p as { type?: string })?.type !== "updateProfile") back(room, me);
+      if (res.ok || wasAway !== !!me?.standIn) touch(room);
       return res as ActionResult & Record<string, unknown>;
     }, ack),
   );
@@ -1003,25 +1281,42 @@ io.on("connection", (raw) => {
   );
 
   socket.on("disconnect", () => {
-    const { code, playerId } = socket.data;
+    const { code, playerId, kind } = socket.data;
     const room = code ? rooms.get(code) : undefined;
     if (room && playerId) setTimeout(() => setConnected(room, playerId), 0);
+    if (room && kind === "host" && !room.machineHost) scheduleHostCheck(room);
   });
 });
+
+/** A finished game's room closes this long after the end, unless a new game starts (OVER_CLOSE_MS env for testing). */
+const OVER_CLOSE_MS = Number(process.env.OVER_CLOSE_MS) || 10 * 60_000;
+/** A room with nobody in it closes after this long (EMPTY_CLOSE_MS env for testing). */
+const EMPTY_CLOSE_MS = Number(process.env.EMPTY_CLOSE_MS) || 5 * 60_000;
+const overSince = new Map<string, number>();
+const emptySince = new Map<string, number>();
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, room] of rooms) {
+    if (room.phase.kind === "gameOver") overSince.set(code, overSince.get(code) ?? now);
+    else overSince.delete(code);
+    if (roomAlive(room)) emptySince.delete(code);
+    else emptySince.set(code, emptySince.get(code) ?? now);
+    const over = now - (overSince.get(code) ?? now) > OVER_CLOSE_MS;
+    const empty = now - (emptySince.get(code) ?? now) > EMPTY_CLOSE_MS;
+    if (!over && !empty) continue;
+    overSince.delete(code);
+    emptySince.delete(code);
+    closeRoom(code);
+    console.log(`[room ${code}] closed: ${over ? "the game ended a while ago" : "everyone left"}`);
+  }
+}, Number(process.env.SWEEP_MS) || 15_000).unref();
 
 // Rooms self-destruct after 12 hours of inactivity.
 setInterval(() => {
   const now = Date.now();
   for (const [code, room] of rooms) {
     if (now - room.lastActivity > ROOM_TTL_MS) {
-      io.to(channel(code)).emit("roomClosed");
-      io.in(channel(code)).socketsLeave(channel(code));
-      clearTimeout(botTimers.get(code));
-      botTimers.delete(code);
-      rooms.delete(code);
-      social.dispose(code);
-      lobby.changed();
-      saveSoon();
+      closeRoom(code);
       console.log(`[room ${code}] expired`);
     }
   }
@@ -1033,6 +1328,7 @@ for (const room of rooms.values()) {
   scheduleAuto(room);
   // After a restart, nobody is connected yet: give everyone the full 5 minutes to come back.
   for (const p of room.players) if (!p.isBot) scheduleAwayKick(room, p.id);
+  if (!room.machineHost) scheduleHostCheck(room);
 }
 
 httpServer.listen(PORT, "0.0.0.0", () => {

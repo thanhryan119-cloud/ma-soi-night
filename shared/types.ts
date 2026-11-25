@@ -107,9 +107,13 @@ export interface Player {
   chatColor?: number;
   /** Linked account, if the player signed in. */
   userId?: string | null;
+  /** The browser the player joined from (server-side only): guests sit in one room at a time too. */
+  deviceId?: string | null;
   locale: Locale;
   isBot: boolean;
   connected: boolean;
+  /** Away (offline or idle on their turn for a minute): a bot plays for them until they are back. */
+  standIn?: boolean;
   alive: boolean;
   joinedAt: number;
 }
@@ -338,6 +342,8 @@ export interface Room {
   listed?: boolean;
   /** Name shown in the room list (the creator's name). */
   title?: string;
+  /** The Google account that made the room (one open room per account). */
+  creatorId?: string | null;
   /** The machine runs the game: nobody holds the host view, the owner (a player) sets the room up. */
   machineHost?: boolean;
   /** Machine-host rooms: the player who may change the settings and start the game. */

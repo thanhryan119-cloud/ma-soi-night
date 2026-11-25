@@ -2,6 +2,7 @@
 // Social features are open in the lobby, during the day discussion and after
 // the game ends; during the game dead players can only watch and listen.
 
+import type { PlayerStyle } from "./cosmetics";
 import type { Room } from "./types";
 
 /** The Silencer's victim of the day (same rule as engine.isSilenced, kept here to stay import-free). */
@@ -27,6 +28,21 @@ export interface ChatMessage {
   from: string;
   text: string;
   t: number;
+  /** When in the game it was said (the chat shows a marker where the day changes). */
+  stage?: ChatStage;
+  /** The day (or night) number for "day" and "night". */
+  n?: number;
+}
+
+export type ChatStage = "lobby" | "night" | "day" | "over";
+
+/** Where the room is, for the markers between days in the chat. */
+export function chatStage(room: Pick<Room, "game" | "phase">): { stage: ChatStage; n: number } {
+  const k = room.phase.kind;
+  if (!room.game || k === "lobby") return { stage: "lobby", n: 0 };
+  if (k === "gameOver") return { stage: "over", n: 0 };
+  if (k === "night" || k === "roleReveal") return { stage: "night", n: Math.max(1, room.phase.night) };
+  return { stage: "day", n: Math.max(1, room.phase.day) };
 }
 
 export interface Stroke {
@@ -41,10 +57,10 @@ export interface Stroke {
 export const socialOpen = (room: Room) => (SOCIAL_PHASES as readonly string[]).includes(room.phase.kind);
 
 /**
- * Online rooms (machine host): the players on the stand keep the chat during
- * the verdict vote too, so they can plead until the end. Everyone else reads.
+ * The players on the stand keep the chat (and mic) during the verdict vote
+ * too, so they can plead until the end. Everyone else reads and listens.
  */
-export const defenderChat = (room: Pick<Room, "machineHost" | "phase">) => !!room.machineHost && room.phase.kind === "verdict";
+export const defenderChat = (room: Pick<Room, "phase">) => room.phase.kind === "verdict";
 
 /** null when the speaker may chat/draw now, otherwise an i18n error key. */
 export function canSpeak(room: Room, who: Speaker): string | null {
@@ -59,14 +75,35 @@ export function canSpeak(room: Room, who: Speaker): string | null {
   return null;
 }
 
+/**
+ * The dead have a chat of their own while the game runs: only they (and a
+ * human host) read it, and the living never see it until the game is over,
+ * when everyone can read it.
+ */
+export function canReadGhosts(room: Room, who: Speaker): boolean {
+  if (!room.game) return false;
+  if (who.kind === "host" || room.phase.kind === "gameOver") return true;
+  const p = room.players.find((x) => x.id === who.playerId);
+  return !!p && !p.alive;
+}
+
+/** null when the speaker may post in the dead players' chat, otherwise an i18n error key. */
+export function canGhostSpeak(room: Room, who: Speaker): string | null {
+  if (who.kind === "host") return "err.ghostsOnly";
+  const p = room.players.find((x) => x.id === who.playerId);
+  if (!p) return "err.notInRoom";
+  if (!room.game || room.phase.kind === "gameOver" || p.alive) return "err.ghostsOnly";
+  return null;
+}
+
 /** Voice is available in the social phases when the host allows it. Dead players listen only. */
 export function voiceAccess(room: Room, who: Speaker): { ok: boolean; listenOnly: boolean; error?: string } {
   if (room.settings.voiceChat === false) return { ok: false, listenOnly: true, error: "err.voiceDisabled" };
-  if (!socialOpen(room)) return { ok: false, listenOnly: true, error: "err.chatClosed" };
+  if (!socialOpen(room) && !defenderChat(room)) return { ok: false, listenOnly: true, error: "err.chatClosed" };
   if (who.kind === "host") return { ok: true, listenOnly: false };
   const p = room.players.find((x) => x.id === who.playerId);
   if (!p) return { ok: false, listenOnly: true, error: "err.notInRoom" };
-  const onlyNominees = room.phase.kind === "defense" && !room.game?.nominees.includes(p.id);
+  const onlyNominees = (room.phase.kind === "defense" || defenderChat(room)) && !room.game?.nominees.includes(p.id);
   return { ok: true, listenOnly: (!!room.game && !p.alive && room.phase.kind !== "gameOver") || onlyNominees || silencedNow(room, p.id) };
 }
 
@@ -131,3 +168,23 @@ export function sanitizeStroke(input: unknown, by: string, id: string): Stroke |
   }
   return { id, by, color: s.color!, size: s.size!, points };
 }
+
+// ---------------------------------------------------------------------------
+// Server-wide chat (home page and online lobby, never inside a room)
+// ---------------------------------------------------------------------------
+
+/** One line in the server-wide chat. Only signed-in accounts can post. */
+export interface GlobalMessage {
+  id: string;
+  t: number;
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  style: PlayerStyle | null;
+  text: string;
+}
+
+/** Lines kept (and sent to someone opening the chat). */
+export const GLOBAL_CHAT_HISTORY = 100;
+/** Least time between two lines from one account. */
+export const GLOBAL_CHAT_WAIT_MS = 3000;

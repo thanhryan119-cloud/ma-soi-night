@@ -64,6 +64,16 @@ export const storage = {
   },
 };
 
+/** This browser's id, so the server keeps a guest in one room at a time. */
+export function getDeviceId(): string {
+  let id = storage.get<string>("msn:device");
+  if (!id) {
+    id = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, "0")).join("");
+    storage.set("msn:device", id);
+  }
+  return id;
+}
+
 export const hostKey = (code: string) => `msn:host:${code}`;
 export const playerKey = (code: string) => `msn:player:${code}`;
 export interface PlayerSession {

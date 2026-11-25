@@ -69,6 +69,8 @@ export interface PlayerView {
   connected: boolean;
   locale: Locale;
   isBot: boolean;
+  /** A bot is playing for them while they are away. */
+  standIn: boolean;
   /** A revealed Idiot: alive, everyone knows his role, he cannot vote. */
   noVote?: boolean;
   /** Silenced by the Silencer today: no chat, no mic, no vote (public). */
@@ -388,6 +390,7 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
       connected: p.connected,
       locale: p.locale,
       isBot: p.isBot,
+      standIn: !!p.standIn,
     };
     if (game && hasLostVote(room, p.id)) v.noVote = true;
     if (game && isSilenced(room, p.id)) v.silenced = true;

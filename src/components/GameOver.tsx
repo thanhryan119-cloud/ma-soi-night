@@ -16,6 +16,7 @@ export function WinnerBanner({ state, t, big = false }: { state: ClientState; t:
       <SceneArt scene={w === "wolves" || w === "whiteWolf" ? "wolves" : w === "village" ? "village" : w === "lovers" ? "lovers" : "draw"} className={`mx-auto w-full ${big ? "max-w-xl" : "max-w-xs"}`} />
       <h2 className={`mt-3 font-display font-black text-moon ${big ? "text-6xl" : "text-3xl"}`}>{t(`winner.${w}.title`)}</h2>
       <p className={`mt-2 text-white/70 ${big ? "text-2xl" : ""}`}>{t(`winner.${w}.desc`)}</p>
+      <p className={`mt-3 text-white/40 ${big ? "text-base" : "text-xs"}`}>{t("player.roomAutoClose", { min: 10 })}</p>
     </div>
   );
 }

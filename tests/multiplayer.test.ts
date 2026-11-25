@@ -13,7 +13,7 @@ import {
 } from "../shared/multiplayer";
 import { buildView } from "../shared/views";
 import { gameResults } from "../shared/stats";
-import { canSpeak } from "../shared/social";
+import { canSpeak, voiceAccess } from "../shared/social";
 import { checkPassword, hashPassword } from "../server/lobby";
 
 function machineRoom(humans = 4) {
@@ -211,9 +211,9 @@ describe("room settings", () => {
     expect(room.settings.botSpeed).toBe(1.5);
   });
 
-  it("absent players are kicked in online rooms only (by default)", () => {
+  it("nobody is kicked for being away by default (a bot plays for them instead)", () => {
     expect(createRoom("OFF1", "vi").settings.autoKickAway).toBe(false);
-    expect(machineRoom().room.settings.autoKickAway).toBe(true);
+    expect(machineRoom().room.settings.autoKickAway).toBe(false);
   });
 
   it("new rooms start with the agreed defaults", () => {
@@ -222,7 +222,7 @@ describe("room settings", () => {
       discussionSeconds: 120,
       defenseSeconds: 30,
       botSpeed: 3,
-      autoKickAway: true,
+      autoKickAway: false,
       aiBots: true,
       wolvesMustBite: true,
       mandatoryVote: true,
@@ -243,7 +243,7 @@ describe("online defaults and the defender's chat", () => {
     expect(createRoom("DEF1", "vi").settings).toMatchObject({ discussionSeconds: 120, defenseSeconds: 30 });
   });
 
-  it("online rooms: the players on the stand keep the chat during the verdict vote", () => {
+  it("the players on the stand keep the chat and mic during the verdict vote", () => {
     const { room, owner, ids } = machineRoom();
     ownerAction(room, owner, { type: "addBots", count: 4 });
     ownerAction(room, owner, { type: "useSuggested" });
@@ -252,8 +252,11 @@ describe("online defaults and the defender's chat", () => {
     room.phase = { ...room.phase, kind: "verdict" };
     expect(canSpeak(room, { kind: "player", playerId: ids[1] })).toBeNull();
     expect(canSpeak(room, { kind: "player", playerId: ids[2] })).toBe("err.onlyNominees");
-    // A room with a human host keeps the chat closed during the vote.
+    // Rooms with a human host do the same.
     room.machineHost = false;
-    expect(canSpeak(room, { kind: "player", playerId: ids[1] })).toBe("err.chatClosed");
+    expect(canSpeak(room, { kind: "player", playerId: ids[1] })).toBeNull();
+    expect(canSpeak(room, { kind: "player", playerId: ids[2] })).toBe("err.onlyNominees");
+    expect(voiceAccess(room, { kind: "player", playerId: ids[1] }).listenOnly).toBe(false);
+    expect(voiceAccess(room, { kind: "player", playerId: ids[2] }).listenOnly).toBe(true);
   });
 });

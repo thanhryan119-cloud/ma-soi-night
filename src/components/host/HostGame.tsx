@@ -11,6 +11,8 @@ import { ProfileLink } from "../Profile";
 import { formatLog, useLocale, useT } from "@/lib/i18n";
 import { speak, stopSpeaking, useTtsSupported } from "@/lib/tts";
 import { SocialPanel } from "@/components/SocialPanel";
+import { RolesInPlay } from "@/components/RolesInPlay";
+import { HostGhostChat } from "@/components/GhostChat";
 import { nameOf, scriptLines, useHostAction } from "./common";
 import { RulesCard } from "./RulesCard";
 
@@ -53,6 +55,7 @@ export function HostGame({ state, offset, hideRoles }: Props) {
       <div className="order-1 flex flex-col gap-4 xl:order-2 xl:min-h-0">
         <div className="flex flex-col gap-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
           <PhaseBar state={state} />
+          <RolesInPlay state={state} />
           {state.pendingWin && <WinPending state={state} winner={state.pendingWin} />}
           <ScriptCard state={state} />
           <PhaseIn phaseKey={phaseKeyOf(state.phase)}>
@@ -70,6 +73,7 @@ export function HostGame({ state, offset, hideRoles }: Props) {
             <LogList state={state} hideRoles={hideRoles} />
           </div>
         </section>
+        <HostGhostChat state={state} />
         <ManualEnd state={state} />
         <RulesCard state={state} defaultOpen={false} />
       </div>
@@ -286,7 +290,7 @@ function PlayerRow({
             <ProfileLink playerId={p.id} className="min-w-0">
               <StyledName p={p} className="truncate" />
             </ProfileLink>
-            {p.isBot && <span className="text-xs">🤖</span>}
+            {(p.isBot || p.standIn) && <span className="text-xs" title={p.standIn ? t("player.standInBadge") : undefined}>🤖</span>}
             {!p.connected && !p.isBot && <span className="text-xs text-blood-light">●</span>}
           </div>
           <div className="mt-0.5 flex flex-wrap gap-1">
