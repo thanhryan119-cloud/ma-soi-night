@@ -585,7 +585,7 @@
     "nameEffect": "Hiệu ứng tên",
     "avatarFrame": "Khung avatar",
     "account": "Tài khoản",
-    "signInHint": "Đăng nhập (không bắt buộc) để lưu hồ sơ trên mọi thiết bị và tải ảnh lên.",
+    "signInHint": "Đăng nhập (không bắt buộc) để lưu hồ sơ trên mọi thiết bị, tải ảnh lên và mở thành tựu lá bài vai.",
     "signedInAs": "Đã đăng nhập: {name}",
     "signOut": "Đăng xuất",
     "save": "Lưu hồ sơ",
@@ -1028,13 +1028,17 @@
       "abandon": "Thoát"
     },
     "mine": "Thống kê của bạn",
-    "signInForStats": "Đăng nhập Google để lưu số ván, số lần làm Sói, tỉ lệ thắng… và lên bảng xếp hạng.",
-    "countRule": "Chỉ tính các ván có từ {min} người thật trở lên (không kể bot).",
-    "noCountedGames": "Chưa có ván nào được tính (cần từ {min} người thật trở lên).",
-    "notCounted": "Không tính",
+    "signInForStats": "Đăng nhập Google để lưu số ván, tỉ lệ thắng, mở thành tựu lá bài vai và lên bảng xếp hạng.",
+    "countRule": "Ván có từ {min} người thật trở lên (không kể bot) tính là Standard. Ít hơn thì tính là Casual, có tỉ lệ thắng riêng.",
+    "noCountedGames": "Chưa có ván Standard nào (cần từ {min} người thật trở lên).",
+    "notCounted": "Casual",
     "humansCount": "{n} người thật",
     "abandons": "Thoát giữa chừng",
-    "left": "Đã thoát"
+    "left": "Đã thoát",
+    "standard": "Standard",
+    "casual": "Casual",
+    "standardRule": "Ván có từ {min} người thật trở lên, tính vào bảng xếp hạng",
+    "casualRule": "Ván có dưới {min} người thật"
   },
   "globalChat": {
     "button": "Chat chung",
@@ -1094,7 +1098,8 @@
     "you": "Bạn",
     "empty": "Chưa có tài khoản nào. Đăng nhập Google ở trang Hồ sơ để là người đầu tiên.",
     "unavailable": "Không tải được bảng xếp hạng.",
-    "unranked": "Chưa đủ {min} ván, tài khoản mới nhất ở trên"
+    "unranked": "Chưa đủ {min} ván, tài khoản mới nhất ở trên",
+    "mode": "Chế độ"
   },
   "lobby": {
     "watch": "Xem",
@@ -1239,7 +1244,7 @@
     "title": "Bộ sưu tập vai",
     "open": "Bộ sưu tập",
     "intro": "Mỗi lần thắng với một vai, lá bài của vai đó tiến gần hơn tới bậc kế tiếp. Lá bài bạn nhận khi vào ván sẽ mang màu bậc cao nhất bạn đã đạt.",
-    "signIn": "Đăng nhập Google để sưu tầm lá bài vai. Số trận thắng gắn với tài khoản của bạn.",
+    "signIn": "Đăng nhập Google để lưu hồ sơ và mở thành tựu lá bài. Mỗi ván thắng sẽ nâng lá bài của vai đó lên đồng, bạc, vàng rồi cầu vồng.",
     "loading": "Đang tải bộ sưu tập…",
     "collected": "Đã mở {n}/{total} vai",
     "wins": "{n} thắng",
@@ -1248,12 +1253,14 @@
     "maxed": "Bậc cao nhất",
     "tiersTitle": "Các bậc",
     "tierNeeds": "{n} thắng",
-    "countRule": "Chỉ tính các ván có từ {min} người thật trở lên.",
+    "countRule": "Mọi ván thắng đều được tính, cả Standard lẫn Casual.",
     "tier": {
       "bronze": "Đồng",
       "silver": "Bạc",
       "gold": "Vàng",
       "rainbow": "Cầu vồng"
-    }
+    },
+    "guestNote": "Khi chưa đăng nhập, các ván bạn chơi sẽ không được tính vào bộ sưu tập.",
+    "preview": "Bộ sưu tập đang chờ bạn"
   }
 }

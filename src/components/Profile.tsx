@@ -4,7 +4,8 @@
 
 import { useEffect, useState } from "react";
 import { ROLE_IDS, ROLES } from "@shared/roles";
-import { MIN_HUMANS_FOR_STATS, winRate, type PublicProfile, type UserStats, type WinCount } from "@shared/stats";
+import { MIN_HUMANS_FOR_STATS, casualOf, winRate, type PublicProfile, type UserStats, type WinCount } from "@shared/stats";
+import { roleWins } from "@shared/achievements";
 import { useLocale, useT } from "@/lib/i18n";
 import { fetchPlayerProfile, fetchUserProfile } from "@/lib/stats";
 import { Avatar, RoleBadge, Spinner, StyledName } from "./ui";
@@ -160,9 +161,24 @@ function ProfileBody({ profile }: { profile: PublicProfile }) {
       ) : (
         <>
           <StatsView stats={profile.stats} />
-          {!!profile.stats?.wins && <CollectionPeek stats={profile.stats} />}
+          {ROLE_IDS.some((r) => roleWins(profile.stats, r) > 0) && <CollectionPeek stats={profile.stats} />}
         </>
       )}
+    </div>
+  );
+}
+
+/** One mode's headline: games played and win rate. */
+function ModeCard({ icon, label, rule, c }: { icon: string; label: string; rule: string; c: Pick<WinCount, "games" | "wins"> }) {
+  const t = useT();
+  return (
+    <div className="flex flex-col gap-0.5 rounded-xl bg-white/5 px-3 py-2.5" title={rule}>
+      <span className="text-xs font-bold text-white/80">
+        {icon} {label}
+      </span>
+      <span className="font-display text-2xl font-black text-gold tabular-nums">{pct(c)}</span>
+      <span className="text-[11px] text-white/60 tabular-nums">{t("stats.gamesWins", { games: c.games, wins: c.wins })}</span>
+      <span className="text-[10px] leading-tight text-white/40">{rule}</span>
     </div>
   );
 }
@@ -198,14 +214,20 @@ function Bar({ label, c, color }: { label: React.ReactNode; c: WinCount; color: 
 export function StatsView({ stats }: { stats: UserStats | null }) {
   const t = useT();
   const { locale } = useLocale();
-  if (!stats || (!stats.games && !stats.recent.length))
+  const casual = casualOf(stats);
+  if (!stats || (!stats.games && !casual.games && !stats.recent.length))
     return <p className="rounded-xl bg-white/5 p-4 text-center text-sm text-white/60">{t("stats.noGames")}</p>;
-  const roles = ROLE_IDS.filter((r) => stats.byRole[r]?.games).sort(
-    (a, b) => stats.byRole[b]!.games - stats.byRole[a]!.games,
-  );
+  const byGames = (counts: UserStats["byRole"]) =>
+    ROLE_IDS.filter((r) => counts[r]?.games).sort((a, b) => counts[b]!.games - counts[a]!.games);
+  const roles = byGames(stats.byRole);
+  const casualRoles = byGames(casual.byRole);
   return (
     <div className="flex flex-col gap-5">
-      <p className="-mb-2 text-xs text-white/50">ℹ️ {t("stats.countRule", { min: MIN_HUMANS_FOR_STATS })}</p>
+      <div className="grid grid-cols-2 gap-2">
+        <ModeCard icon="🏆" label={t("stats.standard")} rule={t("stats.standardRule", { min: MIN_HUMANS_FOR_STATS })} c={stats} />
+        <ModeCard icon="🎲" label={t("stats.casual")} rule={t("stats.casualRule", { min: MIN_HUMANS_FOR_STATS })} c={casual} />
+      </div>
+      <h4 className="-mb-2 text-sm font-bold text-gold">🏆 {t("stats.standard")}</h4>
       {stats.games ? (
       <>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -243,13 +265,30 @@ export function StatsView({ stats }: { stats: UserStats | null }) {
         <p className="rounded-xl bg-white/5 p-4 text-center text-sm text-white/60">{t("stats.noCountedGames", { min: MIN_HUMANS_FOR_STATS })}</p>
       )}
 
+      {casual.games > 0 && (
+        <section className="flex flex-col gap-3">
+          <h4 className="text-sm font-bold text-white/80">🎲 {t("stats.casual")}</h4>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Tile label={t("stats.games")} value={casual.games} />
+            <Tile label={t("stats.wins")} value={casual.wins} />
+            <Tile label={t("stats.winRate")} value={pct(casual)} accent />
+            <Tile label={t("stats.losses")} value={casual.losses} />
+          </div>
+          <ul className="flex flex-col gap-2.5">
+            {casualRoles.map((r) => (
+              <Bar key={r} label={<RoleBadge roleId={r} />} c={casual.byRole[r]!} color={ROLES[r].color} />
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section>
         <h4 className="mb-2 text-sm font-bold text-white/80">{t("stats.recent")}</h4>
         <ul className="flex flex-col gap-1.5">
           {stats.recent.map((g, i) => (
             <li
               key={`${g.t}-${i}`}
-              className={`flex items-center gap-2 rounded-lg bg-white/5 px-2 py-1.5 text-sm ${g.counted === false ? "opacity-60" : ""}`}
+              className="flex items-center gap-2 rounded-lg bg-white/5 px-2 py-1.5 text-sm"
             >
               <span
                 className={`w-14 shrink-0 rounded px-1.5 py-0.5 text-center text-xs font-bold ${

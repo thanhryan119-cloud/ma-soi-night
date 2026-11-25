@@ -25,10 +25,25 @@ export interface RecentGame {
   players: number;
   /** Real people at the table (not bots). Missing on games recorded before this was tracked. */
   humans?: number;
-  /** false: too few real people, so the game is in the history but not in any total. */
+  /** false: too few real people, so a casual game (casual totals only, not standard or the leaderboard). */
   counted?: boolean;
 }
 
+/** Games with fewer than MIN_HUMANS_FOR_STATS real people: their own win rate, apart from standard. */
+export interface CasualStats {
+  games: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  abandons: number;
+  byRole: Partial<Record<RoleId, WinCount>>;
+}
+
+/**
+ * The top-level numbers are the standard ones (games with at least
+ * MIN_HUMANS_FOR_STATS real people): win rate, streaks, leaderboard, quests.
+ * Every other game lands in `casual`.
+ */
 export interface UserStats {
   games: number;
   wins: number;
@@ -48,6 +63,8 @@ export interface UserStats {
   lastPlayed: number;
   /** Newest first. */
   recent: RecentGame[];
+  /** Missing on records made before casual games were counted (see casualOf). */
+  casual?: CasualStats;
 }
 
 /** What anyone may see of a player: their look, and their stats when they have an account. */
@@ -62,18 +79,33 @@ export interface PublicProfile {
   stats: UserStats | null;
 }
 
-export interface LeaderboardRow {
-  userId: string;
-  name: string;
-  avatarUrl: string | null;
-  style: PlayerStyle | null;
+/** One mode's numbers on the leaderboard. */
+export interface LeaderboardLine {
   games: number;
   wins: number;
   winRate: number;
   wolfGames: number;
+}
+
+export type StatsMode = "casual" | "standard";
+
+/** The top-level numbers are standard; `casual` holds the casual ones. */
+export interface LeaderboardRow extends LeaderboardLine {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  style: PlayerStyle | null;
+  /** Missing from servers older than casual stats. */
+  casual?: LeaderboardLine;
   /** When the account was made (ms), so the newest unranked accounts show first. */
   createdAt: number;
 }
+
+const NO_LINE: LeaderboardLine = { games: 0, wins: 0, winRate: 0, wolfGames: 0 };
+
+/** A row's numbers in one mode. */
+export const lineOf = (r: LeaderboardRow, mode: StatsMode): LeaderboardLine =>
+  mode === "casual" ? (r.casual ?? NO_LINE) : r;
 
 export const RECENT_GAMES = 10;
 /** A game counts toward the numbers (games, wins, win rate, roles…) only with this many real people. */
@@ -181,13 +213,40 @@ const bump = (c: WinCount | undefined, won: boolean): WinCount => ({
   wins: (c?.wins ?? 0) + (won ? 1 : 0),
 });
 
+export const emptyCasual = (): CasualStats => ({ games: 0, wins: 0, losses: 0, draws: 0, abandons: 0, byRole: {} });
+
+function addCasual(c: CasualStats, g: RecentGame) {
+  const won = g.outcome === "win";
+  c.games++;
+  if (won) c.wins++;
+  else if (g.outcome === "draw") c.draws++;
+  else c.losses++;
+  if (g.outcome === "abandon") c.abandons++;
+  c.byRole[g.role] = bump(c.byRole[g.role], won);
+}
+
+/**
+ * A player's casual numbers. Records made before casual games were counted
+ * have none, so they start from the casual games still in the recent history.
+ */
+export function casualOf(s: UserStats | null | undefined): CasualStats {
+  if (s?.casual) return s.casual;
+  const c = emptyCasual();
+  for (const g of s?.recent ?? []) if (g.counted === false) addCasual(c, g);
+  return c;
+}
+
 /** Adds one finished game to a player's stats (returns a new object). */
 export function applyResult(prev: UserStats | undefined, g: RecentGame): UserStats {
   const s = prev ? structuredClone(prev) : emptyStats();
+  s.casual = casualOf(s);
   s.lastPlayed = g.t;
   s.recent = [g, ...s.recent].slice(0, RECENT_GAMES);
-  // Too few real people: shown in the history, left out of every number (and the streak).
-  if (g.counted === false) return s;
+  // Too few real people: a casual game, kept apart from the standard numbers (and the streak).
+  if (g.counted === false) {
+    addCasual(s.casual, g);
+    return s;
+  }
   const won = g.outcome === "win";
   s.games++;
   if (won) s.wins++;
@@ -207,18 +266,21 @@ export function applyResult(prev: UserStats | undefined, g: RecentGame): UserSta
 /** Games needed before a win rate counts on the leaderboard (1 win out of 1 is not 100%). */
 export const MIN_RANKED_GAMES = 5;
 
-export const isRanked = (r: Pick<LeaderboardRow, "games">) => r.games >= MIN_RANKED_GAMES;
+/** Enough games in that mode (pass a row's line, or a row for standard). */
+export const isRanked = (r: Pick<LeaderboardLine, "games">) => r.games >= MIN_RANKED_GAMES;
 
 /**
- * Accounts with at least MIN_RANKED_GAMES games come first, by win rate; on a
+ * In one mode (standard by default), accounts with at least MIN_RANKED_GAMES games come first, by win rate; on a
  * tie, more wins first, then more games, then name. Below them, every other
  * account, newest first.
  */
-export function rankLeaderboard(rows: LeaderboardRow[]): LeaderboardRow[] {
-  return [...rows].sort((a, b) => {
+export function rankLeaderboard(rows: LeaderboardRow[], mode: StatsMode = "standard"): LeaderboardRow[] {
+  return [...rows].sort((ra, rb) => {
+    const a = lineOf(ra, mode);
+    const b = lineOf(rb, mode);
     const ranked = Number(isRanked(b)) - Number(isRanked(a));
     if (ranked) return ranked;
-    if (!isRanked(a)) return b.createdAt - a.createdAt || a.name.localeCompare(b.name);
-    return b.winRate - a.winRate || b.wins - a.wins || b.games - a.games || a.name.localeCompare(b.name);
+    if (!isRanked(a)) return rb.createdAt - ra.createdAt || ra.name.localeCompare(rb.name);
+    return b.winRate - a.winRate || b.wins - a.wins || b.games - a.games || ra.name.localeCompare(rb.name);
   });
 }

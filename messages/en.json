@@ -585,7 +585,7 @@
     "nameEffect": "Name effect",
     "avatarFrame": "Avatar frame",
     "account": "Account",
-    "signInHint": "Sign in (optional) to keep your profile on every device and upload a photo.",
+    "signInHint": "Sign in (optional) to keep your profile on every device, upload a photo and unlock role card achievements.",
     "signedInAs": "Signed in as {name}",
     "signOut": "Sign out",
     "save": "Save profile",
@@ -1028,13 +1028,17 @@
       "abandon": "Quit"
     },
     "mine": "Your stats",
-    "signInForStats": "Sign in with Google to keep your games, times as Werewolf, win rate… and get on the leaderboard.",
-    "countRule": "Only games with at least {min} real people count (bots don't).",
-    "noCountedGames": "No counted games yet (they need {min} or more real people).",
-    "notCounted": "Not counted",
+    "signInForStats": "Sign in with Google to save your games and win rate, unlock role card achievements and join the leaderboard.",
+    "countRule": "Games with at least {min} real people (bots don't count) are Standard. Smaller games are Casual and have their own win rate.",
+    "noCountedGames": "No Standard games yet (they need {min} or more real people).",
+    "notCounted": "Casual",
     "humansCount": "{n} real people",
     "abandons": "Quit mid-game",
-    "left": "Quit"
+    "left": "Quit",
+    "standard": "Standard",
+    "casual": "Casual",
+    "standardRule": "Games with {min} or more real people, on the leaderboard",
+    "casualRule": "Games with fewer than {min} real people"
   },
   "globalChat": {
     "button": "Chat",
@@ -1094,7 +1098,8 @@
     "you": "You",
     "empty": "No accounts yet. Sign in with Google on the Profile page to be the first.",
     "unavailable": "Couldn't load the leaderboard.",
-    "unranked": "Fewer than {min} games, newest accounts first"
+    "unranked": "Fewer than {min} games, newest accounts first",
+    "mode": "Mode"
   },
   "lobby": {
     "watch": "Watch",
@@ -1239,7 +1244,7 @@
     "title": "Role collection",
     "open": "Collection",
     "intro": "Every win with a role brings that role's card closer to its next tier. The card you are dealt in a game shows the highest tier you have reached.",
-    "signIn": "Sign in with Google to collect role cards. Your wins are kept on your account.",
+    "signIn": "Sign in with Google to save your profile and unlock card achievements. Every win raises that role's card to bronze, silver, gold and then rainbow.",
     "loading": "Loading your collection…",
     "collected": "{n}/{total} roles unlocked",
     "wins": "{n} wins",
@@ -1248,12 +1253,14 @@
     "maxed": "Top tier",
     "tiersTitle": "Tiers",
     "tierNeeds": "{n} wins",
-    "countRule": "Only games with at least {min} real people count.",
+    "countRule": "Every win counts, Standard and Casual.",
     "tier": {
       "bronze": "Bronze",
       "silver": "Silver",
       "gold": "Gold",
       "rainbow": "Rainbow"
-    }
+    },
+    "guestNote": "Games you play while signed out don't count toward your collection.",
+    "preview": "Your collection is waiting"
   }
 }
