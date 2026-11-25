@@ -1,7 +1,7 @@
 {
   "app": {
-    "name": "Ma Sói Online by Ryan",
-    "tagline": "Quản trò Ma Sói trực tiếp — quét QR, nhận vai, vote bằng điện thoại."
+    "name": "Ma Sói Online",
+    "tagline": "Quản trò Ma Sói trực tiếp. Quét QR, nhận vai, vote bằng điện thoại."
   },
   "common": {
     "confirm": "Xác nhận",

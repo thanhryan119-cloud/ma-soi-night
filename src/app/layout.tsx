@@ -21,8 +21,8 @@ const nfBrush = Pacifico({ subsets: ["latin", "vietnamese"], weight: ["400"], va
 const fontVars = [body, title, nfSerif, nfScript, nfCondensed, nfMono, nfBrush].map((f) => f.variable).join(" ");
 
 export const metadata: Metadata = {
-  title: "Ma Sói Online by Ryan",
-  description: "Quản trò Ma Sói trực tiếp bằng QR & điện thoại — Run a live Werewolf game with phones.",
+  title: "Ma Sói Online",
+  description: "Quản trò Ma Sói trực tiếp bằng QR và điện thoại. Run a live Werewolf game with phones.",
 };
 
 export const viewport: Viewport = {
