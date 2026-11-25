@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CollectionLink } from "@/components/RoleCollection";
 import { QuestsLink } from "@/components/Quests";
 import { TarotSpread } from "@/components/art/TarotSpread";
 import { useRouter } from "next/navigation";
@@ -63,6 +64,7 @@ export default function Home() {
       <div className="fixed top-3 right-3 z-50 flex gap-2">
         <Mailbox />
         <QuestsLink />
+        <CollectionLink />
         <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold">
           🛒 <span className="max-sm:sr-only">{t("shop.open")}</span>
         </Link>

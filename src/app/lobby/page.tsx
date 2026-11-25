@@ -4,6 +4,7 @@
 // (the machine as host, or yourself), with an optional password.
 
 import Link from "next/link";
+import { CollectionLink } from "@/components/RoleCollection";
 import { QuestsLink } from "@/components/Quests";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -95,6 +96,7 @@ export default function LobbyPage() {
       <div className="fixed top-3 right-3 z-50 flex gap-2">
         <Mailbox />
         <QuestsLink />
+        <CollectionLink />
         <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold">
           🛒 <span className="max-sm:sr-only">{t("shop.open")}</span>
         </Link>
