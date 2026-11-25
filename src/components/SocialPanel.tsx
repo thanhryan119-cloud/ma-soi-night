@@ -20,7 +20,7 @@ import { storage } from "@/lib/socket";
 import { useVoice } from "@/lib/voice";
 import { Avatar, ChatBubble, StyledName, useErrorToast } from "./ui";
 import { GhostLog, useGhostChat } from "./GhostChat";
-import { GlobalChatLog, useGlobalChat } from "./GlobalChat";
+import { ServerChat, useGlobalChat } from "./GlobalChat";
 import { ProfileLink } from "./Profile";
 
 /** True when the message starts a new day (or night, or the lobby / game over) compared with the one before. */
@@ -219,7 +219,7 @@ export function SocialPanel({
           <GhostLog state={state} ghost={ghost} className="flex-1" />
         </div>
       )}
-      {tab === "server" && <GlobalChatLog chat={global} className="flex-1 p-2" />}
+      {tab === "server" && <ServerChat chat={global} className="flex-1 p-2" />}
     </div>
   );
 }
