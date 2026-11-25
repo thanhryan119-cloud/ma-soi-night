@@ -258,22 +258,7 @@ function Chat({
   }, [waitUntil]);
   const waitS = Math.ceil(Math.max(0, waitUntil - clock) / 1000);
 
-  // Let the room see "… is typing" (at most every 3 s, and "stopped" after a pause).
-  const lastTyping = useRef(0);
-  const stopTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  function onType(value: string) {
-    setText(value);
-    const now = Date.now();
-    if (value.trim() && now - lastTyping.current > 3000) {
-      lastTyping.current = now;
-      social.sendTyping(true);
-    }
-    clearTimeout(stopTimer.current);
-    stopTimer.current = setTimeout(() => {
-      lastTyping.current = 0;
-      social.sendTyping(false);
-    }, 4000);
-  }
+  const onType = (value: string) => setText(value);
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -287,25 +272,41 @@ function Chat({
       const now = Date.now();
       sends.current = [...recentSends(sends.current, now), now];
       setText("");
-      clearTimeout(stopTimer.current);
-      lastTyping.current = 0;
       // Used up the burst: show the wait right away instead of after the next try.
       const next = limited ? chatWaitMs(sends.current, now) : 0;
       if (next > CHAT_MIN_GAP_MS) startWait(next);
     } else if (r.error === "err.chatSlow") startWait(Number(r.retryMs) || 1000);
     else showError(r);
   }
-  const typers = social.typingIds.filter((id) => id !== viewer).map((id) => players.get(id)?.name).filter(Boolean) as string[];
-  const filterName = filter ? (filter === "host" ? t("social.host") : players.get(filter)?.name ?? "?") : "";
+  // Everyone who has said something, for the "read one person" picker.
+  const speakers = [...new Set(social.chat.map((m) => m.from))];
+  const nameOf = (id: string) => (id === "host" ? t("social.host") : players.get(id)?.name ?? "?");
 
   return (
     <>
-      {filter && (
-        <div className="flex shrink-0 items-center gap-2 border-b border-gold/25 bg-night-800/80 px-2 py-1 text-xs">
-          <span className="min-w-0 flex-1 truncate text-gold">🔎 {t("social.filterOn", { name: filterName })}</span>
-          <button type="button" className="btn-ghost btn-sm shrink-0 px-2 py-0.5 text-xs" onClick={() => setFilter(null)}>
-            ✕ {t("social.filterOff")}
-          </button>
+      {speakers.length > 1 && (
+        <div className={`flex shrink-0 items-center gap-1.5 border-b px-2 py-0.5 text-xs ${filter ? "border-gold/25 bg-night-800/80 text-gold" : "border-white/10 text-white/50"}`}>
+          <label htmlFor="chat-filter" className="shrink-0">
+            🔎 {t("social.filterLabel")}
+          </label>
+          <select
+            id="chat-filter"
+            className="ui-select min-w-0 flex-1 py-0.5 text-xs"
+            value={filter ?? ""}
+            onChange={(e) => setFilter(e.target.value || null)}
+          >
+            <option value="">{t("social.filterAll")}</option>
+            {speakers.map((id) => (
+              <option key={id} value={id}>
+                {nameOf(id)} ({social.chat.filter((m) => m.from === id).length})
+              </option>
+            ))}
+          </select>
+          {filter && (
+            <button type="button" className="btn-ghost btn-sm shrink-0 px-2 py-0.5 text-xs" onClick={() => setFilter(null)}>
+              ✕ {t("social.filterOff")}
+            </button>
+          )}
         </div>
       )}
       <div className="relative flex min-h-0 flex-1 flex-col">
@@ -345,7 +346,11 @@ function Chat({
                     </button>
                   </div>
                 )}
-                <div className={`flex items-center gap-1 ${mine ? "flex-row-reverse" : ""}`}>
+                <div
+                  className={`flex cursor-pointer items-center gap-1 ${mine ? "flex-row-reverse" : ""}`}
+                  onClick={() => setFilter(filter === m.from ? null : m.from)}
+                  title={t("social.filterBy")}
+                >
                   {p ? (
                     <ChatBubble color={p.chatColor} deco={p.style.chat} className={mark}>
                       {m.text}
@@ -364,11 +369,6 @@ function Chat({
           );
         })}
       </div>
-      {typers.length > 0 && (
-        <p className="pointer-events-none absolute bottom-0 left-2 rounded-t bg-night-900/90 px-2 py-0.5 text-[11px] text-white/60 italic">
-          {t("social.typing", { names: typers.slice(0, 3).join(", "), count: typers.length })}
-        </p>
-      )}
       {unread > 0 && (
         <button type="button" onClick={jumpDown} className="btn-primary btn-sm absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap shadow-lg">
           ↓ {t("social.newMessages", { n: unread })}
