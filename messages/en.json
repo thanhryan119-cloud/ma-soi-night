@@ -1020,7 +1020,7 @@
   "globalChat": {
     "button": "Chat",
     "title": "Server chat",
-    "hint": "Everyone on the home page, in the online lobby and in waiting rooms sees this. Be kind.",
+    "hint": "Everyone on the site sees this, players in a game too. Don't give roles away, and be kind.",
     "empty": "Nobody has said anything yet. Say hi!",
     "placeholder": "Message the whole server…",
     "send": "Send",

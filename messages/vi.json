@@ -1020,7 +1020,7 @@
   "globalChat": {
     "button": "Chat chung",
     "title": "Chat toàn server",
-    "hint": "Mọi người ở trang chủ, sảnh online và phòng chờ đều thấy. Hãy lịch sự nhé.",
+    "hint": "Mọi người trên web đều thấy, kể cả người đang chơi. Đừng lộ vai nhé, và hãy lịch sự.",
     "empty": "Chưa có ai nói gì. Chào mọi người đi!",
     "placeholder": "Nhắn cho cả server…",
     "send": "Gửi",

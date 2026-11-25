@@ -7,6 +7,7 @@
 // Some items can also be bought with gold earned from quests (GOLD_PRICES).
 
 import Link from "next/link";
+import { GlobalChat } from "@/components/GlobalChat";
 import { useEffect, useState } from "react";
 import { DEFAULT_STYLE, ITEM_PRICE_VND, SHOP_ITEMS, equip, type ChatDeco, type ItemId, type ItemKind, type PlayerStyle } from "@shared/cosmetics";
 import { goldPrice } from "@shared/quests";
@@ -75,6 +76,7 @@ export default function ShopPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-4xl flex-col gap-6 px-4 pt-16 pb-10">
+      <GlobalChat />
       <LangSwitch />
       <div className="flex flex-wrap items-center gap-3">
         <Link href="/" className="btn-ghost btn-sm">

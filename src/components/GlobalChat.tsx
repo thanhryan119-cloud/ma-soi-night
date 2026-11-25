@@ -1,9 +1,9 @@
 "use client";
 
-// The server-wide chat: a button in the corner of the home page and the online
-// lobby (or, `compact`, a small button in a room's header while the room waits)
-// opens one channel everyone on the site can read. Posting needs a Google
-// account; admins can remove a line. Not shown once a game is running.
+// The server-wide chat: a button in the corner of the site's pages (or,
+// `compact`, a small button in a room's header, during the game too) opens one
+// channel everyone on the site can read, at any time. Posting needs a Google
+// account; admins can remove a line.
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";

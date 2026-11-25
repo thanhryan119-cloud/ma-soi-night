@@ -26,7 +26,7 @@ import { useLocale, useT } from "@/lib/i18n";
 import { emitAck, playerKey, storage } from "@/lib/socket";
 import { loadLocalProfile, saveLocalProfile } from "@/lib/account";
 import { useRouter } from "next/navigation";
-import { speak, stopSpeaking, unlockTts, useTtsSupported } from "@/lib/tts";
+import { speak, stopSpeaking, ttsHeard, unlockTts, useTtsSupported } from "@/lib/tts";
 import { LobbySetup, OwnerBar, OwnerSettings } from "./OwnerPanel";
 
 type Props = { state: ClientState; offset: number; connected: boolean };
@@ -91,7 +91,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
           <div className="truncate text-xs text-white/50">{phaseLabel(t, state)}</div>
         </div>
         {!connected && <ConnectionDot connected={false} />}
-        {kind === "lobby" && <GlobalChat compact />}
+        <GlobalChat compact />
         {!wide && !INLINE_CHAT.has(kind) && <PhoneChatButton state={state} viewer={me.id} />}
         {kind !== "lobby" && <GhostChatButton state={state} viewer={me.id} />}
         <LeaveButton state={state} />
@@ -363,14 +363,17 @@ function LeaveButton({ state }: { state: ClientState }) {
 /**
  * The narrator's words for the current step, as subtitles on every phone
  * (never the line saying a role has nobody left alive), with a speaker button
- * to hear them read aloud on this phone (off until the player turns it on).
+ * to hear them read aloud on this phone (on by default when the room has no shared screen).
  */
 function NarrationBanner({ state }: { state: ClientState }) {
   const t = useT();
   const { locale } = useLocale();
   const canTts = useTtsSupported();
+  // With no shared screen (machine-host rooms too) the phones are the only narrator,
+  // so they speak unless this player turned it off; with a screen it stays quiet to avoid an echo.
+  const noScreen = !!state.settings.noScreen;
   const [voice, setVoice] = useState(false);
-  useEffect(() => setVoice(storage.get<boolean>("msn:phoneVoice") ?? false), []);
+  useEffect(() => setVoice(storage.get<boolean>("msn:phoneVoice") ?? noScreen), [noScreen]);
   // How fast this phone reads the narration (same choice and default as the host screen).
   const [rate, setRate] = useState(1.25);
   useEffect(() => setRate(storage.get<number>("msn:voiceRate") ?? 1.25), []);
@@ -379,10 +382,17 @@ function NarrationBanner({ state }: { state: ClientState }) {
   const off = lobby || state.phase.kind === "gameOver";
   const lines = off ? [] : scriptLines(state, t).filter((l) => l !== silent);
   const linesKey = lines.join("|");
-  // Voice left on from before: the phone may only speak after a tap, so the first tap anywhere unlocks it.
+  // Voice on without a tap yet: the phone may only speak after one, so the first tap
+  // anywhere unlocks it and reads the current line again if nothing could be heard so far.
+  const latest = useRef({ linesKey, locale, rate });
+  latest.current = { linesKey, locale, rate };
   useEffect(() => {
     if (!voice) return;
-    const once = () => unlockTts();
+    const once = () => {
+      unlockTts();
+      const l = latest.current;
+      if (!ttsHeard() && l.linesKey) speak(l.linesKey.split("|"), l.locale, l.rate);
+    };
     document.addEventListener("pointerdown", once, { once: true });
     return () => document.removeEventListener("pointerdown", once);
   }, [voice]);

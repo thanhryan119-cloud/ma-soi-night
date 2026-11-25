@@ -109,7 +109,11 @@ describe("engine flow", () => {
     next(room); // defense
     expect(room.phase.kind).toBe("defense");
     expect(room.game!.nominees).toEqual([w]);
+    // The player on the stand knows it during the defense (their phone opens the chat and the end button).
+    expect(buildView(room, "player", w).me!.onStand).toBe(true);
+    expect(buildView(room, "player", b).me!.onStand).toBe(false);
     next(room); // verdict
+    expect(buildView(room, "player", w).me!.onStand).toBe(true);
     expect(playerAction(room, w, { type: "vote", choice: "spare" }).error).toBe("err.onStand");
     playerAction(room, b, { type: "vote", choice: "execute" });
     playerAction(room, c, { type: "vote", choice: "execute" });
