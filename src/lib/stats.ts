@@ -3,6 +3,7 @@
 // Fetching profile cards and the leaderboard.
 
 import type { LeaderboardRow, PublicProfile, UserStats } from "@shared/stats";
+import type { GameRecord } from "@shared/replay";
 import { getAuth } from "./account";
 import { useEffect, useState } from "react";
 import { emitAck, socketUrl } from "./socket";
@@ -60,3 +61,6 @@ export function useMyStats(userId: string | undefined, refresh = false): UserSta
   }, [userId, refresh]);
   return stats;
 }
+
+/** A saved game, to watch it again from a match history. */
+export const fetchGame = (id: string) => get(`/games/${encodeURIComponent(id)}`, (b) => b.game as GameRecord);

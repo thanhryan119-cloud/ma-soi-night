@@ -25,6 +25,8 @@ export interface RecentGame {
   players: number;
   /** Real people at the table (not bots). Missing on games recorded before this was tracked. */
   humans?: number;
+  /** The saved game (shared/replay.ts), to watch it again. Missing on older games. */
+  gameId?: string;
   /** false: too few real people, so a casual game (casual totals only, not standard or the leaderboard). */
   counted?: boolean;
 }
@@ -179,6 +181,7 @@ export function gameResults(room: Room, t = Date.now()): GameResult[] {
         players: room.players.length,
         humans,
         counted,
+        ...(game.recordId ? { gameId: game.recordId } : {}),
       },
     });
   }
@@ -204,6 +207,7 @@ export function abandonResult(room: Room, playerId: string, t = Date.now()): Gam
       players: room.players.length,
       humans,
       counted: humans >= MIN_HUMANS_FOR_STATS,
+      ...(game.recordId ? { gameId: game.recordId } : {}),
     },
   };
 }

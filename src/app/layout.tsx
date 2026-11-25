@@ -3,6 +3,7 @@ import { Be_Vietnam_Pro, Grenze_Gotisch, Dancing_Script, JetBrains_Mono, Oswald,
 import { I18nProvider } from "@/lib/i18n";
 import { ToastHost } from "@/components/ui";
 import { ProfileHost } from "@/components/Profile";
+import { GameReplayHost } from "@/components/GameReplay";
 import { NightBackdrop } from "@/components/art/NightBackdrop";
 import "./globals.css";
 
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <I18nProvider>
           {children}
           <ProfileHost />
+          <GameReplayHost />
           <ToastHost />
         </I18nProvider>
       </body>
