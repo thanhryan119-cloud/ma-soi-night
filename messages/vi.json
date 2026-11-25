@@ -95,37 +95,37 @@
     },
     "cursedWolf": {
       "name": "Sói Nguyền",
-      "desc": "Thuộc bầy Sói, cùng cắn mỗi đêm. Một lần mỗi ván, có thể nguyền người bị cắn: nếu không được cứu, người đó không chết mà hóa thành Ma Sói.",
+      "desc": "Cắn cùng bầy mỗi đêm. Một lần mỗi ván, có thể nguyền người bị cắn: nếu không được cứu, người đó không chết mà hóa thành Ma Sói.",
       "action": "Nguyền người bị cắn đêm nay?",
       "tips": "Nguyền người có vai mạnh (Tiên tri, Bảo vệ...) để biến họ thành đồng đội thay vì giết.\nĐêm không ai chết sẽ khiến làng nghĩ Bảo vệ hoặc Phù thủy vừa cứu, giúp che giấu lời nguyền.\nChỉ có một lần nguyền, hãy giữ cho lúc đáng giá nhất."
     },
     "wolfSeer": {
       "name": "Sói Tiên Tri",
-      "desc": "Thuộc bầy Sói, cùng cắn mỗi đêm. Mỗi đêm còn được soi một người để biết chính xác vai của họ.",
+      "desc": "Cắn cùng bầy mỗi đêm. Mỗi đêm còn được soi một người để biết chính xác vai của họ.",
       "action": "Chọn người để soi vai",
       "tips": "Soi để tìm Tiên tri, Phù thủy, Bảo vệ rồi báo cho bầy cắn.\nBạn biết vai thật của người khác: có thể giả làm Tiên tri ban ngày với thông tin đúng một nửa.\nĐừng để làng thấy bạn biết quá nhiều, sẽ bị nghi ngay."
     },
     "elder": {
       "name": "Già làng",
-      "desc": "Dân làng có hai mạng trước Sói: lần đầu bị cắn vẫn sống. Bình độc và treo cổ thì chết ngay.",
+      "desc": "Có hai mạng trước Sói: lần đầu bị cắn vẫn sống. Bình độc và treo cổ thì chết ngay.",
       "action": "Không có hành động",
       "tips": "Bạn sống sót lần cắn đầu, nên có thể đứng ra nói mạnh mà ít sợ bị cắn.\nBạn có thể nhận giả vai mạnh để làm mồi nhử: lần cắn đầu tiên không giết được bạn.\nCẩn thận với treo cổ và bình độc: hai thứ đó vẫn giết bạn ngay."
     },
     "idiot": {
       "name": "Thằng Ngốc",
-      "desc": "Dân làng. Nếu bị làng vote treo cổ, bạn lật bài và được sống, nhưng từ đó mất quyền vote.",
+      "desc": "Nếu bị làng vote treo cổ, bạn lật bài và được sống, nhưng từ đó mất quyền vote.",
       "action": "Không có hành động",
       "tips": "Bị treo bạn vẫn sống, nên có thể mạnh dạn tố người khác.\nSau khi lật bài bạn mất quyền vote, nhưng vẫn được nói: hãy dùng lời nói để dẫn dắt làng.\nMột lần treo lên bạn sẽ khiến làng mất một ngày, nên đừng cố tình gây nghi."
     },
     "lycan": {
       "name": "Người Sói Lai",
-      "desc": "Dân làng mang dòng máu Sói: Tiên tri soi bạn sẽ thấy là Sói, nhưng bạn vẫn thắng cùng dân làng.",
+      "desc": "Mang dòng máu Sói: Tiên tri soi bạn sẽ thấy là Sói, nhưng bạn vẫn thắng cùng dân làng.",
       "action": "Không có hành động",
       "tips": "Tiên tri soi bạn sẽ ra Sói. Nếu bị tố, hãy bình tĩnh giải thích bằng hành động của mình.\nCân nhắc nhận vai Lycan sớm nếu thấy Tiên tri đang soi quanh mình.\nBạn vẫn là dân: tập trung tìm Sói như mọi dân làng khác."
     },
     "sister": {
       "name": "Chị Em",
-      "desc": "Hai chị em thuộc phe dân làng, biết nhau ngay từ đầu. Hãy tin nhau và cùng tìm ra Sói.",
+      "desc": "Hai chị em biết nhau ngay từ đầu. Hãy tin nhau và cùng tìm ra Sói.",
       "action": "Không có hành động",
       "tips": "Hai chị em biết chắc nhau là dân, đó là cặp đồng minh đáng tin nhất làng.\nCó thể cùng lộ diện để bảo đảm cho nhau, nhưng Sói cũng sẽ nhắm vào hai bạn.\nBỏ phiếu cùng nhau giúp dẫn dắt cả làng."
     },
@@ -137,13 +137,13 @@
     },
     "medium": {
       "name": "Thầy Đồng",
-      "desc": "Dân làng. Mỗi đêm (khi đã có người chết), gọi hồn một người đã chết để biết chính xác vai của họ.",
+      "desc": "Mỗi đêm (khi đã có người chết), gọi hồn một người đã chết để biết chính xác vai của họ.",
       "action": "Chọn một người đã chết để gọi hồn",
       "tips": "Gọi hồn người chết mà làng còn tranh cãi: biết vai thật giúp xác nhận hoặc lật tẩy lời khai.\nNếu một người tự nhận Tiên tri đã chết, gọi hồn để biết họ nói thật hay không.\nGiữ kín vai đến khi có thông tin đáng giá để công bố."
     },
     "mayor": {
       "name": "Trưởng Làng",
-      "desc": "Dân làng. Phiếu của bạn tính gấp đôi, cả khi vote lên dàn lẫn khi vote treo cổ.",
+      "desc": "Phiếu của bạn tính gấp đôi, cả khi vote lên dàn lẫn khi vote treo cổ.",
       "action": "Không có hành động",
       "tips": "Phiếu của bạn tính gấp đôi, nên dễ quyết định ai bị treo. Hãy bỏ phiếu cẩn thận.\nLộ vai Trưởng Làng giúp bạn dẫn dắt nhưng sẽ thành mục tiêu của Sói.\nSói có thể cố lôi kéo bạn: để ý ai cứ thúc bạn bỏ phiếu theo họ."
     },
@@ -161,7 +161,7 @@
     },
     "knight": {
       "name": "Hiệp Sĩ Rỉ Sét",
-      "desc": "Dân làng. Nếu bị Sói cắn chết, thanh gươm rỉ của bạn khiến một con Sói chết vào đêm hôm sau.",
+      "desc": "Nếu bị Sói cắn chết, thanh gươm rỉ của bạn khiến một con Sói chết vào đêm hôm sau.",
       "action": "Không có hành động",
       "tips": "Sói cắn bạn sẽ mất một con vào đêm sau, nên lộ vai có thể khiến Sói ngại cắn bạn.\nHoặc giữ kín để bẫy Sói cắn nhầm bạn.\nNếu bạn chết vì bị cắn, người chết vì gươm rỉ đêm sau chắc chắn là Sói: làng bớt một mối lo."
     },
@@ -173,25 +173,25 @@
     },
     "tanner": {
       "name": "Kẻ Chán Đời",
-      "desc": "Phe độc lập. Bạn chỉ muốn bị treo cổ: nếu dân làng vote treo bạn, bạn thắng một mình.",
+      "desc": "Bạn chỉ muốn bị treo cổ: nếu dân làng vote treo bạn, bạn thắng một mình.",
       "action": "Không có hành động",
       "tips": "Bạn muốn bị treo cổ, nhưng đừng quá lộ: làng sẽ nhận ra và tránh treo bạn.\nHành động hơi đáng ngờ: trả lời mâu thuẫn, bênh người bị nghi.\nBị Sói cắn chết thì bạn thua, nên đừng tỏ ra quá nguy hiểm với Sói."
     },
     "whiteWolf": {
       "name": "Sói Trắng",
-      "desc": "Phe độc lập. Cắn cùng bầy Sói, và cứ hai đêm một lần được giết một con Sói. Chỉ thắng khi là người cuối cùng còn sống.",
+      "desc": "Cắn cùng bầy Sói, và cứ hai đêm một lần được giết một con Sói. Chỉ thắng khi là người cuối cùng còn sống.",
       "action": "Chọn một con Sói để giết (hoặc bỏ qua)",
       "tips": "Ban đầu chơi như Sói bình thường để bầy tin bạn.\nĐêm chẵn được giết một con Sói: chọn lúc làng còn đông để không ai đoán ra.\nBạn chỉ thắng khi là người cuối cùng, hãy để dân và Sói tự tiêu diệt nhau."
     },
     "serialKiller": {
       "name": "Sát Nhân Hàng Loạt",
-      "desc": "Phe độc lập. Mỗi đêm giết một người. Sói cắn bạn không chết. Chỉ thắng khi là người cuối cùng còn sống.",
+      "desc": "Mỗi đêm giết một người. Sói cắn bạn không chết. Chỉ thắng khi là người cuối cùng còn sống.",
       "action": "Chọn nạn nhân đêm nay",
       "tips": "Sói cắn bạn không chết, nên chỉ cần tránh bị treo cổ.\nGiết người nguy hiểm với bạn nhất: Tiên tri và người đang nghi bạn.\nBan ngày hãy giả làm dân và đổ cho Sói những cái chết do bạn gây ra."
     },
     "arsonist": {
       "name": "Kẻ Phóng Hỏa",
-      "desc": "Phe độc lập. Mỗi đêm tưới xăng một nhà, hoặc châm lửa đốt tất cả nhà đã tưới. Chỉ thắng khi là người cuối cùng còn sống.",
+      "desc": "Mỗi đêm tưới xăng một nhà, hoặc châm lửa đốt tất cả nhà đã tưới. Chỉ thắng khi là người cuối cùng còn sống.",
       "action": "Tưới xăng một nhà, hoặc châm lửa",
       "tips": "Tưới xăng âm thầm nhiều nhà rồi châm lửa một lần để đốt tất cả.\nĐêm tưới xăng không ai chết vì bạn, nên rất khó bị phát hiện.\nChâm lửa trước khi bị nghi: một mồi lửa đúng lúc có thể quét sạch cả làng."
     }
