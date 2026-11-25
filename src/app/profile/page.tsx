@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { QuestsLink } from "@/components/Quests";
-import { RoleShopCard } from "@/components/RoleShop";
 import { LangSwitch, toast } from "@/components/ui";
 import {
   SHOP_RETURN_KEY,
@@ -62,7 +61,6 @@ export default function ProfilePage() {
       >
         {t("profile.save")}
       </button>
-      <RoleShopCard />
       <MyStats />
       <AdminLink />
     </main>
@@ -107,7 +105,7 @@ function usePaymentReturn(setProfile: React.Dispatch<React.SetStateAction<LocalP
             });
           }
           const [kind, value] = itemId.split(":") as [ItemKind, string];
-          const item = kind === "role" ? t("shop.roleBought", { role: t(`roles.${value}.name`) }) : t(`profile.${kind}.${value}`);
+          const item = t(`profile.${kind}.${value}`);
           return toast(t("shop.paid", { item }), "info");
         }
         if (status === "cancelled" || status === "expired" || params.get("cancel") === "true")

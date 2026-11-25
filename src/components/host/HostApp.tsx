@@ -23,7 +23,6 @@ export default function HostApp({ code }: { code: string }) {
   const resume = useCallback(async () => {
     const hostToken = storage.get<string>(hostKey(code));
     if (!hostToken) return setDenied(true);
-    // The host's Google account decides which premium roles the room may use.
     const res = await emitAck("host:resume", { code, hostToken, authToken: getAuth()?.token });
     if (!res.ok && res.error !== "err.disconnected") setDenied(true);
   }, [code]);

@@ -1,7 +1,7 @@
 "use client";
 
-// The shop: everything that can be bought, in one place — special roles, name
-// effects, name fonts and avatar frames. 50.000đ each, bought once per Google
+// The shop: everything that can be bought, in one place: name effects, name
+// fonts, avatar frames and chat decorations (every role is free). 50.000đ each, bought once per Google
 // account through payOS (the buyer comes back to /profile, which confirms it).
 // Some items can also be bought with gold earned from quests (GOLD_PRICES).
 
@@ -9,9 +9,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DEFAULT_STYLE, ITEM_PRICE_VND, SHOP_ITEMS, equip, type ChatDeco, type ItemId, type ItemKind, type PlayerStyle } from "@shared/cosmetics";
 import { goldPrice } from "@shared/quests";
-import { ROLES } from "@shared/roles";
-import type { RoleId } from "@shared/types";
-import { RoleArt } from "@/components/art/Tarot";
 import { CheckoutDialog, usePrice } from "@/components/Checkout";
 import { GoogleButton } from "@/components/ProfileEditor";
 import { GoldChip, QuestsLink, useGoldFormat } from "@/components/Quests";
@@ -33,7 +30,6 @@ import { useT } from "@/lib/i18n";
 
 /** Shown in this order. */
 const SECTIONS: { kind: ItemKind; icon: string; title: string }[] = [
-  { kind: "role", icon: "🃏", title: "shop.rolesTitle" },
   { kind: "effect", icon: "✨", title: "profile.nameEffect" },
   { kind: "font", icon: "🔤", title: "profile.nameFont" },
   { kind: "frame", icon: "⭕", title: "profile.avatarFrame" },
@@ -127,8 +123,7 @@ export default function ShopPage() {
               </h2>
               {user && <span className="text-xs text-white/50">{t("shop.ownedCount", { owned: have, total: items.length })}</span>}
             </div>
-            {s.kind === "role" && <p className="text-xs text-white/60">{t("shop.rolesHint")}</p>}
-            <ul className={`grid gap-3 ${s.kind === "role" ? "sm:grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {items.map((id) => (
                 <ShopItem
                   key={id}
@@ -178,11 +173,10 @@ function ShopItem({
   const gold = goldPrice(id);
   const [kind, value] = split(id);
   const cost = price(shop?.price ?? ITEM_PRICE_VND);
-  const isRole = kind === "role";
-  const title = isRole ? t(`roles.${value}.name`) : t(`profile.${kind}.${value}`);
+  const title = t(`profile.${kind}.${value}`);
   const base: PlayerStyle = profile?.style ?? DEFAULT_STYLE;
-  const preview = { name, avatar: profile?.avatar ?? "🐺", avatarUrl, style: isRole ? base : equip(base, id), alive: true };
-  const wearing = !isRole && owned && profile?.style[kind as keyof PlayerStyle] === value;
+  const preview = { name, avatar: profile?.avatar ?? "🐺", avatarUrl, style: equip(base, id), alive: true };
+  const wearing = owned && profile?.style[kind] === value;
 
   const payGold = async () => {
     setBuying(true);
@@ -195,21 +189,8 @@ function ShopItem({
   return (
     <li
       className={`flex flex-col gap-2 rounded-lg border p-3 ${owned ? "border-emerald-500/40 bg-emerald-500/[0.04]" : "border-white/10 bg-white/[0.03]"}`}
-      style={isRole ? { borderColor: `${ROLES[value as RoleId].color}66` } : undefined}
     >
-      {isRole ? (
-        <div className="flex gap-3">
-          <RoleArt role={value as RoleId} className="w-24 shrink-0 sm:w-28" />
-          <div className="flex min-w-0 flex-col gap-1">
-            <span className="font-bold">
-              {ROLES[value as RoleId].emoji} {title}
-            </span>
-            <span className="text-[11px] font-semibold tracking-wider text-white/50 uppercase">{t(`teams.${ROLES[value as RoleId].team}`)}</span>
-            <p className="text-xs leading-snug text-white/70">{t(`roles.${value}.desc`)}</p>
-          </div>
-        </div>
-      ) : (
-        <div className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-md bg-night-900 p-2">
+      <div className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-md bg-night-900 p-2">
           {kind === "frame" ? (
             <Avatar p={preview} size="lg" />
           ) : kind === "chat" ? (
@@ -221,7 +202,6 @@ function ShopItem({
           )}
           <span className="text-xs text-white/60">{title}</span>
         </div>
-      )}
       <div className="mt-auto flex items-center justify-between gap-2">
         {owned ? (
           <span className="text-xs font-bold text-emerald-300">✓ {t("shop.owned")}</span>
@@ -229,7 +209,6 @@ function ShopItem({
           <span className="text-sm font-bold text-gold">{cost}</span>
         )}
         {owned ? (
-          !isRole &&
           (wearing ? (
             <span className="text-xs text-white/50">{t("shop.wearing")}</span>
           ) : (

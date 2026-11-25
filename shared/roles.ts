@@ -49,8 +49,8 @@ export interface RoleDef {
   alsoWakesIn?: NightStepId[];
   /** Triggers a revenge shot when this role dies. */
   shootsOnDeath?: boolean;
-  /** Sold in the shop (`role:<id>`): the host or room owner must own it to put it in a game. */
-  premium?: boolean;
+  /** Shown folded under "advanced roles" in the setup and left out of the classic suggestion. */
+  advanced?: boolean;
   /**
    * Member of the pack: wakes and bites with the wolves, knows them, can't be
    * bitten and counts as a wolf. Defaults to team === "wolves" (the Minion is
@@ -170,7 +170,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
     },
   },
 
-  // --- Premium roles -------------------------------------------------------
+  // --- Advanced roles ------------------------------------------------------
 
   /**
    * Bites with the pack. Once per game, after the pack has chosen, may curse the
@@ -184,7 +184,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
     color: "#b91c1c",
     seenAsWolf: true,
     max: 1,
-    premium: true,
+    advanced: true,
     alsoWakesIn: ["werewolf"],
     night: {
       step: "cursedWolf",
@@ -201,7 +201,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
     color: "#7c3aed",
     seenAsWolf: true,
     max: 1,
-    premium: true,
+    advanced: true,
     alsoWakesIn: ["werewolf"],
     night: {
       step: "wolfSeer",
@@ -219,7 +219,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
     color: "#ca8a04",
     seenAsWolf: false,
     max: 1,
-    premium: true,
+    advanced: true,
   },
   /** If the village votes to hang him, he is revealed and lives on, but can never vote again. */
   idiot: {
@@ -229,16 +229,16 @@ export const ROLES: Record<RoleId, RoleDef> = {
     color: "#14b8a6",
     seenAsWolf: false,
     max: 1,
-    premium: true,
+    advanced: true,
   },
 
-  // --- Premium village roles (second set) ------------------------------------
+  // --- Advanced village roles (second set) -----------------------------------
 
   /** A villager with wolf blood: the Seer sees a wolf, but they win with the village. */
   lycan: {
     id: "lycan",
     team: "village",
-    premium: true,
+    advanced: true,
     emoji: "🐕",
     color: "#78716c",
     seenAsWolf: true,
@@ -248,7 +248,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   sister: {
     id: "sister",
     team: "village",
-    premium: true,
+    advanced: true,
     emoji: "👭",
     color: "#f472b6",
     seenAsWolf: false,
@@ -261,7 +261,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   wildChild: {
     id: "wildChild",
     team: "village",
-    premium: true,
+    advanced: true,
     emoji: "🧒",
     color: "#65a30d",
     seenAsWolf: false,
@@ -279,7 +279,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   medium: {
     id: "medium",
     team: "village",
-    premium: true,
+    advanced: true,
     emoji: "🕯️",
     color: "#0ea5e9",
     seenAsWolf: false,
@@ -294,13 +294,13 @@ export const ROLES: Record<RoleId, RoleDef> = {
     },
   },
 
-  // --- Premium roles, third set ------------------------------------------------
+  // --- Advanced roles, third set -----------------------------------------------
 
   /** A villager whose ballot counts twice, in the nomination and in the verdict. */
   mayor: {
     id: "mayor",
     team: "village",
-    premium: true,
+    advanced: true,
     emoji: "🎖️",
     color: "#eab308",
     seenAsWolf: false,
@@ -311,7 +311,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   bigBadWolf: {
     id: "bigBadWolf",
     team: "wolves",
-    premium: true,
+    advanced: true,
     emoji: "🐗",
     color: "#991b1b",
     seenAsWolf: true,
@@ -331,7 +331,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   minion: {
     id: "minion",
     team: "wolves",
-    premium: true,
+    advanced: true,
     pack: false,
     emoji: "🦹",
     color: "#7f1d1d",
@@ -342,7 +342,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   knight: {
     id: "knight",
     team: "village",
-    premium: true,
+    advanced: true,
     emoji: "⚔️",
     color: "#64748b",
     seenAsWolf: false,
@@ -352,7 +352,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   silencer: {
     id: "silencer",
     team: "wolves",
-    premium: true,
+    advanced: true,
     emoji: "🤐",
     color: "#9f1239",
     seenAsWolf: true,
@@ -368,13 +368,13 @@ export const ROLES: Record<RoleId, RoleDef> = {
     },
   },
 
-  // --- Premium roles, solo -----------------------------------------------------
+  // --- Advanced roles, solo ----------------------------------------------------
 
   /** Wins alone if the village hangs him. */
   tanner: {
     id: "tanner",
     team: "solo",
-    premium: true,
+    advanced: true,
     emoji: "🪢",
     color: "#a16207",
     seenAsWolf: false,
@@ -384,7 +384,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   whiteWolf: {
     id: "whiteWolf",
     team: "solo",
-    premium: true,
+    advanced: true,
     pack: true,
     soloKiller: true,
     emoji: "🤍",
@@ -406,7 +406,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   serialKiller: {
     id: "serialKiller",
     team: "solo",
-    premium: true,
+    advanced: true,
     soloKiller: true,
     biteImmune: true,
     emoji: "🔪",
@@ -426,7 +426,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   arsonist: {
     id: "arsonist",
     team: "solo",
-    premium: true,
+    advanced: true,
     soloKiller: true,
     emoji: "🔥",
     color: "#ea580c",
@@ -444,9 +444,6 @@ export const ROLES: Record<RoleId, RoleDef> = {
 };
 
 export const ROLE_IDS = Object.keys(ROLES) as RoleId[];
-
-/** Roles sold in the shop. */
-export const PREMIUM_ROLES: RoleId[] = ROLE_IDS.filter((r) => ROLES[r].premium);
 
 export const NIGHT_STEP_ROLE: Record<NightStepId, RoleId> = {
   cupid: "cupid",
@@ -513,8 +510,7 @@ export const isSoloKiller = (roleId: RoleId | undefined) => !!roleId && !!ROLES[
 /** The roles that win alone (their id is the winner). */
 export const SOLO_ROLES = ["tanner", "whiteWolf", "serialKiller", "arsonist"] as const;
 
-export const isPremiumRole = (roleId: RoleId) => !!ROLES[roleId]?.premium;
-export const roleItem = (roleId: RoleId) => `role:${roleId}` as const;
+export const isAdvancedRole = (roleId: RoleId) => !!ROLES[roleId]?.advanced;
 
 export function emptyRoleCounts(): Record<RoleId, number> {
   return Object.fromEntries(ROLE_IDS.map((r) => [r, 0])) as Record<RoleId, number>;
@@ -536,15 +532,16 @@ const MINION_FROM = 10;
 /** Solo roles. A solo killer (Serial Killer, Arsonist) costs the pack one wolf; the White Wolf takes a pack seat. */
 const SOLO_PLAN: [RoleId, number][] = [["tanner", 11], ["serialKiller", 15], ["whiteWolf", 19], ["arsonist", 20]];
 
-export const FREE_ROLES = ROLE_IDS.filter((r) => !ROLES[r].premium);
+/** The classic roles (everything but the advanced ones). */
+export const CORE_ROLES = ROLE_IDS.filter((r) => !ROLES[r].advanced);
 
 /**
- * Suggested setup by player count, using every role in `available` (the free
+ * Suggested setup by player count, using every role in `available` (the classic
  * roles by default). With `rand` it deals a different setup of the same shape
  * (as many special wolves, solo roles and village roles), picked at random
  * from all available roles, so every role turns up.
  */
-export function suggestRoles(n: number, available: readonly RoleId[] = FREE_ROLES, rand?: () => number): Record<RoleId, number> {
+export function suggestRoles(n: number, available: readonly RoleId[] = CORE_ROLES, rand?: () => number): Record<RoleId, number> {
   const c = emptyRoleCounts();
   if (n <= 0) return c;
   const open = new Set(available);

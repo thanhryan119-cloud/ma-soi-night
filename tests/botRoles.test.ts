@@ -3,12 +3,10 @@ import { addPlayer, createRoom, hostAction } from "../shared/engine";
 import { botChatLine, botDefenseLine, botReplyLine, chatSide, newBotChatMemory, truthChance } from "../shared/botChat";
 import { botDecide } from "../shared/bots";
 import { ingestChat, newChatIntel, suspicion, type ChatIntel } from "../shared/botIntel";
-import { PREMIUM_ROLES, roleItem } from "../shared/roles";
 import type { RoleId, Room } from "../shared/types";
 
 function setup(roles: RoleId[]): { room: Room; ids: string[] } {
   const room = createRoom("ROLES", "vi");
-  room.hostOwned = PREMIUM_ROLES.map(roleItem);
   room.settings.mandatoryVote = false;
   const ids = roles.map((_, i) => addPlayer(room, { name: `P${i + 1}` }).player!.id);
   ids.forEach((id, i) => hostAction(room, { type: "assignManual", playerId: id, roleId: roles[i] }));

@@ -13,23 +13,23 @@ export type RoleId =
   | "witch"
   | "hunter"
   | "cupid"
-  // Premium roles (unlocked in the shop, 50k each):
+  // Advanced roles:
   | "cursedWolf"
   | "wolfSeer"
   | "elder"
   | "idiot"
-  // Premium village roles (second set, also 50k each):
+  // Advanced village roles (second set):
   | "lycan"
   | "sister"
   | "wildChild"
   | "medium"
-  // Premium roles, third set (votes, wolves with extra powers):
+  // Advanced roles, third set (votes, wolves with extra powers):
   | "mayor"
   | "bigBadWolf"
   | "minion"
   | "knight"
   | "silencer"
-  // Premium roles, solo (they win alone):
+  // Advanced roles, solo (they win alone):
   | "tanner"
   | "whiteWolf"
   | "serialKiller"
@@ -344,9 +344,6 @@ export interface Room {
   ownerId?: string | null;
   /** Players who left a running game for good (their seat is played by a bot now). */
   abandoned?: string[];
-  /** Human-host rooms: the host's signed-in account and the shop items it owns (server-side only). */
-  hostUserId?: string | null;
-  hostOwned?: string[];
   /** "salt:sha256" of the room password, or null/absent when the room is open. Never sent to clients. */
   passwordHash?: string | null;
 }

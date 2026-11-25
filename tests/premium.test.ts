@@ -1,17 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { addPlayer, createRoom, hostAction, playerAction, unlockedRoles } from "../shared/engine";
+import { addPlayer, createRoom, hostAction, playerAction } from "../shared/engine";
 import { makeMachineRoom, ownerAction } from "../shared/multiplayer";
-import { PREMIUM_ROLES, completeNightOrder, roleItem } from "../shared/roles";
+import { ROLE_IDS, completeNightOrder } from "../shared/roles";
 import { resolveNight } from "../shared/rules";
 import { buildView } from "../shared/views";
 import type { RoleId, Room } from "../shared/types";
 
-const ALL = PREMIUM_ROLES.map(roleItem);
-
-/** A started game with exactly these roles (the host owns every premium role). */
+/** A started game with exactly these roles. */
 function game(roles: RoleId[]): { room: Room; id: (r: RoleId, n?: number) => string } {
   const room = createRoom("PREM", "vi");
-  room.hostOwned = ALL;
   // These scripts let players skip votes (the default now makes voting compulsory).
   room.settings.mandatoryVote = false;
   roles.forEach((_, i) => addPlayer(room, { name: `P${i}` }));
@@ -32,49 +29,30 @@ function until(room: Room, target: string) {
   }
 }
 
-describe("premium roles are locked until bought", () => {
-  it("are locked for a guest host", () => {
-    const room = createRoom("LOCK1", "vi");
+describe("every role is open to everyone", () => {
+  it("a guest host can use any role", () => {
+    const room = createRoom("OPEN1", "vi");
     for (let i = 0; i < 6; i++) addPlayer(room, { name: `P${i}` });
-    expect(unlockedRoles(room)).not.toContain("cursedWolf");
     const counts = { ...room.settings.roleCounts, cursedWolf: 1 };
-    const res = hostAction(room, { type: "setRoleCounts", roleCounts: counts });
-    expect(res).toMatchObject({ ok: false, error: "err.roleLocked", params: { role: "cursedWolf" } });
-    expect(hostAction(room, { type: "assignManual", playerId: room.players[0].id, roleId: "elder" }).error).toBe("err.roleLocked");
+    expect(hostAction(room, { type: "setRoleCounts", roleCounts: counts }).ok).toBe(true);
+    for (const r of ROLE_IDS) expect(hostAction(room, { type: "assignManual", playerId: room.players[0].id, roleId: r }).ok).toBe(true);
   });
 
-  it("the host's purchase unlocks that one role for the room", () => {
-    const room = createRoom("LOCK2", "vi");
-    room.hostOwned = [roleItem("elder")];
-    expect(hostAction(room, { type: "setRoleCounts", roleCounts: { ...room.settings.roleCounts, elder: 1 } }).ok).toBe(true);
-    expect(hostAction(room, { type: "setRoleCounts", roleCounts: { ...room.settings.roleCounts, idiot: 1 } }).ok).toBe(false);
-    // Taking a role out is always allowed, even if the room no longer owns it.
-    room.hostOwned = [];
-    expect(hostAction(room, { type: "setRoleCounts", roleCounts: { ...room.settings.roleCounts, elder: 0 } }).ok).toBe(true);
-    expect(buildView(room, "host").unlockedRoles).not.toContain("elder");
-    expect(JSON.stringify(buildView(room, "screen"))).not.toContain("hostOwned");
-  });
-
-  it("a machine-host room uses what the owner owns", () => {
-    const room = createRoom("LOCK3", "vi");
-    const owner = addPlayer(room, { name: "Chủ", owned: [roleItem("cursedWolf")] }).player!;
+  it("the owner of a machine-host room can use any role", () => {
+    const room = createRoom("OPEN2", "vi");
+    const owner = addPlayer(room, { name: "Chủ" }).player!;
     makeMachineRoom(room, owner.id);
-    const guest = addPlayer(room, { name: "Khách" }).player!;
     hostAction(room, { type: "addBots", count: 6 });
-    const counts = { ...room.settings.roleCounts, cursedWolf: 1 };
+    const counts = { ...room.settings.roleCounts, cursedWolf: 1, elder: 1 };
     expect(ownerAction(room, owner.id, { type: "setRoleCounts", roleCounts: counts }).ok).toBe(true);
-    expect(buildView(room, "player", owner.id).unlockedRoles).toContain("cursedWolf");
-    expect(buildView(room, "player", guest.id).unlockedRoles).toBeUndefined();
   });
 
-  it("can't start a game dealt a locked role", () => {
-    const room = createRoom("LOCK4", "vi");
-    room.hostOwned = ALL;
+  it("a game dealt special roles starts", () => {
+    const room = createRoom("OPEN3", "vi");
     for (let i = 0; i < 4; i++) addPlayer(room, { name: `P${i}` });
     const roles: RoleId[] = ["werewolf", "idiot", "villager", "villager"];
     room.players.forEach((p, i) => hostAction(room, { type: "assignManual", playerId: p.id, roleId: roles[i] }));
-    room.hostOwned = [];
-    expect(hostAction(room, { type: "start" }).error).toBe("err.roleLocked");
+    expect(hostAction(room, { type: "start" }).ok).toBe(true);
   });
 });
 

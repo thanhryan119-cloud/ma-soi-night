@@ -11,9 +11,7 @@ import {
   defaultSettings,
   emptyRoleCounts,
   SOLO_ROLES,
-  isPremiumRole,
   isWolf,
-  roleItem,
   stepRoles,
   suggestRoles,
   totalRoles,
@@ -211,29 +209,6 @@ const nameOf = (room: Room, id: string | null | undefined) => getPlayer(room, id
 // Role assignment
 // ---------------------------------------------------------------------------
 
-/**
- * Premium roles this room may use: those the human host's account owns, or in
- * a machine-host room those the room owner owns. Everyone in the room then
- * plays with them.
- */
-export function unlockedRoles(room: Room): RoleId[] {
-  const owned = room.machineHost ? getPlayer(room, room.ownerId)?.owned ?? [] : room.hostOwned ?? [];
-  return ROLE_IDS.filter((r) => !isPremiumRole(r) || owned.includes(roleItem(r)));
-}
-
-export function isRoleUnlocked(room: Room, roleId: RoleId): boolean {
-  return unlockedRoles(room).includes(roleId);
-}
-
-/** The first premium role the room would use without owning it (counts or the dealt cards). */
-function lockedRoleIn(room: Room, roles: Iterable<RoleId>): RoleId | null {
-  const open = new Set(unlockedRoles(room));
-  for (const r of roles) if (!open.has(r)) return r;
-  return null;
-}
-
-const lockedFail = (roleId: RoleId) => fail("err.roleLocked", { role: roleId });
-
 export function validateRoleCounts(counts: Record<RoleId, number>): string | null {
   for (const r of ROLE_IDS) {
     const c = counts[r] ?? 0;
@@ -290,8 +265,6 @@ export function startGame(room: Room): ActionResult {
   const missing = room.players.filter((p) => !room.assignment[p.id]);
   if (missing.length) return fail("err.unassigned", { count: missing.length });
   if (!room.players.some((p) => isWolf(room.assignment[p.id]))) return fail("err.noWolves");
-  const locked = lockedRoleIn(room, room.players.map((p) => room.assignment[p.id]));
-  if (locked) return lockedFail(locked);
   const roles: Record<string, RoleId> = {};
   for (const p of room.players) {
     roles[p.id] = room.assignment[p.id];
@@ -1264,7 +1237,6 @@ function override(room: Room, o: OverrideAction): ActionResult {
     case "changeRole": {
       const p = getPlayer(room, o.playerId);
       if (!p || !ROLES[o.roleId]) return fail("err.invalidTarget");
-      if (!isRoleUnlocked(room, o.roleId)) return lockedFail(o.roleId);
       const from = game.roles[p.id];
       game.roles[p.id] = o.roleId;
       log(room, "log.host.changeRole", { name: p.name, from, role: o.roleId });
@@ -1345,16 +1317,12 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       const counts = { ...emptyRoleCounts(), ...action.roleCounts };
       const err = validateRoleCounts(counts);
       if (err) return fail(err);
-      // A role the room hasn't unlocked can be taken out, never added.
-      const before = room.settings.roleCounts;
-      const locked = lockedRoleIn(room, ROLE_IDS.filter((r) => counts[r] > (before[r] ?? 0)));
-      if (locked) return lockedFail(locked);
       room.settings = { ...room.settings, roleCounts: counts };
       return ok;
     }
     case "useSuggested":
       if (!inLobby) return fail("err.wrongPhase");
-      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, unlockedRoles(room)) };
+      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, ROLE_IDS) };
       return ok;
     case "assignRandom":
       if (!inLobby) return fail("err.wrongPhase");
@@ -1364,7 +1332,6 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       if (!getPlayer(room, action.playerId)) return fail("err.invalidTarget");
       if (action.roleId === null) delete room.assignment[action.playerId];
       else if (!ROLES[action.roleId]) return fail("err.invalidTarget");
-      else if (!isRoleUnlocked(room, action.roleId)) return lockedFail(action.roleId);
       else room.assignment[action.playerId] = action.roleId;
       return ok;
     }
@@ -1424,7 +1391,7 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       room.game = null;
       room.assignment = {};
       room.phase = { kind: "lobby", night: 0, day: 0, steps: [], stepIndex: 0, verdictIndex: 0 };
-      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, unlockedRoles(room)) };
+      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, ROLE_IDS) };
       room.log = [];
       resetTimer(room);
       log(room, "log.newGame");

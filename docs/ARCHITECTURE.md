@@ -91,7 +91,7 @@ HTTP công khai: `GET /leaderboard` (mọi tài khoản; ai đủ `MIN_RANKED_GA
 
 Mỗi font/hiệu ứng/khung trừ mặc định là một món `<loại>:<id>` (ví dụ `effect:glow`), giá `ITEM_PRICE_VND` = 50.000đ. `User.owned` giữ các món đã mua; `limitStyle()` gỡ mọi món chưa sở hữu ở `addPlayer`, `updateProfile`, `PATCH /me`, hồ sơ công khai và bảng xếp hạng. `Player.owned` chỉ nằm trên server (không có trong view).
 
-**Vai đặc biệt** (`role:cursedWolf`, `role:wolfSeer`, `role:elder`, `role:idiot`, `role:lycan`, `role:sister`, `role:wildChild`, `role:medium`, `role:mayor`, `role:bigBadWolf`, `role:minion`, `role:knight`, `role:silencer`, `role:tanner`, `role:whiteWolf`, `role:serialKiller`, `role:arsonist`, cũng 50.000đ/vai, `RoleDef.premium`): phòng chỉ được dùng vai mà người dựng phòng đã mua — quản trò người (tài khoản gửi kèm `host:create` / `host:resume` / `lobby:createRoom`, lưu ở `room.hostUserId` + `room.hostOwned`, chỉ trên server) hoặc trưởng phòng của phòng máy dẫn (`Player.owned`). `unlockedRoles(room)` quyết định; `setRoleCounts` không cho *tăng* vai chưa mở (giảm thì luôn được), `assignManual`, `changeRole` và `start` đều kiểm tra lại. Mỗi `host:action` / `owner:action` đọc lại món đã mua nên mua xong là dùng được ngay. View của quản trò và trưởng phòng có `unlockedRoles` để hiện 🔒 và nút "Mở khoá".
+**Vai**: mọi vai mở cho tất cả mọi người, không bán. `RoleDef.advanced` chỉ để gom các vai nâng cao vào nhóm thu gọn trong phần chia vai và để `suggestRoles()` mặc định chỉ dùng vai cơ bản (`CORE_ROLES`). Gợi ý của phòng dùng mọi vai.
 
 | Route | Ai gọi | Việc |
 |---|---|---|
@@ -119,7 +119,7 @@ Vai đặc biệt:
 - **Già làng** chịu được nhát cắn đầu tiên (`game.elderHits`); độc và treo cổ vẫn chết.
 - **Thằng Ngốc** bị vote treo cổ thì lật bài, sống, nhưng mất quyền vote (`game.revealedIdiots`, `VerdictRecord.idiotRevealed`).
 
-Vai dân làng đặc biệt thêm (premium, 50.000đ hoặc 2.500–3.000 vàng):
+Vai dân làng đặc biệt thêm:
 
 - **Người Sói Lai** (`lycan`) thuộc phe dân nhưng Tiên tri soi ra Sói (`seenAsWolf: true`).
 - **Chị Em** (`sister`, phải đủ 2 người, `err.sistersPair`) biết nhau từ đầu (`MeView.teammates`, thấy nhau là "Chị Em" theo vai được chia).

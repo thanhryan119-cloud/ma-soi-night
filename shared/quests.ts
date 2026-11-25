@@ -18,15 +18,6 @@ import type { RecentGame, UserStats } from "./stats";
 
 /** What can be bought with gold, and for how much. Anything not listed is VND only. */
 export const GOLD_PRICES: Partial<Record<ItemId, number>> = {
-  "role:elder": 3000,
-  "role:idiot": 3000,
-  "role:lycan": 2500,
-  "role:sister": 2500,
-  "role:wildChild": 3000,
-  "role:medium": 3000,
-  "role:mayor": 3000,
-  "role:knight": 2500,
-  "role:tanner": 2500,
   "effect:glow": 1500,
   "effect:flicker": 1500,
   "font:serif": 1000,

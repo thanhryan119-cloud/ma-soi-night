@@ -4,8 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { ShareRoom } from "@/components/ShareRoom";
 import { useEffect, useState } from "react";
 import { MIN_PLAYERS } from "@shared/engine";
-import { PREMIUM_ROLES, ROLES, ROLE_IDS, SOLO_ROLES, isPremiumRole, suggestRoles, totalRoles } from "@shared/roles";
-import { RoleUnlockButton } from "@/components/RoleShop";
+import { ROLES, ROLE_IDS, SOLO_ROLES, isAdvancedRole, suggestRoles, totalRoles } from "@shared/roles";
 import { AddBots } from "./AddBots";
 import type { Locale, RoleId } from "@shared/types";
 import type { ClientState } from "@shared/views";
@@ -166,14 +165,11 @@ function PlayersCard({ state, hideRoles = false }: { state: ClientState; hideRol
               aria-label={t("host.role")}
             >
               <option value="">{t("host.unassigned")}</option>
-              {ROLE_IDS.map((r) => {
-                const locked = !!state.unlockedRoles && !state.unlockedRoles.includes(r);
-                return (
-                  <option key={r} value={r} disabled={locked}>
-                    {locked ? "🔒" : ROLES[r].emoji} {t(`roles.${r}.name`)}
-                  </option>
-                );
-              })}
+              {ROLE_IDS.map((r) => (
+                <option key={r} value={r}>
+                  {ROLES[r].emoji} {t(`roles.${r}.name`)}
+                </option>
+              ))}
             </select>
             )}
             <button
@@ -216,47 +212,32 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
   const n = state.players.length;
   const assigned = state.players.filter((p) => p.assignedRole).length;
   const set = (r: RoleId, v: number) => act({ type: "setRoleCounts", roleCounts: { ...counts, [r]: Math.max(0, v) } });
-  const unlocked = new Set(state.unlockedRoles ?? ROLE_IDS.filter((r) => !isPremiumRole(r)));
-  // "Another suggestion": a random setup of the same shape from every unlocked role,
+  // "Another suggestion": a random setup of the same shape from every role,
   // dealt here and sent as plain counts. Dropped when the player count changes.
   const [alt, setAlt] = useState<{ n: number; counts: Record<RoleId, number> } | null>(null);
   const suggested = alt?.n === n ? alt.counts : state.suggested;
   const sameAsSuggested = suggested && ROLE_IDS.every((r) => suggested[r] === counts[r]);
-  const anyLocked = PREMIUM_ROLES.some((r) => !unlocked.has(r));
 
   const grid = `grid grid-cols-1 gap-1.5 ${owner ? "" : "sm:grid-cols-2"}`;
-  const row = (r: RoleId) => {
-    const locked = !unlocked.has(r);
-    return (
-      <li
-        key={r}
-        className={`flex items-center gap-2 rounded-xl p-2 ${isPremiumRole(r) ? "border border-gold/25 bg-gold/[0.04]" : "bg-white/5"}`}
-        title={t(`roles.${r}.desc`)}
+  const row = (r: RoleId) => (
+    <li key={r} className="flex items-center gap-2 rounded-xl bg-white/5 p-2" title={t(`roles.${r}.desc`)}>
+      <span className="min-w-0 flex-1">
+        <RoleBadge roleId={r} />
+      </span>
+      <button className="btn-ghost btn-sm w-8" onClick={() => set(r, counts[r] - 1)} disabled={counts[r] <= 0} aria-label="-">
+        −
+      </button>
+      <span className="w-6 text-center font-mono text-lg font-bold">{counts[r]}</span>
+      <button
+        className="btn-ghost btn-sm w-8"
+        onClick={() => set(r, counts[r] + 1)}
+        disabled={ROLES[r].max !== undefined && counts[r] >= ROLES[r].max!}
+        aria-label="+"
       >
-        <span className={`min-w-0 flex-1 ${locked ? "opacity-60" : ""}`}>
-          <RoleBadge roleId={r} />
-        </span>
-        {locked && counts[r] === 0 ? (
-          <RoleUnlockButton roleId={r} />
-        ) : (
-          <>
-            <button className="btn-ghost btn-sm w-8" onClick={() => set(r, counts[r] - 1)} disabled={counts[r] <= 0} aria-label="-">
-              −
-            </button>
-            <span className="w-6 text-center font-mono text-lg font-bold">{counts[r]}</span>
-            <button
-              className="btn-ghost btn-sm w-8"
-              onClick={() => set(r, counts[r] + 1)}
-              disabled={locked || (ROLES[r].max !== undefined && counts[r] >= ROLES[r].max!)}
-              aria-label="+"
-            >
-              +
-            </button>
-          </>
-        )}
-      </li>
-    );
-  };
+        +
+      </button>
+    </li>
+  );
 
   return (
     <section className="card flex flex-col gap-3">
@@ -264,7 +245,6 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
       <ul className={grid}>{BASIC_ROLES.map(row)}</ul>
       <RoleGroup title={t("host.groupAdvanced")} roles={ADVANCED_ROLES} counts={counts} grid={grid} row={row} />
       <RoleGroup title={t("host.groupSolo")} roles={SOLO_GROUP} counts={counts} grid={grid} row={row} />
-      {anyLocked && <p className="text-xs text-white/50">{t("host.premiumHint")}</p>}
       <div className={`rounded-xl p-2 text-sm ${total === n ? "bg-emerald-500/10 text-emerald-300" : "bg-blood/15 text-blood-light"}`}>
         {total === n ? t("host.totalRoles", { roles: total, players: n }) : t("host.mismatch", { roles: total, players: n })}
       </div>
@@ -283,7 +263,7 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
           >
             {t("host.useSuggested")}
           </button>
-          <button className="btn-ghost btn-sm" onClick={() => setAlt({ n, counts: suggestRoles(n, [...unlocked], Math.random) })}>
+          <button className="btn-ghost btn-sm" onClick={() => setAlt({ n, counts: suggestRoles(n, ROLE_IDS, Math.random) })}>
             🎲 {t("host.otherSuggestion")}
           </button>
         </div>
@@ -312,9 +292,9 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
 }
 
 const SOLO_GROUP: RoleId[] = [...SOLO_ROLES];
-/** The free roles: always shown. */
-const BASIC_ROLES = ROLE_IDS.filter((r) => !isPremiumRole(r) && !SOLO_GROUP.includes(r));
-/** Premium roles of the village and the wolves: folded away until opened. */
+/** The classic roles: always shown. */
+const BASIC_ROLES = ROLE_IDS.filter((r) => !isAdvancedRole(r) && !SOLO_GROUP.includes(r));
+/** Advanced roles of the village and the wolves: folded away until opened. */
 const ADVANCED_ROLES = ROLE_IDS.filter((r) => !BASIC_ROLES.includes(r) && !SOLO_GROUP.includes(r));
 
 /** A folded group of roles. The header lists the ones in play, so nothing in the setup is hidden. */

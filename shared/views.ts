@@ -3,7 +3,7 @@
 // (wolf teammates, being dead with "dead see roles", or the game is over).
 
 import { DEFAULT_STYLE, type PlayerStyle } from "./cosmetics";
-import { NIGHT_STEP_ROLE, ROLES, isWolf, suggestRoles, wakesIn } from "./roles";
+import { NIGHT_STEP_ROLE, ROLES, ROLE_IDS, isWolf, suggestRoles, wakesIn } from "./roles";
 import {
   aliveIds,
   currentStep,
@@ -13,7 +13,6 @@ import {
   isStepDone,
   stepActors,
   stepKey,
-  unlockedRoles,
   validTargets,
   voteEligible,
 } from "./engine";
@@ -200,8 +199,6 @@ export interface ClientState {
   lovers: [string, string] | null;
   log?: LogEntry[];
   suggested?: Record<RoleId, number>;
-  /** Host / room owner: the roles this room may use (premium ones only when bought). */
-  unlockedRoles?: RoleId[];
   potions?: { heal: boolean; poison: boolean };
 }
 
@@ -514,14 +511,12 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
 
   // The owner of a machine-host room sets the roles up, so they get the suggestion too.
   if (!isHost && room.machineHost && meId && room.ownerId === meId) {
-    state.suggested = suggestRoles(room.players.length, unlockedRoles(room));
-    state.unlockedRoles = unlockedRoles(room);
+    state.suggested = suggestRoles(room.players.length, ROLE_IDS);
   }
   if (isHost) {
-    state.unlockedRoles = unlockedRoles(room);
     state.pendingWin = game?.pendingWin ?? null;
     state.log = room.log;
-    state.suggested = suggestRoles(room.players.length, unlockedRoles(room));
+    state.suggested = suggestRoles(room.players.length, ROLE_IDS);
     state.potions = game?.potions;
   } else if (room.phase.kind === "gameOver") {
     // The game is over, nothing is secret any more: everyone gets the full
