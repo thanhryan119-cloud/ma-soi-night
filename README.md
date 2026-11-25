@@ -1,4 +1,4 @@
-# Ma Sói Online by Ryan
+# Ma Sói Online
 
 Web app realtime giúp quản trò (Host) tổ chức một buổi chơi Ma Sói **trực tiếp**: Host chiếu mã QR, người chơi quét bằng điện thoại, nhận vai bí mật, thao tác ban đêm và bỏ phiếu ban ngày — tất cả trên điện thoại. Song ngữ Tiếng Việt / English.
 
