@@ -12,6 +12,7 @@ import {
   addPlayer,
   isSilenced,
   advance,
+  AVATARS,
   autoReady,
   createRoom,
   getPlayer,
@@ -20,6 +21,7 @@ import {
   makeRoomCode,
   playerAction,
   randomToken,
+  sanitizeName,
   fillVotesIfTimeUp,
   stepKey,
   timerOp,
@@ -131,6 +133,8 @@ interface SocketData {
   code?: string;
   kind?: Viewer;
   playerId?: string;
+  /** Set for a spectator: who they are in the dead players' chat. */
+  spectator?: { id: string; name: string; avatar: string };
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Events = Record<string, (...args: any[]) => void>;
@@ -1097,6 +1101,25 @@ io.on("connection", (raw) => {
       if (!room) return { ok: false, error: "err.roomNotFound" };
       attach(socket, room, "screen");
       socket.emit("state", buildView(room, "screen"));
+      return { ok: true };
+    }, ack),
+  );
+
+  // Watching a running game: what the shared screen shows, plus the dead players' chat.
+  on("spectator:watch", (p, ack) =>
+    guard(() => {
+      const room = rooms.get(normCode(p.code));
+      if (!room) return { ok: false, error: "err.roomNotFound" };
+      if (!room.game || room.phase.kind === "lobby") return { ok: false, error: "err.notPlayingYet" };
+      if (!checkPassword(room.passwordHash, p.password))
+        return { ok: false, error: p.password ? "err.wrongPassword" : "err.passwordRequired" };
+      const user = accounts.userForToken(p.authToken);
+      const name = sanitizeName(p.name) || user?.name || "";
+      if (!name) return { ok: false, error: "err.nameRequired" };
+      const avatar = AVATARS.includes(String(p.avatar)) ? String(p.avatar) : "👁️";
+      attach(socket, room, "spectator");
+      socket.data.spectator = { id: randomToken().slice(0, 10), name, avatar };
+      socket.emit("state", buildView(room, "spectator"));
       return { ok: true };
     }, ack),
   );

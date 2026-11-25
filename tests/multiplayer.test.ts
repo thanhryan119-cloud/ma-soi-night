@@ -13,7 +13,7 @@ import {
 } from "../shared/multiplayer";
 import { buildView } from "../shared/views";
 import { gameResults } from "../shared/stats";
-import { canSpeak, voiceAccess } from "../shared/social";
+import { canGhostSpeak, canReadGhosts, canSpeak, voiceAccess, type Speaker } from "../shared/social";
 import { checkPassword, hashPassword } from "../server/lobby";
 
 function machineRoom(humans = 4) {
@@ -201,6 +201,18 @@ describe("leaving", () => {
     hostAction(room, { type: "endGame", winner: "village" });
     const mine = gameResults(room).find((r) => r.userId === "u-dead");
     expect(mine?.game).toMatchObject({ role, outcome: "win", survived: false });
+  });
+
+  it("spectators read the dead players' chat and talk there, nowhere else", () => {
+    const { room } = running();
+    const spec: Speaker = { kind: "spectator", id: "s1", name: "Xem", avatar: "🦉" };
+    expect(canReadGhosts(room, spec)).toBe(true);
+    expect(canGhostSpeak(room, spec)).toBeNull();
+    expect(canSpeak(room, spec)).toBe("err.spectatorReadOnly");
+    expect(voiceAccess(room, spec).ok).toBe(false);
+    expect(buildView(room, "spectator").players.every((p) => !p.roleId)).toBe(true);
+    hostAction(room, { type: "endGame", winner: "village" });
+    expect(canGhostSpeak(room, spec)).toBe("err.ghostsOnly");
   });
 
   it("the owner leaving hands the room to the next player", () => {

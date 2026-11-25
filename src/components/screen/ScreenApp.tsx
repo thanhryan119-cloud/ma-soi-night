@@ -12,7 +12,9 @@ import { CardBack, RoleArt } from "@/components/art/Tarot";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
 import { Avatar, LangSwitch, PhaseIn, Spinner, StyledName, TimerDisplay, phaseKeyOf } from "@/components/ui";
 import { translatorFor, useLocale, useT, type T } from "@/lib/i18n";
-import { emitAck } from "@/lib/socket";
+import { emitAck, storage, watchPasswordKey } from "@/lib/socket";
+import { getAuth, loadLocalProfile } from "@/lib/account";
+import { SocialPanel } from "@/components/SocialPanel";
 import { useRoomState } from "@/lib/useRoom";
 
 /** Renders a message in the screen language, plus the other language when bilingual. */
@@ -50,21 +52,52 @@ function Bi({
 const BilingualCtx = createContext(false);
 const useBilingual = () => useContext(BilingualCtx);
 
-export default function ScreenApp({ code }: { code: string }) {
+/**
+ * The shared screen of a room. `spectate`: someone watching a running game
+ * from their own device; same picture, plus the chat box (they talk in the
+ * dead players' chat).
+ */
+export default function ScreenApp({ code, spectate = false }: { code: string; spectate?: boolean }) {
   const t = useT();
   const { suggestLocale } = useLocale();
   const [notFound, setNotFound] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const watch = useCallback(async () => {
-    const res = await emitAck<{ locale: Locale }>("screen:watch", { code });
-    if (!res.ok && res.error === "err.roomNotFound") setNotFound(true);
-  }, [code]);
+    if (!spectate) {
+      const res = await emitAck<{ locale: Locale }>("screen:watch", { code });
+      if (!res.ok && res.error === "err.roomNotFound") setNotFound(true);
+      return;
+    }
+    const profile = loadLocalProfile();
+    const res = await emitAck("spectator:watch", {
+      code,
+      name: profile?.name,
+      avatar: profile?.avatar,
+      password: storage.get<string>(watchPasswordKey(code)) ?? "",
+      authToken: getAuth()?.token,
+    });
+    if (res.ok) setError(null);
+    else if (res.error === "err.roomNotFound") setNotFound(true);
+    else setError(res.error ?? "err.server");
+  }, [code, spectate]);
   const { state, offset } = useRoomState(watch);
   const roomLocale = state?.roomLocale;
   useEffect(() => {
     if (roomLocale) suggestLocale(roomLocale);
   }, [roomLocale, suggestLocale]);
 
-  return (
+  if (spectate && (error || notFound))
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="text-5xl">👁️</div>
+        <p className="text-lg">{notFound ? t("screen.notFound") : t(error!)}</p>
+        <a className="btn-gold" href="/lobby">
+          {t("watch.back")}
+        </a>
+      </main>
+    );
+
+  const screen = (
     <BilingualCtx.Provider value={!!state?.settings.bilingualScreen}>
     <div className="flex min-h-dvh flex-col">
       {(!state || state.phase.kind === "lobby") && <LangSwitch />}
@@ -84,6 +117,54 @@ export default function ScreenApp({ code }: { code: string }) {
       </main>
     </div>
     </BilingualCtx.Provider>
+  );
+  if (!spectate) return screen;
+  return <Spectating state={state} code={code} screen={screen} />;
+}
+
+/** The watch page: the screen, a bar saying you are watching, and the chat box. */
+function Spectating({ state, code, screen }: { state: ClientState | null; code: string; screen: React.ReactNode }) {
+  const t = useT();
+  const [chatOpen, setChatOpen] = useState(false);
+  return (
+    <div className="lg:flex lg:h-dvh">
+      <div className="relative min-w-0 lg:flex-1 lg:overflow-y-auto">
+        <div className="fixed top-14 right-3 z-40 flex items-center gap-2 sm:top-3 lg:absolute">
+          <span className="chip bg-night-900/80 text-sky-200">👁️ {t("watch.badge")}</span>
+          <a className="btn-ghost btn-sm bg-night-900/80" href="/lobby">
+            {t("watch.leave")}
+          </a>
+        </div>
+        {screen}
+      </div>
+      {state && (
+        <>
+          <aside className="hidden h-dvh w-[400px] shrink-0 border-l border-gold/20 p-2 lg:flex">
+            <SocialPanel state={state} viewer="spectator" className="min-h-0 flex-1" />
+          </aside>
+          <button
+            type="button"
+            className="btn-gold fixed right-4 bottom-4 z-40 rounded-full px-4 py-3 shadow-xl lg:hidden"
+            onClick={() => setChatOpen(true)}
+          >
+            💬 {t("watch.chat")}
+          </button>
+          {chatOpen && (
+            <div className="fixed inset-0 z-50 flex flex-col gap-2 bg-night-950/95 p-2 lg:hidden">
+              <div className="flex items-center gap-2">
+                <h2 className="min-w-0 flex-1 truncate font-display text-lg font-black text-moon">
+                  👁️ {t("watch.badge")} · <span className="font-mono text-gold">{code}</span>
+                </h2>
+                <button className="btn-ghost btn-sm" onClick={() => setChatOpen(false)} aria-label={t("common.close")}>
+                  ✕
+                </button>
+              </div>
+              <SocialPanel state={state} viewer="spectator" className="min-h-0 flex-1" />
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 

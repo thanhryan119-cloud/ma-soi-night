@@ -17,6 +17,8 @@ import {
   voiceAccess,
   type ChatMessage,
   type Speaker,
+  type Spectator,
+  SPECTATOR_PREFIX,
   type Stroke,
 } from "../shared/social";
 import type { Room } from "../shared/types";
@@ -44,6 +46,7 @@ interface Data {
   code?: string;
   kind?: string;
   playerId?: string;
+  spectator?: Spectator;
 }
 
 export function createSocial(
@@ -62,8 +65,15 @@ export function createSocial(
   };
 
   const speakerOf = (d: Data): Speaker | null =>
-    d.kind === "host" ? { kind: "host" } : d.kind === "player" && d.playerId ? { kind: "player", playerId: d.playerId } : null;
-  const fromKey = (who: Speaker) => (who.kind === "host" ? "host" : who.playerId);
+    d.kind === "host"
+      ? { kind: "host" }
+      : d.kind === "player" && d.playerId
+        ? { kind: "player", playerId: d.playerId }
+        : d.kind === "spectator" && d.spectator
+          ? { kind: "spectator", ...d.spectator }
+          : null;
+  const fromKey = (who: Speaker) =>
+    who.kind === "host" ? "host" : who.kind === "spectator" ? SPECTATOR_PREFIX + who.id : who.playerId;
 
   function leaveVoice(socket: Socket) {
     const code = (socket.data as Data).code;
@@ -129,6 +139,7 @@ export function createSocial(
       if (retryMs > 0) return ack({ ok: false, error: "err.chatSlow", retryMs, params: { seconds: Math.ceil(retryMs / 1000) } });
       c.s.lastChat.set(key, [...sent, now]);
       const msg: ChatMessage = { id: randomId(10), from: fromKey(c.who), text, t: now, ...chatStage(c.room) };
+      if (c.who.kind === "spectator") Object.assign(msg, { name: c.who.name, avatar: c.who.avatar });
       c.s.ghost.push(msg);
       if (c.s.ghost.length > CHAT_HISTORY) c.s.ghost.splice(0, c.s.ghost.length - CHAT_HISTORY);
       // Only to the sockets allowed to read it (never to the living).
