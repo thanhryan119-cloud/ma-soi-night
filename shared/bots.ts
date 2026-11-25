@@ -6,7 +6,11 @@ import { currentStep, getPlayer, isStepDone, playerAction, voteEligible } from "
 import { isWolf, teamOf, wakesIn } from "./roles";
 import { validTargets } from "./engine";
 import { accusersOf, newChatIntel, ranked, suspicion, topThreat, type ChatIntel } from "./botIntel";
+import { alliesOf, chatSide, shieldsPack } from "./botChat";
 import type { PlayerAction, Room } from "./types";
+
+/** A score this high or low comes from the bot's own night check: certain. */
+const CERTAIN = 50;
 
 const pick = <T,>(arr: T[]): T | undefined => arr[Math.floor(Math.random() * arr.length)];
 
@@ -17,8 +21,12 @@ export function botDecide(room: Room, botId: string, intel: ChatIntel = newChatI
   if (!bot || !bot.isBot || !game) return null;
   const role = game.roles[bot.id];
   const kind = room.phase.kind;
-  // The Minion votes like a wolf (he knows the pack).
-  const wolf = isWolf(role) || teamOf(role) === "wolves";
+  // The Minion votes like a wolf (he knows the pack); the White Wolf too, but
+  // he wants the pack gone as well and turns on a pack mate far sooner.
+  const side = chatSide(role);
+  const wolf = shieldsPack(side) || teamOf(role) === "wolves";
+  const busAt = side === "whiteWolf" ? 2 : 3;
+  const allies = alliesOf(room, bot.id);
   const read = () => suspicion(room, intel, bot.id);
 
   if (kind === "night" && bot.alive) {
@@ -137,10 +145,20 @@ export function botDecide(room: Room, botId: string, intel: ChatIntel = newChatI
     const vouched = new Set(intel.defend.filter((d) => d.by === bot.id).map((d) => d.targetId));
     if (game.vote.kind === "nominate") {
       const all = (game.vote.candidates ?? room.players.filter((p) => p.alive).map((p) => p.id)).filter((id) => id !== bot.id);
-      // A wolf only votes a pack mate it already threw under the bus (one the town has caught).
-      const bussed = wolf && saidVote && isWolf(game.roles[saidVote]) && accusersOf(intel, saidVote).length >= 3 ? saidVote : null;
-      const options = all.filter((id) => !(wolf && isWolf(game.roles[id]) && id !== bussed));
+      // Nobody votes an ally (pack mate, Sister, lover, a Wild Child's model), except a
+      // pack mate this wolf already threw under the bus (one the town has caught).
+      const bussed = wolf && saidVote && isWolf(game.roles[saidVote]) && accusersOf(intel, saidVote).length >= busAt ? saidVote : null;
+      let options = all.filter((id) => !allies.has(id) || id === bussed);
+      // The Arsonist would rather burn his doused houses than see them hanged.
+      if (role === "arsonist") {
+        const dry = options.filter((id) => !(game.doused ?? []).includes(id));
+        if (dry.length) options = dry;
+      }
+      if (!options.length) options = all;
+      const r = wolf ? null : read();
+      const sure = r && ranked(r, options).find((id) => r.score.get(id)! > CERTAIN);
       let choice: string | undefined;
+      if (sure) return { type: "vote", choice: sure }; // a wolf the Seer saw with its own eyes
       if (saidVote && options.includes(saidVote) && Math.random() < 0.85) {
         choice = saidVote;
       } else if (wolf) {
@@ -148,7 +166,7 @@ export function botDecide(room: Room, botId: string, intel: ChatIntel = newChatI
         const crowd = [...options].sort((a, b) => accusersOf(intel, b).length - accusersOf(intel, a).length)[0];
         choice = crowd && accusersOf(intel, crowd).length >= 2 && Math.random() < 0.6 ? crowd : topThreat(room, intel, options) ?? pick(options);
       } else {
-        const top = ranked(read(), options)[0];
+        const top = ranked(r!, options)[0];
         choice = top && Math.random() < 0.75 ? top : pick(options);
       }
       if (room.settings.mandatoryVote) return { type: "vote", choice: choice ?? pick(all) ?? "skip" };
@@ -157,22 +175,35 @@ export function botDecide(room: Room, botId: string, intel: ChatIntel = newChatI
     }
     const nominee = game.vote.nomineeId;
     if (!nominee) return { type: "vote", choice: "spare" };
+    const caught = accusersOf(intel, nominee).length;
     if (wolf) {
-      // A pack mate is spared, unless this wolf already turned on them in the chat and the town has them.
-      const friend = isWolf(game.roles[nominee]);
-      if (friend && saidVote === nominee && accusersOf(intel, nominee).length >= 3) return { type: "vote", choice: "execute" };
-      return { type: "vote", choice: friend ? "spare" : Math.random() < 0.85 ? "execute" : "spare" };
+      // A pack mate is spared, unless this wolf already turned on them in the chat and the town
+      // has them (the White Wolf lets the town have them once it is after them).
+      if (isWolf(game.roles[nominee])) {
+        const letGo = (saidVote === nominee && caught >= busAt) || (side === "whiteWolf" && caught >= 2 && Math.random() < 0.7);
+        return { type: "vote", choice: letGo ? "execute" : "spare" };
+      }
+      if (allies.has(nominee)) return { type: "vote", choice: "spare" };
+      return { type: "vote", choice: Math.random() < 0.85 ? "execute" : "spare" };
     }
+    // A Sister, a lover or a Wild Child's model is spared.
+    if (allies.has(nominee)) return { type: "vote", choice: Math.random() < 0.95 ? "spare" : "execute" };
+    if (role === "arsonist" && (game.doused ?? []).includes(nominee)) return { type: "vote", choice: Math.random() < 0.7 ? "spare" : "execute" };
+    const s = read().score.get(nominee) ?? 0;
+    // The Seer's own checks are certain.
+    if (s > CERTAIN) return { type: "vote", choice: "execute" };
+    if (s < -CERTAIN) return { type: "vote", choice: "spare" };
     // Hang the one you accused, spare the one you vouched for.
     if (saidVote === nominee) return { type: "vote", choice: Math.random() < 0.9 ? "execute" : "spare" };
     if (vouched.has(nominee)) return { type: "vote", choice: Math.random() < 0.85 ? "spare" : "execute" };
-    const s = read().score.get(nominee) ?? 0;
     const pExecute = s > 1 ? 0.8 : s < -1 ? 0.2 : 0.5;
     return { type: "vote", choice: Math.random() < pExecute ? "execute" : "spare" };
   }
 
   if (kind === "hunter" && game.pendingHunters[0] === bot.id && !(bot.id in game.hunterShots)) {
-    const targets = room.players.filter((p) => p.alive && p.id !== bot.id).map((p) => p.id);
+    const everyone = room.players.filter((p) => p.alive && p.id !== bot.id).map((p) => p.id);
+    const safe = everyone.filter((id) => !allies.has(id));
+    const targets = safe.length ? safe : everyone;
     const choice = wolf ? topThreat(room, intel, targets) : ranked(read(), targets)[0];
     return { type: "hunterShot", targetId: choice ?? pick(targets) ?? null };
   }

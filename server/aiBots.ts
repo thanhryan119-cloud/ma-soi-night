@@ -1,12 +1,14 @@
 // Bots that actually read what people write in the chat and answer, powered
 // by Google Gemini (Flash-Lite). Each reply is generated for ONE bot with only
 // what that bot is allowed to know (its own role, its packmates if it is a
-// wolf, its own Seer results) plus the public table talk. Wolves are told to
-// lie and push the town toward innocents most of the time; the village tells
-// the truth. If GEMINI_API_KEY is not set, nothing here runs and the scripted
-// bot lines keep working.
+// wolf, its own night results) plus the public table talk. How it may lie
+// follows its side (chatSide, as in the scripted lines): the pack and the
+// Minion lie to shield the pack, the solo roles hide behind a cover role, the
+// Tanner plays suspicious, and the village tells the truth (power roles may
+// keep their role quiet early). If GEMINI_API_KEY is not set, nothing here
+// runs and the scripted bot lines keep working.
 
-import { mistakeChance, truthChance } from "../shared/botChat";
+import { chatSide, coverRole, mistakeChance, truthChance, type ChatSide } from "../shared/botChat";
 import type { ChatIntel } from "../shared/botIntel";
 import { personaOf, type Persona } from "../shared/botPersona";
 import type { ChatMessage } from "../shared/social";
@@ -100,15 +102,48 @@ export function createAiBots(opts: {
     const lines = [`Your secret role: ${ROLE_NAMES[lang][role]}.`];
     if (isWolf(role) || role === "minion") {
       const mates = room.players.filter((p) => p.id !== bot.id && isWolf(game.roles[p.id])).map((p) => `${p.name}${p.alive ? "" : " (dead)"}`);
-      lines.push(mates.length ? `Your fellow wolves: ${mates.join(", ")}. Protect them, never reveal them.` : "You are the only wolf.");
+      const how = role === "whiteWolf" ? "They think you are one of them; never reveal them to the village, but you want them dead too." : "Protect them, never reveal them.";
+      lines.push(mates.length ? `The wolves: ${mates.join(", ")}. ${how}` : "You are the only wolf.");
     }
-    if (role === "minion") lines.push("You are human and the wolves don't know you, but you win with them: shield them and steer the vote onto villagers.");
-    if (role === "tanner") lines.push("You win alone if the village hangs you: act a little suspicious, but not too obviously.");
-    if (role === "whiteWolf" || role === "serialKiller" || role === "arsonist") lines.push("You play alone: you win only as the last one standing. Never reveal your role.");
+    if (role === "minion") lines.push("You are human and the wolves don't know you, but you win with them: shield them and steer the vote onto villagers. The Seer sees you as a villager, so a fake Seer claim is safe for you.");
+    if (role === "tanner") lines.push("You win alone if the village hangs you.");
+    if (role === "whiteWolf" || role === "serialKiller" || role === "arsonist") lines.push("You play alone: you win only as the last one standing.");
+    if (role === "arsonist" && game.doused?.length) lines.push(`Houses you have doused: ${game.doused.map(name).join(", ")}.`);
     if (role === "mayor") lines.push("Your vote secretly counts twice.");
-    for (const r of game.seerResults[bot.id] ?? []) lines.push(`Night ${r.night} you checked ${name(r.targetId)}: ${r.roleId ? ROLE_NAMES[lang][r.roleId] : r.isWolf ? "WEREWOLF" : "not a werewolf"}.`);
-    if (game.lovers?.includes(bot.id)) lines.push(`You are in love with ${name(game.lovers.find((id) => id !== bot.id)!)} (Cupid's arrow).`);
+    if (role === "lycan") lines.push("A real Seer sees you as a WEREWOLF, but you win with the village.");
+    if (role === "sister") {
+      const sis = room.players.find((p) => p.id !== bot.id && game.roles[p.id] === "sister");
+      if (sis) lines.push(`Your Sister is ${sis.name}: you know for sure she is on the village side.`);
+    }
+    const model = game.wildModels?.[bot.id];
+    if (role === "wildChild" && model) lines.push(`Your model is ${name(model)}: if ${name(model)} dies you become a werewolf.`);
+    if (role === "bodyguard" && game.bodyguardLast) lines.push(`Last night you protected ${name(game.bodyguardLast)}.`);
+    if (role === "witch")
+      for (const e of room.log.filter((l) => (l.key === "log.witchSave" || l.key === "log.witchPoison") && l.params.actor === bot.name))
+        lines.push(`Night ${e.night} you ${e.key === "log.witchSave" ? "saved" : "poisoned"} ${e.params.target}.`);
+    const verb = role === "medium" ? "spoke to the dead" : "checked";
+    for (const r of game.seerResults[bot.id] ?? []) lines.push(`Night ${r.night} you ${verb} ${name(r.targetId)}: ${r.roleId ? ROLE_NAMES[lang][r.roleId] : r.isWolf ? "WEREWOLF" : "not a werewolf"}.`);
+    if (game.lovers?.includes(bot.id)) lines.push(`You are in love with ${name(game.lovers.find((id) => id !== bot.id)!)} (Cupid's arrow): protect them, never vote them.`);
     return lines.join(" ");
+  }
+
+  /** When this bot may lie and when it tells the truth, by the side it plays for. */
+  function sideText(side: ChatSide, truth: number, mistake: number, cover: string): string {
+    const pack = `About ${truth}% of what you say is true. Lie when it matters: when someone accuses you (claim ${cover} or another believable role and stick to it), when a Seer is about to expose the pack (call them a fake, or claim Seer yourself and back it with made-up results that never contradict each other), or to steer the vote onto a dangerous innocent. The rest of the time blend in like an unsure villager. Never admit your real role.`;
+    switch (side) {
+      case "pack":
+        return `You are on the WOLVES' side. ${pack} If a pack mate is already caught and doomed, you may even agree they look suspicious to look innocent.`;
+      case "minion":
+        return `You are on the WOLVES' side, though not a wolf yourself. ${pack} Never accuse a wolf.`;
+      case "whiteWolf":
+        return `You play for yourself, hiding among the wolves. ${pack} Unlike the others, you are happy to let the village hang a pack mate who is already under suspicion: agree they look suspicious.`;
+      case "solo":
+        return `You are on nobody's side. Lie about your role: you are "${cover}" and stick to it. Otherwise talk like an honest villager: help the village find and hang wolves (they are in your way too), and turn suspicion away from yourself. About ${truth}% of what you say is true.`;
+      case "tanner":
+        return `You want the village to hang you, without asking for it. You may lie: give vague answers, hint that you know things you don't, maybe claim "${cover}" late, and defend yourself only half-heartedly. Don't overdo it, or they will see through you.`;
+      default:
+        return `You are on the VILLAGE side. You never lie on purpose, but you can be wrong: about ${mistake}% of the time you trust a hunch over the evidence. Share what you really know when it helps, question claims that don't add up, and say which way you will vote. If your role is one the wolves would kill (Bodyguard, Witch, Mayor, Rusty Knight, Medium, Wild Child, or a Seer who has found no wolf yet), keep it quiet early; reveal it with what you know as proof when you are seriously accused or on the stand. You may keep your role to yourself, but never claim a role you don't have.`;
+    }
   }
 
   /** How this bot writes and behaves, from its personality for the game. */
@@ -141,7 +176,7 @@ export function createAiBots(opts: {
   function systemFor(room: Room, bot: Player): string {
     const lang = room.locale === "en" ? "en" : "vi";
     const role = room.game!.roles[bot.id];
-    const wolf = isWolf(role);
+    const side = chatSide(role);
     const truth = Math.round(truthChance(room, bot.id) * 100);
     const mistake = Math.round(mistakeChance(room, bot.id) * 100);
     const mine = opts
@@ -152,9 +187,7 @@ export function createAiBots(opts: {
     return [
       `You are "${bot.name}", a real person playing Werewolf (Ma Sói) in a group chat with friends.`,
       secretsOf(room, bot, lang),
-      wolf
-        ? `You are on the WOLVES' side. About ${truth}% of what you say is true. Lie when it matters: when someone accuses you (pick one cover role and stick to it), when a Seer is about to expose the pack (call them a fake), or to steer the vote onto a dangerous innocent. The rest of the time blend in like an unsure villager. If a pack mate is already caught and doomed, you may even agree they look suspicious to look innocent. Never admit you are a wolf.`
-        : `You are on the VILLAGE side. You never lie on purpose, but you can be wrong: about ${mistake}% of the time you trust a hunch over the evidence. Share what you really know when it helps, question claims that don't add up, and say which way you will vote.`,
+      sideText(side, truth, mistake, ROLE_NAMES[lang][coverRole(room, bot.id)]),
       personaText(personaOf(room, bot.id), lang),
       tableText(room),
       mine.length ? `What you have already said (stay consistent, never contradict your own role claim):\n${mine.join("\n")}` : "",

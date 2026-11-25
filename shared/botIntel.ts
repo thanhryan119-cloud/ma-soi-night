@@ -7,7 +7,7 @@
 // Seer claim is a lie, a villager falsely accused knows the accuser is wrong,
 // and wolves rank innocents by how dangerous they are to the pack.
 
-import { isWolf } from "./roles";
+import { isWolf, ROLES } from "./roles";
 import type { Player, RoleId, Room } from "./types";
 
 export interface ChatIntel {
@@ -27,13 +27,13 @@ const ROLE_WORDS: [RoleId, RegExp][] = [
   ["hunter", /(thợ săn|tho san|hunter)/i],
   ["cupid", /(cupid|thần tình yêu)/i],
   ["elder", /(già làng|gia lang|elder)/i],
-  ["idiot", /(thằng ngốc|chàng ngốc|thang ngoc|(?<![\p{L}])ngốc(?![\p{L}])|idiot)/iu],
-  ["lycan", /(sói lai|soi lai|lycan)/i],
+  ["idiot", /(thằng ngốc|chàng ngốc|thang ngoc|(?<![\p{L}])ngốc(?![\p{L}])|village idiot|idiot)/iu],
+  ["lycan", /(người sói lai|sói lai|soi lai|lycan)/i],
   ["sister", /(chị em|chi em|sister)/i],
-  ["wildChild", /(trẻ hoang|tre hoang|wild child)/i],
+  ["wildChild", /(đứa trẻ hoang|trẻ hoang|tre hoang|wild child)/i],
   ["medium", /(thầy đồng|thay dong|medium)/i],
   ["mayor", /(trưởng làng|truong lang|mayor)/i],
-  ["knight", /(hiệp sĩ|hiep si|knight)/i],
+  ["knight", /(hiệp sĩ|hiep si|rusty knight|knight)/i],
   ["villager", /(dân làng|dân thường|dân lành|dan lang|\bdân\b|villager)/i],
   ["werewolf", /(ma sói|\bsói\b|werewolf|\bwolf\b)/i],
 ];
@@ -156,9 +156,13 @@ export function suspicion(room: Room, intel: ChatIntel, viewerId: string): Read 
     const reporterDead = !room.players.find((p) => p.id === rep.by)?.alive;
     if (reporterDead && claimedSeer) w *= 1.3; // killed by the wolves — probably told the truth
     if (rep.targetId === viewerId) {
-      // About me: I know the truth, so a wrong report exposes the reporter.
-      const iAmWolf = isWolf(myRole);
-      if (rep.isWolf !== iAmWolf && !iAmWolf) bump(read, rep.by, 5, { kind: "accusedMe" });
+      // About me: I know what a real Seer would see (the Lycan shows as a wolf),
+      // so a wrong report exposes the reporter, and a right one vouches for them.
+      if (!isWolf(myRole)) {
+        const seenAs = !!ROLES[myRole]?.seenAsWolf;
+        if (rep.isWolf !== seenAs) bump(read, rep.by, 5, { kind: "accusedMe" });
+        else if (rep.isWolf) bump(read, rep.by, -3);
+      }
       continue;
     }
     bump(read, rep.targetId, (rep.isWolf ? 4 : -3) * w, rep.isWolf ? { kind: "report", by: rep.by } : undefined);
@@ -168,7 +172,9 @@ export function suspicion(room: Room, intel: ChatIntel, viewerId: string): Read 
   const accusers = new Map<string, Set<string>>();
   for (const a of intel.accuse) {
     if (a.targetId === viewerId) {
-      if (!isWolf(myRole)) bump(read, a.by, 1.5, { kind: "accusedMe" });
+      // A Lycan the Seer called a wolf knows why: that is no frame.
+      const seerSawMe = !!ROLES[myRole]?.seenAsWolf && intel.reports.some((r) => r.by === a.by && r.targetId === viewerId && r.isWolf);
+      if (!isWolf(myRole) && !seerSawMe) bump(read, a.by, 1.5, { kind: "accusedMe" });
       continue;
     }
     if (!accusers.has(a.targetId)) accusers.set(a.targetId, new Set());
@@ -186,6 +192,20 @@ export function suspicion(room: Room, intel: ChatIntel, viewerId: string): Read 
 /** Ranked suspects (most suspicious first) among `pool`. */
 export function ranked(read: Read, pool: string[]): string[] {
   return pool.filter((id) => read.score.has(id)).sort((a, b) => read.score.get(b)! - read.score.get(a)!);
+}
+
+/**
+ * What the pack knows for sure: the exact roles its Wolf Seer has seen (the
+ * pack wakes together, so the Wolf Seer shares them).
+ */
+export function packKnowledge(room: Room): Map<string, RoleId> {
+  const game = room.game!;
+  const out = new Map<string, RoleId>();
+  for (const p of room.players) {
+    if (game.roles[p.id] !== "wolfSeer" && game.originalRoles?.[p.id] !== "wolfSeer") continue;
+    for (const r of game.seerResults[p.id] ?? []) if (r.roleId) out.set(r.targetId, game.roles[r.targetId] ?? r.roleId);
+  }
+  return out;
 }
 
 /**
@@ -207,6 +227,9 @@ export function threat(room: Room, intel: ChatIntel): Map<string, number> {
   for (const a of intel.accuse) if (wolves.has(a.targetId)) add(a.by, 2);
   for (const r of intel.reports) if (r.isWolf && wolves.has(r.targetId)) add(r.by, 4);
   for (const d of intel.defend) if (!wolves.has(d.targetId)) add(d.targetId, 0.5);
+  // Roles the Wolf Seer has uncovered: the real Seer first, then the protectors.
+  const bonus: Partial<Record<RoleId, number>> = { seer: 6, witch: 3, bodyguard: 3, medium: 2, hunter: -1 };
+  for (const [id, role] of packKnowledge(room)) add(id, bonus[role] ?? 0);
   return out;
 }
 
