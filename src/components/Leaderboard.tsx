@@ -35,11 +35,10 @@ export function Leaderboard() {
   const shown = rows ?? [];
   return (
     <section className="card mt-10 p-6">
-      <div className="mb-1 flex items-baseline gap-2">
+      <div className="mb-4 flex items-baseline gap-2">
         <h2 className="text-xl font-bold">🏆 {t("leaderboard.title")}</h2>
         {rows && <span className="chip">{t("leaderboard.accounts", { count: rows.length })}</span>}
       </div>
-      <p className="mb-4 text-sm text-white/60">{t("leaderboard.desc", { min: MIN_RANKED_GAMES })}</p>
       {failed ? (
         <p className="py-6 text-center text-white/50">{t("leaderboard.unavailable")}</p>
       ) : !rows ? (

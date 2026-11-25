@@ -985,7 +985,6 @@
   },
   "leaderboard": {
     "title": "Bảng xếp hạng",
-    "desc": "Mọi tài khoản đã tạo. Ai chơi đủ {min} ván được xếp lên đầu theo tỉ lệ thắng; bằng nhau thì ai thắng nhiều ván hơn đứng trên. Các tài khoản còn lại xếp theo ngày tạo, mới nhất trước. Bấm vào tên để xem hồ sơ.",
     "accounts": "{count} tài khoản",
     "player": "Người chơi",
     "wolf": "Sói",

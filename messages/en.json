@@ -985,7 +985,6 @@
   },
   "leaderboard": {
     "title": "Leaderboard",
-    "desc": "Every account. Players with at least {min} games come first, ranked by win rate; on a tie, more wins ranks higher. Everyone else follows, newest account first. Tap a name to see the profile.",
     "accounts": "{count} accounts",
     "player": "Player",
     "wolf": "Wolf",
