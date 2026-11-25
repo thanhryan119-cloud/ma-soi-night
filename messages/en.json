@@ -1029,12 +1029,16 @@
     },
     "mine": "Your stats",
     "signInForStats": "Sign in with Google to save your games and win rate, unlock role card achievements and join the leaderboard.",
-    "countRule": "Only games with at least {min} real people count (bots don't).",
-    "noCountedGames": "No counted games yet (they need {min} or more real people).",
-    "notCounted": "Not counted",
+    "countRule": "Games with at least {min} real people (bots don't count) are Standard. Smaller games are Casual and have their own win rate.",
+    "noCountedGames": "No Standard games yet (they need {min} or more real people).",
+    "notCounted": "Casual",
     "humansCount": "{n} real people",
     "abandons": "Quit mid-game",
-    "left": "Quit"
+    "left": "Quit",
+    "standard": "Standard",
+    "casual": "Casual",
+    "standardRule": "Games with {min} or more real people, on the leaderboard",
+    "casualRule": "Games with fewer than {min} real people"
   },
   "globalChat": {
     "button": "Chat",
@@ -1248,7 +1252,7 @@
     "maxed": "Top tier",
     "tiersTitle": "Tiers",
     "tierNeeds": "{n} wins",
-    "countRule": "Only games with at least {min} real people count.",
+    "countRule": "Every win counts, Standard and Casual.",
     "tier": {
       "bronze": "Bronze",
       "silver": "Silver",

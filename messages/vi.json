@@ -1029,12 +1029,16 @@
     },
     "mine": "Thống kê của bạn",
     "signInForStats": "Đăng nhập Google để lưu số ván, tỉ lệ thắng, mở thành tựu lá bài vai và lên bảng xếp hạng.",
-    "countRule": "Chỉ tính các ván có từ {min} người thật trở lên (không kể bot).",
-    "noCountedGames": "Chưa có ván nào được tính (cần từ {min} người thật trở lên).",
-    "notCounted": "Không tính",
+    "countRule": "Ván có từ {min} người thật trở lên (không kể bot) tính là Standard. Ít hơn thì tính là Casual, có tỉ lệ thắng riêng.",
+    "noCountedGames": "Chưa có ván Standard nào (cần từ {min} người thật trở lên).",
+    "notCounted": "Casual",
     "humansCount": "{n} người thật",
     "abandons": "Thoát giữa chừng",
-    "left": "Đã thoát"
+    "left": "Đã thoát",
+    "standard": "Standard",
+    "casual": "Casual",
+    "standardRule": "Ván có từ {min} người thật trở lên, tính vào bảng xếp hạng",
+    "casualRule": "Ván có dưới {min} người thật"
   },
   "globalChat": {
     "button": "Chat chung",
@@ -1248,7 +1252,7 @@
     "maxed": "Bậc cao nhất",
     "tiersTitle": "Các bậc",
     "tierNeeds": "{n} thắng",
-    "countRule": "Chỉ tính các ván có từ {min} người thật trở lên.",
+    "countRule": "Mọi ván thắng đều được tính, cả Standard lẫn Casual.",
     "tier": {
       "bronze": "Đồng",
       "silver": "Bạc",
