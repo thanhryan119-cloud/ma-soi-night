@@ -1,8 +1,9 @@
 "use client";
 
 // The server-wide chat: a button in the corner of the home page and the online
-// lobby opens one channel everyone on the site can read. Posting needs a
-// Google account; admins can remove a line. Never shown inside a room.
+// lobby (or, `compact`, a small button in a room's header while the room waits)
+// opens one channel everyone on the site can read. Posting needs a Google
+// account; admins can remove a line. Not shown once a game is running.
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -15,7 +16,7 @@ import { emitAck, getSocket, storage } from "@/lib/socket";
 
 const SEEN_KEY = "msn:globalChatSeen";
 
-export function GlobalChat() {
+export function GlobalChat({ compact = false }: { compact?: boolean }) {
   const t = useT();
   const showError = useErrorToast();
   const account = useAccount();
@@ -73,16 +74,23 @@ export function GlobalChat() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="btn-gold fixed right-4 bottom-4 z-40 gap-2 rounded-full px-4 py-3 shadow-xl"
+        className={compact ? "btn-ghost btn-sm relative shrink-0 gap-1.5" : "btn-gold fixed right-4 bottom-4 z-40 gap-2 rounded-full px-4 py-3 shadow-xl"}
+        title={t("globalChat.title")}
         aria-expanded={open}
       >
-        💬 {t("globalChat.button")}
+        {compact ? (
+          <>
+            🌐 <span className="hidden sm:inline">{t("globalChat.button")}</span>
+          </>
+        ) : (
+          <>💬 {t("globalChat.button")}</>
+        )}
         {unread > 0 && <span className="rounded-full bg-blood px-1.5 text-xs font-bold text-white">{unread > 99 ? "99+" : unread}</span>}
       </button>
 
       {open && (
         <section
-          className="rise fixed inset-x-2 bottom-20 z-40 flex h-[min(520px,70dvh)] flex-col gap-2 rounded-lg border border-gold/40 bg-night-800/95 p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6),inset_0_0_0_3px_#1a153d] backdrop-blur sm:inset-x-auto sm:right-4 sm:w-96"
+          className={`rise fixed inset-x-2 ${compact ? "top-14 z-50" : "bottom-20 z-40"} flex h-[min(520px,70dvh)] flex-col gap-2 rounded-lg border border-gold/40 bg-night-800/95 p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6),inset_0_0_0_3px_#1a153d] backdrop-blur sm:inset-x-auto sm:right-4 sm:w-96`}
           aria-label={t("globalChat.title")}
         >
           <div className="flex items-center gap-2">

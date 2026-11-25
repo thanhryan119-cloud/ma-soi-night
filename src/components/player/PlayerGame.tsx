@@ -17,6 +17,8 @@ import { scriptLines } from "@/components/host/common";
 import { SocialPanel } from "@/components/SocialPanel";
 import { RolesInPlay } from "@/components/RolesInPlay";
 import { GhostChatButton } from "@/components/GhostChat";
+import { GlobalChat } from "@/components/GlobalChat";
+import { useSocial } from "@/lib/social";
 import { ShareRoom } from "@/components/ShareRoom";
 import { SceneArt } from "@/components/art/Woodcut";
 import { CardBack, RoleCardFull } from "@/components/art/Tarot";
@@ -89,6 +91,8 @@ export function PlayerGame({ state, offset, connected }: Props) {
           <div className="truncate text-xs text-white/50">{phaseLabel(t, state)}</div>
         </div>
         {!connected && <ConnectionDot connected={false} />}
+        {kind === "lobby" && <GlobalChat compact />}
+        {!wide && !INLINE_CHAT.has(kind) && <PhoneChatButton state={state} viewer={me.id} />}
         {kind !== "lobby" && <GhostChatButton state={state} viewer={me.id} />}
         <LeaveButton state={state} />
       </header>
@@ -189,6 +193,43 @@ export function PlayerGame({ state, offset, connected }: Props) {
       )}
     </div>
     </WideCtx.Provider>
+  );
+}
+
+/** Phones: the phases whose screen already shows the room chat. */
+const INLINE_CHAT = new Set<string>(["lobby", "discussion", "defense", "verdict"]);
+
+/**
+ * Phones: on desktop the room chat is always in the right column; on a phone
+ * the other phases get this button, with the unread count, opening it full screen.
+ */
+function PhoneChatButton({ state, viewer }: { state: ClientState; viewer: string }) {
+  const t = useT();
+  const { chat } = useSocial(state.code);
+  const [open, setOpen] = useState(false);
+  const [since, setSince] = useState(() => Date.now());
+  useEffect(() => {
+    if (open) setSince(Date.now());
+  }, [open, chat.length]);
+  const unread = open ? 0 : chat.filter((m) => m.t > since && m.from !== viewer).length;
+  return (
+    <>
+      <button
+        type="button"
+        className="btn-ghost btn-sm relative shrink-0 gap-1.5"
+        onClick={() => setOpen(true)}
+        aria-label={t("social.title")}
+        title={t("social.title")}
+      >
+        💬
+        {unread > 0 && <span className="rounded-full bg-blood px-1.5 text-[10px] font-bold text-white">{unread > 99 ? "99+" : unread}</span>}
+      </button>
+      {open && (
+        <Sheet title={`💬 ${t("social.title")}`} onClose={() => setOpen(false)}>
+          <SocialPanel state={state} viewer={viewer} className="min-h-0 flex-1" />
+        </Sheet>
+      )}
+    </>
   );
 }
 
@@ -419,9 +460,11 @@ function Sheet({ title, onClose, children }: { title?: string; onClose: () => vo
   );
 }
 
-/** A full-height column that fills the free space. */
-const Fill = ({ children, center = false }: { children: React.ReactNode; center?: boolean }) => (
-  <section className={`flex min-h-0 flex-1 flex-col gap-3 ${center ? "items-center justify-center text-center" : ""}`}>
+/** A full-height column that fills the free space (`scroll`: scrolls when its content is taller). */
+const Fill = ({ children, center = false, scroll = false }: { children: React.ReactNode; center?: boolean; scroll?: boolean }) => (
+  <section
+    className={`flex min-h-0 flex-1 flex-col gap-3 ${center ? "items-center justify-center text-center" : ""} ${scroll ? "-mx-1 overflow-y-auto px-1" : ""}`}
+  >
     {children}
   </section>
 );
@@ -541,8 +584,10 @@ function Lobby({ state, onOwnerSettings }: { state: ClientState; onOwnerSettings
   const t = useT();
   const wide = useWideLayout();
   const iOwn = state.machineHost && state.ownerId === state.me?.id;
+  // Phones: the bots and roles fold away so the chat always has room (the owner sees them open).
+  const [setupOpen, setSetupOpen] = useState(!!iOwn);
   return (
-    <Fill>
+    <Fill scroll={!wide}>
       <div className="flex shrink-0 items-center gap-3">
         <SceneArt scene="night" className="h-12 w-auto shrink-0" />
         <div className="min-w-0">
@@ -551,18 +596,34 @@ function Lobby({ state, onOwnerSettings }: { state: ClientState; onOwnerSettings
         </div>
       </div>
       <OwnerBar state={state} onSettings={onOwnerSettings} />
-      <ShareRoom code={state.code} className="shrink-0" />
       {wide ? (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <LobbySetup state={state} />
-        </div>
-      ) : (
         <>
-          <div className="max-h-[42dvh] shrink-0 overflow-y-auto">
+          <ShareRoom code={state.code} className="shrink-0" />
+          <div className="min-h-0 flex-1 overflow-y-auto">
             <LobbySetup state={state} />
           </div>
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            className="btn-ghost btn-sm shrink-0 justify-between"
+            onClick={() => setSetupOpen((o) => !o)}
+            aria-expanded={setupOpen}
+          >
+            <span>🃏 {t("lobbySetup.toggle")}</span>
+            <span aria-hidden>{setupOpen ? "▴" : "▾"}</span>
+          </button>
+          {setupOpen && (
+            <>
+              <ShareRoom code={state.code} className="shrink-0" />
+              <div className="max-h-[38dvh] shrink-0 overflow-y-auto">
+                <LobbySetup state={state} />
+              </div>
+            </>
+          )}
           <AliveStrip state={state} />
-          {state.me && <SocialPanel state={state} viewer={state.me.id} className="min-h-48 flex-1" />}
+          {state.me && <SocialPanel state={state} viewer={state.me.id} className="min-h-[50dvh] flex-1" />}
         </>
       )}
     </Fill>

@@ -1020,7 +1020,7 @@
   "globalChat": {
     "button": "Chat chung",
     "title": "Chat toàn server",
-    "hint": "Mọi người đang ở trang chủ và sảnh online đều thấy. Hãy lịch sự nhé.",
+    "hint": "Mọi người ở trang chủ, sảnh online và phòng chờ đều thấy. Hãy lịch sự nhé.",
     "empty": "Chưa có ai nói gì. Chào mọi người đi!",
     "placeholder": "Nhắn cho cả server…",
     "send": "Gửi",
@@ -1062,7 +1062,8 @@
   },
   "lobbySetup": {
     "bots": "Bot trong phòng: {count}",
-    "noRoles": "Chưa chọn vai nào."
+    "noRoles": "Chưa chọn vai nào.",
+    "toggle": "Bot và vai trong phòng"
   },
   "leaderboard": {
     "title": "Bảng xếp hạng",

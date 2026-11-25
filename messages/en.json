@@ -1020,7 +1020,7 @@
   "globalChat": {
     "button": "Chat",
     "title": "Server chat",
-    "hint": "Everyone on the home page and in the online lobby sees this. Be kind.",
+    "hint": "Everyone on the home page, in the online lobby and in waiting rooms sees this. Be kind.",
     "empty": "Nobody has said anything yet. Say hi!",
     "placeholder": "Message the whole server…",
     "send": "Send",
@@ -1062,7 +1062,8 @@
   },
   "lobbySetup": {
     "bots": "Bots in the room: {count}",
-    "noRoles": "No roles picked yet."
+    "noRoles": "No roles picked yet.",
+    "toggle": "Bots and roles in the room"
   },
   "leaderboard": {
     "title": "Leaderboard",
