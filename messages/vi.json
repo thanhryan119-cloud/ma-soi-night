@@ -29,6 +29,7 @@
     "en": "English"
   },
   "home": {
+    "cardRedraw": "Bấm vào lá để rút lá khác",
     "createTitle": "Tôi là quản trò",
     "createDesc": "Tạo phòng mới, chiếu mã QR cho mọi người quét.",
     "roomLanguage": "Ngôn ngữ mặc định của phòng",

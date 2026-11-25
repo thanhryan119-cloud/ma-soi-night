@@ -29,6 +29,7 @@
     "en": "English"
   },
   "home": {
+    "cardRedraw": "Click the card to draw another",
     "createTitle": "I’m the Host",
     "createDesc": "Create a new room and show the QR code for everyone to scan.",
     "roomLanguage": "Room default language",

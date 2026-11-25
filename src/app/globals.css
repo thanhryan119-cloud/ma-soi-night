@@ -80,9 +80,19 @@ body {
   transition: transform 0.3s ease, filter 0.3s ease;
   animation: tarot-turn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
-.tarot-float-slot:hover .tarot-float-card {
+.tarot-float-slot:hover .tarot-float-card,
+.tarot-float-hit:focus-visible .tarot-float-card {
   transform: translateY(-14px) scale(1.12);
   filter: brightness(1) drop-shadow(0 0 16px rgba(255, 255, 255, 0.35));
+}
+/* What a hovered card's role does, under the card. */
+.tarot-tip {
+  transform: translateX(-50%);
+  animation: tarot-tip-in 0.18s ease-out;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6), inset 0 0 0 3px #1a153d, inset 0 0 0 4px rgba(232, 180, 90, 0.18);
+}
+@keyframes tarot-tip-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-6px); }
 }
 @keyframes tarot-rise {
   from { opacity: 0; transform: translateX(-50%) translateY(40px) rotate(0deg) scale(var(--scale)); }
@@ -122,7 +132,7 @@ html { scroll-behavior: smooth; }
   .tarot-float-card { filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tarot-float-slot, .tarot-float-bob, .tarot-float-card { animation: none; }
+  .tarot-float-slot, .tarot-float-bob, .tarot-float-card, .tarot-tip { animation: none; }
 }
 @keyframes nb-lurk {
   /* visible for ~1/6 of a long cycle, so each wolf shows up a third as often */
