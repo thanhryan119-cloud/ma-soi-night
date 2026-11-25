@@ -345,13 +345,16 @@ function buildMe(room: Room, meId: string): MeView | null {
   }
 
   const vote = game.vote;
+  // The nomination vote stays on game.vote through the defense, so the stand is
+  // decided by the phase, not by which vote happens to be stored.
+  const trialPhase = room.phase.kind === "defense" || room.phase.kind === "verdict" || room.phase.kind === "verdictResult";
+  view.onStand = trialPhase && game.nominees.includes(me.id);
+  if (room.phase.kind === "defense" || room.phase.kind === "verdictResult") {
+    view.defenseDone = (game.defenseDone ?? []).includes(me.id);
+  }
   if (vote) {
     view.myVote = vote.ballots[me.id] ?? null;
-    view.onStand = game.nominees.includes(me.id) && vote.kind === "verdict";
     view.canVote = !vote.closed && voteEligible(room).includes(me.id) && view.myVote === null;
-  } else if (room.phase.kind === "defense" || room.phase.kind === "verdictResult") {
-    view.onStand = game.nominees.includes(me.id);
-    view.defenseDone = (game.defenseDone ?? []).includes(me.id);
   }
 
   if (room.phase.kind === "hunter" && game.pendingHunters[0] === me.id) {

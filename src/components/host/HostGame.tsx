@@ -216,7 +216,7 @@ function Controls({ state, offset }: { state: ClientState; offset: number }) {
   );
 }
 
-/** "Moving on in 3s…" while the auto narrator is about to advance. */
+/** "Moving on in 1.5s…" while the auto narrator is about to advance. */
 function AutoCountdown({ autoAt, offset }: { autoAt: number | null; offset: number }) {
   const t = useT();
   const [now, setNow] = useState(() => Date.now());

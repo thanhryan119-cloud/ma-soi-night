@@ -256,4 +256,17 @@ describe("online defaults and the defender's chat", () => {
     room.machineHost = false;
     expect(canSpeak(room, { kind: "player", playerId: ids[1] })).toBe("err.chatClosed");
   });
+
+  it("the accused is on the stand during the defense even with the nomination vote still stored", () => {
+    const { room, owner, ids } = machineRoom();
+    ownerAction(room, owner, { type: "addBots", count: 4 });
+    ownerAction(room, owner, { type: "useSuggested" });
+    ownerAction(room, owner, { type: "start" });
+    room.game!.nominees = [ids[1]];
+    room.game!.vote = { kind: "nominate", ballots: {}, closed: true, candidates: null, nomineeId: null };
+    room.phase = { ...room.phase, kind: "defense" };
+    expect(buildView(room, "player", ids[1]).me?.onStand).toBe(true);
+    expect(buildView(room, "player", ids[2]).me?.onStand).toBe(false);
+    expect(canSpeak(room, { kind: "player", playerId: ids[1] })).toBeNull();
+  });
 });

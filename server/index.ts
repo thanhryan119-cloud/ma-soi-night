@@ -71,7 +71,7 @@ try {
 
 const botTimers = new Map<string, NodeJS.Timeout>();
 const autoTimers = new Map<string, { key: string; timer: NodeJS.Timeout }>();
-const AUTO_DELAY_MS = 3000;
+const AUTO_DELAY_MS = 1500;
 const botChatTimers = new Map<string, NodeJS.Timeout>();
 const botChatMemory = new Map<string, BotChatMemory>();
 
