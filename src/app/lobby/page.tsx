@@ -97,16 +97,16 @@ export default function LobbyPage() {
         <Mailbox />
         <QuestsLink />
         <CollectionLink />
-        <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold">
-          🛒 <span className="max-sm:sr-only">{t("shop.open")}</span>
+        <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold" title={t("shop.open")}>
+          🛒 <span className="sr-only">{t("shop.open")}</span>
         </Link>
-        <Link href="/profile" className="btn-ghost btn-sm">
-          👤 <span className="max-sm:sr-only">{t("profile.open")}</span>
+        <Link href="/profile" className="btn-ghost btn-sm" title={t("profile.open")}>
+          👤 <span className="sr-only">{t("profile.open")}</span>
         </Link>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <Link href="/" className="btn-ghost btn-sm">
-          ← {t("common.back")}
+        <Link href="/" className="btn-ghost btn-sm" title={t("common.back")}>
+          ←<span className="sr-only">{t("common.back")}</span>
         </Link>
         <h1 className="font-display text-3xl font-black text-moon">🌐 {t("lobby.title")}</h1>
         {!connected && <ConnectionDot connected={false} />}

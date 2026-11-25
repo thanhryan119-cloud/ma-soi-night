@@ -48,7 +48,9 @@
     "how1": "Quản trò mở app trên laptop hoặc máy chiếu và tạo phòng.",
     "how2": "Mọi người quét QR bằng điện thoại, nhập tên là vào được — không cần cài app.",
     "how3": "Vai được gửi bí mật tới từng điện thoại. Ban đêm thao tác, ban ngày vote — tất cả trên điện thoại.",
-    "narratorCard": "Quản trò"
+    "narratorCard": "Quản trò",
+    "signInToSave": "Đăng nhập Google để lưu lịch sử chơi, tỉ lệ thắng và mở thành tựu lá bài vai. Chơi khi chưa đăng nhập sẽ không được lưu.",
+    "signInButton": "Đăng nhập"
   },
   "teams": {
     "wolves": "Phe Sói",

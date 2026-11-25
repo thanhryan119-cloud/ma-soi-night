@@ -107,7 +107,7 @@ export function CollectionLink({ className = "" }: { className?: string }) {
   const t = useT();
   return (
     <Link href="/collection" className={`btn-ghost btn-sm border-gold/50 text-gold ${className}`} title={t("collection.title")}>
-      🃏 <span className="max-sm:sr-only">{t("collection.open")}</span>
+      🃏 <span className="sr-only">{t("collection.open")}</span>
     </Link>
   );
 }
