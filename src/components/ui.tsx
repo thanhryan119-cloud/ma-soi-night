@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ROLES } from "@shared/roles";
 import { CHAT_COLORS, type ChatDeco } from "@shared/cosmetics";
 import type { Locale, RoleId, TimerState } from "@shared/types";
@@ -229,19 +230,84 @@ export function ChatBubble({
   );
 }
 
-export function RoleBadge({ roleId, size = "sm" }: { roleId: RoleId; size?: "sm" | "md" }) {
+/**
+ * A role's name chip. Hovering it (or tapping / focusing it) opens a card that
+ * explains how the role works; pass `tip={false}` where the description is
+ * already printed next to it.
+ */
+export function RoleBadge({ roleId, size = "sm", tip = true }: { roleId: RoleId; size?: "sm" | "md"; tip?: boolean }) {
   const t = useT();
   const def = ROLES[roleId];
+  const ref = useRef<HTMLSpanElement>(null);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const viaMouse = useRef(false);
+  const show = () => ref.current && setRect(ref.current.getBoundingClientRect());
+  const hide = () => setRect(null);
+
+  // Close on scroll, resize, or a tap anywhere else.
+  useEffect(() => {
+    if (!rect) return;
+    const onDown = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) hide();
+    };
+    window.addEventListener("scroll", hide, true);
+    window.addEventListener("resize", hide);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      window.removeEventListener("scroll", hide, true);
+      window.removeEventListener("resize", hide);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [rect]);
+
   return (
     <span
+      ref={ref}
+      tabIndex={tip ? 0 : undefined}
+      onPointerEnter={tip ? (e) => { if (e.pointerType === "mouse") { viaMouse.current = true; show(); } } : undefined}
+      onPointerLeave={tip ? (e) => { if (e.pointerType === "mouse") { viaMouse.current = false; hide(); } } : undefined}
+      onClick={tip ? () => { if (!viaMouse.current) (rect ? hide() : show()); } : undefined}
+      onFocus={tip ? show : undefined}
+      onBlur={tip ? hide : undefined}
       className={`inline-flex items-center gap-1.5 rounded border border-white/15 bg-white/[0.03] font-semibold whitespace-nowrap text-white/90 ${
         size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm"
-      }`}
+      } ${tip ? "cursor-help outline-none focus-visible:ring-1 focus-visible:ring-gold/60" : ""}`}
     >
       <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: def.color }} aria-hidden />
       <span aria-hidden>{def.emoji}</span>
       {t(`roles.${roleId}.name`)}
+      {tip && rect && typeof document !== "undefined" && createPortal(<RoleTip roleId={roleId} rect={rect} />, document.body)}
     </span>
+  );
+}
+
+/** The floating card RoleBadge opens: name, side and how the role plays. */
+function RoleTip({ roleId, rect }: { roleId: RoleId; rect: DOMRect }) {
+  const t = useT();
+  const def = ROLES[roleId];
+  const width = Math.min(280, window.innerWidth - 16);
+  const cx = Math.min(Math.max(rect.left + rect.width / 2, width / 2 + 8), window.innerWidth - width / 2 - 8);
+  const below = rect.top < 180;
+  return (
+    <div
+      role="tooltip"
+      className="pointer-events-none fixed z-[200] rounded-lg border border-gold/40 bg-night-900/95 px-3 py-2 text-left whitespace-normal shadow-xl shadow-black/60 backdrop-blur"
+      style={{
+        width,
+        left: cx,
+        top: below ? rect.bottom + 6 : rect.top - 6,
+        transform: `translate(-50%, ${below ? "0" : "-100%"})`,
+      }}
+    >
+      <div className="flex items-center gap-1.5 text-sm font-bold text-white">
+        <span aria-hidden>{def.emoji}</span>
+        {t(`roles.${roleId}.name`)}
+        <span className="ml-auto text-[11px] font-semibold" style={{ color: def.color }}>
+          {t(`teams.${def.team}`)}
+        </span>
+      </div>
+      <p className="mt-1 text-xs leading-snug font-normal text-white/80">{t(`roles.${roleId}.desc`)}</p>
+    </div>
   );
 }
 

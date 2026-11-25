@@ -231,7 +231,6 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
       <li
         key={r}
         className={`flex items-center gap-2 rounded-xl p-2 ${isPremiumRole(r) ? "border border-gold/25 bg-gold/[0.04]" : "bg-white/5"}`}
-        title={t(`roles.${r}.desc`)}
       >
         <span className={`min-w-0 flex-1 ${locked ? "opacity-60" : ""}`}>
           <RoleBadge roleId={r} />

@@ -76,7 +76,7 @@ export function RoleShopCard() {
               style={{ borderColor: `${ROLES[r].color}66` }}
             >
               <div className="flex items-center justify-between gap-2">
-                <RoleBadge roleId={r} />
+                <RoleBadge roleId={r} tip={false} />
                 {has ? (
                   <span className="text-xs font-bold text-emerald-300">✓ {t("shop.owned")}</span>
                 ) : (
