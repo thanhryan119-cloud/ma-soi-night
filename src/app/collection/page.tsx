@@ -29,10 +29,16 @@ export default function CollectionPage() {
       <p className="text-sm text-white/70">{t("collection.intro")}</p>
 
       {!account ? (
-        <section className="card flex flex-col gap-3">
-          <p className="text-white/80">{t("collection.signIn")}</p>
-          {GOOGLE_CLIENT_ID ? <GoogleButton /> : <p className="text-xs text-white/50">{t("profile.authUnavailable")}</p>}
-        </section>
+        <>
+          <section className="card flex flex-col gap-3 border-gold/40">
+            <p className="font-bold text-white/90">🔐 {t("collection.signIn")}</p>
+            <p className="text-xs text-white/55">{t("collection.guestNote")}</p>
+            {GOOGLE_CLIENT_ID ? <GoogleButton /> : <p className="text-xs text-white/50">{t("profile.authUnavailable")}</p>}
+          </section>
+          {/* A taste of what signing in unlocks: every card, still locked. */}
+          <h2 className="-mb-2 text-sm font-bold text-white/70">{t("collection.preview")}</h2>
+          <RoleCollection stats={null} />
+        </>
       ) : stats === undefined ? (
         <p className="text-center text-white/50">{t("collection.loading")}</p>
       ) : (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectionSummary, nextTier, roleTier, tierFor } from "../shared/achievements";
+import { collectionSummary, nextTier, roleTier, roleWins, tierFor } from "../shared/achievements";
 import { ROLE_IDS } from "../shared/roles";
 import { emptyStats } from "../shared/stats";
 
@@ -31,5 +31,16 @@ describe("role collection tiers", () => {
     const sum = collectionSummary(s);
     expect(sum.total).toBe(ROLE_IDS.length);
     expect(sum.atLeast).toEqual({ bronze: 1, silver: 1, gold: 1, rainbow: 0 });
+  });
+});
+
+describe("casual wins in the collection", () => {
+  it("adds casual wins to standard wins", () => {
+    const s = emptyStats();
+    s.byRole.seer = { games: 4, wins: 3 };
+    s.casual = { games: 3, wins: 2, losses: 1, draws: 0, abandons: 0, byRole: { seer: { games: 3, wins: 2 }, witch: { games: 1, wins: 1 } } };
+    expect(roleWins(s, "seer")).toBe(5);
+    expect(roleTier(s, "seer")).toBe("silver");
+    expect(roleTier(s, "witch")).toBe("bronze");
   });
 });

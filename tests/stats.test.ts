@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import { addPlayer, createRoom, hostAction } from "../shared/engine";
 import {
   applyResult,
+  casualOf,
   gameResults,
   isRanked,
+  lineOf,
   outcomeFor,
   MIN_HUMANS_FOR_STATS,
   MIN_RANKED_GAMES,
@@ -102,15 +104,32 @@ describe("career stats", () => {
     expect(s.games).toBe(25);
   });
 
-  it("a game with too few real people shows in the history but changes no number", () => {
+  it("a game with too few real people is casual: its own totals, no standard number changes", () => {
     let s = applyResult(undefined, game({ role: "werewolf", winner: "wolves" }));
     s = applyResult(s, game({ role: "werewolf", winner: "wolves" }));
     s = applyResult(s, game({ t: 9, role: "seer", outcome: "loss", winner: "wolves", humans: 3, counted: false }));
-    expect(s).toMatchObject({ games: 2, wins: 2, losses: 0, streak: 2, bestStreak: 2, lastPlayed: 9 });
+    s = applyResult(s, game({ t: 10, role: "seer", humans: 2, counted: false }));
+    expect(s).toMatchObject({ games: 2, wins: 2, losses: 0, streak: 2, bestStreak: 2, lastPlayed: 10 });
     expect(s.byRole.seer).toBeUndefined();
     expect(s.byTeam.village.games).toBe(0);
     expect(s.recent[0]).toMatchObject({ role: "seer", counted: false });
     expect(winRate(s)).toBe(1);
+    expect(s.casual).toEqual({ games: 2, wins: 1, losses: 1, draws: 0, abandons: 0, byRole: { seer: { games: 2, wins: 1 } } });
+    expect(winRate(casualOf(s))).toBe(0.5);
+  });
+
+  it("older records without casual totals start from the casual games still in the history", () => {
+    const old = applyResult(undefined, game({ role: "werewolf", winner: "wolves" }));
+    old.recent = [
+      game({ role: "seer", humans: 2, counted: false }),
+      game({ role: "seer", outcome: "abandon", winner: null, humans: 2, counted: false }),
+      ...old.recent,
+    ];
+    delete old.casual;
+    expect(casualOf(old)).toEqual({ games: 2, wins: 1, losses: 1, draws: 0, abandons: 1, byRole: { seer: { games: 2, wins: 1 } } });
+    const next = applyResult(old, game({ role: "witch", humans: 3, counted: false }));
+    expect(next.casual).toMatchObject({ games: 3, wins: 2 });
+    expect(next.games).toBe(1);
   });
 
   it("quitting a game counts as a loss and breaks the streak", () => {
@@ -150,5 +169,20 @@ describe("leaderboard", () => {
     const ranked = rankLeaderboard([row("new", 0, 0, 3), row("lucky", 1, 1, 2), row("almost", 4, 4, 1), row("steady", 10, 5)]);
     expect(ranked.map((r) => r.name)).toEqual(["steady", "new", "lucky", "almost"]);
     expect(ranked.map(isRanked)).toEqual([true, false, false, false]);
+  });
+
+  it("ranks by casual or standard numbers, each needing its own games", () => {
+    const casual = (games: number, wins: number) => ({ games, wins, winRate: games ? wins / games : 0, wolfGames: 0 });
+    const rows = [
+      { ...row("pro", 10, 8), casual: casual(2, 2) },
+      { ...row("botfan", 1, 0), casual: casual(20, 15) },
+      { ...row("mixed", 6, 3), casual: casual(6, 3) },
+      row("oldServer", 7, 7),
+    ];
+    expect(rankLeaderboard(rows, "standard").map((r) => r.name)).toEqual(["oldServer", "pro", "mixed", "botfan"]);
+    const byCasual = rankLeaderboard(rows, "casual");
+    expect(byCasual.map((r) => r.name)).toEqual(["botfan", "mixed", "oldServer", "pro"]);
+    expect(byCasual.map((r) => isRanked(lineOf(r, "casual")))).toEqual([true, true, false, false]);
+    expect(lineOf(rows[3], "casual")).toEqual({ games: 0, wins: 0, winRate: 0, wolfGames: 0 });
   });
 });

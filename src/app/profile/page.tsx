@@ -5,6 +5,7 @@ import { GlobalChat } from "@/components/GlobalChat";
 import { useEffect, useRef, useState } from "react";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { QuestsLink } from "@/components/Quests";
+import { CollectionLink } from "@/components/RoleCollection";
 import { LangSwitch, toast } from "@/components/ui";
 import {
   SHOP_RETURN_KEY,
@@ -42,6 +43,7 @@ export default function ProfilePage() {
         <span className="ml-auto">
           <QuestsLink />
         </span>
+        <CollectionLink />
         <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold">
           🛒 {t("shop.open")}
         </Link>
