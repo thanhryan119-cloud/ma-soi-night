@@ -985,16 +985,14 @@
   },
   "leaderboard": {
     "title": "Bảng xếp hạng",
-    "desc": "Mọi tài khoản đã tạo. Ai chơi đủ {min} ván thì được xếp hạng theo tỉ lệ thắng; bằng nhau thì ai thắng nhiều ván hơn đứng trên. Bấm vào tên để xem hồ sơ.",
+    "desc": "Mọi tài khoản đã tạo. Ai chơi đủ {min} ván được xếp lên đầu theo tỉ lệ thắng; bằng nhau thì ai thắng nhiều ván hơn đứng trên. Các tài khoản còn lại xếp theo ngày tạo, mới nhất trước. Bấm vào tên để xem hồ sơ.",
     "accounts": "{count} tài khoản",
     "player": "Người chơi",
     "wolf": "Sói",
     "you": "Bạn",
     "empty": "Chưa có tài khoản nào. Đăng nhập Google ở trang Hồ sơ để là người đầu tiên.",
     "unavailable": "Không tải được bảng xếp hạng.",
-    "showAll": "Xem tất cả ({count})",
-    "showLess": "Thu gọn",
-    "unranked": "Chưa đủ {min} ván để xếp hạng"
+    "unranked": "Chưa đủ {min} ván, tài khoản mới nhất ở trên"
   },
   "lobby": {
     "title": "Sảnh chờ online",

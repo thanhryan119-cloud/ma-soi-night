@@ -129,7 +129,7 @@ describe("career stats", () => {
 });
 
 describe("leaderboard", () => {
-  const row = (name: string, games: number, wins: number): LeaderboardRow => ({
+  const row = (name: string, games: number, wins: number, createdAt = 0): LeaderboardRow => ({
     userId: name,
     name,
     avatarUrl: null,
@@ -138,6 +138,7 @@ describe("leaderboard", () => {
     wins,
     winRate: games ? wins / games : 0,
     wolfGames: 0,
+    createdAt,
   });
 
   it("ranks players with enough games by win rate, then wins, then games", () => {
@@ -146,8 +147,8 @@ describe("leaderboard", () => {
   });
 
   it(`needs ${MIN_RANKED_GAMES} games to be ranked: 1 win out of 1 stays below 5 out of 10`, () => {
-    const ranked = rankLeaderboard([row("new", 0, 0), row("lucky", 1, 1), row("almost", 4, 4), row("steady", 10, 5)]);
-    expect(ranked.map((r) => r.name)).toEqual(["steady", "almost", "lucky", "new"]);
+    const ranked = rankLeaderboard([row("new", 0, 0, 3), row("lucky", 1, 1, 2), row("almost", 4, 4, 1), row("steady", 10, 5)]);
+    expect(ranked.map((r) => r.name)).toEqual(["steady", "new", "lucky", "almost"]);
     expect(ranked.map(isRanked)).toEqual([true, false, false, false]);
   });
 });

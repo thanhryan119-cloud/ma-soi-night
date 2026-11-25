@@ -71,6 +71,8 @@ export interface LeaderboardRow {
   wins: number;
   winRate: number;
   wolfGames: number;
+  /** When the account was made (ms), so the newest unranked accounts show first. */
+  createdAt: number;
 }
 
 export const RECENT_GAMES = 10;
@@ -206,14 +208,14 @@ export const isRanked = (r: Pick<LeaderboardRow, "games">) => r.games >= MIN_RAN
 
 /**
  * Accounts with at least MIN_RANKED_GAMES games come first, by win rate; on a
- * tie, more wins first, then more games, then name. Below them, unranked
- * accounts by games played (closest to being ranked first), then name.
+ * tie, more wins first, then more games, then name. Below them, every other
+ * account, newest first.
  */
 export function rankLeaderboard(rows: LeaderboardRow[]): LeaderboardRow[] {
   return [...rows].sort((a, b) => {
     const ranked = Number(isRanked(b)) - Number(isRanked(a));
     if (ranked) return ranked;
-    if (!isRanked(a)) return b.games - a.games || a.name.localeCompare(b.name);
+    if (!isRanked(a)) return b.createdAt - a.createdAt || a.name.localeCompare(b.name);
     return b.winRate - a.winRate || b.wins - a.wins || b.games - a.games || a.name.localeCompare(b.name);
   });
 }

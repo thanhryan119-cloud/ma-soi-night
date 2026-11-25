@@ -985,16 +985,14 @@
   },
   "leaderboard": {
     "title": "Leaderboard",
-    "desc": "Every account. Players with at least {min} games are ranked by win rate; on a tie, more wins ranks higher. Tap a name to see the profile.",
+    "desc": "Every account. Players with at least {min} games come first, ranked by win rate; on a tie, more wins ranks higher. Everyone else follows, newest account first. Tap a name to see the profile.",
     "accounts": "{count} accounts",
     "player": "Player",
     "wolf": "Wolf",
     "you": "You",
     "empty": "No accounts yet. Sign in with Google on the Profile page to be the first.",
     "unavailable": "Couldn't load the leaderboard.",
-    "showAll": "Show all ({count})",
-    "showLess": "Show less",
-    "unranked": "Fewer than {min} games, not ranked yet"
+    "unranked": "Fewer than {min} games, newest accounts first"
   },
   "lobby": {
     "title": "Online lobby",

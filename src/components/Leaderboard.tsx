@@ -1,6 +1,7 @@
 "use client";
 
-// Landing-page ranking of every account, by win rate.
+// Landing-page list of every account: ranked players by win rate on top, then
+// the rest, newest account first.
 
 import { useEffect, useState } from "react";
 import { MIN_RANKED_GAMES, isRanked, type LeaderboardRow } from "@shared/stats";
@@ -11,7 +12,6 @@ import { fetchLeaderboard } from "@/lib/stats";
 import { ProfileLink } from "./Profile";
 import { Avatar, Spinner, StyledName } from "./ui";
 
-const SHOWN = 10;
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 export function Leaderboard() {
@@ -19,7 +19,6 @@ export function Leaderboard() {
   const me = useAccount()?.user.id;
   const [rows, setRows] = useState<LeaderboardRow[] | null>(null);
   const [failed, setFailed] = useState(false);
-  const [all, setAll] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -33,7 +32,7 @@ export function Leaderboard() {
     };
   }, []);
 
-  const shown = rows ? (all ? rows : rows.slice(0, SHOWN)) : [];
+  const shown = rows ?? [];
   return (
     <section className="card mt-10 p-6">
       <div className="mb-1 flex items-baseline gap-2">
@@ -99,11 +98,6 @@ export function Leaderboard() {
               </tbody>
             </table>
           </div>
-          {rows.length > SHOWN && (
-            <button className="btn-ghost btn-sm mx-auto mt-3 block" onClick={() => setAll((x) => !x)}>
-              {all ? t("leaderboard.showLess") : t("leaderboard.showAll", { count: rows.length })}
-            </button>
-          )}
         </>
       )}
     </section>

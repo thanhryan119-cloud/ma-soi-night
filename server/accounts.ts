@@ -132,6 +132,7 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
           wins: s?.wins ?? 0,
           winRate: s ? winRate(s) : 0,
           wolfGames: s?.byRole.werewolf?.games ?? 0,
+          createdAt: u.createdAt ?? 0,
         };
       }),
     );
