@@ -8,6 +8,7 @@ import { MIN_HUMANS_FOR_STATS, winRate, type PublicProfile, type UserStats, type
 import { useLocale, useT } from "@/lib/i18n";
 import { fetchPlayerProfile, fetchUserProfile } from "@/lib/stats";
 import { Avatar, RoleBadge, Spinner, StyledName } from "./ui";
+import { CollectionPeek } from "./RoleCollection";
 
 type Target = { playerId: string } | { userId: string };
 
@@ -157,7 +158,10 @@ function ProfileBody({ profile }: { profile: PublicProfile }) {
       ) : !profile.userId ? (
         <p className="rounded-xl bg-white/5 p-4 text-center text-sm text-white/60">{t("stats.guestNoStats")}</p>
       ) : (
-        <StatsView stats={profile.stats} />
+        <>
+          <StatsView stats={profile.stats} />
+          {!!profile.stats?.wins && <CollectionPeek stats={profile.stats} />}
+        </>
       )}
     </div>
   );

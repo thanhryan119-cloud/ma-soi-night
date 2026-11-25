@@ -8,6 +8,7 @@
 import { cosR, sinR } from "./trig";
 import { useId } from "react";
 import type { RoleId } from "@shared/types";
+import type { CardTier } from "@shared/achievements";
 import type { Scene } from "./Woodcut";
 import { useT } from "@/lib/i18n";
 
@@ -1315,16 +1316,38 @@ function CardFrame({ id, numeral, title, children }: { id: string; numeral?: str
   );
 }
 
-/** A black-and-white stencil tarot card for a role (name and numeral included). */
-export function RoleArt({ role, className = "" }: { role: RoleId; className?: string }) {
+/**
+ * A black-and-white stencil tarot card for a role (name and numeral included).
+ * With a collection tier its white ink turns bronze, silver, gold or rainbow;
+ * `locked` dims a role never won with.
+ */
+export function RoleArt({
+  role,
+  className = "",
+  tier,
+  locked = false,
+}: {
+  role: RoleId;
+  className?: string;
+  tier?: CardTier | null;
+  locked?: boolean;
+}) {
   const t = useT();
   const id = `t${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
-  return (
-    <svg viewBox="0 0 120 200" className={className} role="img" aria-label={t(`roles.${role}.name`)}>
+  const wrapped = !!tier || locked;
+  const svg = (
+    <svg viewBox="0 0 120 200" className={wrapped ? "block h-full w-full" : className} role="img" aria-label={t(`roles.${role}.name`)}>
       <CardFrame id={id} numeral={NUMERAL[role]} title={t(`roles.${role}.name`)}>
         {ART[role]({ hatch: `url(#${id}h)`, dots: `url(#${id}d)` })}
       </CardFrame>
     </svg>
+  );
+  if (!wrapped) return svg;
+  return (
+    <span className={`tier-card block rounded-[6%/3.5%] ${tier ? `tier-${tier}` : "tier-locked"} ${className}`} style={{ aspectRatio: "3 / 5" }}>
+      {svg}
+      {tier && <span className="tier-tint" aria-hidden />}
+    </span>
   );
 }
 
@@ -1448,10 +1471,22 @@ export function RoleArtPanel({ role, className = "" }: { role: RoleId; className
  * A whole tarot card for the role reveal: numeral, illustration, the role's
  * explanation printed inside the card, and the name plaque at the bottom.
  */
-export function RoleCardFull({ role, children, className = "" }: { role: RoleId; children?: React.ReactNode; className?: string }) {
+export function RoleCardFull({
+  role,
+  children,
+  className = "",
+  tier,
+}: {
+  role: RoleId;
+  children?: React.ReactNode;
+  className?: string;
+  /** The player's collection tier for this role: tints the white ink. */
+  tier?: CardTier | null;
+}) {
   const t = useT();
   return (
-    <div className={`flex flex-col rounded-[14px] border-2 border-white bg-black p-[3.5%] text-white ${className}`}>
+    <div className={`flex flex-col rounded-[14px] border-2 border-white bg-black p-[3.5%] text-white ${tier ? `tier-card tier-${tier}` : ""} ${className}`}>
+      {tier && <span className="tier-tint" aria-hidden />}
       <div className="flex min-h-0 flex-1 flex-col gap-2 rounded-[10px] border border-white p-2">
         <div className="mx-auto shrink-0 rounded-full bg-white px-3 font-serif text-sm leading-5 font-bold text-black">{NUMERAL[role]}</div>
         <div className="min-h-0 flex-1 overflow-hidden rounded-md border border-white">

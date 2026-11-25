@@ -156,7 +156,12 @@ function MyStats() {
       {!account ? (
         <p className="text-sm text-white/60">{t("stats.signInForStats")}</p>
       ) : stats === undefined ? null : (
-        <StatsView stats={stats} />
+        <>
+          <Link href="/collection" className="btn-ghost w-full border-gold/50 text-gold">
+            🃏 {t("collection.title")}
+          </Link>
+          <StatsView stats={stats} />
+        </>
       )}
     </section>
   );
