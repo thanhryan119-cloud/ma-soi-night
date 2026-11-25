@@ -1234,5 +1234,26 @@
       "wins25": "Thắng {goal} ván",
       "games100": "Chơi {goal} ván"
     }
+  },
+  "collection": {
+    "title": "Bộ sưu tập vai",
+    "open": "Bộ sưu tập",
+    "intro": "Mỗi lần thắng với một vai, lá bài của vai đó tiến gần hơn tới bậc kế tiếp. Lá bài bạn nhận khi vào ván sẽ mang màu bậc cao nhất bạn đã đạt.",
+    "signIn": "Đăng nhập Google để sưu tầm lá bài vai. Số trận thắng gắn với tài khoản của bạn.",
+    "loading": "Đang tải bộ sưu tập…",
+    "collected": "Đã mở {n}/{total} vai",
+    "wins": "{n} thắng",
+    "locked": "Chưa thắng",
+    "toNext": "Còn {n} thắng tới {tier}",
+    "maxed": "Bậc cao nhất",
+    "tiersTitle": "Các bậc",
+    "tierNeeds": "{n} thắng",
+    "countRule": "Chỉ tính các ván có từ {min} người thật trở lên.",
+    "tier": {
+      "bronze": "Đồng",
+      "silver": "Bạc",
+      "gold": "Vàng",
+      "rainbow": "Cầu vồng"
+    }
   }
 }

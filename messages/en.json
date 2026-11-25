@@ -1234,5 +1234,26 @@
       "wins25": "Win {goal} games",
       "games100": "Play {goal} games"
     }
+  },
+  "collection": {
+    "title": "Role collection",
+    "open": "Collection",
+    "intro": "Every win with a role brings that role's card closer to its next tier. The card you are dealt in a game shows the highest tier you have reached.",
+    "signIn": "Sign in with Google to collect role cards. Your wins are kept on your account.",
+    "loading": "Loading your collection…",
+    "collected": "{n}/{total} roles unlocked",
+    "wins": "{n} wins",
+    "locked": "No wins yet",
+    "toNext": "{n} more wins to {tier}",
+    "maxed": "Top tier",
+    "tiersTitle": "Tiers",
+    "tierNeeds": "{n} wins",
+    "countRule": "Only games with at least {min} real people count.",
+    "tier": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold",
+      "rainbow": "Rainbow"
+    }
   }
 }

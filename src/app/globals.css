@@ -372,3 +372,50 @@ html { scroll-behavior: smooth; }
   0% { box-shadow: 0 0 0 2px #e5383b, 0 0 0 2px rgba(229, 56, 59, 0.6); }
   100% { box-shadow: 0 0 0 2px #e5383b, 0 0 0 12px rgba(229, 56, 59, 0); }
 }
+
+/* Role collection tiers. A layer over the black-and-white card multiplies its
+   white ink into the tier's metal: black stays black, white becomes colour. */
+.tier-card { position: relative; isolation: isolate; }
+.tier-card > .tier-tint {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  border-radius: inherit;
+}
+.tier-bronze > .tier-tint { background: linear-gradient(135deg, #f0a35e 0%, #b8692e 45%, #e9a066 70%, #9a5523 100%); }
+.tier-silver > .tier-tint { background: linear-gradient(135deg, #e3e9f2 0%, #8996ab 38%, #d2dae6 62%, #66748b 100%); }
+.tier-gold > .tier-tint {
+  background: linear-gradient(120deg, #fff1b3 0%, #e8b45a 30%, #fff4c4 50%, #c98f2c 70%, #ffe08a 100%);
+  background-size: 250% 250%;
+  animation: tier-sheen 5s ease-in-out infinite;
+}
+.tier-rainbow > .tier-tint {
+  background: linear-gradient(115deg, #ff6b6b, #ffb347, #fff176, #69f0ae, #4fc3f7, #b388ff, #ff80ab, #ff6b6b);
+  background-size: 300% 300%;
+  animation: tier-sheen 6s linear infinite;
+}
+.tier-silver { filter: drop-shadow(0 0 6px rgba(190, 205, 225, 0.3)); }
+.tier-gold { filter: drop-shadow(0 0 10px rgba(232, 180, 90, 0.45)); }
+.tier-rainbow { filter: drop-shadow(0 0 12px rgba(179, 136, 255, 0.5)); }
+@keyframes tier-sheen {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+/* A role never won with: the card is there, but dim. */
+.tier-locked { filter: grayscale(1) brightness(0.45); }
+.tier-chip-bronze { color: #e9a066; border-color: rgba(233, 160, 102, 0.5); }
+.tier-chip-silver { color: #dfe4ec; border-color: rgba(223, 228, 236, 0.5); }
+.tier-chip-gold { color: #ffd77a; border-color: rgba(255, 215, 122, 0.55); }
+.tier-chip-rainbow {
+  border-color: rgba(179, 136, 255, 0.6);
+  background-image: linear-gradient(90deg, #ff6b6b, #ffb347, #fff176, #69f0ae, #4fc3f7, #b388ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tier-gold > .tier-tint, .tier-rainbow > .tier-tint { animation: none; }
+}

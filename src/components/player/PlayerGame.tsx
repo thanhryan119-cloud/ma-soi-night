@@ -22,7 +22,9 @@ import { SceneArt } from "@/components/art/Woodcut";
 import { CardBack, RoleCardFull } from "@/components/art/Tarot";
 import { useLocale, useT } from "@/lib/i18n";
 import { emitAck, playerKey, storage } from "@/lib/socket";
-import { loadLocalProfile, saveLocalProfile } from "@/lib/account";
+import { loadLocalProfile, saveLocalProfile, useAccount } from "@/lib/account";
+import { useMyStats } from "@/lib/stats";
+import { roleTier } from "@shared/achievements";
 import { useRouter } from "next/navigation";
 import { speak, stopSpeaking, ttsHeard, unlockTts, useTtsSupported } from "@/lib/tts";
 import { LobbySetup, OwnerBar, OwnerSettings } from "./OwnerPanel";
@@ -660,6 +662,10 @@ function HoldCard({ me, players }: Ctx) {
   const [open, setOpen] = useState(false);
   const [tips, setTips] = useState(false);
   const role = me.roleId ? ROLES[me.roleId] : null;
+  // Wins with this role (signed-in players) tint the card bronze, silver, gold or rainbow.
+  const account = useAccount();
+  const myStats = useMyStats(account?.user.id, true);
+  const tier = role ? roleTier(myStats, role.id) : null;
   const show = (e?: React.PointerEvent<HTMLButtonElement>) => {
     // Keep the finger on this button even though the full-screen card now covers it.
     try {
@@ -721,7 +727,7 @@ function HoldCard({ me, players }: Ctx) {
         createPortal(
           <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center bg-black p-3">
             <div className="role-flip-in" style={{ aspectRatio: "3 / 5", height: "min(calc(100dvh - 24px), calc((100vw - 24px) * 5 / 3))" }}>
-              <RoleCardFull role={role.id} className="h-full w-full">
+              <RoleCardFull role={role.id} tier={tier} className="h-full w-full">
                 <div className="text-xs font-semibold tracking-[0.2em] text-white/70 uppercase">{t(`teams.${role.team}`)}</div>
                 <p className="mt-1 text-base leading-snug text-white">{t(`roles.${role.id}.desc`)}</p>
                 {role.team === "wolves" && (
