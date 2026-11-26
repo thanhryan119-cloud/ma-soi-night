@@ -30,6 +30,19 @@ export function nextTier(wins: number): { tier: CardTier; wins: number } | null 
   return t ? { tier: t, wins: TIER_WINS[t] } : null;
 }
 
+/** The tier a win just reached, or null when the card stayed where it was. */
+export function tierReached(winsBefore: number, winsAfter: number): CardTier | null {
+  const after = tierFor(winsAfter);
+  return after && after !== tierFor(winsBefore) ? after : null;
+}
+
+/** Sent to a player whose role card just went up a tier. */
+export interface AchievementNews {
+  role: RoleId;
+  tier: CardTier;
+  wins: number;
+}
+
 export const roleWins = (stats: UserStats | null | undefined, role: RoleId) =>
   stats ? (stats.byRole[role]?.wins ?? 0) + (casualOf(stats).byRole[role]?.wins ?? 0) : 0;
 

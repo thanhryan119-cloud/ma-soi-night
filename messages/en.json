@@ -1311,5 +1311,12 @@
     "signIn": "Sign in",
     "signInDesc": "Sign in with Google to keep your profile and match history and unlock the collection. You stay in the room.",
     "windowHint": "You are still in the room"
+  },
+  "achievement": {
+    "title": "New achievement",
+    "reached": "Your {role} card reached {tier}",
+    "next": "{n} more wins for {tier}",
+    "maxedNow": "That is the highest tier, well done",
+    "ok": "Awesome"
   }
 }

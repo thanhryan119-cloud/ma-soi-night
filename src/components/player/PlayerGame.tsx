@@ -24,6 +24,7 @@ import { useLocale, useT } from "@/lib/i18n";
 import { emitAck, playerKey, storage } from "@/lib/socket";
 import { loadLocalProfile, saveLocalProfile, useAccount } from "@/lib/account";
 import { RoomWindows } from "./RoomWindows";
+import { AchievementPopup } from "./AchievementPopup";
 import { useMyStats } from "@/lib/stats";
 import { roleTier } from "@shared/achievements";
 import { useRouter } from "next/navigation";
@@ -96,6 +97,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
         <RoomWindows state={state} />
         <LeaveButton state={state} />
       </header>
+      <AchievementPopup />
 
       {self.standIn && kind !== "gameOver" && (
         <div className="flex shrink-0 items-center gap-2 border-b border-gold/30 bg-gold/10 px-3 py-1.5 text-sm">
