@@ -827,7 +827,8 @@
     "silenced": "You are silenced today.",
     "nothingToIgnite": "No house has been doused yet.",
     "dmNoUser": "This player could not be found.",
-    "dmSameGame": "You're both in the same game, so private messages wait until it ends."
+    "dmSameGame": "You're both in the same game, so private messages wait until it ends.",
+    "gameNotFound": "This game could not be found. It may be too old."
   },
   "log": {
     "standIn": "{name} is away, a bot plays for them until they are back.",
@@ -1277,5 +1278,11 @@
     },
     "guestNote": "Games you play while signed out don't count toward your collection.",
     "preview": "Your collection is waiting"
+  },
+  "replay": {
+    "title": "Game replay",
+    "open": "Watch how this game went",
+    "players": "Players and roles",
+    "minutes": "{n} min"
   }
 }
