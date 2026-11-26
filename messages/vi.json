@@ -1461,7 +1461,9 @@
   },
   "inApp": {
     "title": "Mở bằng trình duyệt để chơi mượt hơn",
-    "stepsIos": "Bấm nút ⋯ hoặc biểu tượng la bàn ở góc màn hình rồi chọn \"Mở trong trình duyệt\" (Safari). Hoặc sao chép link và dán vào trình duyệt.",
+    "openSafari": "Mở bằng Safari",
+    "openChrome": "Mở bằng Chrome",
+    "stepsIos": "Nếu nút không chạy, bấm ⋯ hoặc biểu tượng la bàn ở góc màn hình rồi chọn \"Mở trong trình duyệt\". Hoặc sao chép link và dán vào trình duyệt.",
     "stepsAndroid": "Bấm nút ⋮ ở góc màn hình rồi chọn \"Mở bằng trình duyệt\" (Chrome…). Hoặc sao chép link và dán vào trình duyệt.",
     "copy": "Sao chép link",
     "copied": "Đã chép link, dán vào Chrome hoặc Safari nhé",
