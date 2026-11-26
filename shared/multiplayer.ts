@@ -93,6 +93,16 @@ export function ownerAction(room: Room, ownerId: string, action: OwnerAction): A
     case "removeBots":
     case "newGame":
       return hostAction(room, action);
+    case "transferOwner": {
+      // Hand the room to another person seated here (not a bot, and online).
+      const next = getPlayer(room, action.playerId);
+      if (!next || next.id === ownerId || next.isBot || !next.connected) return { ok: false, error: "err.invalidTarget" };
+      room.ownerId = next.id;
+      // The room now counts as theirs: one-room-per-account and their role cards.
+      room.creatorId = next.userId ?? null;
+      log(room, "log.ownerChanged", { name: next.name });
+      return { ok: true };
+    }
     case "kick":
       if (action.playerId === ownerId) return { ok: false, error: "err.invalidTarget" };
       return hostAction(room, action);

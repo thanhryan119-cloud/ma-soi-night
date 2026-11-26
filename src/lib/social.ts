@@ -1,13 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { ChatMessage, Stroke } from "@shared/social";
+import type { ChatMessage } from "@shared/social";
 import { emitAck, getSocket } from "./socket";
 
-/** Chat messages + board strokes of the current room, kept in sync with the server. */
+/** Chat messages of the current room, kept in sync with the server. */
 export function useSocial(syncKey: string) {
   const [chat, setChat] = useState<ChatMessage[]>([]);
-  const [strokes, setStrokes] = useState<Stroke[]>([]);
   /** Who is typing right now (player ids), each with when it expires. */
   const [typing, setTyping] = useState<Record<string, number>>({});
 
@@ -15,10 +14,9 @@ export function useSocial(syncKey: string) {
     const s = getSocket();
     let alive = true;
     const sync = async () => {
-      const r = await emitAck<{ chat: ChatMessage[]; strokes: Stroke[] }>("social:sync");
+      const r = await emitAck<{ chat: ChatMessage[] }>("social:sync");
       if (!alive || !r.ok) return;
       setChat(r.chat ?? []);
-      setStrokes(r.strokes ?? []);
     };
     const onMsg = (m: ChatMessage) => {
       setChat((xs) => (xs.some((x) => x.id === m.id) ? xs : [...xs.slice(-199), m]));
@@ -27,15 +25,11 @@ export function useSocial(syncKey: string) {
     // "… is typing": shown until the message lands, they stop, or 15 s pass.
     const onTyping = (p: { from: string; on: boolean }) =>
       setTyping(({ [p.from]: _, ...rest }) => (p.on ? { ...rest, [p.from]: Date.now() + 15_000 } : rest));
-    const onStroke = (st: Stroke) => setStrokes((xs) => [...xs, st]);
-    const onClear = () => setStrokes([]);
     // The host started a new game: the old game's messages go away.
     const onChatClear = () => setChat([]);
     s.on("chat:new", onMsg);
     s.on("chat:typing", onTyping);
     s.on("chat:clear", onChatClear);
-    s.on("board:stroke", onStroke);
-    s.on("board:clear", onClear);
     s.on("connect", sync);
     sync();
     return () => {
@@ -43,8 +37,6 @@ export function useSocial(syncKey: string) {
       s.off("chat:new", onMsg);
       s.off("chat:typing", onTyping);
       s.off("chat:clear", onChatClear);
-      s.off("board:stroke", onStroke);
-      s.off("board:clear", onClear);
       s.off("connect", sync);
     };
   }, [syncKey]);
@@ -59,12 +51,6 @@ export function useSocial(syncKey: string) {
     return () => clearInterval(t);
   }, [typing]);
   const typingIds = Object.keys(typing);
-  const sendStroke = useCallback(async (stroke: Omit<Stroke, "id" | "by">) => {
-    const r = await emitAck<{ stroke: Stroke }>("board:stroke", { stroke });
-    if (r.ok && r.stroke) setStrokes((xs) => [...xs, r.stroke!]);
-    return r;
-  }, []);
-  const clearBoard = useCallback(() => emitAck("board:clear"), []);
 
-  return { chat, strokes, typingIds, sendChat, sendTyping, sendStroke, clearBoard };
+  return { chat, typingIds, sendChat, sendTyping };
 }

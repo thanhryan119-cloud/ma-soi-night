@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addPlayer, createRoom, hostAction } from "../shared/engine";
-import { canSpeak, sanitizeChat, sanitizeStroke, voiceAccess } from "../shared/social";
+import { canSpeak, sanitizeChat, voiceAccess } from "../shared/social";
 import type { RoleId } from "../shared/types";
 
 function room4(roles: RoleId[] = ["werewolf", "villager", "villager", "villager"]) {
@@ -63,13 +63,4 @@ describe("sanitizers", () => {
     expect(sanitizeChat("x".repeat(500))!.length).toBe(200);
   });
 
-  it("strokes need a known colour and size and are clamped to the board", () => {
-    const ok = sanitizeStroke({ color: "#e5383b", size: 5, points: [0.1, 0.2, 1.5, -1] }, "p1", "s1");
-    expect(ok).toEqual({ id: "s1", by: "p1", color: "#e5383b", size: 5, points: [0.1, 0.2, 1, 0] });
-    expect(sanitizeStroke({ color: "red", size: 5, points: [0, 0] }, "p", "s")).toBeNull();
-    expect(sanitizeStroke({ color: "#e5383b", size: 99, points: [0, 0] }, "p", "s")).toBeNull();
-    expect(sanitizeStroke({ color: "#e5383b", size: 5, points: [0, 0, 1] }, "p", "s")).toBeNull();
-    expect(sanitizeStroke({ color: "#e5383b", size: 5, points: new Array(5000).fill(0.5) }, "p", "s")).toBeNull();
-    expect(sanitizeStroke({ color: "#e5383b", size: 5, points: [0, "x"] }, "p", "s")).toBeNull();
-  });
 });

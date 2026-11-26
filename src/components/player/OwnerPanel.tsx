@@ -163,6 +163,16 @@ export function OwnerSettings({ state }: { state: ClientState }) {
               <span className="min-w-0 flex-1 truncate font-semibold">
                 <StyledName p={p} /> {p.id === state.ownerId && "👑"} {p.isBot && "🤖"}
               </span>
+              {p.id !== state.ownerId && !p.isBot && p.connected && (
+                <button
+                  className="btn-ghost btn-sm"
+                  title={t("owner.makeOwner")}
+                  aria-label={t("owner.makeOwner")}
+                  onClick={() => confirm(t("owner.confirmMakeOwner", { name: p.name })) && act({ type: "transferOwner", playerId: p.id })}
+                >
+                  👑
+                </button>
+              )}
               {p.id !== state.ownerId && (
                 <button
                   className="btn-ghost btn-sm"
