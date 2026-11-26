@@ -49,6 +49,7 @@ import {
   type ShopInfo,
 } from "@/lib/account";
 import { useT } from "@/lib/i18n";
+import { useEmbedded } from "@/lib/embed";
 
 /** Shown in this order. */
 const SECTIONS: { kind: ItemKind; icon: string; title: string }[] = [
@@ -62,6 +63,7 @@ const split = (id: ItemId) => id.split(":") as [ItemKind, string];
 
 export default function ShopPage() {
   const t = useT();
+  const embedded = useEmbedded();
   const account = useAccount();
   const user = account?.user ?? null;
   const owned = user?.owned ?? [];
@@ -93,13 +95,15 @@ export default function ShopPage() {
   const mine = SHOP_ITEMS.filter((id) => owned.includes(id)).length;
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-4xl flex-col gap-6 px-4 pt-16 pb-10">
-      <GlobalChat />
-      <LangSwitch />
+    <main className={`mx-auto flex min-h-dvh max-w-4xl flex-col gap-6 px-4 pb-10 ${embedded ? "pt-4" : "pt-16"}`}>
+      {!embedded && <GlobalChat />}
+      {!embedded && <LangSwitch />}
       <div className="flex flex-wrap items-center gap-3">
-        <Link href="/" className="btn-ghost btn-sm" title={t("common.back")}>
-          ←<span className="sr-only">{t("common.back")}</span>
-        </Link>
+        {!embedded && (
+          <Link href="/" className="btn-ghost btn-sm" title={t("common.back")}>
+            ←<span className="sr-only">{t("common.back")}</span>
+          </Link>
+        )}
         <h1 className="font-display text-3xl font-black">🛒 {t("shop.title")}</h1>
         {user && <span className="chip ml-auto">{t("shop.ownedCount", { owned: mine, total })}</span>}
         <GoldChip />

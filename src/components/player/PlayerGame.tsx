@@ -23,6 +23,7 @@ import { CardBack, RoleCardFull } from "@/components/art/Tarot";
 import { useLocale, useT } from "@/lib/i18n";
 import { emitAck, playerKey, storage } from "@/lib/socket";
 import { loadLocalProfile, saveLocalProfile, useAccount } from "@/lib/account";
+import { RoomWindows } from "./RoomWindows";
 import { useMyStats } from "@/lib/stats";
 import { roleTier } from "@shared/achievements";
 import { useRouter } from "next/navigation";
@@ -92,6 +93,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
         </div>
         {!connected && <ConnectionDot connected={false} />}
         {!wide && !INLINE_CHAT.has(kind) && <PhoneChatButton state={state} viewer={me.id} />}
+        <RoomWindows state={state} />
         <LeaveButton state={state} />
       </header>
 
