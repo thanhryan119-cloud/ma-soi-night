@@ -931,6 +931,14 @@ function leaveCreatedRoom(room: Room, userId: string) {
 }
 
 /** Where this person already sits in another room: by Google account, or by browser for guests. */
+/** The seat this account (or this phone) already has in the room, if any. */
+function seatHere(room: Room, userId: string | null | undefined, deviceId: unknown) {
+  // A phone alone (a guest) only counts before the game: getting back into a running game without an account needs the owner.
+  const device = typeof deviceId === "string" && deviceId && room.phase.kind === "lobby" ? deviceId : null;
+  if (!userId && !device) return undefined;
+  return room.players.find((p) => !p.isBot && !room.abandoned?.includes(p.id) && ((userId && p.userId === userId) || (device && p.deviceId === device)));
+}
+
 function seatElsewhere(userId: string | null | undefined, deviceId: unknown, except: string) {
   const device = typeof deviceId === "string" && deviceId ? deviceId : null;
   if (!userId && !device) return undefined;
@@ -1188,6 +1196,17 @@ io.on("connection", (raw) => {
         return { ok: false, error: p.password ? "err.wrongPassword" : "err.passwordRequired" };
       // Signed-in players get their photo from the account (never trusted from the client).
       const user = accounts.userForToken(p.authToken);
+      // One seat per account (and per phone) in a room: joining again hands back the seat you already have.
+      const mine = seatHere(room, user?.id, p.deviceId);
+      if (mine) {
+        const token = grantSeat(room, mine.id);
+        refreshOwned(room, mine.id);
+        mine.connected = true;
+        attach(socket, room, "player", mine.id);
+        back(room, mine);
+        touch(room);
+        return { ok: true, playerId: mine.id, token };
+      }
       const other = otherSeat(p, user?.id, room.code);
       if (other.error) return other.error;
       const res = addPlayer(room, {
