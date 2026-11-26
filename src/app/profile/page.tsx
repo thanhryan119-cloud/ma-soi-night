@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { QuestsLink } from "@/components/Quests";
 import { CollectionLink } from "@/components/RoleCollection";
-import { Avatar, LangSwitch, StyledName, toast } from "@/components/ui";
+import { Avatar, LangSwitch, ProfileCard, StyledName, toast } from "@/components/ui";
 import {
   SHOP_RETURN_KEY,
   checkOrder,
@@ -79,7 +79,7 @@ export default function ProfilePage() {
         </Link>
       )}
       {look && (
-        <div className="flex items-center gap-4 rounded-lg border border-white/10 bg-night-900 p-4">
+        <ProfileCard bg={look.style.card} className="flex items-center gap-4 p-4">
           <Avatar p={look} size="xl" />
           <div className="min-w-0 flex-1">
             <StyledName p={look} className="block truncate text-3xl font-black" />
@@ -87,7 +87,7 @@ export default function ProfilePage() {
               ✏️ {t("profile.edit")}
             </button>
           </div>
-        </div>
+        </ProfileCard>
       )}
       <MyStats />
       {editing && profile && (
