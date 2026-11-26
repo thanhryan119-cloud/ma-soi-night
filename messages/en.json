@@ -455,8 +455,7 @@
     "votes": "{count, plural, one {# vote} other {# votes}}"
   },
   "player": {
-    "standInYou": "You were away for over a minute, so a bot is playing for you.",
-    "standInBack": "I'm back",
+    "standInYou": "You were away for over a minute, so a bot is playing for you. Tap anywhere to play again.",
     "standInBadge": "A bot is playing for them",
     "narrationSoon": "The narrator's words show here once the game starts. Tap 🔇 to hear them read aloud.",
     "rename": "Change name",
