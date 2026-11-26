@@ -25,6 +25,7 @@ import {
   fillVotesIfTimeUp,
   stepKey,
   timerOp,
+  MAX_PLAYERS,
 } from "../shared/engine";
 import { botDecide, botTalks } from "../shared/bots";
 import { DEFAULT_BOT_SPEED } from "../shared/roles";
@@ -242,6 +243,16 @@ const globalChat = createGlobalChat(io, {
     }
     return false;
   },
+  // Invites go into the room the inviter is in, while it still waits for players.
+  inviteRoom: (socket, to) => {
+    const { code, kind } = (socket as AppSocket).data;
+    const room = code ? rooms.get(code) : undefined;
+    if (!room || (kind !== "player" && kind !== "host")) return { error: "err.inviteNoRoom" };
+    if (room.phase.kind !== "lobby") return { error: "err.inviteStarted" };
+    if (room.players.length >= MAX_PLAYERS) return { error: "err.inviteFull" };
+    if (room.players.some((p) => !p.isBot && p.userId === to && !room.abandoned?.includes(p.id))) return { error: "err.inviteAlreadyIn" };
+    return { code: room.code };
+  },
   whereIs: (sid) => {
     const s = io.sockets.sockets.get(sid) as AppSocket | undefined;
     const room = s?.data.code ? rooms.get(s.data.code) : undefined;
@@ -261,8 +272,6 @@ const globalChat = createGlobalChat(io, {
     }
     return { open, playing };
   },
-  friendsOf: (id) => accounts.friendsOf(id),
-  setFriend: (id, friendId, on) => accounts.setFriend(id, friendId, on),
 });
 const social = createSocial(io, (code) => rooms.get(code), channel, (room, fromId, text) => {
   if (!room.game) return;
@@ -1243,10 +1252,12 @@ io.on("connection", (raw) => {
     guard(() => {
       const room = rooms.get(normCode(p.code));
       if (!room) return { ok: false, error: "err.roomNotFound" };
-      if (!checkPassword(room.passwordHash, p.password))
-        return { ok: false, error: p.password ? "err.wrongPassword" : "err.passwordRequired" };
       // Signed-in players get their photo from the account (never trusted from the client).
       const user = accounts.userForToken(p.authToken);
+      // Someone invited into the room comes in without its password.
+      const invited = !!user && globalChat.invitedTo(user.id, room.code);
+      if (!invited && !checkPassword(room.passwordHash, p.password))
+        return { ok: false, error: p.password ? "err.wrongPassword" : "err.passwordRequired" };
       // One seat per account (and per phone) in a room: joining again hands back the seat you already have.
       const mine = seatHere(room, user?.id, p.deviceId);
       if (mine) {
@@ -1255,6 +1266,7 @@ io.on("connection", (raw) => {
         mine.connected = true;
         attach(socket, room, "player", mine.id);
         back(room, mine);
+        if (user) globalChat.takeInvite(user.id, room.code);
         touch(room);
         return { ok: true, playerId: mine.id, token };
       }
@@ -1274,6 +1286,7 @@ io.on("connection", (raw) => {
       other.leave();
       res.player.connected = true;
       attach(socket, room, "player", res.player.id);
+      if (user) globalChat.takeInvite(user.id, room.code);
       touch(room);
       return { ok: true, playerId: res.player.id, token: res.player.token };
     }, ack),

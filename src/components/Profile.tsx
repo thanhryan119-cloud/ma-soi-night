@@ -11,7 +11,6 @@ import { fetchPlayerProfile, fetchUserProfile } from "@/lib/stats";
 import { Avatar, RoleBadge, Spinner, StyledName } from "./ui";
 import { CollectionPeek } from "./RoleCollection";
 import { openReplay } from "./GameReplay";
-import { FriendButton } from "./Friends";
 
 type Target = { playerId: string } | { userId: string };
 
@@ -154,11 +153,6 @@ function ProfileBody({ profile }: { profile: PublicProfile }) {
               </span>
             )}
           </div>
-          {profile.userId && !profile.isBot && (
-            <div className="mt-2">
-              <FriendButton userId={profile.userId} />
-            </div>
-          )}
         </div>
       </div>
       {profile.isBot ? (

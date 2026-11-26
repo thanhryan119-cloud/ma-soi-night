@@ -10,6 +10,8 @@ import type { OnlineList } from "@shared/social";
 import { LangSwitch, toast } from "@/components/ui";
 import { Leaderboard } from "@/components/Leaderboard";
 import { GlobalChat, useGlobalChat } from "@/components/GlobalChat";
+
+type Chat = ReturnType<typeof useGlobalChat>;
 import { Mailbox } from "@/components/Mailbox";
 import { OnlinePeople } from "@/components/OnlinePeople";
 import { HowToPlay } from "@/components/HowToPlay";
@@ -19,14 +21,17 @@ import { GOOGLE_CLIENT_ID, useAccount } from "@/lib/account";
 import { GoogleButton } from "@/components/ProfileEditor";
 
 export default function Home() {
+  // The server chat also knows who is online, the room counts and the friends: the page shows them too.
+  return <GlobalChat render={(chat) => <HomePage chat={chat} />} />;
+}
+
+function HomePage({ chat }: { chat: Chat }) {
   const t = useT();
-  // Who is online and how many rooms are open (the same channel as the server chat).
-  const { online } = useGlobalChat(false);
+  const { online } = chat;
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 pt-14 pb-28 sm:pt-16">
       <LangSwitch />
-      <GlobalChat />
       <div className="fixed top-3 right-3 z-50 flex gap-2">
         <Mailbox />
         <QuestsLink />
@@ -68,7 +73,7 @@ export default function Home() {
       <Features />
 
       <div className="mt-10 grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <OnlinePeople online={online} />
+        <OnlinePeople chat={chat} />
         <Leaderboard className="" />
       </div>
 

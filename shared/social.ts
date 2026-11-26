@@ -230,8 +230,6 @@ export interface OnlineList {
   rooms?: { open: number; playing: number };
 }
 
-/** Most accounts one account can keep as friends. */
-export const MAX_FRIENDS = 300;
 
 /** A private line between two accounts, shown as a tab of the server chat. */
 export interface DirectMessage {
