@@ -27,14 +27,17 @@ describe("shop catalog", () => {
     expect(SHOP_ITEMS.some((id) => id.startsWith("role:"))).toBe(false);
     expect(SHOP_ITEMS).toContain("chat:stars");
     expect(SHOP_ITEMS).not.toContain("chat:plain");
-    expect(SHOP_ITEMS).toHaveLength(22);
+    expect(SHOP_ITEMS).toContain("card:bloodmoon");
+    expect(SHOP_ITEMS).not.toContain("card:plain");
+    expect(SHOP_ITEMS).toHaveLength(28);
   });
 
   it("strips paid parts of a style the player does not own", () => {
-    const style = { font: "script", effect: "glow", frame: "moon", chat: "ember" } as const;
+    const style = { font: "script", effect: "glow", frame: "moon", chat: "ember", card: "tarot" } as const;
     expect(limitStyle(style, [])).toEqual(DEFAULT_STYLE);
-    expect(limitStyle(style, ["effect:glow"])).toEqual({ font: "default", effect: "glow", frame: "none", chat: "plain" });
+    expect(limitStyle(style, ["effect:glow"])).toEqual({ ...DEFAULT_STYLE, effect: "glow" });
     expect(limitStyle(style, ["chat:ember"])).toEqual({ ...DEFAULT_STYLE, chat: "ember" });
+    expect(limitStyle(style, ["card:tarot"])).toEqual({ ...DEFAULT_STYLE, card: "tarot" });
     expect(limitStyle(style, "all")).toEqual(style);
     expect(sanitizeOwned(["effect:glow", "effect:glow", "effect:none", "x:y", 3])).toEqual(["effect:glow"]);
   });
@@ -51,7 +54,7 @@ describe("shop catalog", () => {
     // Buying later: the server refreshes `owned` before the profile update.
     buyer.owned = ["effect:blood", "frame:moon"];
     playerAction(room, buyer.id, { type: "updateProfile", style: { frame: "moon" } });
-    expect(buyer.style).toEqual({ font: "default", effect: "blood", frame: "moon", chat: "plain" });
+    expect(buyer.style).toEqual({ ...DEFAULT_STYLE, effect: "blood", frame: "moon" });
 
     hostAction(room, { type: "addBots", count: 30 });
     const bots = room.players.filter((p) => p.isBot);

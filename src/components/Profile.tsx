@@ -8,7 +8,7 @@ import { MIN_HUMANS_FOR_STATS, casualOf, winRate, type PublicProfile, type UserS
 import { roleWins } from "@shared/achievements";
 import { useLocale, useT } from "@/lib/i18n";
 import { fetchPlayerProfile, fetchUserProfile } from "@/lib/stats";
-import { Avatar, RoleBadge, Spinner, StyledName } from "./ui";
+import { Avatar, ProfileCard, RoleBadge, Spinner, StyledName } from "./ui";
 import { CollectionPeek } from "./RoleCollection";
 import { openReplay } from "./GameReplay";
 
@@ -135,7 +135,7 @@ function ProfileBody({ profile }: { profile: PublicProfile }) {
   const look = { ...profile, avatar: profile.avatar || "👤", alive: true, style: profile.style ?? undefined };
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center gap-4">
+      <ProfileCard bg={profile.style?.card} className="flex items-center gap-4 p-4">
         <Avatar p={look} size="xl" />
         <div className="min-w-0">
           <StyledName p={look} className="block truncate text-2xl font-black" />
@@ -154,7 +154,7 @@ function ProfileBody({ profile }: { profile: PublicProfile }) {
             )}
           </div>
         </div>
-      </div>
+      </ProfileCard>
       {profile.isBot ? (
         <p className="rounded-xl bg-white/5 p-4 text-center text-sm text-white/60">{t("stats.botNoStats")}</p>
       ) : !profile.userId ? (
