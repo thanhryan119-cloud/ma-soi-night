@@ -19,6 +19,7 @@ import { useOtherRoom } from "@/components/CreateRoomGate";
 import { getAuth, loadLocalProfile, useAccount } from "@/lib/account";
 import { useLocale, useT } from "@/lib/i18n";
 import { emitAck, getDeviceId, getSocket, playerKey, storage } from "@/lib/socket";
+import { WhereChip } from "@/components/Friends";
 
 type Friends = FriendsState<OnlineUser>;
 type Invite = RoomInvite<OnlineUser>;
@@ -455,8 +456,13 @@ function PersonRow({ chat, u, online, children }: { chat: Global; u: OnlineUser;
             />
           )}
         </span>
-        <StyledName p={look} className="truncate text-sm font-bold" />
-        {self && <span className="shrink-0 text-[10px] text-white/40">({t("globalChat.you")})</span>}
+        <span className="flex min-w-0 flex-col items-start">
+          <span className="flex max-w-full items-center gap-1">
+            <StyledName p={look} className="truncate text-sm font-bold" />
+            {self && <span className="shrink-0 text-[10px] text-white/40">({t("globalChat.you")})</span>}
+          </span>
+          {online && u.where && <WhereChip where={u.where} link={false} />}
+        </span>
       </ProfileLink>
       {children}
     </li>
@@ -722,7 +728,7 @@ function DirectChat({ chat, peerId, className = "" }: { chat: Global; peerId: st
  * Outside a room: the panel in the corner of the page, open by default. Closing
  * it leaves a button, and the choice is remembered.
  */
-export function GlobalChat() {
+export function GlobalChat({ render }: { render?: (chat: Global) => React.ReactNode } = {}) {
   const t = useT();
   const [open, setOpenState] = useState(false);
   useEffect(() => setOpenState(storage.get<boolean>(OPEN_KEY) ?? true), []);
@@ -736,6 +742,8 @@ export function GlobalChat() {
 
   return (
     <>
+      {/* The page can show the same online list and friends (one connection, one set of toasts). */}
+      {render?.(chat)}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

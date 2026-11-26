@@ -13,13 +13,17 @@ import { ProfileLink } from "./Profile";
 import { Avatar, Spinner, StyledName } from "./ui";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
+/** Rows shown at first, and after "show more". Your own row is always added when it falls outside. */
+const TOP_SHORT = 10;
+const TOP_LONG = 20;
 
-export function Leaderboard() {
+export function Leaderboard({ className = "mt-10" }: { className?: string }) {
   const t = useT();
   const me = useAccount()?.user.id;
   const [rows, setRows] = useState<LeaderboardRow[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [mode, setMode] = useState<StatsMode>("casual");
+  const [long, setLong] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -33,9 +37,15 @@ export function Leaderboard() {
     };
   }, []);
 
-  const shown = rows ? rankLeaderboard(rows, mode) : [];
+  const ordered = rows ? rankLeaderboard(rows, mode) : [];
+  const limit = long ? TOP_LONG : TOP_SHORT;
+  const top = ordered.slice(0, limit);
+  const myIndex = me ? ordered.findIndex((r) => r.userId === me) : -1;
+  /** Rows on screen with their place in the whole ranking. */
+  const shown = top.map((r, i) => ({ r, i }));
+  if (myIndex >= limit) shown.push({ r: ordered[myIndex], i: myIndex });
   return (
-    <section className="card mt-10 p-6">
+    <section className={`card p-5 sm:p-6 ${className}`}>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <h2 className="text-xl font-bold">🏆 {t("leaderboard.title")}</h2>
         {rows && <span className="chip">{t("leaderboard.accounts", { count: rows.length })}</span>}
@@ -78,13 +88,19 @@ export function Leaderboard() {
                 </tr>
               </thead>
               <tbody>
-                {shown.map((r, i) => {
+                {shown.map(({ r, i }, k) => {
                   const look = { name: r.name, avatar: "👤", avatarUrl: r.avatarUrl, style: r.style ?? undefined, alive: true };
                   const line = lineOf(r, mode);
                   const ranked = isRanked(line);
-                  const firstUnranked = !ranked && (i === 0 || isRanked(lineOf(shown[i - 1], mode)));
+                  const firstUnranked = !ranked && (k === 0 || isRanked(lineOf(shown[k - 1].r, mode)));
+                  const gap = k > 0 && shown[k - 1].i !== i - 1;
                   return (
                     <Fragment key={r.userId}>
+                    {gap && (
+                      <tr className="border-t border-white/10">
+                        <td colSpan={6} className="py-0.5 text-center text-xs text-white/30">⋯</td>
+                      </tr>
+                    )}
                     {firstUnranked && (
                       <tr className="border-t border-white/10 bg-white/[0.03]">
                         <td colSpan={6} className="px-3 py-1.5 text-xs text-white/50">
@@ -94,13 +110,13 @@ export function Leaderboard() {
                     )}
                     <tr className={`border-t border-white/5 ${r.userId === me ? "bg-gold/10" : ""}`}>
                       <td className="py-2 pl-3 font-display text-lg font-black text-gold tabular-nums">
-                        {ranked ? (MEDALS[i] ?? i + 1) : "–"}
+                        {ranked ? (MEDALS[i] ?? i + 1) : "·"}
                       </td>
                       <td className="max-w-0 py-2">
                         <ProfileLink userId={r.userId} className="max-w-full gap-2">
                           <Avatar p={look} size="sm" />
                           <StyledName p={look} className="truncate font-semibold" />
-                          {r.userId === me && <span className="chip shrink-0 py-0 text-[10px]">{t("leaderboard.you")}</span>}
+                          {r.userId === me && <span className="chip hidden shrink-0 py-0 text-[10px] sm:inline-flex">{t("leaderboard.you")}</span>}
                         </ProfileLink>
                       </td>
                       <td className="hidden px-2 py-2 text-right text-white/70 tabular-nums sm:table-cell">{line.wolfGames}</td>
@@ -116,6 +132,11 @@ export function Leaderboard() {
               </tbody>
             </table>
           </div>
+          {ordered.length > TOP_SHORT && (
+            <button type="button" className="btn-ghost btn-sm mx-auto mt-3" onClick={() => setLong((x) => !x)}>
+              {long ? t("leaderboard.showLess") : t("leaderboard.showMore", { n: Math.min(TOP_LONG, ordered.length) })}
+            </button>
+          )}
         </>
       )}
     </section>

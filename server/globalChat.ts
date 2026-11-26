@@ -23,6 +23,7 @@ import {
   type GlobalMessage,
   type OnlineList,
   type OnlineUser,
+  type Whereabouts,
 } from "../shared/social";
 import type { PlayerStyle } from "../shared/cosmetics";
 import {
@@ -61,6 +62,10 @@ export function createGlobalChat(
      * room, the game started, the room is full, they are in it already).
      */
     inviteRoom: (socket: Socket, to: string) => { code: string } | { error: string };
+    /** Where the person on this socket is (null: outside any room). */
+    whereIs?: (socketId: string) => Whereabouts | null;
+    /** Listed rooms waiting for players, and games being played. */
+    roomCounts?: () => { open: number; playing: number };
   },
 ) {
   const file = join(opts.dataDir, "global-chat.json");
@@ -173,14 +178,22 @@ export function createGlobalChat(
 
   // Who has the channel open: socket id -> account (null for a guest).
   const present = new Map<string, Account | null>();
+  const RANK: Record<Whereabouts["status"], number> = { playing: 3, waiting: 2, watching: 1 };
   function onlineList(): OnlineList {
     const users = new Map<string, OnlineUser>();
     let guests = 0;
-    for (const a of present.values()) {
-      if (a) users.set(a.id, pub(a));
-      else guests++;
+    for (const [sid, a] of present) {
+      if (!a) {
+        guests++;
+        continue;
+      }
+      const u = users.get(a.id) ?? pub(a);
+      // One account on several tabs: show the busiest one.
+      const w = opts.whereIs?.(sid);
+      if (w && (!u.where || RANK[w.status] > RANK[u.where.status])) u.where = w;
+      users.set(a.id, u);
     }
-    return { users: [...users.values()].sort((x, y) => x.name.localeCompare(y.name)), guests };
+    return { users: [...users.values()].sort((x, y) => x.name.localeCompare(y.name)), guests, rooms: opts.roomCounts?.() };
   }
   let lastOnline = "";
   let onlineTimer: NodeJS.Timeout | null = null;
@@ -370,5 +383,6 @@ export function createGlobalChat(
     for (const i of used) for (const sid of socketsOf(userId)) io.to(sid).emit("invite:gone", { id: i.id });
   }
 
-  return { register, invitedTo, takeInvite };
+  /** Someone moved between rooms or a game changed phase: tell the channel (throttled, only if it differs). */
+  return { register, invitedTo, takeInvite, presenceChanged: broadcastOnline };
 }

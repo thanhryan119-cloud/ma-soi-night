@@ -253,6 +253,25 @@ const globalChat = createGlobalChat(io, {
     if (room.players.some((p) => !p.isBot && p.userId === to && !room.abandoned?.includes(p.id))) return { error: "err.inviteAlreadyIn" };
     return { code: room.code };
   },
+  whereIs: (sid) => {
+    const s = io.sockets.sockets.get(sid) as AppSocket | undefined;
+    const room = s?.data.code ? rooms.get(s.data.code) : undefined;
+    if (!room || !s?.data.kind || s.data.kind === "screen") return null;
+    const kind = room.phase.kind;
+    const status = s.data.kind === "spectator" ? "watching" : kind === "lobby" || kind === "gameOver" ? "waiting" : "playing";
+    return room.listed ? { status, code: room.code } : { status };
+  },
+  roomCounts: () => {
+    let open = 0;
+    let playing = 0;
+    for (const room of rooms.values()) {
+      if (!roomAlive(room)) continue;
+      const kind = room.phase.kind;
+      if (kind !== "lobby" && kind !== "gameOver") playing++;
+      else if (room.listed && kind === "lobby") open++;
+    }
+    return { open, playing };
+  },
 });
 const social = createSocial(io, (code) => rooms.get(code), channel, (room, fromId, text) => {
   if (!room.game) return;
@@ -291,6 +310,8 @@ function refreshLocks(room: Room) {
 
 function broadcast(room: Room) {
   refreshLocks(room);
+  // Who is playing where (the Online list and the home page counts).
+  globalChat.presenceChanged();
   const ids = io.sockets.adapter.rooms.get(channel(room.code));
   if (!ids) return;
   for (const id of ids) {
