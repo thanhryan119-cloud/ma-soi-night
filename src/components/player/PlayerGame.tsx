@@ -637,17 +637,18 @@ function Lobby({ state, onOwnerSettings }: { state: ClientState; onOwnerSettings
   const [setupOpen, setSetupOpen] = useState(!!iOwn);
   return (
     <Fill scroll={!wide}>
-      <div className="flex shrink-0 items-center gap-3">
-        <SceneArt scene="night" className="h-12 w-auto shrink-0" />
+      {/* The owner gets a slim header so the bots and roles below have the room. */}
+      <div className={`flex shrink-0 items-center ${iOwn ? "gap-2" : "gap-3"}`}>
+        <SceneArt scene="night" className={`${iOwn ? "h-8" : "h-12"} w-auto shrink-0`} />
         <div className="min-w-0">
-          <h2 className="truncate font-bold">{iOwn ? t("owner.setUp") : state.machineHost ? t("owner.waitingOwner") : t("player.waitingHost")}</h2>
+          <h2 className="truncate font-bold">{iOwn ? `👑 ${t("owner.setUp")}` : state.machineHost ? t("owner.waitingOwner") : t("player.waitingHost")}</h2>
           <p className="text-xs text-white/60">{t("player.inLobby", { count: state.players.length })}</p>
         </div>
       </div>
       <OwnerBar state={state} onSettings={onOwnerSettings} />
       {wide ? (
         <>
-          <ShareRoom code={state.code} className="shrink-0" />
+          <ShareRoom code={state.code} className="shrink-0" compact={!!iOwn} />
           <div className="min-h-0 flex-1 overflow-y-auto">
             <LobbySetup state={state} />
           </div>
@@ -665,8 +666,8 @@ function Lobby({ state, onOwnerSettings }: { state: ClientState; onOwnerSettings
           </button>
           {setupOpen && (
             <>
-              <ShareRoom code={state.code} className="shrink-0" />
-              <div className="max-h-[38dvh] shrink-0 overflow-y-auto">
+              <ShareRoom code={state.code} className="shrink-0" compact={!!iOwn} />
+              <div className={`${iOwn ? "max-h-[72dvh]" : "max-h-[38dvh]"} shrink-0 overflow-y-auto`}>
                 <LobbySetup state={state} />
               </div>
             </>

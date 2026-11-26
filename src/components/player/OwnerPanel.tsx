@@ -40,6 +40,32 @@ export function OwnerBar({ state, onSettings }: { state: ClientState; onSettings
   const n = state.players.length;
   const ready = n >= MIN_PLAYERS && totalRoles(state.settings.roleCounts) === n;
 
+  // The owner setting up the lobby: one compact row of buttons, so the setup below gets the room.
+  if (iOwn && kind === "lobby")
+    return (
+      <div className="flex shrink-0 flex-col gap-1">
+        <div className="flex gap-1.5">
+          <button className="btn-ghost btn-sm shrink-0 px-3" onClick={onSettings} title={t("owner.settings")}>
+            ⚙️<span className="sr-only">{t("owner.settings")}</span>
+          </button>
+          <button className="btn-primary btn-sm min-w-0 flex-1 truncate" disabled={!ready} onClick={() => act({ type: "start" })}>
+            🌙 {t("host.start")}
+          </button>
+          <button className="btn-gold btn-sm min-w-0 flex-1 truncate" title={t("owner.playNowDesc")} onClick={() => act({ type: "playNow" })}>
+            ▶ {t("owner.playNow")}
+          </button>
+          {state.locked && <span className="self-center" title={t("lobby.locked")}>🔒</span>}
+        </div>
+        {!ready && (
+          <p className="text-xs text-white/50">
+            {n < MIN_PLAYERS
+              ? t("err.notEnoughPlayers", { min: MIN_PLAYERS })
+              : t("host.mismatch", { roles: totalRoles(state.settings.roleCounts), players: n })}
+          </p>
+        )}
+      </div>
+    );
+
   return (
     <div className="flex shrink-0 flex-col gap-2 rounded-xl border border-gold/30 bg-gold/5 p-2.5 text-sm">
       <div className="flex items-center gap-2">
@@ -99,16 +125,14 @@ export function LobbySetup({ state }: { state: ClientState }) {
   const total = totalRoles(counts);
 
   const botsRow = (
-    <section className="card flex flex-col gap-2 p-3">
-      <div className="flex items-center gap-2">
-        <h3 className="min-w-0 flex-1 font-bold">🤖 {t("lobbySetup.bots", { count: bots })}</h3>
-        {iOwn && (
-          <button className="btn-ghost btn-sm" disabled={!bots} onClick={() => act({ type: "removeBots" })}>
-            {t("host.removeBots")}
-          </button>
-        )}
-      </div>
+    <section className="card flex flex-wrap items-center gap-2 p-2.5">
+      <h3 className="min-w-0 flex-1 font-bold whitespace-nowrap">🤖 {t("lobbySetup.bots", { count: bots })}</h3>
       {iOwn && <AddBots players={n} onAdd={(count) => act({ type: "addBots", count })} />}
+      {iOwn && (
+        <button className="btn-ghost btn-sm" disabled={!bots} onClick={() => act({ type: "removeBots" })}>
+          {t("host.removeBots")}
+        </button>
+      )}
     </section>
   );
 

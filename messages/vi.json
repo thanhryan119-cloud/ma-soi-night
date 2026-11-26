@@ -28,6 +28,16 @@
     "vi": "Tiếng Việt",
     "en": "English"
   },
+  "install": {
+    "title": "Cài Ma Sói lên điện thoại",
+    "desc": "Mở game ngay từ màn hình chính, toàn màn hình như một app.",
+    "install": "Cài app",
+    "later": "Để sau",
+    "gotIt": "Đã hiểu",
+    "ios1": "Bấm nút Chia sẻ ở thanh dưới của Safari",
+    "ios2": "Chọn \"Thêm vào MH chính\"",
+    "ios3": "Bấm \"Thêm\" là xong"
+  },
   "home": {
     "signInToCreate": "Đăng nhập Google để tạo phòng. Người vào chơi thì không cần đăng nhập.",
     "oneRoomTitle": "Bạn đang có một phòng",

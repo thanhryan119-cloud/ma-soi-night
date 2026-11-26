@@ -15,6 +15,7 @@ type Chat = ReturnType<typeof useGlobalChat>;
 import { Mailbox } from "@/components/Mailbox";
 import { OnlinePeople } from "@/components/OnlinePeople";
 import { HowToPlay } from "@/components/HowToPlay";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { APP_VERSION } from "@shared/changelog";
 import { useT } from "@/lib/i18n";
 import { GOOGLE_CLIENT_ID, useAccount } from "@/lib/account";
@@ -32,6 +33,7 @@ function HomePage({ chat }: { chat: Chat }) {
   return (
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 pt-14 pb-28 sm:pt-16">
       <LangSwitch />
+      <InstallPrompt />
       <div className="fixed top-3 right-3 z-50 flex gap-2">
         <Mailbox />
         <QuestsLink />
