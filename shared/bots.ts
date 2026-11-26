@@ -14,7 +14,9 @@ const CERTAIN = 50;
 
 const pick = <T,>(arr: T[]): T | undefined => arr[Math.floor(Math.random() * arr.length)];
 
-/** Returns the next action a bot wants to take right now, or null. */
+/** A bot, or a bot standing in for an away player: it acts and talks by itself. */
+export const botTalks = (p: { isBot: boolean; standIn?: boolean }) => !!(p.isBot || p.standIn);
+
 /**
  * What a bot (or a bot standing in for an away player) does next. `anyone`:
  * asks for a human too (is there something they should be doing?).

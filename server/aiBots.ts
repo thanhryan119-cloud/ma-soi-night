@@ -11,6 +11,7 @@
 import { answerDelay } from "../shared/social";
 import { chatSide, coverRole, mistakeChance, truthChance, type ChatSide } from "../shared/botChat";
 import type { ChatIntel } from "../shared/botIntel";
+import { botTalks } from "../shared/bots";
 import { personaOf, type Persona } from "../shared/botPersona";
 import type { ChatMessage } from "../shared/social";
 import { isWolf } from "../shared/roles";
@@ -217,7 +218,7 @@ export function createAiBots(opts: {
 
   /** Which bots answer: anyone named in the messages, otherwise one or two at random. */
   function responders(room: Room, msgs: { text: string }[]): Player[] {
-    const bots = room.players.filter((p) => p.isBot && p.alive && !isSilenced(room, p.id));
+    const bots = room.players.filter((p) => botTalks(p) && p.alive && !isSilenced(room, p.id));
     if (!bots.length) return [];
     const text = msgs.map((m) => m.text.toLowerCase()).join(" ");
     const named = bots.filter((b) => text.includes(b.name.toLowerCase()));
@@ -262,7 +263,7 @@ export function createAiBots(opts: {
     onHumanChat(room, fromId, text) {
       if (!enabled || !room.game || room.settings.aiBots === false || !opts.canTalk(room)) return;
       const from = room.players.find((p) => p.id === fromId);
-      if (!from || from.isBot) return;
+      if (!from || botTalks(from)) return;
       const s = stateFor(room);
       const now = Date.now();
       if (!s.pending.length) s.firstAt = now;
