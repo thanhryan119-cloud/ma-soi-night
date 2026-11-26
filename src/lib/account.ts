@@ -173,13 +173,14 @@ export interface CodeCheck {
   code: string;
   kind: "percent" | "amount";
   value: number;
-  /** Price of one item after the code. */
+  /** Price of the item after the code. */
   amount: number;
 }
 
 /** What a discount code does for me right now (price after it), or why it can't be used. */
-export async function checkCode(code: string): Promise<ApiResult & Partial<CodeCheck>> {
-  return (await api(`/shop/codes/${encodeURIComponent(code.trim())}`)) as ApiResult & Partial<CodeCheck>;
+export async function checkCode(code: string, itemId?: ItemId): Promise<ApiResult & Partial<CodeCheck>> {
+  const item = itemId ? `?item=${encodeURIComponent(itemId)}` : "";
+  return (await api(`/shop/codes/${encodeURIComponent(code.trim())}${item}`)) as ApiResult & Partial<CodeCheck>;
 }
 
 /**

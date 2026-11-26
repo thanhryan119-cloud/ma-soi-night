@@ -346,6 +346,8 @@ export interface Room {
   title?: string;
   /** The Google account that made the room (one open room per account). */
   creatorId?: string | null;
+  /** Special roles the room cannot use now; set by the server from the free rotation and the creator's role cards. */
+  lockedRoles?: RoleId[];
   /** The machine runs the game: nobody holds the host view, the owner (a player) sets the room up. */
   machineHost?: boolean;
   /** Machine-host rooms: the player who may change the settings and start the game. */

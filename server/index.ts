@@ -33,6 +33,7 @@ import { linesPerDay, personaOf, typingMs } from "../shared/botPersona";
 import { ingestChat, newChatIntel, type ChatIntel } from "../shared/botIntel";
 import { createAiBots } from "./aiBots";
 import { createAccounts } from "./accounts";
+import { lockedRolesAt } from "../shared/freeRoles";
 import { payOSFromEnv } from "./payos";
 import { createQuests } from "./quests";
 import { createShop } from "./shop";
@@ -239,7 +240,13 @@ console.log(`[ai] chat bots ${ai.enabled ? "ON (Gemini)" : "off — set GEMINI_A
 const normCode = (code: unknown) => String(code ?? "").trim().toUpperCase().slice(0, 8);
 const safeAck = (ack: unknown): Ack => (typeof ack === "function" ? (ack as Ack) : () => {});
 
+/** Special roles the room cannot use today: not in the free rotation, and its creator has no card for them. */
+function refreshLocks(room: Room) {
+  room.lockedRoles = lockedRolesAt(Date.now(), room.creatorId ? accounts.ownedFor(room.creatorId) : []);
+}
+
 function broadcast(room: Room) {
+  refreshLocks(room);
   const ids = io.sockets.adapter.rooms.get(channel(room.code));
   if (!ids) return;
   for (const id of ids) {
@@ -1046,6 +1053,7 @@ io.on("connection", (raw) => {
       if (!room || kind !== "player" || !playerId) return { ok: false, error: "err.notInRoom" };
       const action = p as unknown as OwnerAction;
       refreshOwned(room, playerId);
+      refreshLocks(room);
       const res = ownerAction(room, playerId, action);
       if (res.ok && action.type === "kick") kickSockets(room, action.playerId);
       if (res.ok && action.type === "newGame") social.clearForNewGame(room.code);
@@ -1309,6 +1317,7 @@ io.on("connection", (raw) => {
       if (!room || kind !== "host") return { ok: false, error: "err.notHost" };
       const action = p as unknown as HostAction;
       const kickedId = action.type === "kick" ? action.playerId : null;
+      refreshLocks(room);
       const res = hostAction(room, action);
       if (res.ok && kickedId) kickSockets(room, kickedId);
       if (res.ok && action.type === "newGame") social.clearForNewGame(room.code);

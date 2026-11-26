@@ -657,9 +657,7 @@
     "claimFree": "Nhận miễn phí",
     "open": "Cửa hàng",
     "rolesTitle": "Vai đặc biệt",
-    "rolesFreeHint": "Đang giảm 100%. Mọi vai đặc biệt miễn phí cho tất cả mọi người, không cần mua, vào phòng là dùng được ngay.",
-    "openForAll": "Mở cho mọi người",
-    "pageHint": "Mọi thứ bán trong game ở cùng một chỗ: vai đặc biệt (đang giảm 100%), hiệu ứng tên, font tên, khung avatar và nền chat. Mỗi món 50.000đ, mua một lần, gắn với tài khoản Google và dùng trên mọi máy.",
+    "pageHint": "Mọi thứ bán trong game ở cùng một chỗ. Thẻ vai đặc biệt, hiệu ứng tên, font tên, khung avatar và nền chat. Mỗi món 50.000đ, mua thẻ vai theo bộ được giảm 20%. Mua một lần, gắn với tài khoản Google và dùng trên mọi máy.",
     "signInFirst": "Đăng nhập Google để mua. Món đồ sẽ gắn với tài khoản của bạn.",
     "ownedCount": "Đã có {owned}/{total}",
     "wear": "Dùng",
@@ -669,7 +667,13 @@
     "goldHint": "Một số món mua được bằng vàng kiếm từ nhiệm vụ.",
     "buyGold": "Mua bằng vàng",
     "boughtWithGold": "Đã mua {item} bằng vàng!",
-    "needGold": "Còn thiếu {gold} vàng"
+    "needGold": "Còn thiếu {gold} vàng",
+    "bundle": {
+      "wolves": "Bộ Sói",
+      "village": "Bộ Dân làng",
+      "solo": "Bộ Phe riêng",
+      "all": "Trọn bộ"
+    }
   },
   "watch": {
     "badge": "Đang xem",
@@ -825,7 +829,8 @@
     "silenced": "Bạn bị bịt miệng hôm nay.",
     "nothingToIgnite": "Chưa có nhà nào bị tưới xăng.",
     "dmNoUser": "Không tìm thấy người này.",
-    "dmSameGame": "Hai bạn đang ở cùng một ván, không nhắn riêng được tới khi ván kết thúc."
+    "dmSameGame": "Hai bạn đang ở cùng một ván, không nhắn riêng được tới khi ván kết thúc.",
+    "roleLocked": "Vai này hôm nay chưa mở. Mua thẻ vai trong cửa hàng để dùng được mọi ngày."
   },
   "log": {
     "standIn": "{name} vắng mặt, bot chơi hộ cho tới khi quay lại.",
@@ -1275,5 +1280,20 @@
     },
     "guestNote": "Khi chưa đăng nhập, các ván bạn chơi sẽ không được tính vào bộ sưu tập.",
     "preview": "Bộ sưu tập đang chờ bạn"
+  },
+  "freeRoles": {
+    "lockedRole": "Hôm nay chưa mở, mua thẻ vai để dùng mọi ngày",
+    "lockedHint": "Vai có 🔒 hôm nay chưa miễn phí. Mỗi ngày mở một nhóm vai đặc biệt khác nhau, chủ phòng có thẻ vai thì dùng được mọi ngày.",
+    "toShop": "Xem cửa hàng",
+    "hint": "Mỗi ngày mở miễn phí một nhóm vai đặc biệt chọn ngẫu nhiên (lần lượt {sizes} vai). Khi cả {total} vai đều đã được mở thì xáo lại và bắt đầu vòng mới. Có thẻ vai thì dùng vai đó mọi ngày trong phòng bạn tạo, mua theo bộ được giảm 20%.",
+    "today": "Miễn phí hôm nay ({count} vai)",
+    "changesIn": "Đổi sau {hours} giờ {minutes} phút",
+    "bundles": "Bộ thẻ vai",
+    "cards": "Thẻ vai lẻ",
+    "bundleCount": "{count} thẻ",
+    "bundleHave": "Đã có {have}/{total} thẻ, chỉ tính tiền phần còn thiếu",
+    "ownedCard": "Đã có thẻ, dùng mọi ngày",
+    "freeToday": "Miễn phí hôm nay",
+    "freeIn": "Miễn phí lại sau {days} ngày"
   }
 }

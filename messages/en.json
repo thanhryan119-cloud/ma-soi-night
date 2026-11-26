@@ -657,9 +657,7 @@
     "claimFree": "Claim for free",
     "open": "Shop",
     "rolesTitle": "Special roles",
-    "rolesFreeHint": "100% off. Every special role is free for everyone, nothing to buy, ready to use in any room.",
-    "openForAll": "Open to everyone",
-    "pageHint": "Everything sold in the game in one place: special roles (100% off right now), name effects, name fonts, avatar frames and chat backgrounds. 50,000 VND each, bought once, tied to your Google account and usable on any device.",
+    "pageHint": "Everything sold in the game, in one place. Special role cards, name effects, name fonts, avatar frames and chat backgrounds. 50,000 VND each, and role card bundles are 20% off. Buy once, it stays with your Google account on every device.",
     "signInFirst": "Sign in with Google to buy. Items are tied to your account.",
     "ownedCount": "Owned {owned}/{total}",
     "wear": "Wear",
@@ -669,7 +667,13 @@
     "goldHint": "Some items can be bought with gold from quests.",
     "buyGold": "Buy with gold",
     "boughtWithGold": "Bought {item} with gold!",
-    "needGold": "{gold} more gold needed"
+    "needGold": "{gold} more gold needed",
+    "bundle": {
+      "wolves": "Wolf bundle",
+      "village": "Village bundle",
+      "solo": "Solo bundle",
+      "all": "Complete bundle"
+    }
   },
   "watch": {
     "badge": "Watching",
@@ -825,7 +829,8 @@
     "silenced": "You are silenced today.",
     "nothingToIgnite": "No house has been doused yet.",
     "dmNoUser": "This player could not be found.",
-    "dmSameGame": "You're both in the same game, so private messages wait until it ends."
+    "dmSameGame": "You're both in the same game, so private messages wait until it ends.",
+    "roleLocked": "This role is not open today. Buy its role card in the shop to use it every day."
   },
   "log": {
     "standIn": "{name} is away, a bot plays for them until they are back.",
@@ -1275,5 +1280,20 @@
     },
     "guestNote": "Games you play while signed out don't count toward your collection.",
     "preview": "Your collection is waiting"
+  },
+  "freeRoles": {
+    "lockedRole": "Not open today, buy the role card to use it every day",
+    "lockedHint": "Roles with 🔒 are not free today. A different group of special roles opens each day, and a room creator with the role card can use it any day.",
+    "toShop": "Go to the shop",
+    "hint": "Each day a random group of special roles is free ({sizes} roles in turn). Once all {total} have had their day, they are shuffled and a new round begins. A role card opens that role every day in the rooms you create, and bundles are 20% off.",
+    "today": "Free today ({count} roles)",
+    "changesIn": "Changes in {hours}h {minutes}m",
+    "bundles": "Role card bundles",
+    "cards": "Single role cards",
+    "bundleCount": "{count} cards",
+    "bundleHave": "You have {have}/{total}, you only pay for the rest",
+    "ownedCard": "Card owned, open every day",
+    "freeToday": "Free today",
+    "freeIn": "Free again in {days} days"
   }
 }

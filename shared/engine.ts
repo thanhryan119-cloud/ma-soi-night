@@ -14,6 +14,7 @@ import {
   isWolf,
   stepRoles,
   suggestRoles,
+  openRoles,
   totalRoles,
   wakesIn,
 } from "./roles";
@@ -211,6 +212,8 @@ const nameOf = (room: Room, id: string | null | undefined) => getPlayer(room, id
 // Role assignment
 // ---------------------------------------------------------------------------
 
+const isLocked = (room: Room, r: RoleId) => !!room.lockedRoles?.includes(r);
+
 export function validateRoleCounts(counts: Record<RoleId, number>): string | null {
   for (const r of ROLE_IDS) {
     const c = counts[r] ?? 0;
@@ -266,6 +269,7 @@ export function startGame(room: Room): ActionResult {
   if (room.players.length < MIN_PLAYERS) return fail("err.notEnoughPlayers", { min: MIN_PLAYERS });
   const missing = room.players.filter((p) => !room.assignment[p.id]);
   if (missing.length) return fail("err.unassigned", { count: missing.length });
+  if (room.players.some((p) => isLocked(room, room.assignment[p.id]))) return fail("err.roleLocked");
   if (!room.players.some((p) => isWolf(room.assignment[p.id]))) return fail("err.noWolves");
   const roles: Record<string, RoleId> = {};
   for (const p of room.players) {
@@ -1338,12 +1342,14 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       const counts = { ...emptyRoleCounts(), ...action.roleCounts };
       const err = validateRoleCounts(counts);
       if (err) return fail(err);
+      // A locked role can be taken out but not added (it may be left over from yesterday).
+      if (ROLE_IDS.some((r) => isLocked(room, r) && counts[r] > (room.settings.roleCounts[r] ?? 0))) return fail("err.roleLocked");
       room.settings = { ...room.settings, roleCounts: counts };
       return ok;
     }
     case "useSuggested":
       if (!inLobby) return fail("err.wrongPhase");
-      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, ROLE_IDS) };
+      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, openRoles(room)) };
       return ok;
     case "assignRandom":
       if (!inLobby) return fail("err.wrongPhase");
@@ -1353,6 +1359,7 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       if (!getPlayer(room, action.playerId)) return fail("err.invalidTarget");
       if (action.roleId === null) delete room.assignment[action.playerId];
       else if (!ROLES[action.roleId]) return fail("err.invalidTarget");
+      else if (isLocked(room, action.roleId) && room.assignment[action.playerId] !== action.roleId) return fail("err.roleLocked");
       else room.assignment[action.playerId] = action.roleId;
       return ok;
     }
@@ -1412,7 +1419,7 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       room.game = null;
       room.assignment = {};
       room.phase = { kind: "lobby", night: 0, day: 0, steps: [], stepIndex: 0, verdictIndex: 0 };
-      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, ROLE_IDS) };
+      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, openRoles(room)) };
       room.log = [];
       resetTimer(room);
       log(room, "log.newGame");

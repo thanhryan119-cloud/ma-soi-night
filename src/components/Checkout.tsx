@@ -5,7 +5,7 @@
 // button. Inline on the profile page, or as a dialog (CheckoutDialog).
 
 import { useEffect, useState } from "react";
-import { ITEM_PRICE_VND, type ItemId } from "@shared/cosmetics";
+import { ITEM_PRICE_VND, bundleListPrice, isBundle, itemPrice, type ItemId } from "@shared/cosmetics";
 import { buyItem, checkCode, fetchShop, useAccount, type CodeCheck, type ShopInfo } from "@/lib/account";
 import { useLocale, useT } from "@/lib/i18n";
 import { toast, useErrorToast } from "./ui";
@@ -15,6 +15,17 @@ export function usePrice() {
   const t = useT();
   const { locale } = useLocale();
   return (vnd: number) => t("shop.price", { price: new Intl.NumberFormat(locale === "en" ? "en-US" : "vi-VN").format(vnd) });
+}
+
+/** A shop item's name: a style item, a role card (the role's name) or a bundle. */
+export function useItemName() {
+  const t = useT();
+  return (id: string) => {
+    const [kind, value] = id.split(":");
+    if (kind === "role") return t(`roles.${value}.name`);
+    if (kind === "bundle") return t(`shop.bundle.${value}`);
+    return t(`profile.${kind}.${value}`);
+  };
 }
 
 export function useShopInfo() {
@@ -55,14 +66,18 @@ export function CheckoutPanel({
     setBusy(false);
   }, [itemId]);
 
-  const listPrice = shop?.price ?? ITEM_PRICE_VND;
+  const owned = user?.owned ?? [];
+  // A bundle costs 20% less than its missing role cards one by one.
+  const bundle = isBundle(itemId);
+  const listPrice = bundle ? itemPrice(itemId, owned) : (shop?.price ?? ITEM_PRICE_VND);
+  const wasPrice = applied ? listPrice : bundle ? bundleListPrice(itemId, owned) : null;
   const free = !!applied && applied.amount === 0;
   const cost = price(applied ? applied.amount : listPrice);
 
   async function apply() {
     if (!codeText.trim()) return;
     setChecking(true);
-    const r = await checkCode(codeText);
+    const r = await checkCode(codeText, itemId);
     setChecking(false);
     if (showError(r) && r.code && r.kind && r.value !== undefined && r.amount !== undefined)
       setApplied({ code: r.code, kind: r.kind, value: r.value, amount: r.amount });
@@ -85,7 +100,7 @@ export function CheckoutPanel({
       <div className="flex flex-wrap items-baseline justify-between gap-x-2">
         <span className="font-bold">{title}</span>
         <span className="flex items-baseline gap-2">
-          {applied && <s className="text-sm text-white/40">{price(listPrice)}</s>}
+          {wasPrice !== null && <s className="text-sm text-white/40">{price(wasPrice)}</s>}
           <span className="font-bold text-gold">{free ? t("shop.free") : cost}</span>
         </span>
       </div>
