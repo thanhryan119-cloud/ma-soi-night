@@ -193,23 +193,38 @@ function Tile({ label, value, accent = false }: { label: string; value: string |
   );
 }
 
-function Bar({ label, c, color }: { label: React.ReactNode; c: WinCount; color: string }) {
+/** Win rate as a ring in the team's or role's colour, with games and wins under it. */
+function RateTile({ icon, label, c, color }: { icon: string; label: string; c: WinCount; color: string }) {
   const t = useT();
+  const rate = winRate(c) * 100;
   return (
-    <li className="flex flex-col gap-1">
-      <div className="flex items-center gap-2 text-sm">
-        <span className="min-w-0 flex-1 truncate">{label}</span>
-        <span className="shrink-0 text-xs text-white/60 tabular-nums">
-          {t("stats.gamesWins", { games: c.games, wins: c.wins })}
+    <li
+      className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-2.5"
+      style={{ borderLeft: `3px solid ${color}` }}
+      title={t("stats.gamesWins", { games: c.games, wins: c.wins })}
+    >
+      <span
+        className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full"
+        style={{ background: `conic-gradient(${color} ${rate}%, rgba(255, 255, 255, 0.08) 0)` }}
+        aria-hidden
+      >
+        <span className="absolute inset-[5px] rounded-full bg-night-950" />
+        <span className="relative text-xl">{icon}</span>
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-sm font-bold text-moon">{label}</span>
+        <span className="font-display text-xl leading-tight font-black tabular-nums" style={{ color }}>
+          {pct(c)}
         </span>
-        <span className="w-10 shrink-0 text-right font-bold tabular-nums">{pct(c)}</span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-        <div className="h-full rounded-full" style={{ width: `${winRate(c) * 100}%`, background: color }} />
-      </div>
+        <span className="truncate text-[11px] text-white/50 tabular-nums">{t("stats.gamesWins", { games: c.games, wins: c.wins })}</span>
+      </span>
     </li>
   );
 }
+
+const RateGrid = ({ children }: { children: React.ReactNode }) => (
+  <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">{children}</ul>
+);
 
 /** Career numbers of one account (also on the player's own profile page). */
 export function StatsView({ stats }: { stats: UserStats | null }) {
@@ -245,21 +260,21 @@ export function StatsView({ stats }: { stats: UserStats | null }) {
 
       <section>
         <h4 className="mb-2 text-sm font-bold text-white/80">{t("stats.byTeam")}</h4>
-        <ul className="flex flex-col gap-2.5">
-          <Bar label={`🐺 ${t("teams.wolves")}`} c={stats.byTeam.wolves} color={ROLES.werewolf.color} />
-          <Bar label={`🏡 ${t("teams.village")}`} c={stats.byTeam.village} color="#57cc99" />
-          {(stats.byTeam.solo?.games ?? 0) > 0 && <Bar label={`🎭 ${t("teams.solo")}`} c={stats.byTeam.solo} color="#ea580c" />}
-          {stats.lover.games > 0 && <Bar label={`💘 ${t("stats.asLover")}`} c={stats.lover} color="#f472b6" />}
-        </ul>
+        <RateGrid>
+          <RateTile icon="🐺" label={t("teams.wolves")} c={stats.byTeam.wolves} color={ROLES.werewolf.color} />
+          <RateTile icon="🏡" label={t("teams.village")} c={stats.byTeam.village} color="#57cc99" />
+          {(stats.byTeam.solo?.games ?? 0) > 0 && <RateTile icon="🎭" label={t("teams.solo")} c={stats.byTeam.solo} color="#ea580c" />}
+          {stats.lover.games > 0 && <RateTile icon="💘" label={t("stats.asLover")} c={stats.lover} color="#f472b6" />}
+        </RateGrid>
       </section>
 
       <section>
         <h4 className="mb-2 text-sm font-bold text-white/80">{t("stats.byRole")}</h4>
-        <ul className="flex flex-col gap-2.5">
+        <RateGrid>
           {roles.map((r) => (
-            <Bar key={r} label={<RoleBadge roleId={r} />} c={stats.byRole[r]!} color={ROLES[r].color} />
+            <RateTile key={r} icon={ROLES[r].emoji} label={t(`roles.${r}.name`)} c={stats.byRole[r]!} color={ROLES[r].color} />
           ))}
-        </ul>
+        </RateGrid>
       </section>
       </>
       ) : (
@@ -275,11 +290,11 @@ export function StatsView({ stats }: { stats: UserStats | null }) {
             <Tile label={t("stats.winRate")} value={pct(casual)} accent />
             <Tile label={t("stats.losses")} value={casual.losses} />
           </div>
-          <ul className="flex flex-col gap-2.5">
+          <RateGrid>
             {casualRoles.map((r) => (
-              <Bar key={r} label={<RoleBadge roleId={r} />} c={casual.byRole[r]!} color={ROLES[r].color} />
+              <RateTile key={r} icon={ROLES[r].emoji} label={t(`roles.${r}.name`)} c={casual.byRole[r]!} color={ROLES[r].color} />
             ))}
-          </ul>
+          </RateGrid>
         </section>
       )}
 

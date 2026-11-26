@@ -607,6 +607,7 @@
   "profile": {
     "title": "Your profile",
     "open": "Profile",
+    "edit": "Edit profile",
     "preview": "Preview",
     "name": "Display name",
     "photo": "Profile photo",
