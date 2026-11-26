@@ -84,8 +84,8 @@ export function ShareRoom({ code, className = "" }: { code: string; className?: 
         <button type="button" className="btn-primary btn-sm flex-1" disabled={!url} onClick={onShare}>
           📤 {t("share.button")}
         </button>
-        <button type="button" className="btn-ghost btn-sm flex-1" disabled={!url} onClick={onCopy}>
-          📋 {t("share.copy")}
+        <button type="button" className="btn-ghost btn-sm flex-1" disabled={!url} onClick={onCopy} title={t("share.copy")}>
+          📋<span className="sr-only">{t("share.copy")}</span>
         </button>
       </div>
       <p className="text-center text-xs text-white/55">{t("share.hint")}</p>

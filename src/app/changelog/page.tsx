@@ -14,8 +14,8 @@ export default function ChangelogPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-4 px-4 py-10">
       <GlobalChat />
-      <Link href="/" className="btn-ghost btn-sm self-start">
-        ← {t("common.back")}
+      <Link href="/" className="btn-ghost btn-sm self-start" title={t("common.back")}>
+        ←<span className="sr-only">{t("common.back")}</span>
       </Link>
       <header>
         <h1 className="font-display text-4xl font-black text-moon">✨ {t("changelog.title")}</h1>

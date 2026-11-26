@@ -461,8 +461,8 @@ function Sheet({ title, onClose, children }: { title?: string; onClose: () => vo
     <div className="rise absolute inset-0 z-50 flex flex-col bg-night-950">
       <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-2">
         <h3 className="min-w-0 flex-1 truncate font-bold">{title}</h3>
-        <button className="btn-ghost btn-sm" onClick={onClose}>
-          ✕ {t("common.close")}
+        <button className="btn-ghost btn-sm" onClick={onClose} aria-label={t("common.close")} title={t("common.close")}>
+          ✕
         </button>
       </div>
       <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-3 overflow-y-auto px-3 py-3">{children}</div>

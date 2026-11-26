@@ -48,7 +48,9 @@
     "how1": "The Host opens the app on a laptop or projector and creates a room.",
     "how2": "Everyone scans the QR code and types a name — no account, no app install.",
     "how3": "Roles are sent secretly to each phone. Act at night, vote by day — all on your phone.",
-    "narratorCard": "The Narrator"
+    "narratorCard": "The Narrator",
+    "signInToSave": "Sign in with Google to keep your game history and win rates and unlock role card achievements. Games played while signed out aren't saved.",
+    "signInButton": "Sign in"
   },
   "teams": {
     "wolves": "Werewolf team",

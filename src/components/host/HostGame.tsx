@@ -155,11 +155,11 @@ function ScriptCard({ state }: { state: ClientState }) {
         <h3 className="ui-label mb-0 flex-1">🎙️ {t("script.title")}</h3>
         {canSpeakTts && (
           <>
-            <button className="btn-ghost btn-sm" onClick={() => speak(lines, locale)}>
-              🔊 {t("host.readNow")}
+            <button className="btn-ghost btn-sm" onClick={() => speak(lines, locale)} title={t("host.readNow")}>
+              🔊<span className="sr-only">{t("host.readNow")}</span>
             </button>
-            <button className="btn-ghost btn-sm" onClick={() => stopSpeaking()}>
-              ⏹ {t("host.stopReading")}
+            <button className="btn-ghost btn-sm" onClick={() => stopSpeaking()} title={t("host.stopReading")}>
+              ⏹<span className="sr-only">{t("host.stopReading")}</span>
             </button>
           </>
         )}
@@ -188,12 +188,12 @@ function Controls({ state, offset }: { state: ClientState; offset: number }) {
           <TimerDisplay timer={state.timer} offset={offset} className="text-5xl" />
           <div className="flex flex-wrap justify-center gap-2">
             {state.timer.running ? (
-              <button className="btn-ghost btn-sm" onClick={() => act({ type: "timer", op: "pause" })}>
-                ⏸ {t("host.timerPause")}
+              <button className="btn-ghost btn-sm" onClick={() => act({ type: "timer", op: "pause" })} title={t("host.timerPause")}>
+                ⏸<span className="sr-only">{t("host.timerPause")}</span>
               </button>
             ) : (
-              <button className="btn-ghost btn-sm" onClick={() => act({ type: "timer", op: "resume" })}>
-                ▶ {t("host.timerResume")}
+              <button className="btn-ghost btn-sm" onClick={() => act({ type: "timer", op: "resume" })} title={t("host.timerResume")}>
+                ▶<span className="sr-only">{t("host.timerResume")}</span>
               </button>
             )}
             <button className="btn-ghost btn-sm" onClick={() => act({ type: "timer", op: "add", seconds: 30 })}>

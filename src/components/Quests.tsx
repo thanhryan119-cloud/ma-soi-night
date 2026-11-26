@@ -32,7 +32,7 @@ export function QuestsLink() {
   return (
     <Link href="/quests" className="btn-ghost btn-sm relative border-gold/50 text-gold" title={t("quests.open")}>
       {/* Just the icon on phones, so it fits next to the language switch. */}
-      📜 <span className="max-sm:sr-only">{t("quests.open")}</span>
+      📜 <span className="sr-only">{t("quests.open")}</span>
       {!!q?.ready && (
         <span className="absolute -top-1.5 -right-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-blood px-1 text-[11px] font-black text-white">
           {q.ready}
