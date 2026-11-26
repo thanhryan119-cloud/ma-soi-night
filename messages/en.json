@@ -50,7 +50,10 @@
     "how3": "Roles are sent secretly to each phone. Act at night, vote by day — all on your phone.",
     "narratorCard": "The Narrator",
     "signInToSave": "Sign in with Google to keep your game history and win rates and unlock role card achievements. Games played while signed out aren't saved.",
-    "signInButton": "Sign in"
+    "signInButton": "Sign in",
+    "playNow": "Play now",
+    "playNowBusy": "Setting the table…",
+    "playNowDesc": "Makes a machine-hosted room, fills it to 8 with bots, deals the suggested basic roles and starts right away."
   },
   "teams": {
     "wolves": "Werewolf team",
@@ -833,7 +836,8 @@
     "dmNoUser": "This player could not be found.",
     "dmSameGame": "You're both in the same game, so private messages wait until it ends.",
     "gameNotFound": "This game could not be found. It may be too old.",
-    "roleLocked": "This role is not open today. Buy its role card in the shop to use it every day."
+    "roleLocked": "This role is not open today. Buy its role card in the shop to use it every day.",
+    "signInToRename": "Sign in with Google to change your name. Guests keep the name they joined with."
   },
   "log": {
     "standIn": "{name} is away, a bot plays for them until they are back.",
@@ -1168,7 +1172,8 @@
     "voiceOn": "Read the narration aloud",
     "voiceOff": "Mute the narration",
     "makeOwner": "Make room owner",
-    "confirmMakeOwner": "Make {name} the room owner? You will no longer be able to set up the room."
+    "confirmMakeOwner": "Make {name} the room owner? You will no longer be able to set up the room.",
+    "playNow": "Play now with bots, basic roles"
   },
   "codes": {
     "title": "Discount codes",

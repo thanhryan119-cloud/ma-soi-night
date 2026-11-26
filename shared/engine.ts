@@ -889,12 +889,14 @@ export function playerAction(room: Room, playerId: string, action: PlayerAction)
       player.locale = action.locale === "en" ? "en" : "vi";
       return ok;
     case "updateProfile": {
-      // A new name is fine at any time (everyone is told); the look only before the game.
+      // A new name is fine at any time for a signed-in player (everyone is told); the look only before the game.
       if (action.name !== undefined) {
         const name = sanitizeName(action.name);
         if (!name) return fail("err.nameRequired");
         if (room.players.some((p) => p.id !== player.id && p.name.toLowerCase() === name.toLowerCase()))
           return fail("err.nameTaken");
+        // Guests keep the name they joined with; changing it needs a signed-in account.
+        if (name !== player.name && !player.userId && !player.isBot) return fail("err.signInToRename");
         if (name !== player.name) {
           log(room, "log.renamed", { old: player.name, name }, true);
           player.name = name;

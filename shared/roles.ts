@@ -514,6 +514,9 @@ export const SOLO_ROLES = ["tanner", "whiteWolf", "serialKiller", "arsonist"] as
 export const openRoles = (room: Pick<Room, "lockedRoles">): RoleId[] =>
   room.lockedRoles?.length ? ROLE_IDS.filter((r) => !room.lockedRoles!.includes(r)) : [...ROLE_IDS];
 
+/** The classic roles (no special or solo roles): what "play now" deals. */
+export const BASIC_ROLE_IDS: RoleId[] = ROLE_IDS.filter((r) => !ROLES[r].advanced);
+
 export const isAdvancedRole = (roleId: RoleId) => !!ROLES[roleId]?.advanced;
 
 export function emptyRoleCounts(): Record<RoleId, number> {

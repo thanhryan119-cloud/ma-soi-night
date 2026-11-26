@@ -50,7 +50,10 @@
     "how3": "Vai được gửi bí mật tới từng điện thoại. Ban đêm thao tác, ban ngày vote — tất cả trên điện thoại.",
     "narratorCard": "Quản trò",
     "signInToSave": "Đăng nhập Google để lưu lịch sử chơi, tỉ lệ thắng và mở thành tựu lá bài vai. Chơi khi chưa đăng nhập sẽ không được lưu.",
-    "signInButton": "Đăng nhập"
+    "signInButton": "Đăng nhập",
+    "playNow": "Chơi liền",
+    "playNowBusy": "Đang dọn bàn…",
+    "playNowDesc": "Tạo phòng máy dẫn, thêm bot cho đủ 8 người, chia các vai cơ bản theo gợi ý rồi vào ván luôn."
   },
   "teams": {
     "wolves": "Phe Sói",
@@ -833,7 +836,8 @@
     "dmNoUser": "Không tìm thấy người này.",
     "dmSameGame": "Hai bạn đang ở cùng một ván, không nhắn riêng được tới khi ván kết thúc.",
     "gameNotFound": "Không tìm thấy ván này. Có thể ván đã quá cũ.",
-    "roleLocked": "Vai này hôm nay chưa mở. Mua thẻ vai trong cửa hàng để dùng được mọi ngày."
+    "roleLocked": "Vai này hôm nay chưa mở. Mua thẻ vai trong cửa hàng để dùng được mọi ngày.",
+    "signInToRename": "Đăng nhập Google để đổi tên. Khách giữ tên đã dùng khi vào phòng."
   },
   "log": {
     "standIn": "{name} vắng mặt, bot chơi hộ cho tới khi quay lại.",
@@ -1168,7 +1172,8 @@
     "voiceOn": "Đọc lời dẫn thành tiếng",
     "voiceOff": "Tắt tiếng lời dẫn",
     "makeOwner": "Chuyển trưởng phòng",
-    "confirmMakeOwner": "Chuyển quyền trưởng phòng cho {name}? Bạn sẽ không chỉnh phòng được nữa."
+    "confirmMakeOwner": "Chuyển quyền trưởng phòng cho {name}? Bạn sẽ không chỉnh phòng được nữa.",
+    "playNow": "Chơi liền với bot, vai cơ bản"
   },
   "codes": {
     "title": "Mã giảm giá",

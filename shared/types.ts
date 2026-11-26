@@ -371,6 +371,8 @@ export type OwnerAction =
   /** Make another person in the room its owner. */
   | { type: "transferOwner"; playerId: string }
   | { type: "start" }
+  /** Fill with bots, deal the suggested basic roles and start, in one go. */
+  | { type: "playNow" }
   | { type: "newGame" };
 
 // ---------------------------------------------------------------------------
