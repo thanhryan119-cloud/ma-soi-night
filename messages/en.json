@@ -50,7 +50,10 @@
     "how3": "Roles are sent secretly to each phone. Act at night, vote by day — all on your phone.",
     "narratorCard": "The Narrator",
     "signInToSave": "Sign in with Google to keep your game history and win rates and unlock role card achievements. Games played while signed out aren't saved.",
-    "signInButton": "Sign in"
+    "signInButton": "Sign in",
+    "playNow": "Play now",
+    "playNowBusy": "Setting the table…",
+    "playNowDesc": "Makes a machine-hosted room, fills it to 8 with bots, deals the suggested basic roles and starts right away."
   },
   "teams": {
     "wolves": "Werewolf team",
@@ -1168,7 +1171,8 @@
     "passwordSet": "Password set",
     "passwordRemoved": "Password removed, anyone can join",
     "voiceOn": "Read the narration aloud",
-    "voiceOff": "Mute the narration"
+    "voiceOff": "Mute the narration",
+    "playNow": "Play now with bots, basic roles"
   },
   "codes": {
     "title": "Discount codes",
