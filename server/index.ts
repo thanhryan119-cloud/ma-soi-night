@@ -509,8 +509,14 @@ const VOTE_SECONDS = Number(process.env.VOTE_SECONDS) || 60;
 const ROLE_REVEAL_MS = 15_000;
 /** Pause after reading a result (dawn, nomination, verdict, winner) before moving on. */
 const AFTER_READING_MS = 2_000;
-/** Machine-host rooms: how long the phones get to read each step's narration. */
+/**
+ * Machine-host rooms: the least time the phones get for each step's narration.
+ * The phones report how long the narration takes to read out (and when they
+ * finished saying it), and the step waits for the longest, up to MACHINE_READ_MAX_MS.
+ */
 const MACHINE_READ_MS = 6_000;
+/** Machine-host rooms: the longest a step waits for its narration. */
+const MACHINE_READ_MAX_MS = 45_000;
 /** Machine-host rooms: how long the owner may be offline before someone else takes over. */
 const OWNER_GRACE_MS = 30_000;
 /** Human-host rooms: how long the host may be gone before the machine takes over (HOST_GRACE_MS env for testing). */
@@ -1306,6 +1312,26 @@ io.on("connection", (raw) => {
       if (res.ok && me && wasAway && (p as { type?: string })?.type !== "updateProfile") back(room, me);
       if (res.ok || wasAway !== !!me?.standIn) touch(room);
       return res as ActionResult & Record<string, unknown>;
+    }, ack),
+  );
+
+  // Machine-host rooms: a phone says how long this step's narration takes to read
+  // ({ms}) or that it just finished saying it ({done:true}); the step waits for the longest.
+  on("player:narration", (p, ack) =>
+    guard(() => {
+      const { code, kind } = socket.data;
+      const room = code ? rooms.get(code) : undefined;
+      if (!room || kind !== "player" || !room.machineHost || !room.game) return { ok: false, error: "err.notInRoom" };
+      const st = timingFor(room);
+      if (String(p.key ?? "") !== st.key) return { ok: true };
+      const ms = Math.max(0, Number(p.ms) || 0);
+      const until = Math.min(st.startedAt + MACHINE_READ_MAX_MS, p.done ? Date.now() : st.startedAt + ms);
+      if (until > (st.narratedAt ?? 0)) {
+        st.narratedAt = until;
+        scheduleAuto(room);
+        broadcast(room);
+      }
+      return { ok: true };
     }, ack),
   );
 

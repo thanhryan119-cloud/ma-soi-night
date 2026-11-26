@@ -368,6 +368,9 @@ function LeaveButton({ state }: { state: ClientState }) {
  * (never the line saying a role has nobody left alive), with a speaker button
  * to hear them read aloud on this phone (on by default when the room has no shared screen).
  */
+/** About how long reading the narration aloud takes at normal speed (same rule as the host screen). */
+const readingMs = (text: string) => 1500 + text.split(/\s+/).filter(Boolean).length * 350;
+
 function NarrationBanner({ state }: { state: ClientState }) {
   const t = useT();
   const { locale } = useLocale();
@@ -399,12 +402,22 @@ function NarrationBanner({ state }: { state: ClientState }) {
     document.addEventListener("pointerdown", once, { once: true });
     return () => document.removeEventListener("pointerdown", once);
   }, [voice]);
-  // Each phone can read the narration aloud for its player.
+  // Machine-host rooms: the phones are the narrator, so tell the server how long this
+  // step's narration takes to read out at the slowest speed; the next turn waits for it.
+  const stepKey = state.stepKey ?? "";
+  const machine = !!state.machineHost;
+  useEffect(() => {
+    if (!machine || !stepKey || !linesKey) return;
+    void emitAck("player:narration", { key: stepKey, ms: readingMs(linesKey) });
+  }, [machine, stepKey, linesKey]);
+  // Each phone can read the narration aloud for its player (and says when it is done).
   useEffect(() => {
     if (!voice || !linesKey) return;
-    speak(linesKey.split("|"), locale, rate);
+    speak(linesKey.split("|"), locale, rate, () => {
+      if (machine && stepKey) void emitAck("player:narration", { key: stepKey, done: true });
+    });
     return () => stopSpeaking();
-  }, [voice, linesKey, locale, rate]);
+  }, [voice, linesKey, locale, rate]); // eslint-disable-line react-hooks/exhaustive-deps
   // Before the game: just the speaker, so it can be turned on in advance.
   if (!lines.length && !(lobby && canTts)) return null;
   const toggle = () => {
