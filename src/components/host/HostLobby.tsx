@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MIN_PLAYERS } from "@shared/engine";
 import { ROLES, ROLE_IDS, SOLO_ROLES, isAdvancedRole, suggestRoles, totalRoles } from "@shared/roles";
+import { PRESET_EMOJI, PRESET_IDS, presetRoles, type PresetId } from "@shared/presets";
 import { AddBots } from "./AddBots";
 import type { Locale, RoleId } from "@shared/types";
 import type { ClientState } from "@shared/views";
@@ -265,6 +266,7 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
       <div className={`rounded-xl p-2 text-sm ${total === n ? "bg-emerald-500/10 text-emerald-300" : "bg-blood/15 text-blood-light"}`}>
         {total === n ? t("host.totalRoles", { roles: total, players: n }) : t("host.mismatch", { roles: total, players: n })}
       </div>
+      {n > 0 && <RoleMaps n={n} counts={counts} locked={locked} onUse={(c) => act({ type: "setRoleCounts", roleCounts: c })} />}
       {suggested && n > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-sm text-white/60">
           <span>{t("host.suggestedFor", { count: n })}:</span>
@@ -309,6 +311,63 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
       </>
       )}
     </section>
+  );
+}
+
+/** Ready-made role maps: pick one to see what it deals for this table, then use it. */
+function RoleMaps({
+  n,
+  counts,
+  locked,
+  onUse,
+}: {
+  n: number;
+  counts: Record<RoleId, number>;
+  locked: RoleId[];
+  onUse: (counts: Record<RoleId, number>) => void;
+}) {
+  const t = useT();
+  const [pick, setPick] = useState<PresetId | null>(null);
+  const open = ROLE_IDS.filter((r) => !locked.includes(r));
+  const map = pick ? presetRoles(pick, n, open) : null;
+  const same = map && ROLE_IDS.every((r) => map.counts[r] === counts[r]);
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-white/10 p-2">
+      <span className="text-sm font-bold">{t("presets.title", { count: n })}</span>
+      <div className="flex flex-wrap gap-1.5">
+        {PRESET_IDS.map((id) => (
+          <button
+            key={id}
+            type="button"
+            className={`btn-sm ${pick === id ? "btn-gold" : "btn-ghost"}`}
+            aria-pressed={pick === id}
+            onClick={() => setPick(pick === id ? null : id)}
+          >
+            {PRESET_EMOJI[id]} {t(`presets.${id}.name`)}
+          </button>
+        ))}
+      </div>
+      {pick && map && (
+        <div className="flex flex-col gap-2 text-sm text-white/70">
+          <p>{t(`presets.${pick}.desc`)}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {ROLE_IDS.filter((r) => map.counts[r] > 0).map((r) => (
+              <span key={r} className="chip">
+                {ROLES[r].emoji} {t(`roles.${r}.name`)} ×{map.counts[r]}
+              </span>
+            ))}
+          </div>
+          {map.missing.length > 0 && (
+            <p className="text-xs text-white/50">
+              🔒 {t("presets.partial")} {map.missing.map((r) => ROLES[r].emoji).join(" ")}
+            </p>
+          )}
+          <button className="btn-gold btn-sm self-start" disabled={!!same} onClick={() => onUse(map.counts)}>
+            {same ? t("presets.inUse") : t("presets.use")}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
