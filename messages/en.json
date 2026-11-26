@@ -382,6 +382,18 @@
     "stepCalling": "Calling",
     "resultIdiot": "{name} revealed the Village Idiot — lives, loses the vote"
   },
+  "presets": {
+    "title": "Role maps for {count} players",
+    "use": "Use this map",
+    "inUse": "Using this map",
+    "partial": "Some roles of this map are locked, so plain Werewolves or Villagers take their place",
+    "basic": { "name": "Basic", "desc": "Only the basic roles. Easy to play and good for new players." },
+    "advanced": { "name": "Advanced", "desc": "Every kind of role, with special wolves and solo roles on bigger tables." },
+    "noVillager": { "name": "No villagers", "desc": "Everyone in the village has a power, no plain Villagers. The pack gets a little bigger to keep it fair." },
+    "strongPack": { "name": "Strong pack", "desc": "Special wolves instead of plain ones, plus a Minion. The village has to stick together." },
+    "thirdParty": { "name": "Third party", "desc": "Solo roles that play for themselves. The bigger the table, the more strangers." },
+    "blind": { "name": "Blind village", "desc": "No role that sees anything at night. The village only has talk and votes, and the pack is one wolf smaller." }
+  },
   "settings": {
     "nightOrder": "Night wake-up order",
     "nominationMode": "Who goes on trial",
