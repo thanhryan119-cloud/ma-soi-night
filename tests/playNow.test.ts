@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addPlayer, createRoom } from "../shared/engine";
+import { addPlayer, createRoom, hostAction } from "../shared/engine";
 import { PLAY_NOW_PLAYERS, makeMachineRoom, ownerAction } from "../shared/multiplayer";
 import { ROLES } from "../shared/roles";
 
@@ -24,5 +24,13 @@ describe("play now", () => {
     expect(ownerAction(room, b.id, { type: "playNow" }).ok).toBe(false);
     expect(ownerAction(room, a.id, { type: "playNow" }).ok).toBe(true);
     expect(ownerAction(room, a.id, { type: "playNow" })).toMatchObject({ ok: false, error: "err.wrongPhase" });
+  });
+
+  it("works for a human host too, even with nobody seated yet", () => {
+    const room = createRoom("TEST", "vi");
+    expect(hostAction(room, { type: "playNow" }).ok).toBe(true);
+    expect(room.players).toHaveLength(PLAY_NOW_PLAYERS);
+    expect(room.phase.kind).not.toBe("lobby");
+    for (const r of Object.values(room.game!.roles)) expect(ROLES[r].advanced).toBeFalsy();
   });
 });

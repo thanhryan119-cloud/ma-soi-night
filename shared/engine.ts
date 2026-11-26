@@ -15,6 +15,7 @@ import {
   isWolf,
   stepRoles,
   suggestRoles,
+  BASIC_ROLE_IDS,
   openRoles,
   totalRoles,
   wakesIn,
@@ -214,6 +215,9 @@ const nameOf = (room: Room, id: string | null | undefined) => getPlayer(room, id
 // ---------------------------------------------------------------------------
 
 const isLocked = (room: Room, r: RoleId) => !!room.lockedRoles?.includes(r);
+
+/** "Play now" fills the table with bots up to this many seats. */
+export const PLAY_NOW_PLAYERS = 8;
 
 export function validateRoleCounts(counts: Record<RoleId, number>): string | null {
   for (const r of ROLE_IDS) {
@@ -1359,6 +1363,20 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
     case "assignRandom":
       if (!inLobby) return fail("err.wrongPhase");
       return assignRandom(room);
+    case "playNow": {
+      // One tap: bots fill the empty seats, the suggested setup from the basic roles is dealt, and the game starts.
+      if (!inLobby) return fail("err.wrongPhase");
+      const missing = PLAY_NOW_PLAYERS - room.players.length;
+      if (missing > 0) {
+        const added = hostAction(room, { type: "addBots", count: missing });
+        if (!added.ok) return added;
+      }
+      const set = hostAction(room, { type: "setRoleCounts", roleCounts: suggestRoles(room.players.length, BASIC_ROLE_IDS) });
+      if (!set.ok) return set;
+      const dealt = assignRandom(room);
+      if (!dealt.ok) return dealt;
+      return startGame(room);
+    }
     case "assignManual": {
       if (!inLobby) return fail("err.wrongPhase");
       if (!getPlayer(room, action.playerId)) return fail("err.invalidTarget");

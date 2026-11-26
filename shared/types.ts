@@ -402,6 +402,8 @@ export type HostAction =
   | { type: "setRoleCounts"; roleCounts: Record<RoleId, number> }
   | { type: "useSuggested" }
   | { type: "assignRandom" }
+  /** Fill with bots, deal the suggested basic roles and start, in one go. */
+  | { type: "playNow" }
   | { type: "assignManual"; playerId: string; roleId: RoleId | null }
   | { type: "addBots"; count: number }
   | { type: "removeBots" }

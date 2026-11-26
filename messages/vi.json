@@ -50,10 +50,7 @@
     "how3": "Vai được gửi bí mật tới từng điện thoại. Ban đêm thao tác, ban ngày vote — tất cả trên điện thoại.",
     "narratorCard": "Quản trò",
     "signInToSave": "Đăng nhập Google để lưu lịch sử chơi, tỉ lệ thắng và mở thành tựu lá bài vai. Chơi khi chưa đăng nhập sẽ không được lưu.",
-    "signInButton": "Đăng nhập",
-    "playNow": "Chơi liền",
-    "playNowBusy": "Đang dọn bàn…",
-    "playNowDesc": "Tạo phòng máy dẫn, thêm bot cho đủ 8 người, chia các vai cơ bản theo gợi ý rồi vào ván luôn."
+    "signInButton": "Đăng nhập"
   },
   "teams": {
     "wolves": "Phe Sói",
@@ -1173,7 +1170,8 @@
     "voiceOff": "Tắt tiếng lời dẫn",
     "makeOwner": "Chuyển trưởng phòng",
     "confirmMakeOwner": "Chuyển quyền trưởng phòng cho {name}? Bạn sẽ không chỉnh phòng được nữa.",
-    "playNow": "Chơi liền với bot, vai cơ bản"
+    "playNow": "Chơi liền với bot, vai cơ bản",
+    "playNowDesc": "Thêm bot cho đủ 8 người, chia các vai cơ bản theo gợi ý rồi vào ván luôn."
   },
   "codes": {
     "title": "Mã giảm giá",
