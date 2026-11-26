@@ -14,7 +14,8 @@ import { Mailbox } from "@/components/Mailbox";
 import { APP_VERSION } from "@shared/changelog";
 import { useLocale, useT } from "@/lib/i18n";
 import { emitAck, hostKey, storage } from "@/lib/socket";
-import { getAuth } from "@/lib/account";
+import { GOOGLE_CLIENT_ID, getAuth, useAccount } from "@/lib/account";
+import { GoogleButton } from "@/components/ProfileEditor";
 import { ExistingRoomDialog, SignInToCreate, useNeedsSignInToCreate } from "@/components/CreateRoomGate";
 
 export default function Home() {
@@ -65,11 +66,11 @@ export default function Home() {
         <Mailbox />
         <QuestsLink />
         <CollectionLink />
-        <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold">
-          🛒 <span className="max-sm:sr-only">{t("shop.open")}</span>
+        <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold" title={t("shop.open")}>
+          🛒 <span className="sr-only">{t("shop.open")}</span>
         </Link>
-        <Link href="/profile" className="btn-ghost btn-sm">
-          👤 <span className="max-sm:sr-only">{t("profile.open")}</span>
+        <Link href="/profile" className="btn-ghost btn-sm" title={t("profile.open")}>
+          👤 <span className="sr-only">{t("profile.open")}</span>
         </Link>
       </div>
       <header className="mb-10 flex flex-col items-center text-center">
@@ -78,20 +79,23 @@ export default function Home() {
         <p className="mt-3 max-w-xl text-lg text-white/70">{t("app.tagline")}</p>
       </header>
 
-      <section className="card mb-6 flex flex-col items-start gap-3 border-gold/40 p-6 sm:flex-row sm:items-center">
-        <span className="text-4xl">🌐</span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-2xl font-bold text-moon">{t("lobby.homeTitle")}</span>
-          <span className="mt-1 block text-white/60">{t("lobby.homeDesc")}</span>
-        </span>
-        <div className="flex w-full shrink-0 gap-2 sm:w-auto">
-          <Link href="/lobby?quick=1" className="btn-gold flex-1 px-6 py-3 text-lg sm:flex-none">
-            ⚡ {t("lobby.quickButton")}
-          </Link>
-          <Link href="/lobby" className="btn-ghost flex-1 px-6 py-3 text-lg sm:flex-none">
-            {t("lobby.homeButton")} →
-          </Link>
+      <section className="card mb-6 flex flex-col gap-4 border-gold/40 p-6">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+          <span className="text-4xl">🌐</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-2xl font-bold text-moon">{t("lobby.homeTitle")}</span>
+            <span className="mt-1 block text-white/60">{t("lobby.homeDesc")}</span>
+          </span>
+          <div className="flex w-full shrink-0 gap-2 sm:w-auto">
+            <Link href="/lobby?quick=1" className="btn-gold flex-1 px-6 py-3 text-lg sm:flex-none">
+              ⚡ {t("lobby.quickButton")}
+            </Link>
+            <Link href="/lobby" className="btn-ghost flex-1 px-6 py-3 text-lg sm:flex-none">
+              {t("lobby.homeButton")} →
+            </Link>
+          </div>
         </div>
+        <SignInToSave />
       </section>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -171,5 +175,27 @@ export default function Home() {
         </Link>
       </footer>
     </main>
+  );
+}
+
+/** Guests only: sign in before playing, so the games are kept (history, win rates, role collection). */
+function SignInToSave() {
+  const t = useT();
+  const account = useAccount();
+  const [ready, setReady] = useState(false);
+  // The account is read from storage after mount: wait, so a signed-in player never sees the prompt flash.
+  useEffect(() => setReady(true), []);
+  if (!ready || account) return null;
+  return (
+    <div className="flex flex-col items-start gap-3 rounded-lg border border-gold/30 bg-gold/[0.05] p-3 sm:flex-row sm:items-center">
+      <p className="min-w-0 flex-1 text-sm text-white/80">🔐 {t("home.signInToSave")}</p>
+      {GOOGLE_CLIENT_ID ? (
+        <GoogleButton />
+      ) : (
+        <Link href="/profile" className="btn-gold btn-sm shrink-0">
+          {t("home.signInButton")}
+        </Link>
+      )}
+    </div>
   );
 }

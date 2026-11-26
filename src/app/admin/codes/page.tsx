@@ -58,8 +58,8 @@ export default function CodesPage() {
     <main className="mx-auto flex min-h-dvh max-w-3xl flex-col gap-6 px-4 pt-16 pb-10">
       <LangSwitch />
       <div className="flex flex-wrap items-center gap-3">
-        <Link href="/profile" className="btn-ghost btn-sm">
-          ← {t("common.back")}
+        <Link href="/profile" className="btn-ghost btn-sm" title={t("common.back")}>
+          ←<span className="sr-only">{t("common.back")}</span>
         </Link>
         <h1 className="font-display text-3xl font-black">🏷️ {t("codes.title")}</h1>
       </div>

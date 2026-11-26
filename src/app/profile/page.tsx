@@ -36,16 +36,16 @@ export default function ProfilePage() {
       <GlobalChat />
       <LangSwitch />
       <div className="flex items-center gap-3">
-        <Link href="/" className="btn-ghost btn-sm">
-          ← {t("common.back")}
+        <Link href="/" className="btn-ghost btn-sm" title={t("common.back")}>
+          ←<span className="sr-only">{t("common.back")}</span>
         </Link>
         <h1 className="font-display text-3xl font-black">{t("profile.title")}</h1>
         <span className="ml-auto">
           <QuestsLink />
         </span>
         <CollectionLink />
-        <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold">
-          🛒 {t("shop.open")}
+        <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold" title={t("shop.open")}>
+          🛒<span className="sr-only">{t("shop.open")}</span>
         </Link>
       </div>
       {backTo && (

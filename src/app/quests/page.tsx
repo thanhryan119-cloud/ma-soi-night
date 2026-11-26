@@ -42,8 +42,8 @@ export default function QuestsPage() {
       <GlobalChat />
       <LangSwitch />
       <div className="flex flex-wrap items-center gap-3">
-        <Link href="/" className="btn-ghost btn-sm">
-          ← {t("common.back")}
+        <Link href="/" className="btn-ghost btn-sm" title={t("common.back")}>
+          ←<span className="sr-only">{t("common.back")}</span>
         </Link>
         <h1 className="font-display text-3xl font-black">📜 {t("quests.title")}</h1>
         <GoldChip className="ml-auto text-base" />

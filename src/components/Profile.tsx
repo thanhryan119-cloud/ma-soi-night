@@ -10,6 +10,7 @@ import { useLocale, useT } from "@/lib/i18n";
 import { fetchPlayerProfile, fetchUserProfile } from "@/lib/stats";
 import { Avatar, RoleBadge, Spinner, StyledName } from "./ui";
 import { CollectionPeek } from "./RoleCollection";
+import { openReplay } from "./GameReplay";
 
 type Target = { playerId: string } | { userId: string };
 
@@ -110,8 +111,8 @@ export function ProfileHost() {
       >
         <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-4 py-2">
           <h3 className="min-w-0 flex-1 truncate font-bold">{t("stats.title")}</h3>
-          <button className="btn-ghost btn-sm" onClick={close} autoFocus>
-            ✕ {t("common.close")}
+          <button className="btn-ghost btn-sm" onClick={close} autoFocus aria-label={t("common.close")} title={t("common.close")}>
+            ✕
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
@@ -286,9 +287,14 @@ export function StatsView({ stats }: { stats: UserStats | null }) {
         <h4 className="mb-2 text-sm font-bold text-white/80">{t("stats.recent")}</h4>
         <ul className="flex flex-col gap-1.5">
           {stats.recent.map((g, i) => (
-            <li
-              key={`${g.t}-${i}`}
-              className="flex items-center gap-2 rounded-lg bg-white/5 px-2 py-1.5 text-sm"
+            <li key={`${g.t}-${i}`}>
+            {/* A saved game opens again with its whole story; older games were not saved. */}
+            <button
+              type="button"
+              disabled={!g.gameId}
+              onClick={() => g.gameId && openReplay(g.gameId)}
+              title={g.gameId ? t("replay.open") : undefined}
+              className="flex w-full items-center gap-2 rounded-lg bg-white/5 px-2 py-1.5 text-left text-sm transition enabled:cursor-pointer enabled:hover:bg-white/10 disabled:cursor-default"
             >
               <span
                 className={`w-14 shrink-0 rounded px-1.5 py-0.5 text-center text-xs font-bold ${
@@ -313,6 +319,8 @@ export function StatsView({ stats }: { stats: UserStats | null }) {
                 </span>
               )}
               <span className="shrink-0 text-[11px] text-white/40 tabular-nums">{new Date(g.t).toLocaleDateString(locale)}</span>
+              {g.gameId && <span className="shrink-0 text-xs text-gold" aria-hidden>▶</span>}
+            </button>
             </li>
           ))}
         </ul>

@@ -48,7 +48,9 @@
     "how1": "Quản trò mở app trên laptop hoặc máy chiếu và tạo phòng.",
     "how2": "Mọi người quét QR bằng điện thoại, nhập tên là vào được — không cần cài app.",
     "how3": "Vai được gửi bí mật tới từng điện thoại. Ban đêm thao tác, ban ngày vote — tất cả trên điện thoại.",
-    "narratorCard": "Quản trò"
+    "narratorCard": "Quản trò",
+    "signInToSave": "Đăng nhập Google để lưu lịch sử chơi, tỉ lệ thắng và mở thành tựu lá bài vai. Chơi khi chưa đăng nhập sẽ không được lưu.",
+    "signInButton": "Đăng nhập"
   },
   "teams": {
     "wolves": "Phe Sói",
@@ -830,6 +832,7 @@
     "nothingToIgnite": "Chưa có nhà nào bị tưới xăng.",
     "dmNoUser": "Không tìm thấy người này.",
     "dmSameGame": "Hai bạn đang ở cùng một ván, không nhắn riêng được tới khi ván kết thúc.",
+    "gameNotFound": "Không tìm thấy ván này. Có thể ván đã quá cũ.",
     "roleLocked": "Vai này hôm nay chưa mở. Mua thẻ vai trong cửa hàng để dùng được mọi ngày."
   },
   "log": {
@@ -1280,6 +1283,12 @@
     },
     "guestNote": "Khi chưa đăng nhập, các ván bạn chơi sẽ không được tính vào bộ sưu tập.",
     "preview": "Bộ sưu tập đang chờ bạn"
+  },
+  "replay": {
+    "title": "Xem lại ván đấu",
+    "open": "Xem lại diễn biến ván này",
+    "players": "Người chơi và vai",
+    "minutes": "{n} phút"
   },
   "freeRoles": {
     "lockedRole": "Hôm nay chưa mở, mua thẻ vai để dùng mọi ngày",

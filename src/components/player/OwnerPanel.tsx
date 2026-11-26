@@ -56,8 +56,8 @@ export function OwnerBar({ state, onSettings }: { state: ClientState; onSettings
       </div>
       {iOwn && kind === "lobby" && (
         <div className="flex gap-2">
-          <button className="btn-ghost btn-sm flex-1" onClick={onSettings}>
-            ⚙️ {t("owner.settings")}
+          <button className="btn-ghost btn-sm shrink-0 px-4" onClick={onSettings} title={t("owner.settings")}>
+            ⚙️<span className="sr-only">{t("owner.settings")}</span>
           </button>
           <button className="btn-primary btn-sm flex-1" disabled={!ready} onClick={() => act({ type: "start" })}>
             🌙 {t("host.start")}

@@ -48,7 +48,9 @@
     "how1": "The Host opens the app on a laptop or projector and creates a room.",
     "how2": "Everyone scans the QR code and types a name — no account, no app install.",
     "how3": "Roles are sent secretly to each phone. Act at night, vote by day — all on your phone.",
-    "narratorCard": "The Narrator"
+    "narratorCard": "The Narrator",
+    "signInToSave": "Sign in with Google to keep your game history and win rates and unlock role card achievements. Games played while signed out aren't saved.",
+    "signInButton": "Sign in"
   },
   "teams": {
     "wolves": "Werewolf team",
@@ -830,6 +832,7 @@
     "nothingToIgnite": "No house has been doused yet.",
     "dmNoUser": "This player could not be found.",
     "dmSameGame": "You're both in the same game, so private messages wait until it ends.",
+    "gameNotFound": "This game could not be found. It may be too old.",
     "roleLocked": "This role is not open today. Buy its role card in the shop to use it every day."
   },
   "log": {
@@ -1280,6 +1283,12 @@
     },
     "guestNote": "Games you play while signed out don't count toward your collection.",
     "preview": "Your collection is waiting"
+  },
+  "replay": {
+    "title": "Game replay",
+    "open": "Watch how this game went",
+    "players": "Players and roles",
+    "minutes": "{n} min"
   },
   "freeRoles": {
     "lockedRole": "Not open today, buy the role card to use it every day",

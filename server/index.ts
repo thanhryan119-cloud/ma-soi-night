@@ -41,6 +41,8 @@ import { createSocial } from "./social";
 import { createGlobalChat } from "./globalChat";
 import { tableBusy } from "../shared/social";
 import { gameResults, type PublicProfile } from "../shared/stats";
+import { gameRecord, newGameId } from "../shared/replay";
+import { createGames } from "./games";
 import {
   AWAY_LIMIT_MS,
   cleanPassword,
@@ -131,6 +133,7 @@ const shop = createShop({
 });
 if (!shop.enabled) console.log("[shop] PAYOS_CLIENT_ID / PAYOS_API_KEY / PAYOS_CHECKSUM_KEY not set: shop disabled");
 const quests = createQuests({ dataDir: dirname(DATA_FILE), corsOrigin: CORS_ORIGIN, accounts });
+const games = createGames(dirname(DATA_FILE), CORS_ORIGIN);
 
 interface SocketData {
   code?: string;
@@ -155,6 +158,7 @@ const httpServer = createServer(async (req, res) => {
   if (await accounts.handle(req, res)) return;
   if (await shop.handle(req, res)) return;
   if (await quests.handle(req, res)) return;
+  if (await games.handle(req, res)) return;
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Content-Type", "application/json");
   if (req.url === "/health") return res.end(JSON.stringify({ ok: true, rooms: rooms.size }));
@@ -261,7 +265,17 @@ function recordStats(room: Room) {
   const game = room.game;
   if (!game || game.statsRecorded || room.phase.kind !== "gameOver" || !game.winner) return;
   game.statsRecorded = true;
+  game.recordId ??= newGameId();
   const results = gameResults(room);
+  // Keep the whole story when someone signed in can open it again from their history.
+  const record = results.length ? gameRecord(room, game.recordId) : null;
+  if (record) {
+    try {
+      games.save(record);
+    } catch (err) {
+      console.error("[games] save failed", err);
+    }
+  }
   try {
     // Quests first: a player's first quest record starts from their stats before this game.
     quests.recordGame(results);

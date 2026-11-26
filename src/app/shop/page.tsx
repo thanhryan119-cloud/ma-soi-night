@@ -97,8 +97,8 @@ export default function ShopPage() {
       <GlobalChat />
       <LangSwitch />
       <div className="flex flex-wrap items-center gap-3">
-        <Link href="/" className="btn-ghost btn-sm">
-          ← {t("common.back")}
+        <Link href="/" className="btn-ghost btn-sm" title={t("common.back")}>
+          ←<span className="sr-only">{t("common.back")}</span>
         </Link>
         <h1 className="font-display text-3xl font-black">🛒 {t("shop.title")}</h1>
         {user && <span className="chip ml-auto">{t("shop.ownedCount", { owned: mine, total })}</span>}
@@ -116,8 +116,8 @@ export default function ShopPage() {
           <div className="flex items-center gap-3">
             {profile && <Avatar p={{ avatar: profile.avatar, avatarUrl: user.avatarUrl, style: profile.style, alive: true }} size="md" />}
             <span className="min-w-0 flex-1 truncate text-sm text-white/70">{t("profile.signedInAs", { name: user.name })}</span>
-            <Link href="/profile" className="btn-ghost btn-sm">
-              👤 {t("profile.open")}
+            <Link href="/profile" className="btn-ghost btn-sm" title={t("profile.open")}>
+              👤<span className="sr-only">{t("profile.open")}</span>
             </Link>
           </div>
         ) : (

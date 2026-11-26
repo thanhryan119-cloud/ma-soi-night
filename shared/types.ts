@@ -309,6 +309,8 @@ export interface Game {
   revealedIdiots?: string[];
   /** The finished game was added to the players' career stats (server side, once). */
   statsRecorded?: boolean;
+  /** Id of the saved game (shared/replay.ts) the players' history links to. Set by the server. */
+  recordId?: string;
   /** Seats of players who left after they died: seat id to their account, still counted at the end. */
   leftDead?: Record<string, string>;
 }

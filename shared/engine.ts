@@ -1,6 +1,7 @@
 // Game engine: mutates a Room in response to validated host/player actions.
 // Every action is checked here (phase, role, alive, valid target, double vote).
 
+import { newGameId } from "./replay";
 import { AVATAR_FRAMES, CHAT_DECOS, NAME_EFFECTS, NAME_FONTS, freeChatColor, limitStyle, sanitizeAvatarUrl, sanitizeOwned, sanitizeStyle } from "./cosmetics";
 import {
   BOT_SPEEDS,
@@ -296,6 +297,8 @@ export function startGame(room: Room): ActionResult {
     pendingWin: null,
     dismissedWinSig: null,
     winner: null,
+    // The history of everyone at the table links to this game, even someone who leaves before the end.
+    recordId: newGameId(),
   };
   room.game = game;
   room.log = room.log.filter((e) => e.key === "log.join");

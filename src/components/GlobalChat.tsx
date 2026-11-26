@@ -244,8 +244,8 @@ export function GlobalChatLog({ chat, className = "" }: { chat: Global; classNam
                           <button
                             className="text-[10px] text-gold"
                             onClick={() => chat.openDm({ id: m.userId, name: m.name, avatarUrl: m.avatarUrl, style: m.style })}
-                          >
-                            ✉️ {t("globalChat.message")}
+                           title={t("globalChat.message")}>
+                            ✉️<span className="sr-only">{t("globalChat.message")}</span>
                           </button>
                         )}
                         {me?.isAdmin && (
@@ -341,8 +341,8 @@ function OnlineList({ chat, className = "" }: { chat: Global; className?: string
                     {self && <span className="shrink-0 text-[10px] text-white/40">({t("globalChat.you")})</span>}
                   </ProfileLink>
                   {me && !self && (
-                    <button className="btn-ghost btn-sm shrink-0 border-gold/40 text-xs text-gold" onClick={() => chat.openDm(u)}>
-                      ✉️ {t("globalChat.message")}
+                    <button className="btn-ghost btn-sm shrink-0 border-gold/40 text-xs text-gold" onClick={() => chat.openDm(u)} title={t("globalChat.message")}>
+                      ✉️<span className="sr-only">{t("globalChat.message")}</span>
                     </button>
                   )}
                 </li>
@@ -458,7 +458,7 @@ export function GlobalChat() {
         aria-expanded={open}
         title={t("globalChat.title")}
       >
-        💬 {t("globalChat.button")}
+        💬<span className="sr-only">{t("globalChat.button")}</span>
         {chat.unread > 0 && <span className="rounded-full bg-blood px-1.5 text-xs font-bold text-white">{chat.unread > 99 ? "99+" : chat.unread}</span>}
       </button>
 
