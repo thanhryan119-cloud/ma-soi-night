@@ -1166,7 +1166,9 @@
     "passwordSet": "Đã đặt mật khẩu",
     "passwordRemoved": "Đã bỏ mật khẩu, ai cũng vào được",
     "voiceOn": "Đọc lời dẫn thành tiếng",
-    "voiceOff": "Tắt tiếng lời dẫn"
+    "voiceOff": "Tắt tiếng lời dẫn",
+    "makeOwner": "Chuyển trưởng phòng",
+    "confirmMakeOwner": "Chuyển quyền trưởng phòng cho {name}? Bạn sẽ không chỉnh phòng được nữa."
   },
   "codes": {
     "title": "Mã giảm giá",

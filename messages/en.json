@@ -1166,7 +1166,9 @@
     "passwordSet": "Password set",
     "passwordRemoved": "Password removed, anyone can join",
     "voiceOn": "Read the narration aloud",
-    "voiceOff": "Mute the narration"
+    "voiceOff": "Mute the narration",
+    "makeOwner": "Make room owner",
+    "confirmMakeOwner": "Make {name} the room owner? You will no longer be able to set up the room."
   },
   "codes": {
     "title": "Discount codes",
