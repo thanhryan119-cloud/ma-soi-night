@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState } from "react";
 import {
+  newStage,
   CHAT_MIN_GAP_MS,
   SOCIAL_PHASES,
   chatWaitMs,
@@ -19,20 +20,15 @@ import { GhostLog, useGhostChat } from "./GhostChat";
 import { ServerChat, useGlobalChat } from "./GlobalChat";
 import { ProfileLink } from "./Profile";
 
-/** True when the message starts a new day (or night, or the lobby / game over) compared with the one before. */
-export function newStage(
-  m: ChatMessage,
-  prev: ChatMessage | undefined,
-): boolean {
-  if (!m.stage) return false;
-  if (!prev) return m.stage !== "lobby";
-  return prev.stage !== m.stage || prev.n !== m.n;
-}
+export { newStage } from "@shared/social";
 
-/** The marker line between days in a chat: "Sáng ngày 2", "Đêm 3"… */
+/** A chat line's time of day, "21:05". */
+export const chatTime = (t: number) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+/** The marker line between parts of a chat: "Ván 2 · Đêm 3 · 21:05"… */
 export function ChatMilestone({ m }: { m: ChatMessage }) {
   const t = useT();
-  const label =
+  const stage =
     m.stage === "day"
       ? `☀️ ${t("social.markDay", { n: m.n ?? 1 })}`
       : m.stage === "night"
@@ -40,6 +36,7 @@ export function ChatMilestone({ m }: { m: ChatMessage }) {
         : m.stage === "over"
           ? `🏁 ${t("social.markOver")}`
           : `🏠 ${t("social.markLobby")}`;
+  const label = [m.g ? `${t("social.markGame", { n: m.g })}` : null, stage, chatTime(m.t)].filter(Boolean).join(" · ");
   return (
     <div
       className="my-2 flex items-center gap-2 text-[11px] font-semibold tracking-wide text-gold/80"
@@ -559,6 +556,7 @@ function Chat({
                             t("social.host")
                           )}
                         </button>
+                        <span className="ml-1 text-white/30 tabular-nums">{chatTime(m.t)}</span>
                       </div>
                     )}
                     <div

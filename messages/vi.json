@@ -983,7 +983,8 @@
     "filterLabel": "Xem tin của",
     "filterAll": "Tất cả mọi người",
     "filterBy": "Chỉ xem tin của người này",
-    "silenced": "Bạn bị bịt miệng hôm nay."
+    "silenced": "Bạn bị bịt miệng hôm nay.",
+    "markGame": "Ván {n}"
   },
   "voice": {
     "join": "Bật mic",

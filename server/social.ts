@@ -9,6 +9,7 @@ import {
   canReadGhosts,
   canSpeak,
   chatStage,
+  currentGameChat,
   chatWaitMs,
   recentSends,
   sanitizeChat,
@@ -260,19 +261,20 @@ export function createSocial(
     social.delete(code);
   }
 
-  /** A new game starts with an empty chat (the old game's talk stays with it). */
+  /**
+   * A new game with the same people: the room chat keeps the earlier games' talk
+   * (every line says which game it was said in), only the dead players' chat starts over.
+   */
   function clearForNewGame(code: string) {
     const s = social.get(code);
     if (!s) return;
-    s.chat = [];
     s.ghost = [];
     s.lastChat.clear();
-    io.to(channel(code)).emit("chat:clear");
     io.to(channel(code)).emit("ghost:clear");
   }
 
-  /** The room's recent chat (for the AI bots' context). */
-  const recentChat = (code: string) => social.get(code)?.chat ?? [];
+  /** The current game's recent chat (for the bots, who should not mix up games). */
+  const recentChat = (code: string) => currentGameChat(social.get(code)?.chat ?? [], getRoom(code)?.gameNo);
 
   return { register, afterChange, dispose, postAs, typing, recentChat, clearForNewGame };
 }

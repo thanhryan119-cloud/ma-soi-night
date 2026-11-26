@@ -983,7 +983,8 @@
     "filterLabel": "Messages from",
     "filterAll": "Everyone",
     "filterBy": "Show only this player's messages",
-    "silenced": "You are silenced today."
+    "silenced": "You are silenced today.",
+    "markGame": "Game {n}"
   },
   "voice": {
     "join": "Turn on mic",

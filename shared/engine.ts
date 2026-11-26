@@ -1440,6 +1440,7 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       if (room.phase.kind === "lobby") return fail("err.wrongPhase");
       for (const p of room.players) p.alive = true;
       room.game = null;
+      room.gameNo = (room.gameNo ?? 1) + 1;
       room.assignment = {};
       room.phase = { kind: "lobby", night: 0, day: 0, steps: [], stepIndex: 0, verdictIndex: 0 };
       room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, openRoles(room)) };

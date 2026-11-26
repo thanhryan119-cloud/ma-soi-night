@@ -14,7 +14,7 @@ function silencedNow(room: Room, id: string): boolean {
 /** Chat is open in these phases; during the defense only the players on the stand may speak. */
 export const SOCIAL_PHASES = ["lobby", "discussion", "defense", "gameOver"] as const;
 export const CHAT_MAX_LEN = 200;
-export const CHAT_HISTORY = 200;
+export const CHAT_HISTORY = 400;
 
 /** A spectator watches a running game: they read along and talk in the dead players' chat only. */
 export interface Spectator {
@@ -42,18 +42,31 @@ export interface ChatMessage {
   stage?: ChatStage;
   /** The day (or night) number for "day" and "night". */
   n?: number;
+  /** Which game in the room it was said in (the chat keeps every game's talk, marked by game). */
+  g?: number;
 }
 
 export type ChatStage = "lobby" | "night" | "day" | "over";
 
 /** Where the room is, for the markers between days in the chat. */
-export function chatStage(room: Pick<Room, "game" | "phase">): { stage: ChatStage; n: number } {
+export function chatStage(room: Pick<Room, "game" | "phase" | "gameNo">): { stage: ChatStage; n: number; g: number } {
   const k = room.phase.kind;
-  if (!room.game || k === "lobby") return { stage: "lobby", n: 0 };
-  if (k === "gameOver") return { stage: "over", n: 0 };
-  if (k === "night" || k === "roleReveal") return { stage: "night", n: Math.max(1, room.phase.night) };
-  return { stage: "day", n: Math.max(1, room.phase.day) };
+  const g = room.gameNo ?? 1;
+  if (!room.game || k === "lobby") return { stage: "lobby", n: 0, g };
+  if (k === "gameOver") return { stage: "over", n: 0, g };
+  if (k === "night" || k === "roleReveal") return { stage: "night", n: Math.max(1, room.phase.night), g };
+  return { stage: "day", n: Math.max(1, room.phase.day), g };
 }
+
+/** True when a chat line starts a new part of the room's story (another game, day, night, lobby or game over). */
+export function newStage(m: ChatMessage, prev: ChatMessage | undefined): boolean {
+  if (!m.stage) return false;
+  if (!prev) return m.stage !== "lobby" || (m.g ?? 1) > 1;
+  return prev.stage !== m.stage || prev.n !== m.n || (prev.g ?? 1) !== (m.g ?? 1);
+}
+
+/** The chat lines of the game being played now (bots only read these). */
+export const currentGameChat = (chat: ChatMessage[], gameNo: number | undefined) => chat.filter((m) => (m.g ?? 1) === (gameNo ?? 1));
 
 export const socialOpen = (room: Room) => (SOCIAL_PHASES as readonly string[]).includes(room.phase.kind);
 
