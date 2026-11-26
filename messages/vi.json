@@ -833,7 +833,8 @@
     "dmNoUser": "Không tìm thấy người này.",
     "dmSameGame": "Hai bạn đang ở cùng một ván, không nhắn riêng được tới khi ván kết thúc.",
     "gameNotFound": "Không tìm thấy ván này. Có thể ván đã quá cũ.",
-    "roleLocked": "Vai này hôm nay chưa mở. Mua thẻ vai trong cửa hàng để dùng được mọi ngày."
+    "roleLocked": "Vai này hôm nay chưa mở. Mua thẻ vai trong cửa hàng để dùng được mọi ngày.",
+    "signInToRename": "Đăng nhập Google để đổi tên. Khách giữ tên đã dùng khi vào phòng."
   },
   "log": {
     "standIn": "{name} vắng mặt, bot chơi hộ cho tới khi quay lại.",
