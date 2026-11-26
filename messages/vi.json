@@ -1082,6 +1082,8 @@
     "survived": "Sống sót",
     "byTeam": "Theo phe",
     "byRole": "Theo vai",
+    "showRoles": "Xem theo vai ({n})",
+    "hideRoles": "Ẩn",
     "asLover": "Cặp đôi",
     "recent": "Ván gần đây",
     "gamesWins": "{games} ván · {wins} thắng",

@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { ROLE_IDS, ROLES } from "@shared/roles";
+import type { RoleId } from "@shared/types";
 import { MIN_HUMANS_FOR_STATS, casualOf, winRate, type PublicProfile, type UserStats, type WinCount } from "@shared/stats";
 import { roleWins } from "@shared/achievements";
 import { useLocale, useT } from "@/lib/i18n";
@@ -226,6 +227,30 @@ const RateGrid = ({ children }: { children: React.ReactNode }) => (
   <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">{children}</ul>
 );
 
+/** Win rate per role, hidden until the player taps the button (the list gets long). */
+function RoleRates({ roles, counts, title }: { roles: RoleId[]; counts: UserStats["byRole"]; title?: string }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  if (!roles.length) return null;
+  return (
+    <section>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        {title ? <h4 className="text-sm font-bold text-white/80">{title}</h4> : <span />}
+        <button type="button" className="btn-ghost btn-sm shrink-0" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          {open ? `▴ ${t("stats.hideRoles")}` : `▾ ${t("stats.showRoles", { n: roles.length })}`}
+        </button>
+      </div>
+      {open && (
+        <RateGrid>
+          {roles.map((r) => (
+            <RateTile key={r} icon={ROLES[r].emoji} label={t(`roles.${r}.name`)} c={counts[r]!} color={ROLES[r].color} />
+          ))}
+        </RateGrid>
+      )}
+    </section>
+  );
+}
+
 /** Career numbers of one account (also on the player's own profile page). */
 export function StatsView({ stats }: { stats: UserStats | null }) {
   const t = useT();
@@ -263,19 +288,11 @@ export function StatsView({ stats }: { stats: UserStats | null }) {
         <RateGrid>
           <RateTile icon="🐺" label={t("teams.wolves")} c={stats.byTeam.wolves} color={ROLES.werewolf.color} />
           <RateTile icon="🏡" label={t("teams.village")} c={stats.byTeam.village} color="#57cc99" />
-          {(stats.byTeam.solo?.games ?? 0) > 0 && <RateTile icon="🎭" label={t("teams.solo")} c={stats.byTeam.solo} color="#ea580c" />}
-          {stats.lover.games > 0 && <RateTile icon="💘" label={t("stats.asLover")} c={stats.lover} color="#f472b6" />}
+          <RateTile icon="🎭" label={t("teams.solo")} c={stats.byTeam.solo ?? { games: 0, wins: 0 }} color="#ea580c" />
         </RateGrid>
       </section>
 
-      <section>
-        <h4 className="mb-2 text-sm font-bold text-white/80">{t("stats.byRole")}</h4>
-        <RateGrid>
-          {roles.map((r) => (
-            <RateTile key={r} icon={ROLES[r].emoji} label={t(`roles.${r}.name`)} c={stats.byRole[r]!} color={ROLES[r].color} />
-          ))}
-        </RateGrid>
-      </section>
+      <RoleRates roles={roles} counts={stats.byRole} title={t("stats.byRole")} />
       </>
       ) : (
         <p className="rounded-xl bg-white/5 p-4 text-center text-sm text-white/60">{t("stats.noCountedGames", { min: MIN_HUMANS_FOR_STATS })}</p>
@@ -290,11 +307,7 @@ export function StatsView({ stats }: { stats: UserStats | null }) {
             <Tile label={t("stats.winRate")} value={pct(casual)} accent />
             <Tile label={t("stats.losses")} value={casual.losses} />
           </div>
-          <RateGrid>
-            {casualRoles.map((r) => (
-              <RateTile key={r} icon={ROLES[r].emoji} label={t(`roles.${r}.name`)} c={casual.byRole[r]!} color={ROLES[r].color} />
-            ))}
-          </RateGrid>
+          <RoleRates roles={casualRoles} counts={casual.byRole} />
         </section>
       )}
 
