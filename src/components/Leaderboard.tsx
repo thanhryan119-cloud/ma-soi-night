@@ -22,7 +22,7 @@ export function Leaderboard({ className = "mt-10" }: { className?: string }) {
   const me = useAccount()?.user.id;
   const [rows, setRows] = useState<LeaderboardRow[] | null>(null);
   const [failed, setFailed] = useState(false);
-  const [mode, setMode] = useState<StatsMode>("casual");
+  const [mode, setMode] = useState<StatsMode>("standard");
   const [long, setLong] = useState(false);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export function Leaderboard({ className = "mt-10" }: { className?: string }) {
         <h2 className="text-xl font-bold">🏆 {t("leaderboard.title")}</h2>
         {rows && <span className="chip">{t("leaderboard.accounts", { count: rows.length })}</span>}
         <div className="ml-auto flex rounded-full border border-white/15 p-0.5 text-xs" role="tablist" aria-label={t("leaderboard.mode")}>
-          {(["casual", "standard"] as const).map((m) => (
+          {(["standard", "casual"] as const).map((m) => (
             <button
               key={m}
               type="button"
