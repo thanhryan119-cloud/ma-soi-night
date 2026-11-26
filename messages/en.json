@@ -1208,6 +1208,7 @@
     "online": "Online now",
     "nobodyOnline": "Nobody else in the lobby yet.",
     "createTitle": "Make a room",
+    "options": "Options",
     "whoHosts": "Who hosts?",
     "machineHost": "Machine host",
     "machineHostDesc": "The machine deals the roles and runs the whole game. You're the room owner: you play and set the room up.",
