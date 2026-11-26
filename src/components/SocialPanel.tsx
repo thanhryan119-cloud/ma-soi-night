@@ -17,7 +17,7 @@ import { storage } from "@/lib/socket";
 import { useVoice } from "@/lib/voice";
 import { Avatar, ChatBubble, StyledName, useErrorToast } from "./ui";
 import { GhostLog, useGhostChat } from "./GhostChat";
-import { ServerChat, useGlobalChat } from "./GlobalChat";
+import { InviteCards, ServerChat, useGlobalChat } from "./GlobalChat";
 import { ProfileLink } from "./Profile";
 
 export { newStage } from "@shared/social";
@@ -180,7 +180,10 @@ export function SocialPanel({
           <GhostLog state={state} ghost={ghost} className="flex-1" />
         </div>
       )}
-      {tab === "server" && <ServerChat chat={global} className="flex-1 p-2" />}
+      {tab === "server" && (
+        <ServerChat chat={global} canInvite={!spectator && state.phase.kind === "lobby"} className="flex-1 p-2" />
+      )}
+      <InviteCards chat={global} />
     </div>
   );
 }

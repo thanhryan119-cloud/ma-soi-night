@@ -25,6 +25,14 @@ import {
   type OnlineUser,
 } from "../shared/social";
 import type { PlayerStyle } from "../shared/cosmetics";
+import {
+  INVITE_WAIT_MS,
+  cleanFriendData,
+  friendBook,
+  liveInvites,
+  type FriendsState,
+  type RoomInvite,
+} from "../shared/friends";
 
 const CHANNEL = "global-chat";
 
@@ -48,6 +56,11 @@ export function createGlobalChat(
     userById: (userId: string) => Account | null;
     /** Both accounts sit in the same game that is still running (no private talk there). */
     sameRunningGame: (a: string, b: string) => boolean;
+    /**
+     * The room this socket can invite `to` into: its code, or why not (not in a
+     * room, the game started, the room is full, they are in it already).
+     */
+    inviteRoom: (socket: Socket, to: string) => { code: string } | { error: string };
   },
 ) {
   const file = join(opts.dataDir, "global-chat.json");
@@ -113,6 +126,51 @@ export function createGlobalChat(
     return { dms: lines, peers };
   }
 
+  // Friends, kept on disk (requests too, so they wait for someone who is away).
+  const friendsFile = join(opts.dataDir, "friends.json");
+  let friendData = cleanFriendData(null);
+  try {
+    if (existsSync(friendsFile)) friendData = cleanFriendData(JSON.parse(readFileSync(friendsFile, "utf8")));
+  } catch (err) {
+    console.error("[friends] load failed", err);
+  }
+  const book = friendBook(friendData);
+  let friendsTimer: NodeJS.Timeout | null = null;
+  const saveFriendsSoon = () => {
+    if (friendsTimer) return;
+    friendsTimer = setTimeout(() => {
+      friendsTimer = null;
+      try {
+        writeFileSync(`${friendsFile}.tmp`, JSON.stringify(friendData));
+        renameSync(`${friendsFile}.tmp`, friendsFile);
+      } catch (err) {
+        console.error("[friends] save failed", err);
+      }
+    }, 500);
+  };
+  const lookup = (id: string) => {
+    const a = opts.userById(id);
+    return a ? pub(a) : null;
+  };
+  const friendsOf = (userId: string): FriendsState<OnlineUser> => book.stateOf(userId, lookup);
+
+  // Room invites live in memory only: they are worth something for a few minutes.
+  interface Invite {
+    id: string;
+    from: string;
+    to: string;
+    code: string;
+    t: number;
+  }
+  let invites: Invite[] = [];
+  const invitesFor = (userId: string): RoomInvite<OnlineUser>[] => {
+    invites = liveInvites(invites, Date.now());
+    return invites
+      .filter((i) => i.to === userId)
+      .map((i) => ({ id: i.id, code: i.code, t: i.t, from: lookup(i.from) }))
+      .filter((i): i is RoomInvite<OnlineUser> => !!i.from);
+  };
+
   // Who has the channel open: socket id -> account (null for a guest).
   const present = new Map<string, Account | null>();
   function onlineList(): OnlineList {
@@ -139,6 +197,13 @@ export function createGlobalChat(
     }, 300);
   };
   const socketsOf = (userId: string) => [...present].filter(([, a]) => a?.id === userId).map(([sid]) => sid);
+  /** Sends each account its new friend list. */
+  const pushFriends = (...ids: string[]) => {
+    for (const id of ids) {
+      const state = friendsOf(id);
+      for (const sid of socketsOf(id)) io.to(sid).emit("friends:state", state);
+    }
+  };
 
   function register(socket: Socket) {
     const on = (event: string, fn: (p: Record<string, unknown>, ack: Ack) => void) =>
@@ -157,7 +222,14 @@ export function createGlobalChat(
       socket.join(CHANNEL);
       present.set(socket.id, user);
       broadcastOnline();
-      ack({ ok: true, messages, online: onlineList(), ...(user ? dmsOf(user.id) : { dms: [], peers: {} }) });
+      ack({
+        ok: true,
+        messages,
+        online: onlineList(),
+        ...(user ? dmsOf(user.id) : { dms: [], peers: {} }),
+        friends: user ? friendsOf(user.id) : null,
+        invites: user ? invitesFor(user.id) : [],
+      });
     });
 
     const leave = () => {
@@ -193,6 +265,60 @@ export function createGlobalChat(
       for (const sid of socketsOf(peer.id)) io.to(sid).emit("dm:new", { msg, peer: pub(user) });
       for (const sid of socketsOf(user.id)) io.to(sid).emit("dm:new", { msg, peer: pub(peer) });
       ack({ ok: true, msg, peer: pub(peer) });
+    });
+
+    // ----------------------------------------------------------- friends --
+    type Run = (me: string, other: string) => ReturnType<typeof book.request>;
+    const friendAction = (p: Record<string, unknown>, ack: Ack, isRequest: boolean, run: Run) => {
+      const user = opts.accountFor(p.authToken);
+      if (!user) return ack({ ok: false, error: "err.signInForFriends" });
+      const other = typeof p.id === "string" ? p.id : "";
+      if (other === user.id) return ack({ ok: false, error: "err.friendSelf" });
+      if (!other || !opts.userById(other)) return ack({ ok: false, error: "err.dmNoUser" });
+      const res = run(user.id, other);
+      if (!res.ok) return ack(res);
+      if (res.changed) {
+        saveFriendsSoon();
+        pushFriends(user.id, other);
+        const note = res.nowFriends ? "friends:accepted" : isRequest ? "friends:request" : null;
+        if (note) for (const sid of socketsOf(other)) io.to(sid).emit(note, { user: pub(user) });
+      }
+      ack({ ok: true, nowFriends: !!res.nowFriends, friends: friendsOf(user.id) });
+    };
+    on("friend:request", (p, ack) => friendAction(p, ack, true, (me, other) => book.request(me, other, Date.now())));
+    on("friend:answer", (p, ack) => friendAction(p, ack, false, (me, other) => book.answer(me, other, p.accept === true)));
+    on("friend:remove", (p, ack) => friendAction(p, ack, false, (me, other) => book.remove(me, other)));
+
+    // ----------------------------------------------------------- invites --
+    on("invite:send", (p, ack) => {
+      const user = opts.accountFor(p.authToken);
+      if (!user) return ack({ ok: false, error: "err.signInToInvite" });
+      const to = typeof p.to === "string" ? p.to : "";
+      if (!to || to === user.id || !opts.userById(to)) return ack({ ok: false, error: "err.dmNoUser" });
+      if (!socketsOf(to).length) return ack({ ok: false, error: "err.inviteOffline" });
+      const room = opts.inviteRoom(socket, to);
+      if ("error" in room) return ack({ ok: false, error: room.error });
+      const now = Date.now();
+      invites = liveInvites(invites, now);
+      const last = invites.find((i) => i.from === user.id && i.to === to && i.code === room.code);
+      if (last && now - last.t < INVITE_WAIT_MS)
+        return ack({ ok: false, error: "err.inviteSlow", params: { seconds: Math.ceil((last.t + INVITE_WAIT_MS - now) / 1000) } });
+      invites = invites.filter((i) => !(i.from === user.id && i.to === to));
+      const invite: Invite = { id: newId(now), from: user.id, to, code: room.code, t: now };
+      invites.push(invite);
+      const out: RoomInvite<OnlineUser> = { id: invite.id, from: pub(user), code: invite.code, t: now };
+      for (const sid of socketsOf(to)) io.to(sid).emit("invite:new", out);
+      ack({ ok: true });
+    });
+
+    // Turning it down (accepting is joining the room, see takeInvite).
+    on("invite:decline", (p, ack) => {
+      const user = opts.accountFor(p.authToken);
+      if (!user) return ack({ ok: false, error: "err.signInToInvite" });
+      const invite = invites.find((i) => i.id === p.id && i.to === user.id);
+      invites = invites.filter((i) => i !== invite);
+      if (invite) for (const sid of socketsOf(invite.to)) io.to(sid).emit("invite:gone", { id: invite.id });
+      ack({ ok: true });
     });
 
     on("global:send", (p, ack) => {
@@ -233,5 +359,16 @@ export function createGlobalChat(
     });
   }
 
-  return { register };
+  /** True when `userId` has an open invite to room `code` (it lets them past the room password). */
+  const invitedTo = (userId: string, code: string) => liveInvites(invites, Date.now()).some((i) => i.to === userId && i.code === code);
+
+  /** They joined the room: their invites to it are used up. */
+  function takeInvite(userId: string, code: string) {
+    const used = invites.filter((i) => i.to === userId && i.code === code);
+    if (!used.length) return;
+    invites = invites.filter((i) => !used.includes(i));
+    for (const i of used) for (const sid of socketsOf(userId)) io.to(sid).emit("invite:gone", { id: i.id });
+  }
+
+  return { register, invitedTo, takeInvite };
 }
