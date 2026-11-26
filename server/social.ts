@@ -1,10 +1,9 @@
-// Socket handlers for chat, the shared drawing board and open-mic voice
+// Socket handlers for chat and open-mic voice
 // (WebRTC mesh: the server only relays signaling, audio goes peer to peer).
 
 import type { Server, Socket } from "socket.io";
 import { randomId } from "../shared/engine";
 import {
-  BOARD_MAX_STROKES,
   CHAT_HISTORY,
   canGhostSpeak,
   canReadGhosts,
@@ -13,13 +12,11 @@ import {
   chatWaitMs,
   recentSends,
   sanitizeChat,
-  sanitizeStroke,
   voiceAccess,
   type ChatMessage,
   type Speaker,
   type Spectator,
   SPECTATOR_PREFIX,
-  type Stroke,
 } from "../shared/social";
 import type { Room } from "../shared/types";
 import { describeIce, iceServers } from "./ice";
@@ -35,7 +32,6 @@ interface RoomSocial {
   chat: ChatMessage[];
   /** The dead players' own chat (read by the dead and the host until the game ends). */
   ghost: ChatMessage[];
-  strokes: Stroke[];
   /** Recent send times per sender, for slow mode. */
   lastChat: Map<string, number[]>;
   voice: Map<string, VoicePeer>;
@@ -60,7 +56,7 @@ export function createSocial(
   const social = new Map<string, RoomSocial>();
   const of = (code: string) => {
     let s = social.get(code);
-    if (!s) social.set(code, (s = { chat: [], ghost: [], strokes: [], lastChat: new Map(), voice: new Map() }));
+    if (!s) social.set(code, (s = { chat: [], ghost: [], lastChat: new Map(), voice: new Map() }));
     return s;
   };
 
@@ -106,7 +102,6 @@ export function createSocial(
       ack({
         ok: true,
         chat: s.chat,
-        strokes: s.strokes,
         voice: [...s.voice.values()],
         canSpeak: c ? canSpeak(c.room, c.who) === null : false,
       });
@@ -170,27 +165,6 @@ export function createSocial(
       if (c.who.kind === "player") onChat(c.room, key, text);
       if (c.s.chat.length > CHAT_HISTORY) c.s.chat.splice(0, c.s.chat.length - CHAT_HISTORY);
       io.to(channel(c.room.code)).emit("chat:new", msg);
-      ack({ ok: true });
-    });
-
-    on("board:stroke", (p, ack) => {
-      const c = ctx();
-      if (!c) return ack({ ok: false, error: "err.notInRoom" });
-      const err = canSpeak(c.room, c.who);
-      if (err) return ack({ ok: false, error: err });
-      const stroke = sanitizeStroke(p.stroke, fromKey(c.who), randomId(10));
-      if (!stroke) return ack({ ok: false, error: "err.unknownAction" });
-      c.s.strokes.push(stroke);
-      if (c.s.strokes.length > BOARD_MAX_STROKES) c.s.strokes.splice(0, c.s.strokes.length - BOARD_MAX_STROKES);
-      socket.to(channel(c.room.code)).emit("board:stroke", stroke);
-      ack({ ok: true, stroke });
-    });
-
-    on("board:clear", (_p, ack) => {
-      const c = ctx();
-      if (!c || c.who.kind !== "host") return ack({ ok: false, error: "err.notHost" });
-      c.s.strokes = [];
-      io.to(channel(c.room.code)).emit("board:clear");
       ack({ ok: true });
     });
 
@@ -286,17 +260,15 @@ export function createSocial(
     social.delete(code);
   }
 
-  /** A new game starts with an empty chat and a blank board (the old game's talk stays with it). */
+  /** A new game starts with an empty chat (the old game's talk stays with it). */
   function clearForNewGame(code: string) {
     const s = social.get(code);
     if (!s) return;
     s.chat = [];
     s.ghost = [];
-    s.strokes = [];
     s.lastChat.clear();
     io.to(channel(code)).emit("chat:clear");
     io.to(channel(code)).emit("ghost:clear");
-    io.to(channel(code)).emit("board:clear");
   }
 
   /** The room's recent chat (for the AI bots' context). */

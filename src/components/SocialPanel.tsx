@@ -1,22 +1,17 @@
 "use client";
 
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
-  BOARD_COLORS,
-  BRUSH_SIZES,
   CHAT_MIN_GAP_MS,
   SOCIAL_PHASES,
-  STROKE_MAX_POINTS,
   chatWaitMs,
   mentionsName,
   recentSends,
   type ChatMessage,
-  type Stroke,
 } from "@shared/social";
 import type { ClientState, PlayerView } from "@shared/views";
 import { useT } from "@/lib/i18n";
 import { useSocial } from "@/lib/social";
-import { storage } from "@/lib/socket";
 import { useVoice } from "@/lib/voice";
 import { Avatar, ChatBubble, StyledName, useErrorToast } from "./ui";
 import { GhostLog, useGhostChat } from "./GhostChat";
@@ -57,7 +52,7 @@ export function ChatMilestone({ m }: { m: ChatMessage }) {
 }
 
 /**
- * The room's chat box. Tabs: the room chat (with the drawing board), the dead
+ * The room's chat box. Tabs: the room chat, the dead
  * players' chat when this viewer may read it, and the server-wide chat.
  * Who is using the panel: the host, a spectator, or a player id.
  */
@@ -102,17 +97,6 @@ export function SocialPanel({
         : defenseLocked
           ? t("social.onlyNominees")
           : null;
-  // The board can be folded away so the chat gets the whole panel.
-  const [boardOpen, setBoardOpen] = useState(true);
-  useEffect(
-    () => setBoardOpen(storage.get<boolean>("msn:boardOpen") ?? true),
-    [],
-  );
-  const toggleBoard = () => {
-    storage.set("msn:boardOpen", !boardOpen);
-    setBoardOpen(!boardOpen);
-  };
-
   // Spectators talk in the dead players' chat, so they start there.
   const [tab, setTab] = useState<Tab>(spectator ? "ghost" : "room");
   const over = state.phase.kind === "gameOver";
@@ -174,30 +158,9 @@ export function SocialPanel({
             )}
           </button>
         ))}
-        {tab === "room" && (
-          <button
-            type="button"
-            className="btn-ghost btn-sm ml-auto shrink-0 px-2 py-0.5 text-xs"
-            onClick={toggleBoard}
-            aria-expanded={boardOpen}
-            title={boardOpen ? t("social.hideBoard") : t("social.showBoard")}
-          >
-            {boardOpen ? "▴" : "▾"} 🎨
-          </button>
-        )}
       </div>
       {state.settings.voiceChat !== false && !spectator && (
         <VoiceBar state={state} players={players} enabled={phaseOpen} />
-      )}
-      {tab === "room" && boardOpen && (
-        <div className="flex min-h-0 shrink-0 basis-[24%] flex-col border-b border-gold/25">
-          <Board
-            social={social}
-            canDraw={canSpeak}
-            isHost={isHost}
-            reason={null}
-          />
-        </div>
       )}
       {/* Kept mounted while hidden so the room chat keeps its scroll and filter. */}
       <div className={`min-h-0 flex-1 flex-col ${tab === "room" ? "flex" : "hidden"}`}>
@@ -668,184 +631,5 @@ function Chat({
         )
       )}
     </>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Drawing board
-// ---------------------------------------------------------------------------
-
-function drawStroke(
-  ctx: CanvasRenderingContext2D,
-  s: Pick<Stroke, "color" | "size" | "points">,
-  w: number,
-  h: number,
-) {
-  const pts = s.points;
-  if (pts.length < 2) return;
-  ctx.strokeStyle = s.color;
-  ctx.fillStyle = s.color;
-  ctx.lineWidth = (s.size * w) / 400;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  if (pts.length === 2) {
-    ctx.beginPath();
-    ctx.arc(pts[0] * w, pts[1] * h, ctx.lineWidth / 2, 0, Math.PI * 2);
-    ctx.fill();
-    return;
-  }
-  ctx.beginPath();
-  ctx.moveTo(pts[0] * w, pts[1] * h);
-  for (let i = 2; i < pts.length; i += 2)
-    ctx.lineTo(pts[i] * w, pts[i + 1] * h);
-  ctx.stroke();
-}
-
-function Board({
-  social,
-  canDraw,
-  isHost,
-  reason,
-}: {
-  social: ReturnType<typeof useSocial>;
-  canDraw: boolean;
-  isHost: boolean;
-  reason: string | null;
-}) {
-  const t = useT();
-  const showError = useErrorToast();
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [size, setSize] = useState({ w: 0, h: 0 });
-  const [color, setColor] = useState<string>(BOARD_COLORS[1]);
-  const [brush, setBrush] = useState<number>(BRUSH_SIZES[1]);
-  const current = useRef<number[] | null>(null);
-
-  // Fit a 4:3 canvas into the free space.
-  useLayoutEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    const fit = () => {
-      const { width, height } = el.getBoundingClientRect();
-      const w = Math.max(0, Math.min(width, (height * 4) / 3));
-      setSize({ w: Math.floor(w), h: Math.floor((w * 3) / 4) });
-    };
-    fit();
-    const ro = new ResizeObserver(fit);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  const redraw = () => {
-    const c = canvasRef.current;
-    if (!c || !size.w) return;
-    const dpr = window.devicePixelRatio || 1;
-    c.width = size.w * dpr;
-    c.height = size.h * dpr;
-    const ctx = c.getContext("2d")!;
-    ctx.scale(dpr, dpr);
-    ctx.fillStyle = "#0d0d0d";
-    ctx.fillRect(0, 0, size.w, size.h);
-    for (const s of social.strokes) drawStroke(ctx, s, size.w, size.h);
-    if (current.current)
-      drawStroke(
-        ctx,
-        { color, size: brush, points: current.current },
-        size.w,
-        size.h,
-      );
-  };
-  useEffect(redraw); // cheap enough: re-render on any change
-
-  const point = (e: React.PointerEvent) => {
-    const r = canvasRef.current!.getBoundingClientRect();
-    return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
-  };
-
-  const finish = async () => {
-    const pts = current.current;
-    current.current = null;
-    if (!pts) return;
-    showError(await social.sendStroke({ color, size: brush, points: pts }));
-    redraw();
-  };
-
-  return (
-    <div className="flex min-h-0 flex-1 flex-col gap-1.5 p-1.5">
-      <div
-        ref={wrapRef}
-        className="flex min-h-0 flex-1 items-center justify-center"
-      >
-        <canvas
-          ref={canvasRef}
-          style={{ width: size.w, height: size.h }}
-          className={`rounded-md border border-white/10 ${canDraw ? "cursor-crosshair touch-none" : ""}`}
-          onPointerDown={(e) => {
-            if (!canDraw) return;
-            e.currentTarget.setPointerCapture(e.pointerId);
-            current.current = point(e);
-            redraw();
-          }}
-          onPointerMove={(e) => {
-            const pts = current.current;
-            if (!pts) return;
-            const [x, y] = point(e);
-            const lx = pts[pts.length - 2];
-            const ly = pts[pts.length - 1];
-            if (Math.hypot(x - lx, y - ly) < 0.004) return;
-            pts.push(x, y);
-            if (pts.length >= STROKE_MAX_POINTS * 2) {
-              finish();
-              current.current = [x, y];
-            }
-            redraw();
-          }}
-          onPointerUp={finish}
-          onPointerCancel={finish}
-        />
-      </div>
-      {canDraw ? (
-        <div className="flex shrink-0 items-center gap-1.5">
-          {BOARD_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              aria-label={c}
-              onClick={() => setColor(c)}
-              className={`h-7 w-7 shrink-0 rounded-full border-2 ${color === c ? "border-white" : "border-transparent"}`}
-              style={{ background: c }}
-            />
-          ))}
-          <span className="mx-1 h-5 w-px bg-white/15" />
-          {BRUSH_SIZES.map((b) => (
-            <button
-              key={b}
-              type="button"
-              onClick={() => setBrush(b)}
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md border ${brush === b ? "border-white" : "border-white/10"}`}
-              aria-label={`${b}px`}
-            >
-              <span
-                className="rounded-full bg-white"
-                style={{ width: b + 2, height: b + 2 }}
-              />
-            </button>
-          ))}
-          {isHost && (
-            <button
-              type="button"
-              className="btn-ghost btn-sm ml-auto"
-              onClick={async () => showError(await social.clearBoard())}
-            >
-              {t("social.clear")}
-            </button>
-          )}
-        </div>
-      ) : (
-        reason && (
-          <p className="shrink-0 text-center text-xs text-white/50">{reason}</p>
-        )
-      )}
-    </div>
   );
 }

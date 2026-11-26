@@ -1,4 +1,4 @@
-// Chat, drawing board and open-mic rules (pure, shared by server and client).
+// Chat and open-mic rules (pure, shared by server and client).
 // Social features are open in the lobby, during the day discussion and after
 // the game ends; during the game dead players can only watch and listen.
 
@@ -15,10 +15,6 @@ function silencedNow(room: Room, id: string): boolean {
 export const SOCIAL_PHASES = ["lobby", "discussion", "defense", "gameOver"] as const;
 export const CHAT_MAX_LEN = 200;
 export const CHAT_HISTORY = 200;
-export const BOARD_MAX_STROKES = 3000;
-export const STROKE_MAX_POINTS = 600;
-export const BOARD_COLORS = ["#f2f2f2", "#e5383b", "#f4c542", "#4cc9f0", "#57cc99", "#b388eb"] as const;
-export const BRUSH_SIZES = [2, 5, 12] as const;
 
 /** A spectator watches a running game: they read along and talk in the dead players' chat only. */
 export interface Spectator {
@@ -57,15 +53,6 @@ export function chatStage(room: Pick<Room, "game" | "phase">): { stage: ChatStag
   if (k === "gameOver") return { stage: "over", n: 0 };
   if (k === "night" || k === "roleReveal") return { stage: "night", n: Math.max(1, room.phase.night) };
   return { stage: "day", n: Math.max(1, room.phase.day) };
-}
-
-export interface Stroke {
-  id: string;
-  by: string;
-  color: string;
-  size: number;
-  /** Flat list of x,y pairs normalised to 0..1 */
-  points: number[];
 }
 
 export const socialOpen = (room: Room) => (SOCIAL_PHASES as readonly string[]).includes(room.phase.kind);
@@ -169,21 +156,6 @@ export function mentionsName(text: string, name: string): boolean {
   if ([...n].length < 2) return false;
   const esc = n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(String.raw`(?<![\p{L}\p{N}])${esc}(?![\p{L}\p{N}])`, "iu").test(text);
-}
-
-export function sanitizeStroke(input: unknown, by: string, id: string): Stroke | null {
-  const s = (input ?? {}) as Partial<Stroke>;
-  if (!BOARD_COLORS.includes(s.color as (typeof BOARD_COLORS)[number])) return null;
-  if (!BRUSH_SIZES.includes(s.size as (typeof BRUSH_SIZES)[number])) return null;
-  if (!Array.isArray(s.points) || s.points.length < 2 || s.points.length % 2 !== 0) return null;
-  if (s.points.length > STROKE_MAX_POINTS * 2) return null;
-  const points: number[] = [];
-  for (const v of s.points) {
-    const n = Number(v);
-    if (!Number.isFinite(n)) return null;
-    points.push(Math.round(Math.min(1, Math.max(0, n)) * 1000) / 1000);
-  }
-  return { id, by, color: s.color!, size: s.size!, points };
 }
 
 // ---------------------------------------------------------------------------
