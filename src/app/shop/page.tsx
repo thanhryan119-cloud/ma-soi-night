@@ -314,9 +314,7 @@ function RoleCard({ role: r, now, owned, signedIn, shop }: { role: RoleId; now: 
         ) : (
           <span className="flex flex-col">
             <span className="text-sm font-bold text-gold">{price(shop?.price ?? ITEM_PRICE_VND)}</span>
-            <span className={`text-xs ${days === 0 ? "font-bold text-emerald-300" : "text-white/50"}`}>
-              {days === 0 ? t("freeRoles.freeToday") : t("freeRoles.freeIn", { days })}
-            </span>
+            {days === 0 && <span className="text-xs font-bold text-emerald-300">{t("freeRoles.freeToday")}</span>}
           </span>
         )}
         {!owned && signedIn && shop?.enabled && (

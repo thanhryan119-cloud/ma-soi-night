@@ -1305,8 +1305,7 @@
     "bundleCount": "{count} cards",
     "bundleHave": "You have {have}/{total}, you only pay for the rest",
     "ownedCard": "Card owned, open every day",
-    "freeToday": "Free today",
-    "freeIn": "Free again in {days} days"
+    "freeToday": "Free today"
   },
   "room": {
     "signIn": "Sign in",

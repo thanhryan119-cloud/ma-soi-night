@@ -1305,8 +1305,7 @@
     "bundleCount": "{count} thẻ",
     "bundleHave": "Đã có {have}/{total} thẻ, chỉ tính tiền phần còn thiếu",
     "ownedCard": "Đã có thẻ, dùng mọi ngày",
-    "freeToday": "Miễn phí hôm nay",
-    "freeIn": "Miễn phí lại sau {days} ngày"
+    "freeToday": "Miễn phí hôm nay"
   },
   "room": {
     "signIn": "Đăng nhập",
