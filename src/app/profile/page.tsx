@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { QuestsLink } from "@/components/Quests";
 import { CollectionLink } from "@/components/RoleCollection";
-import { LangSwitch, toast } from "@/components/ui";
+import { Avatar, LangSwitch, StyledName, toast } from "@/components/ui";
 import {
   SHOP_RETURN_KEY,
   checkOrder,
@@ -33,6 +33,27 @@ export default function ProfilePage() {
     refreshAccount();
   }, []);
   const backTo = usePaymentReturn(setProfile);
+  const account = useAccount();
+  // The page shows the card and the stats; every edit option lives in a window
+  // opened by the edit button.
+  const [editing, setEditing] = useState(false);
+  const closeEditor = () => {
+    if (profile) saveLocalProfile(profile);
+    setEditing(false);
+  };
+  useEffect(() => {
+    if (!editing) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeEditor();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }); // eslint-disable-line react-hooks/exhaustive-deps
+  const look = profile && {
+    name: profile.name || t("player.namePlaceholder"),
+    avatar: profile.avatar,
+    avatarUrl: account?.user.avatarUrl ?? null,
+    style: profile.style,
+    alive: true,
+  };
   return (
     <main className={`mx-auto flex min-h-dvh max-w-lg flex-col gap-6 px-4 pb-10 ${embedded ? "pt-4" : "pt-16"}`}>
       {!embedded && <GlobalChat />}
@@ -57,19 +78,53 @@ export default function ProfilePage() {
           ← {t("shop.backToRoom")}
         </Link>
       )}
-      {profile && <ProfileEditor value={profile} onChange={setProfile} />}
-      <button
-        className="btn-primary py-4 text-lg"
-        disabled={!profile}
-        onClick={() => {
-          if (!profile) return;
-          saveLocalProfile(profile);
-          toast(t("profile.saved"), "info");
-        }}
-      >
-        {t("profile.save")}
-      </button>
+      {look && (
+        <div className="flex items-center gap-4 rounded-lg border border-white/10 bg-night-900 p-4">
+          <Avatar p={look} size="xl" />
+          <div className="min-w-0 flex-1">
+            <StyledName p={look} className="block truncate text-3xl font-black" />
+            <button type="button" className="btn-ghost btn-sm mt-2" onClick={() => setEditing(true)}>
+              ✏️ {t("profile.edit")}
+            </button>
+          </div>
+        </div>
+      )}
       <MyStats />
+      {editing && profile && (
+        <div
+          className="page-enter fixed inset-0 z-[90] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+          onClick={closeEditor}
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("profile.edit")}
+        >
+          <div
+            className="rise flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-night-950 shadow-2xl sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-4 py-2">
+              <h3 className="min-w-0 flex-1 truncate font-bold">✏️ {t("profile.edit")}</h3>
+              <button className="btn-ghost btn-sm" onClick={closeEditor} aria-label={t("common.close")} title={t("common.close")}>
+                ✕
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+              <ProfileEditor value={profile} onChange={setProfile} />
+            </div>
+            <div className="shrink-0 border-t border-white/10 p-3">
+              <button
+                className="btn-primary w-full py-3 text-lg"
+                onClick={() => {
+                  closeEditor();
+                  toast(t("profile.saved"), "info");
+                }}
+              >
+                {t("profile.save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <AdminLink />
     </main>
   );
