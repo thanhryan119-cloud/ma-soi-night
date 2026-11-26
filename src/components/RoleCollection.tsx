@@ -10,6 +10,24 @@ import { MIN_HUMANS_FOR_STATS, type UserStats } from "@shared/stats";
 import { TIERS, TIER_WINS, collectionSummary, nextTier, roleWins, tierFor, type CardTier } from "@shared/achievements";
 import { RoleArt } from "@/components/art/Tarot";
 import { useT } from "@/lib/i18n";
+import { useRoleTip } from "./RoleTip";
+
+type RoleTips = ReturnType<typeof useRoleTip>;
+
+/** A role card that shows what the role does on hover, focus or tap. */
+function CardButton({ role, tips, children }: { role: (typeof ROLE_IDS)[number]; tips: RoleTips; children: React.ReactNode }) {
+  const t = useT();
+  return (
+    <button
+      type="button"
+      className={`block w-full cursor-help rounded-lg transition-transform focus-visible:outline-2 focus-visible:outline-gold ${tips.active(role) ? "scale-[1.03]" : "hover:scale-[1.03]"}`}
+      aria-label={`${t(`roles.${role}.name`)}: ${t(`roles.${role}.desc`)}`}
+      {...tips.bind(role)}
+    >
+      {children}
+    </button>
+  );
+}
 
 const TIER_ICON: Record<CardTier, string> = { bronze: "🥉", silver: "🥈", gold: "🥇", rainbow: "🌈" };
 
@@ -46,7 +64,7 @@ export function CollectionSummary({ stats }: { stats: UserStats | null | undefin
   );
 }
 
-function CollectionCard({ role, wins }: { role: (typeof ROLE_IDS)[number]; wins: number }) {
+function CollectionCard({ role, wins, tips }: { role: (typeof ROLE_IDS)[number]; wins: number; tips: RoleTips }) {
   const t = useT();
   const tier = tierFor(wins);
   const next = nextTier(wins);
@@ -54,7 +72,9 @@ function CollectionCard({ role, wins }: { role: (typeof ROLE_IDS)[number]; wins:
   const progress = next ? (wins - from) / (next.wins - from) : 1;
   return (
     <li className="flex flex-col gap-1.5">
-      <RoleArt role={role} tier={tier} locked={!tier} className="w-full" />
+      <CardButton role={role} tips={tips}>
+        <RoleArt role={role} tier={tier} locked={!tier} className="w-full" />
+      </CardButton>
       <div className="flex min-h-5 items-center justify-between gap-1">
         {tier ? <TierChip tier={tier} /> : <span className="text-[11px] text-white/40">{t("collection.locked")}</span>}
         <span className="shrink-0 text-xs font-bold text-white/70 tabular-nums">{t("collection.wins", { n: wins })}</span>
@@ -72,11 +92,13 @@ function CollectionCard({ role, wins }: { role: (typeof ROLE_IDS)[number]; wins:
 /** Every role's card. Best tiers first, then the rest in the usual role order. */
 export function RoleCollection({ stats }: { stats: UserStats | null | undefined }) {
   const roles = [...ROLE_IDS].sort((a, b) => roleWins(stats, b) - roleWins(stats, a));
+  const tips = useRoleTip();
   return (
     <ul className="grid grid-cols-3 gap-x-3 gap-y-4 sm:grid-cols-4">
       {roles.map((r) => (
-        <CollectionCard key={r} role={r} wins={roleWins(stats, r)} />
+        <CollectionCard key={r} role={r} wins={roleWins(stats, r)} tips={tips} />
       ))}
+      {tips.tip}
     </ul>
   );
 }
@@ -84,6 +106,7 @@ export function RoleCollection({ stats }: { stats: UserStats | null | undefined 
 /** A compact strip for profile cards: the summary and only the roles already won with. */
 export function CollectionPeek({ stats }: { stats: UserStats | null | undefined }) {
   const t = useT();
+  const tips = useRoleTip();
   const won = ROLE_IDS.filter((r) => roleWins(stats, r) > 0).sort((a, b) => roleWins(stats, b) - roleWins(stats, a));
   return (
     <section className="flex flex-col gap-3">
@@ -92,13 +115,16 @@ export function CollectionPeek({ stats }: { stats: UserStats | null | undefined 
       {won.length > 0 && (
         <ul className="grid grid-cols-4 gap-2 sm:grid-cols-6">
           {won.map((r) => (
-            <li key={r} className="flex flex-col items-center gap-0.5" title={t(`roles.${r}.name`)}>
-              <RoleArt role={r} tier={tierFor(roleWins(stats, r))} className="w-full" />
+            <li key={r} className="flex flex-col items-center gap-0.5">
+              <CardButton role={r} tips={tips}>
+                <RoleArt role={r} tier={tierFor(roleWins(stats, r))} className="w-full" />
+              </CardButton>
               <span className="text-[10px] text-white/60 tabular-nums">{t("collection.wins", { n: roleWins(stats, r) })}</span>
             </li>
           ))}
         </ul>
       )}
+      {tips.tip}
     </section>
   );
 }

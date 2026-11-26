@@ -4,22 +4,13 @@
 // folded away. Hovering (or tapping) a role shows what it does.
 
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { ROLES, ROLE_IDS } from "@shared/roles";
-import type { RoleId } from "@shared/types";
 import type { ClientState } from "@shared/views";
 import { useT } from "@/lib/i18n";
 import { storage } from "@/lib/socket";
+import { useRoleTip } from "./RoleTip";
 
 const OPEN_KEY = "msn:rolesBarOpen";
-const TIP_W = 272;
-
-interface Tip {
-  role: RoleId;
-  left: number;
-  top: number;
-  above: boolean;
-}
 
 export function RolesInPlay({
   state,
@@ -33,20 +24,9 @@ export function RolesInPlay({
   const roles = ROLE_IDS.filter((r) => (counts[r] ?? 0) > 0);
   const total = roles.reduce((n, r) => n + counts[r], 0);
   const [open, setOpen] = useState(true);
-  const [tip, setTip] = useState<Tip | null>(null);
+  const tips = useRoleTip((r) => `×${counts[r]}`);
 
   useEffect(() => setOpen(storage.get<boolean>(OPEN_KEY) ?? true), []);
-  // A tapped role's info goes away on the next tap anywhere or on scroll.
-  useEffect(() => {
-    if (!tip) return;
-    const close = () => setTip(null);
-    window.addEventListener("scroll", close, true);
-    window.addEventListener("resize", close);
-    return () => {
-      window.removeEventListener("scroll", close, true);
-      window.removeEventListener("resize", close);
-    };
-  }, [tip]);
 
   if (!total) return null;
 
@@ -55,23 +35,8 @@ export function RolesInPlay({
       storage.set(OPEN_KEY, !o);
       return !o;
     });
-    setTip(null);
+    tips.close();
   };
-
-  const show = (role: RoleId, el: HTMLElement) => {
-    const r = el.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const half = Math.min(TIP_W, vw - 16) / 2;
-    const above = r.bottom + 180 > window.innerHeight && r.top > 200;
-    setTip({
-      role,
-      left: Math.max(half + 8, Math.min(vw - half - 8, r.left + r.width / 2)),
-      top: above ? r.top - 8 : r.bottom + 8,
-      above,
-    });
-  };
-  const hide = (role: RoleId) =>
-    setTip((cur) => (cur?.role === role ? null : cur));
 
   return (
     <section
@@ -99,17 +64,11 @@ export function RolesInPlay({
               <button
                 type="button"
                 className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-white/90 transition-colors ${
-                  tip?.role === r
+                  tips.active(r)
                     ? "border-gold/60 bg-gold/10"
                     : "border-white/15 bg-white/[0.03] hover:border-gold/40"
                 }`}
-                onMouseEnter={(e) => show(r, e.currentTarget)}
-                onMouseLeave={() => hide(r)}
-                onFocus={(e) => show(r, e.currentTarget)}
-                onBlur={() => hide(r)}
-                onClick={(e) =>
-                  tip?.role === r ? setTip(null) : show(r, e.currentTarget)
-                }
+                {...tips.bind(r)}
               >
                 <span
                   className="h-1.5 w-1.5 shrink-0 rounded-full"
@@ -124,41 +83,7 @@ export function RolesInPlay({
           ))}
         </ul>
       )}
-
-      {tip &&
-        createPortal(
-          <div
-            role="tooltip"
-            className="tarot-tip pointer-events-none fixed z-[95] flex flex-col gap-1.5 rounded-lg border bg-night-800 p-3.5 text-left"
-            style={{
-              left: tip.left,
-              top: tip.top,
-              width: TIP_W,
-              maxWidth: "calc(100vw - 16px)",
-              borderColor: `${ROLES[tip.role].color}99`,
-              translate: tip.above ? "0 -100%" : undefined,
-            }}
-          >
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl leading-none">
-                {ROLES[tip.role].emoji}
-              </span>
-              <span className="font-display text-xl font-black text-moon">
-                {t(`roles.${tip.role}.name`)}
-              </span>
-              <span className="ml-auto font-mono text-sm text-gold">
-                ×{counts[tip.role]}
-              </span>
-            </div>
-            <span className="text-[11px] font-semibold tracking-[0.18em] text-gold uppercase">
-              {t(`teams.${ROLES[tip.role].team}`)}
-            </span>
-            <p className="text-sm leading-snug text-white/80">
-              {t(`roles.${tip.role}.desc`)}
-            </p>
-          </div>,
-          document.body,
-        )}
+      {tips.tip}
     </section>
   );
 }
