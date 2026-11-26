@@ -1312,5 +1312,12 @@
     "signIn": "Đăng nhập",
     "signInDesc": "Đăng nhập Google để lưu hồ sơ, lịch sử chơi và mở bộ sưu tập. Bạn vẫn ở trong phòng.",
     "windowHint": "Bạn vẫn ở trong phòng"
+  },
+  "achievement": {
+    "title": "Thành tựu mới",
+    "reached": "Lá bài {role} đã lên bậc {tier}",
+    "next": "Thêm {n} trận thắng nữa để lên {tier}",
+    "maxedNow": "Đây là bậc cao nhất, chúc mừng bạn",
+    "ok": "Tuyệt vời"
   }
 }

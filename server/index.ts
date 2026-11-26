@@ -33,6 +33,7 @@ import { linesPerDay, personaOf, typingMs } from "../shared/botPersona";
 import { ingestChat, newChatIntel, type ChatIntel } from "../shared/botIntel";
 import { createAiBots } from "./aiBots";
 import { createAccounts } from "./accounts";
+import { roleWins, tierReached, type AchievementNews } from "../shared/achievements";
 import { lockedRolesAt } from "../shared/freeRoles";
 import { payOSFromEnv } from "./payos";
 import { createQuests } from "./quests";
@@ -282,11 +283,23 @@ function recordStats(room: Room) {
   } catch (err) {
     console.error("[quests] record failed", err);
   }
+  const winsBefore = results.map((r) => roleWins(accounts.statsOf(r.userId), r.game.role));
   try {
     accounts.recordGame(results);
   } catch (err) {
     console.error("[stats] record failed", err);
   }
+  // A role card that just went up a tier: tell that player, so their phone can show it off.
+  results.forEach((r, i) => {
+    const wins = roleWins(accounts.statsOf(r.userId), r.game.role);
+    const tier = tierReached(winsBefore[i], wins);
+    if (!tier) return;
+    const news: AchievementNews = { role: r.game.role, tier, wins };
+    for (const s of roomSockets(room.code)) {
+      const p = room.players.find((q) => q.id === s.data.playerId);
+      if (p && !p.isBot && p.userId === r.userId) s.emit("achievement", news);
+    }
+  });
 }
 
 /** Votes that already got their countdown (a revote is a new vote object). */

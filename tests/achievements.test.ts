@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { collectionSummary, nextTier, roleTier, roleWins, tierFor } from "../shared/achievements";
+import { collectionSummary, nextTier, roleTier, roleWins, tierFor, tierReached } from "../shared/achievements";
 import { ROLE_IDS } from "../shared/roles";
 import { emptyStats } from "../shared/stats";
+
+describe("a new achievement", () => {
+  it("is the tier a win just reached, and nothing in between tiers", () => {
+    expect(tierReached(0, 1)).toBe("bronze");
+    expect(tierReached(4, 5)).toBe("silver");
+    expect(tierReached(5, 6)).toBeNull();
+    expect(tierReached(29, 30)).toBe("rainbow");
+    expect(tierReached(30, 31)).toBeNull();
+    expect(tierReached(0, 0)).toBeNull();
+  });
+});
 
 describe("role collection tiers", () => {
   it("climbs bronze, silver, gold, rainbow with wins", () => {
