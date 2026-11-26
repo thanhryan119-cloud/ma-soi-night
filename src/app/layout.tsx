@@ -5,6 +5,8 @@ import { ToastHost } from "@/components/ui";
 import { ProfileHost } from "@/components/Profile";
 import { GameReplayHost } from "@/components/GameReplay";
 import { NightBackdrop } from "@/components/art/NightBackdrop";
+import { OpenInBrowser } from "@/components/OpenInBrowser";
+import { OPEN_IN_BROWSER_SCRIPT } from "@/lib/inAppBrowser";
 import "./globals.css";
 
 const body = Be_Vietnam_Pro({
@@ -45,6 +47,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" className={fontVars}>
+      <head>
+        {/* Shared links opened inside Messenger / Zalo / Facebook jump to the real browser. */}
+        <script dangerouslySetInnerHTML={{ __html: OPEN_IN_BROWSER_SCRIPT }} />
+      </head>
       <body className="font-sans antialiased">
         <NightBackdrop />
         <I18nProvider>
@@ -52,6 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ProfileHost />
           <GameReplayHost />
           <ToastHost />
+          <OpenInBrowser />
         </I18nProvider>
       </body>
     </html>
