@@ -419,3 +419,63 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   .tier-gold > .tier-tint, .tier-rainbow > .tier-tint { animation: none; }
 }
+
+/* Home page: the big "Play now" button. A warm gradient, a slow glow and a light sweep. */
+.cta-play {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  border-radius: 1rem;
+  border: 2px solid #ffe2a3;
+  background: linear-gradient(135deg, #ffd77a 0%, #e8b45a 45%, #e25a63 100%);
+  color: #07060f;
+  box-shadow: 0 12px 40px rgba(232, 180, 90, 0.35), 0 0 0 6px rgba(232, 180, 90, 0.12);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  animation: cta-glow 2.4s ease-in-out infinite;
+}
+.cta-play:hover { transform: translateY(-2px) scale(1.015); filter: brightness(1.06); }
+.cta-play:active { transform: scale(0.98); }
+.cta-play::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: cta-sweep 3.2s ease-in-out infinite;
+}
+@keyframes cta-glow {
+  0%, 100% { box-shadow: 0 12px 40px rgba(232, 180, 90, 0.35), 0 0 0 6px rgba(232, 180, 90, 0.12); }
+  50% { box-shadow: 0 16px 60px rgba(226, 90, 99, 0.45), 0 0 0 12px rgba(232, 180, 90, 0.06); }
+}
+@keyframes cta-sweep {
+  0%, 55% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+.live-dot {
+  position: relative;
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 9999px;
+  background: #34d399;
+}
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: live-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes live-ping {
+  75%, 100% { transform: scale(2.4); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cta-play, .cta-play::before, .live-dot::after { animation: none; }
+}

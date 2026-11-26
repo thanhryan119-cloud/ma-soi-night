@@ -16,6 +16,8 @@ import { ProfileLink } from "@/components/Profile";
 import { getAuth, useAccount } from "@/lib/account";
 import { useT } from "@/lib/i18n";
 import { emitAck, getSocket, storage } from "@/lib/socket";
+import { setFriendList } from "@/lib/friends";
+import { FriendButton, WhereChip } from "@/components/Friends";
 
 const SEEN_KEY = "msn:globalChatSeen";
 const DM_SEEN_KEY = "msn:dmSeen";
@@ -58,10 +60,12 @@ export function useGlobalChat(visible: boolean) {
   useEffect(() => {
     const s = getSocket();
     const join = () =>
-      emitAck<{ messages: GlobalMessage[]; online: OnlineList; dms: DirectMessage[]; peers: Record<string, OnlineUser> }>("global:join", {
-        authToken: getAuth()?.token,
-      }).then((r) => {
+      emitAck<{ messages: GlobalMessage[]; online: OnlineList; dms: DirectMessage[]; peers: Record<string, OnlineUser>; friends: OnlineUser[] }>(
+        "global:join",
+        { authToken: getAuth()?.token },
+      ).then((r) => {
         if (!r.ok) return;
+        setFriendList(r.friends ?? []);
         setMessages(r.messages ?? []);
         if (r.online) setOnline(r.online);
         setDms(r.dms ?? []);
@@ -337,9 +341,15 @@ function OnlineList({ chat, className = "" }: { chat: Global; className?: string
                       <Avatar p={look} size="sm" />
                       <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-night-900 bg-emerald-400" aria-hidden />
                     </span>
-                    <StyledName p={look} className="truncate text-sm font-bold" />
-                    {self && <span className="shrink-0 text-[10px] text-white/40">({t("globalChat.you")})</span>}
+                    <span className="flex min-w-0 flex-col items-start">
+                      <span className="flex max-w-full items-center gap-1">
+                        <StyledName p={look} className="truncate text-sm font-bold" />
+                        {self && <span className="shrink-0 text-[10px] text-white/40">({t("globalChat.you")})</span>}
+                      </span>
+                    </span>
                   </ProfileLink>
+                  <WhereChip where={u.where} />
+                  {me && <FriendButton userId={u.id} compact />}
                   {me && !self && (
                     <button className="btn-ghost btn-sm shrink-0 border-gold/40 text-xs text-gold" onClick={() => chat.openDm(u)} title={t("globalChat.message")}>
                       ✉️<span className="sr-only">{t("globalChat.message")}</span>

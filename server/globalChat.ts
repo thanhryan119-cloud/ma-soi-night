@@ -23,6 +23,7 @@ import {
   type GlobalMessage,
   type OnlineList,
   type OnlineUser,
+  type Whereabouts,
 } from "../shared/social";
 import type { PlayerStyle } from "../shared/cosmetics";
 
@@ -48,6 +49,12 @@ export function createGlobalChat(
     userById: (userId: string) => Account | null;
     /** Both accounts sit in the same game that is still running (no private talk there). */
     sameRunningGame: (a: string, b: string) => boolean;
+    /** Where the person on this socket is (null: outside any room). */
+    whereIs: (socketId: string) => Whereabouts | null;
+    /** Listed rooms waiting for players, and games being played. */
+    roomCounts: () => { open: number; playing: number };
+    friendsOf: (userId: string) => string[];
+    setFriend: (userId: string, friendId: string, on: boolean) => string[] | null;
   },
 ) {
   const file = join(opts.dataDir, "global-chat.json");
@@ -115,15 +122,30 @@ export function createGlobalChat(
 
   // Who has the channel open: socket id -> account (null for a guest).
   const present = new Map<string, Account | null>();
+  const RANK: Record<Whereabouts["status"], number> = { playing: 3, waiting: 2, watching: 1 };
   function onlineList(): OnlineList {
     const users = new Map<string, OnlineUser>();
     let guests = 0;
-    for (const a of present.values()) {
-      if (a) users.set(a.id, pub(a));
-      else guests++;
+    for (const [sid, a] of present) {
+      if (!a) {
+        guests++;
+        continue;
+      }
+      const u = users.get(a.id) ?? pub(a);
+      // One account on several tabs: show the busiest one.
+      const w = opts.whereIs(sid);
+      if (w && (!u.where || RANK[w.status] > RANK[u.where.status])) u.where = w;
+      users.set(a.id, u);
     }
-    return { users: [...users.values()].sort((x, y) => x.name.localeCompare(y.name)), guests };
+    return { users: [...users.values()].sort((x, y) => x.name.localeCompare(y.name)), guests, rooms: opts.roomCounts() };
   }
+  /** Friends of an account, with what anyone may see of them. */
+  const friendUsers = (userId: string) =>
+    opts
+      .friendsOf(userId)
+      .map((id) => opts.userById(id))
+      .filter((a): a is Account => !!a)
+      .map(pub);
   let lastOnline = "";
   let onlineTimer: NodeJS.Timeout | null = null;
   /** Tells the channel who is online, at most every 300 ms and only when it changed. */
@@ -157,7 +179,24 @@ export function createGlobalChat(
       socket.join(CHANNEL);
       present.set(socket.id, user);
       broadcastOnline();
-      ack({ ok: true, messages, online: onlineList(), ...(user ? dmsOf(user.id) : { dms: [], peers: {} }) });
+      ack({
+        ok: true,
+        messages,
+        online: onlineList(),
+        friends: user ? friendUsers(user.id) : [],
+        ...(user ? dmsOf(user.id) : { dms: [], peers: {} }),
+      });
+    });
+
+    // Add or remove a friend. Every tab of the account gets the new list.
+    on("friend:set", (p, ack) => {
+      const user = opts.accountFor(p.authToken);
+      if (!user) return ack({ ok: false, error: "err.signInForFriends" });
+      const list = opts.setFriend(user.id, String(p.userId ?? ""), !!p.on);
+      if (!list) return ack({ ok: false, error: "err.server" });
+      const friends = friendUsers(user.id);
+      for (const sid of socketsOf(user.id)) if (sid !== socket.id) io.to(sid).emit("friend:list", friends);
+      ack({ ok: true, friends });
     });
 
     const leave = () => {
@@ -233,5 +272,6 @@ export function createGlobalChat(
     });
   }
 
-  return { register };
+  /** Someone moved between rooms or a game changed phase: tell the channel (throttled, only if it differs). */
+  return { register, presenceChanged: broadcastOnline };
 }

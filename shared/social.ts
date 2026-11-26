@@ -209,13 +209,29 @@ export interface OnlineUser {
   name: string;
   avatarUrl: string | null;
   style: PlayerStyle | null;
+  /** Where they are right now (absent: on a page outside any room). */
+  where?: Whereabouts;
+}
+
+/**
+ * What someone online is doing. `code` only for a room listed in the lobby,
+ * so a private room's code never leaks to the whole server.
+ */
+export interface Whereabouts {
+  status: "waiting" | "playing" | "watching";
+  code?: string;
 }
 
 export interface OnlineList {
   users: OnlineUser[];
   /** People reading without an account: counted, not listed. */
   guests: number;
+  /** Listed rooms still waiting for players, and games being played anywhere. */
+  rooms?: { open: number; playing: number };
 }
+
+/** Most accounts one account can keep as friends. */
+export const MAX_FRIENDS = 300;
 
 /** A private line between two accounts, shown as a tab of the server chat. */
 export interface DirectMessage {

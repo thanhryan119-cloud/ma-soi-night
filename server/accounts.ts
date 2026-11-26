@@ -19,6 +19,7 @@ import {
   type PlayerStyle,
 } from "../shared/cosmetics";
 import { bearer, cors as corsFor, json, readBody } from "./http";
+import { MAX_FRIENDS } from "../shared/social";
 import {
   applyResult,
   casualOf,
@@ -41,6 +42,8 @@ export interface User {
   owned?: string[];
   /** Google account email, refreshed at every sign-in (used to recognise admins). */
   email?: string;
+  /** Accounts this one added as friends (one way, like a follow). */
+  friends?: string[];
   createdAt: number;
 }
 
@@ -327,6 +330,18 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
     /** What anyone may see of an account (null when it does not exist). */
     userById: (userId: string) => (store.users[userId] ? publicUser(store.users[userId]) : null),
     statsOf: (userId: string) => stats[userId] ?? null,
+    /** The friends an account added that still exist. */
+    friendsOf: (userId: string) => (store.users[userId]?.friends ?? []).filter((id) => store.users[id]),
+    /** Adds or removes a friend; returns the new list (null when either account is missing). */
+    setFriend(userId: string, friendId: string, on: boolean): string[] | null {
+      const u = store.users[userId];
+      if (!u || !store.users[friendId] || friendId === userId) return null;
+      const list = (u.friends ?? []).filter((id) => id !== friendId && store.users[id]);
+      if (on) list.unshift(friendId);
+      u.friends = list.slice(0, MAX_FRIENDS);
+      save();
+      return u.friends;
+    },
     /** Shop items a user owns (empty for guests). */
     ownedFor: (userId: string | null | undefined) => ownedOf(userId ? store.users[userId] : null),
     enabled: !!GOOGLE_CLIENT_ID,
