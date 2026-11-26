@@ -259,7 +259,8 @@ export function applyResult(prev: UserStats | undefined, g: RecentGame): UserSta
   if (g.outcome === "abandon") s.abandons = (s.abandons ?? 0) + 1;
   if (g.survived) s.survived++;
   s.byRole[g.role] = bump(s.byRole[g.role], won);
-  const team: Team = teamOf(g.role);
+  // Cupid's lovers play for themselves, so their games count for the independent faction.
+  const team: Team = g.lover ? "solo" : teamOf(g.role);
   s.byTeam[team] = bump(s.byTeam[team], won);
   if (g.lover) s.lover = bump(s.lover, won);
   s.streak = won ? s.streak + 1 : 0;

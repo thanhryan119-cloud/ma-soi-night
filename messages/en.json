@@ -1082,6 +1082,8 @@
     "survived": "Survived",
     "byTeam": "By team",
     "byRole": "By role",
+    "showRoles": "Show roles ({n})",
+    "hideRoles": "Hide",
     "asLover": "Lovers",
     "recent": "Recent games",
     "gamesWins": "{games} games · {wins} wins",
