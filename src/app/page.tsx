@@ -4,7 +4,6 @@ import Link from "next/link";
 import { CollectionLink } from "@/components/RoleCollection";
 import { QuestsLink } from "@/components/Quests";
 import { TarotSpread } from "@/components/art/TarotSpread";
-import { PlayNowButton } from "@/components/PlayNow";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Locale } from "@shared/types";
@@ -87,8 +86,7 @@ export default function Home() {
             <span className="block text-2xl font-bold text-moon">{t("lobby.homeTitle")}</span>
             <span className="mt-1 block text-white/60">{t("lobby.homeDesc")}</span>
           </span>
-          <div className="flex w-full shrink-0 flex-wrap gap-2 sm:w-auto">
-            <PlayNowButton className="flex-1 px-6 py-3 text-lg sm:flex-none" />
+          <div className="flex w-full shrink-0 gap-2 sm:w-auto">
             <Link href="/lobby?quick=1" className="btn-gold flex-1 px-6 py-3 text-lg sm:flex-none">
               ⚡ {t("lobby.quickButton")}
             </Link>

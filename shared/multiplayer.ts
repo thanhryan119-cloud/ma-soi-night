@@ -2,9 +2,9 @@
 // machine-host rooms where the machine narrates and a player (the room owner)
 // sets the room up without ever seeing anyone's role.
 
-import { MAX_PLAYERS, assignRandom, getPlayer, hostAction, log, randomToken, sanitizeName } from "./engine";
+import { MAX_PLAYERS, PLAY_NOW_PLAYERS, assignRandom, getPlayer, hostAction, log, randomToken, sanitizeName } from "./engine";
 import { abandonResult, type GameResult } from "./stats";
-import { BASIC_ROLE_IDS, suggestRoles, totalRoles } from "./roles";
+import { totalRoles } from "./roles";
 import type { ActionResult, Locale, OwnerAction, PhaseKind, Room, Settings } from "./types";
 
 /** The machine always runs the game and every phone shows the narration. */
@@ -74,13 +74,12 @@ export function nextOwner(room: Room): string | null {
   return humans[0]?.id ?? null;
 }
 
-/** "Play now" fills the table with bots up to this many seats. */
-export const PLAY_NOW_PLAYERS = 8;
-
 /**
  * What the room owner may do. Everything that would show roles (manual
  * assignment, the host's overrides, acting for others) stays with the machine.
  */
+export { PLAY_NOW_PLAYERS };
+
 export function ownerAction(room: Room, ownerId: string, action: OwnerAction): ActionResult {
   if (!isOwner(room, ownerId)) return { ok: false, error: "err.notOwner" };
   switch (action?.type) {
@@ -106,18 +105,9 @@ export function ownerAction(room: Room, ownerId: string, action: OwnerAction): A
     case "kick":
       if (action.playerId === ownerId) return { ok: false, error: "err.invalidTarget" };
       return hostAction(room, action);
-    case "playNow": {
-      // One tap: bots fill the empty seats, the suggested setup from the basic roles, and the game starts.
-      if (room.phase.kind !== "lobby") return { ok: false, error: "err.wrongPhase" };
-      const missing = PLAY_NOW_PLAYERS - room.players.length;
-      if (missing > 0) {
-        const added = hostAction(room, { type: "addBots", count: missing });
-        if (!added.ok) return added;
-      }
-      const set = hostAction(room, { type: "setRoleCounts", roleCounts: suggestRoles(room.players.length, BASIC_ROLE_IDS) });
-      if (!set.ok) return set;
-      return ownerAction(room, ownerId, { type: "start" });
-    }
+    case "playNow":
+      // Bots, the basic roles dealt by the machine, and the game starts (see engine hostAction).
+      return hostAction(room, action);
     case "start": {
       if (room.phase.kind !== "lobby") return { ok: false, error: "err.wrongPhase" };
       const total = totalRoles(room.settings.roleCounts);

@@ -301,6 +301,10 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
       >
         🌙 {t("host.start")}
       </button>
+      <button className="btn-gold py-3" title={t("owner.playNowDesc")} onClick={() => act({ type: "playNow" })}>
+        ▶ {t("owner.playNow")}
+      </button>
+      <p className="-mt-2 text-center text-xs text-white/40">{t("owner.playNowDesc")}</p>
       {n < MIN_PLAYERS && <p className="text-center text-xs text-white/40">{t("err.notEnoughPlayers", { min: MIN_PLAYERS })}</p>}
       </>
       )}
