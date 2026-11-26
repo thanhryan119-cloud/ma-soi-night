@@ -653,12 +653,28 @@ function DirectChat({ chat, peerId, className = "" }: { chat: Global; peerId: st
     list.current?.scrollTo({ top: list.current.scrollHeight });
   }, [newest, peerId]);
 
+  // Locked while the two of us play the same running game. Asked again whenever
+  // the online list changes, which it does when a game starts or ends.
+  const [locked, setLocked] = useState(false);
+  const signedIn = !!me;
+  useEffect(() => {
+    if (!signedIn) return setLocked(false);
+    let live = true;
+    emitAck<{ locked: boolean }>("dm:status", { to: peerId, authToken: getAuth()?.token }).then((r) => {
+      if (live && r.ok) setLocked(!!r.locked);
+    });
+    return () => {
+      live = false;
+    };
+  }, [signedIn, peerId, online]);
+
   async function send(e: React.FormEvent) {
     e.preventDefault();
-    if (!text.trim() || busy) return;
+    if (!text.trim() || busy || locked) return;
     setBusy(true);
     const res = await emitAck("dm:send", { to: peerId, text, authToken: getAuth()?.token });
     setBusy(false);
+    if (!res.ok && res.error === "err.dmSameGame") return setLocked(true);
     if (showError(res)) setText("");
   }
 
@@ -715,7 +731,11 @@ function DirectChat({ chat, peerId, className = "" }: { chat: Global; peerId: st
           </ul>
         )}
       </div>
-      {me ? (
+      {me && locked ? (
+        <p className="shrink-0 rounded-lg border border-gold/30 bg-gold/10 px-3 py-2 text-center text-sm text-gold" role="status">
+          🔒 {t("err.dmSameGame")}
+        </p>
+      ) : me ? (
         <ChatInput placeholder={t("globalChat.dmPlaceholder", { name: peer.name })} text={text} setText={setText} busy={busy} onSubmit={send} />
       ) : (
         <SignInLine text={t("globalChat.dmSignIn")} />

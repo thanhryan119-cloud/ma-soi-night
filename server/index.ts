@@ -253,6 +253,18 @@ const globalChat = createGlobalChat(io, {
     if (room.players.some((p) => !p.isBot && p.userId === to && !room.abandoned?.includes(p.id))) return { error: "err.inviteAlreadyIn" };
     return { code: room.code };
   },
+  roomAccounts: () => {
+    const out: { sid: string; userId: string }[] = [];
+    for (const [sid, raw] of io.sockets.sockets) {
+      const { code, kind, playerId } = (raw as AppSocket).data;
+      const room = code ? rooms.get(code) : undefined;
+      if (!room) continue;
+      const userId =
+        kind === "player" ? getPlayer(room, playerId ?? "")?.userId : kind === "host" && !room.machineHost ? room.creatorId : null;
+      if (userId) out.push({ sid, userId });
+    }
+    return out;
+  },
   whereIs: (sid) => {
     const s = io.sockets.sockets.get(sid) as AppSocket | undefined;
     const room = s?.data.code ? rooms.get(s.data.code) : undefined;
