@@ -8,7 +8,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { createPortal } from "react-dom";
 import { NIGHT_STEP_ROLE, ROLES } from "@shared/roles";
 import type { ClientState, MeView, PlayerView } from "@shared/views";
-import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, phaseKeyOf, useErrorToast, usePhaseEnter, useWide } from "@/components/ui";
+import { Avatar, ConnectionDot, RoleBadge, StyledName, TimerDisplay, phaseKeyOf, toast, useErrorToast, usePhaseEnter, useWide } from "@/components/ui";
 import { CHAT_COLORS } from "@shared/cosmetics";
 import { ProfileLink } from "../Profile";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
@@ -280,6 +280,7 @@ function PlayersPanel({ state, me, onRole }: { state: ClientState; me: MeView; o
 function RenameMe({ self }: { self: PlayerView }) {
   const t = useT();
   const showError = useErrorToast();
+  const signedIn = !!useAccount()?.user;
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(self.name);
   const [busy, setBusy] = useState(false);
@@ -327,10 +328,12 @@ function RenameMe({ self }: { self: PlayerView }) {
         type="button"
         className="shrink-0 rounded px-1 text-xs text-white/50 hover:text-gold"
         onClick={() => {
+          // Guests keep the name they joined with: changing it needs an account.
+          if (!signedIn) return toast(t("err.signInToRename"), "info");
           setName(self.name);
           setEditing(true);
         }}
-        title={t("player.rename")}
+        title={signedIn ? t("player.rename") : t("err.signInToRename")}
         aria-label={t("player.rename")}
       >
         ✏️
