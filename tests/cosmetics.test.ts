@@ -5,7 +5,7 @@ import { buildView } from "../shared/views";
 
 describe("profile cosmetics", () => {
   it("keeps known ids and drops unknown ones", () => {
-    expect(sanitizeStyle({ font: "script", effect: "glitch", frame: "moon" })).toEqual({ font: "script", effect: "glitch", frame: "moon", chat: "plain" });
+    expect(sanitizeStyle({ font: "script", effect: "glitch", frame: "moon" })).toEqual({ font: "script", effect: "glitch", frame: "moon", chat: "plain", card: "plain" });
     expect(sanitizeStyle({ font: "<script>", effect: 5, frame: null })).toEqual(DEFAULT_STYLE);
     expect(sanitizeStyle(undefined)).toEqual(DEFAULT_STYLE);
   });
@@ -28,7 +28,7 @@ describe("profile cosmetics", () => {
     }).player!;
     expect(p.avatarUrl).toBeNull();
     const screen = buildView(room, "screen");
-    expect(screen.players[0].style).toEqual({ font: "brush", effect: "blood", frame: "thorns", chat: "stars" });
+    expect(screen.players[0].style).toEqual({ font: "brush", effect: "blood", frame: "thorns", chat: "stars", card: "plain" });
     expect(playerAction(room, p.id, { type: "updateProfile", style: { effect: "glow" } }).ok).toBe(true);
     expect(buildView(room, "host").players[0].style.effect).toBe("glow");
   });

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AVATARS } from "@shared/engine";
 import {
   AVATAR_FRAMES,
+  CARD_BGS,
   CHAT_DECOS,
   DEFAULT_STYLE,
   ITEM_PRICE_VND,
@@ -30,7 +31,7 @@ import {
   type LocalProfile,
 } from "@/lib/account";
 import { useLocale, useT } from "@/lib/i18n";
-import { Avatar, ChatBubble, StyledName, toast, useErrorToast } from "./ui";
+import { Avatar, ChatBubble, ProfileCard, StyledName, toast, useErrorToast } from "./ui";
 import { CheckoutPanel, usePrice } from "./Checkout";
 
 export { usePrice };
@@ -251,13 +252,13 @@ export function ProfileEditor({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center gap-4 rounded-lg border border-white/10 bg-night-900 p-4">
+      <ProfileCard bg={shown.card} className="flex items-center gap-4 p-4">
         <Avatar p={preview} size="xl" />
         <div className="min-w-0 flex-1">
           <div className="ui-label">{t("profile.preview")}</div>
           <StyledName p={preview} className="block truncate text-3xl font-black" />
         </div>
-      </div>
+      </ProfileCard>
 
       {trying && (
         <CheckoutPanel
@@ -396,6 +397,21 @@ export function ProfileEditor({
             )}
           />
           <p className="-mt-2 text-xs text-white/50">{t("profile.chatColorHint")}</p>
+          <Picker
+            label={t("profile.cardBg")}
+            options={CARD_BGS}
+            value={value.style.card}
+            trying={tryKind === "card" ? (tryValue as PlayerStyle["card"]) : null}
+            locked={(v) => isLocked("card", v)}
+            price={priceLabel}
+            onChange={(card) => pick("card", card)}
+            render={(c) => (
+              <ProfileCard bg={c} className="flex h-12 w-full items-center gap-2 px-2">
+                <Avatar p={{ ...preview, style: value.style }} size="sm" />
+                <span className="truncate text-xs font-bold">{t(`profile.card.${c}`)}</span>
+              </ProfileCard>
+            )}
+          />
         </>
       )}
 

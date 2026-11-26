@@ -2,7 +2,7 @@
 // Every action is checked here (phase, role, alive, valid target, double vote).
 
 import { newGameId } from "./replay";
-import { AVATAR_FRAMES, CHAT_DECOS, NAME_EFFECTS, NAME_FONTS, freeChatColor, limitStyle, sanitizeAvatarUrl, sanitizeOwned, sanitizeStyle } from "./cosmetics";
+import { AVATAR_FRAMES, CARD_BGS, CHAT_DECOS, NAME_EFFECTS, NAME_FONTS, freeChatColor, limitStyle, sanitizeAvatarUrl, sanitizeOwned, sanitizeStyle } from "./cosmetics";
 import {
   BOT_SPEEDS,
   NIGHT_STEP_ROLE,
@@ -1396,7 +1396,7 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
           avatar: AVATARS[(room.players.length * 7) % AVATARS.length],
           locale: room.locale,
           isBot: true,
-          style: { font: rnd(NAME_FONTS), effect: rnd(NAME_EFFECTS), frame: rnd(AVATAR_FRAMES), chat: rnd(CHAT_DECOS) },
+          style: { font: rnd(NAME_FONTS), effect: rnd(NAME_EFFECTS), frame: rnd(AVATAR_FRAMES), chat: rnd(CHAT_DECOS), card: rnd(CARD_BGS) },
         });
       }
       return ok;

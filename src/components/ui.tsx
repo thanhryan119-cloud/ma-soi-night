@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ROLES } from "@shared/roles";
-import { CHAT_COLORS, type ChatDeco } from "@shared/cosmetics";
+import { CHAT_COLORS, type CardBg, type ChatDeco } from "@shared/cosmetics";
 import type { Locale, RoleId, TimerState } from "@shared/types";
 import type { PlayerView } from "@shared/views";
 import { useLocale, useT } from "@/lib/i18n";
@@ -143,6 +143,19 @@ export function Avatar({ p, size = "md" }: { p: AvatarLike; size?: "sm" | "md" |
 }
 
 /** A player name rendered with their chosen font and effect. */
+/** The decorated box behind a player's avatar and name (profile card, editor preview). */
+export function ProfileCard({
+  bg = "plain",
+  className = "",
+  children,
+}: {
+  bg?: CardBg;
+  className?: string;
+  children?: React.ReactNode;
+}) {
+  return <div className={`profile-card pc-${bg} rounded-lg ${className}`}>{children}</div>;
+}
+
 export function StyledName({
   p,
   className = "",

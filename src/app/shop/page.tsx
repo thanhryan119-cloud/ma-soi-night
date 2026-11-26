@@ -21,6 +21,7 @@ import {
   equip,
   itemPrice,
   type BundleName,
+  type CardBg,
   type ChatDeco,
   type ItemId,
   type ItemKind,
@@ -34,7 +35,7 @@ import { RoleArt } from "@/components/art/Tarot";
 import { CheckoutDialog, useItemName, usePrice } from "@/components/Checkout";
 import { GoogleButton } from "@/components/ProfileEditor";
 import { GoldChip, QuestsLink, useGoldFormat } from "@/components/Quests";
-import { Avatar, ChatBubble, LangSwitch, StyledName, toast } from "@/components/ui";
+import { Avatar, ChatBubble, LangSwitch, ProfileCard, StyledName, toast } from "@/components/ui";
 import {
   GOOGLE_CLIENT_ID,
   buyWithGold,
@@ -57,6 +58,7 @@ const SECTIONS: { kind: ItemKind; icon: string; title: string }[] = [
   { kind: "font", icon: "🔤", title: "profile.nameFont" },
   { kind: "frame", icon: "⭕", title: "profile.avatarFrame" },
   { kind: "chat", icon: "💬", title: "profile.chatDeco" },
+  { kind: "card", icon: "🖼️", title: "profile.cardBg" },
 ];
 
 const split = (id: ItemId) => id.split(":") as [ItemKind, string];
@@ -77,7 +79,7 @@ export default function ShopPage() {
   // Follow the account's style (a purchase or another device equips items).
   useEffect(() => {
     if (user) setProfile((p) => (p ? { ...p, style: user.style } : p));
-  }, [user?.style.font, user?.style.effect, user?.style.frame, user?.style.chat]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.style.font, user?.style.effect, user?.style.frame, user?.style.chat, user?.style.card]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const name = profile?.name || user?.name || t("shop.sampleName");
 
@@ -376,6 +378,11 @@ function ShopItem({
       <div className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-md bg-night-900 p-2">
           {kind === "frame" ? (
             <Avatar p={preview} size="lg" />
+          ) : kind === "card" ? (
+            <ProfileCard bg={value as CardBg} className="flex w-full items-center gap-2 p-2">
+              <Avatar p={preview} size="md" />
+              <StyledName p={preview} className="block min-w-0 truncate text-base font-black" />
+            </ProfileCard>
           ) : kind === "chat" ? (
             <ChatBubble color={1} deco={value as ChatDeco} className="px-3 py-1.5">
               {t("profile.chatSample")}

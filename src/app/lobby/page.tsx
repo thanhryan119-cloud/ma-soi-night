@@ -1,7 +1,7 @@
 "use client";
 
-// Online lobby: who is online, the open rooms, and making a room
-// (the machine as host, or yourself), with an optional password.
+// Online lobby. The open rooms are the main part; beside them (below on a
+// phone) your name, making a room (options folded away) and who is online.
 
 import Link from "next/link";
 import { CollectionLink } from "@/components/RoleCollection";
@@ -111,20 +111,16 @@ export default function LobbyPage() {
         <h1 className="font-display text-3xl font-black text-moon">🌐 {t("lobby.title")}</h1>
         {!connected && <ConnectionDot connected={false} />}
       </div>
-      <p className="-mt-2 text-white/60">{t("lobby.desc")}</p>
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <RoomsCard rooms={state?.rooms ?? null} profile={profile} onQuick={() => quickJoin()} quickBusy={quickBusy} />
+        {quickOther.dialog}
         <div className="flex flex-col gap-4">
           <section className="card flex flex-col gap-3 p-4">
             <h2 className="text-lg font-bold">{t("lobby.you")}</h2>
             {profile ? <ProfileEditor value={profile} onChange={change} compact /> : <Spinner />}
           </section>
-          <OnlineCard online={state?.online ?? null} />
-        </div>
-        <div className="flex flex-col gap-4">
           <CreateRoomCard profile={profile} />
-          <RoomsCard rooms={state?.rooms ?? null} profile={profile} onQuick={() => quickJoin()} quickBusy={quickBusy} />
-          {quickOther.dialog}
+          <OnlineCard online={state?.online ?? null} />
         </div>
       </div>
     </main>
@@ -145,7 +141,7 @@ function OnlineCard({ online }: { online: LobbyPerson[] | null }) {
       ) : !online.length ? (
         <p className="text-sm text-white/50">{t("lobby.nobodyOnline")}</p>
       ) : (
-        <ul className="flex max-h-80 flex-col gap-1.5 overflow-y-auto">
+        <ul className="flex max-h-60 flex-col gap-1.5 overflow-y-auto">
           {online.map((p) => {
             const look = { ...p, alive: true };
             const row = (
@@ -187,6 +183,8 @@ function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
   const [withPassword, setWithPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  /** Host, language and password stay folded away: the defaults suit most rooms. */
+  const [showOptions, setShowOptions] = useState(false);
   useEffect(() => setRoomLocale(locale), [locale]);
 
   async function create(replace = false, leaveOther = false) {
@@ -234,11 +232,30 @@ function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
   );
 
   return (
-    <section className="card flex flex-col gap-4 p-5">
-      <h2 className="text-xl font-bold">➕ {t("lobby.createTitle")}</h2>
+    <section className="card flex flex-col gap-3 p-4">
+      <div className="flex items-center gap-2">
+        <h2 className="text-lg font-bold">➕ {t("lobby.createTitle")}</h2>
+        <button
+          type="button"
+          className="btn-ghost btn-sm ml-auto"
+          onClick={() => setShowOptions(!showOptions)}
+          aria-expanded={showOptions}
+        >
+          {showOptions ? "▴" : "▾"} {t("lobby.options")}
+        </button>
+      </div>
+      {!showOptions && (
+        <div className="flex flex-wrap gap-1 text-[11px] text-white/60">
+          <span className="chip py-0">{machine ? `🤖 ${t("lobby.machineHost")}` : `🎙️ ${t("lobby.humanHost")}`}</span>
+          <span className="chip py-0">{roomLocale.toUpperCase()}</span>
+          {withPassword && <span className="chip py-0">🔒 {t("lobby.usePassword")}</span>}
+        </div>
+      )}
+      {showOptions && (
+      <>
       <div>
         <span className="ui-label">{t("lobby.whoHosts")}</span>
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex flex-col gap-2">
           {choice(machine, "🤖", t("lobby.machineHost"), t("lobby.machineHostDesc"), () => setMachine(true))}
           {choice(!machine, "🎙️", t("lobby.humanHost"), t("lobby.humanHostDesc"), () => setMachine(false))}
         </div>
@@ -259,6 +276,8 @@ function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
         </div>
       </div>
       <PasswordField enabled={withPassword} onEnabled={setWithPassword} value={password} onChange={setPassword} />
+      </>
+      )}
       {needsSignIn ? (
         <SignInToCreate />
       ) : (
@@ -285,9 +304,9 @@ function RoomsCard({
 }) {
   const t = useT();
   return (
-    <section className="card flex flex-col gap-3 p-5">
+    <section className="card flex min-h-64 flex-col gap-3 p-5 sm:p-6">
       <div className="flex items-center gap-2">
-        <h2 className="text-xl font-bold">🚪 {t("lobby.rooms")}</h2>
+        <h2 className="font-display text-2xl font-black text-moon">🚪 {t("lobby.rooms")}</h2>
         {rooms && <span className="chip">{rooms.length}</span>}
         <button className="btn-gold btn-sm ml-auto" onClick={onQuick} disabled={!rooms || !profile || quickBusy}>
           ⚡ {quickBusy ? t("lobby.quickJoining") : t("lobby.quickButton")}
