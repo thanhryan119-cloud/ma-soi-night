@@ -992,7 +992,9 @@
     "mute": "Talking",
     "unmute": "Muted",
     "listenOnly": "Listening only",
-    "inCall": "{count, plural, one {# on mic} other {# on mic}}"
+    "inCall": "{count, plural, one {# on mic} other {# on mic}}",
+    "showPeople": "Show who is in the call",
+    "hidePeople": "Hide the call list"
   },
   "timeline": {
     "dawn": "Night's outcome",

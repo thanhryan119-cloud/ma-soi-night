@@ -12,6 +12,7 @@ import {
 import type { ClientState, PlayerView } from "@shared/views";
 import { useT } from "@/lib/i18n";
 import { useSocial } from "@/lib/social";
+import { storage } from "@/lib/socket";
 import { useVoice } from "@/lib/voice";
 import { Avatar, ChatBubble, StyledName, useErrorToast } from "./ui";
 import { GhostLog, useGhostChat } from "./GhostChat";
@@ -206,6 +207,13 @@ function VoiceBar({
   const voice = useVoice();
   const showError = useErrorToast();
   const [busy, setBusy] = useState(false);
+  // Who is in the call: just a count by default, the faces on request (remembered on this device).
+  const [showPeople, setShowPeople] = useState(false);
+  useEffect(() => setShowPeople(storage.get<boolean>("msn:micPeople") ?? false), []);
+  const togglePeople = () => {
+    storage.set("msn:micPeople", !showPeople);
+    setShowPeople(!showPeople);
+  };
   const label = (from: string) =>
     from === "host" ? t("social.host") : (players.get(from)?.name ?? "?");
 
@@ -226,6 +234,11 @@ function VoiceBar({
   };
 
   const people = voice.self ? [voice.self, ...voice.peers] : voice.peers;
+  const isTalking = (p: (typeof people)[number]) => voice.speaking(p === voice.self ? "self" : p.socketId) && !p.muted;
+  const anyTalking = people.some(isTalking);
+  // Talking first, then mic on, then muted or only listening; you stay first among equals.
+  const rank = (p: (typeof people)[number]) => (isTalking(p) ? 0 : p.muted || p.listenOnly ? 2 : 1);
+  const sorted = people.map((p, i) => ({ p, i })).sort((a, b) => rank(a.p) - rank(b.p) || a.i - b.i).map((x) => x.p);
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 px-2 py-1.5">
       {!voice.joined ? (
@@ -276,38 +289,40 @@ function VoiceBar({
           </button>
         </>
       )}
-      <div className="flex min-w-0 flex-1 items-center justify-end gap-1 overflow-hidden">
-        {people.slice(0, 8).map((p) => {
-          const pv = players.get(p.from);
-          const talking =
-            voice.speaking(p === voice.self ? "self" : p.socketId) && !p.muted;
-          return (
-            <span
-              key={p.socketId}
-              title={`${label(p.from)}${p.muted ? " 🔇" : ""}`}
-              className={`relative rounded-full ${talking ? "ring-2 ring-emerald-400" : ""}`}
-            >
-              {pv ? (
-                <Avatar p={pv} size="sm" />
-              ) : (
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night-700">
-                  🎙️
+      {people.length > 0 && (
+        <button
+          type="button"
+          onClick={togglePeople}
+          aria-expanded={showPeople}
+          title={showPeople ? t("voice.hidePeople") : t("voice.showPeople")}
+          className={`ml-auto flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold ${anyTalking ? "border-emerald-400/70 text-emerald-300" : "border-white/15 text-white/60 hover:text-white"}`}
+        >
+          🎙️ {people.length}
+          <span className="sr-only">{t("voice.inCall", { count: people.length })}</span>
+          <span aria-hidden>{showPeople ? "▴" : "▾"}</span>
+        </button>
+      )}
+      {showPeople && people.length > 0 && (
+        <ul className="flex w-full flex-wrap gap-x-2 gap-y-1.5 border-t border-white/10 pt-1.5" aria-label={t("voice.inCall", { count: people.length })}>
+          {sorted.map((p) => {
+            const pv = players.get(p.from);
+            const talking = isTalking(p);
+            return (
+              <li key={p.socketId} className="flex max-w-[8rem] min-w-0 items-center gap-1" title={`${label(p.from)}${p.muted ? " 🔇" : ""}`}>
+                <span className={`relative shrink-0 rounded-full ${talking ? "ring-2 ring-emerald-400" : ""}`}>
+                  {pv ? (
+                    <Avatar p={pv} size="sm" />
+                  ) : (
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night-700">🎙️</span>
+                  )}
+                  {p.muted && <span className="absolute -right-1 -bottom-1 text-[10px]">🔇</span>}
                 </span>
-              )}
-              {p.muted && (
-                <span className="absolute -right-1 -bottom-1 text-[10px]">
-                  🔇
-                </span>
-              )}
-            </span>
-          );
-        })}
-        {people.length > 0 && (
-          <span className="text-[11px] text-white/50">
-            {t("voice.inCall", { count: people.length })}
-          </span>
-        )}
-      </div>
+                <span className={`truncate text-[11px] ${talking ? "font-bold text-emerald-300" : "text-white/60"}`}>{label(p.from)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

@@ -992,7 +992,9 @@
     "mute": "Đang nói",
     "unmute": "Đang tắt tiếng",
     "listenOnly": "Chỉ nghe",
-    "inCall": "{count} người trong mic"
+    "inCall": "{count} người trong mic",
+    "showPeople": "Hiện ai đang trong mic",
+    "hidePeople": "Ẩn danh sách mic"
   },
   "timeline": {
     "dawn": "Kết quả đêm",
