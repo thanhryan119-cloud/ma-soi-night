@@ -252,20 +252,6 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
   return (
     <section className="card flex flex-col gap-3">
       <h2 className="text-xl font-bold">{t("host.roleConfig")}</h2>
-      <ul className={grid}>{BASIC_ROLES.map(row)}</ul>
-      <RoleGroup title={t("host.groupAdvanced")} roles={ADVANCED_ROLES} counts={counts} grid={grid} row={row} />
-      <RoleGroup title={t("host.groupSolo")} roles={SOLO_GROUP} counts={counts} grid={grid} row={row} />
-      {locked.length > 0 && (
-        <p className="rounded-xl bg-white/5 p-2 text-xs text-white/60">
-          🔒 {t("freeRoles.lockedHint")}{" "}
-          <Link href="/shop#shop-role" className="font-semibold text-gold hover:underline">
-            {t("freeRoles.toShop")}
-          </Link>
-        </p>
-      )}
-      <div className={`rounded-xl p-2 text-sm ${total === n ? "bg-emerald-500/10 text-emerald-300" : "bg-blood/15 text-blood-light"}`}>
-        {total === n ? t("host.totalRoles", { roles: total, players: n }) : t("host.mismatch", { roles: total, players: n })}
-      </div>
       {n > 0 && <RoleMaps n={n} counts={counts} locked={locked} onUse={(c) => act({ type: "setRoleCounts", roleCounts: c })} />}
       {suggested && n > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-sm text-white/60">
@@ -287,6 +273,20 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
           </button>
         </div>
       )}
+      <ul className={grid}>{BASIC_ROLES.map(row)}</ul>
+      <RoleGroup title={t("host.groupAdvanced")} roles={ADVANCED_ROLES} counts={counts} grid={grid} row={row} />
+      <RoleGroup title={t("host.groupSolo")} roles={SOLO_GROUP} counts={counts} grid={grid} row={row} />
+      {locked.length > 0 && (
+        <p className="rounded-xl bg-white/5 p-2 text-xs text-white/60">
+          🔒 {t("freeRoles.lockedHint")}{" "}
+          <Link href="/shop#shop-role" className="font-semibold text-gold hover:underline">
+            {t("freeRoles.toShop")}
+          </Link>
+        </p>
+      )}
+      <div className={`rounded-xl p-2 text-sm ${total === n ? "bg-emerald-500/10 text-emerald-300" : "bg-blood/15 text-blood-light"}`}>
+        {total === n ? t("host.totalRoles", { roles: total, players: n }) : t("host.mismatch", { roles: total, players: n })}
+      </div>
       {!owner && (
       <>
       <div className="border-t border-white/10 pt-3">

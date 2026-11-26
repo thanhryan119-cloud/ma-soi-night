@@ -28,6 +28,16 @@
     "vi": "Tiếng Việt",
     "en": "English"
   },
+  "install": {
+    "title": "Install Ma Sói on your phone",
+    "desc": "Open the game straight from your home screen, full screen like an app.",
+    "install": "Install app",
+    "later": "Not now",
+    "gotIt": "Got it",
+    "ios1": "Tap the Share button in Safari’s bottom bar",
+    "ios2": "Choose \"Add to Home Screen\"",
+    "ios3": "Tap \"Add\" and you’re done"
+  },
   "home": {
     "signInToCreate": "Sign in with Google to make a room. Players joining a room don't need to sign in.",
     "oneRoomTitle": "You already have a room",

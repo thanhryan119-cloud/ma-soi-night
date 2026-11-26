@@ -24,6 +24,15 @@ const fontVars = [body, title, nfSerif, nfScript, nfCondensed, nfMono, nfBrush].
 export const metadata: Metadata = {
   title: "Ma Sói Online",
   description: "Quản trò Ma Sói trực tiếp bằng QR và điện thoại. Run a live Werewolf game with phones.",
+  applicationName: "Ma Sói Online",
+  icons: {
+    icon: [
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  appleWebApp: { capable: true, title: "Ma Sói", statusBarStyle: "black" },
 };
 
 export const viewport: Viewport = {

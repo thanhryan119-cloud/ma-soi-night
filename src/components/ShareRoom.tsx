@@ -56,7 +56,8 @@ async function copy(text: string): Promise<boolean> {
   }
 }
 
-export function ShareRoom({ code, className = "" }: { code: string; className?: string }) {
+/** `compact`: one short row, the hint moves into the button's tooltip. */
+export function ShareRoom({ code, className = "", compact = false }: { code: string; className?: string; compact?: boolean }) {
   const t = useT();
   const url = useInviteUrl(code);
   const text = t("share.text", { code });
@@ -77,6 +78,18 @@ export function ShareRoom({ code, className = "" }: { code: string; className?: 
     }
     await onCopy();
   }
+
+  if (compact)
+    return (
+      <div className={`flex gap-1.5 ${className}`}>
+        <button type="button" className="btn-primary btn-sm flex-1" disabled={!url} onClick={onShare} title={t("share.hint")}>
+          📤 {t("share.button")}
+        </button>
+        <button type="button" className="btn-ghost btn-sm shrink-0 px-3" disabled={!url} onClick={onCopy} title={t("share.copy")}>
+          📋<span className="sr-only">{t("share.copy")}</span>
+        </button>
+      </div>
+    );
 
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
