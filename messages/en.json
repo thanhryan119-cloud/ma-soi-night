@@ -1456,5 +1456,13 @@
     "tip2": "A few special roles are free every day. Try them in your room.",
     "tip3": "Winning with a role unlocks its card in your collection.",
     "tip4": "Don't leave mid-game. The village needs your vote."
+  },
+  "inApp": {
+    "title": "Open in your browser for a smoother game",
+    "stepsIos": "Tap ⋯ or the compass icon in a corner of the screen, then \"Open in browser\" (Safari). Or copy the link and paste it into your browser.",
+    "stepsAndroid": "Tap ⋮ in a corner of the screen, then \"Open in browser\" (Chrome…). Or copy the link and paste it into your browser.",
+    "copy": "Copy link",
+    "copied": "Link copied, paste it into Chrome or Safari",
+    "close": "Close"
   }
 }

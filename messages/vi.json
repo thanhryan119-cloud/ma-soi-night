@@ -1456,5 +1456,13 @@
     "tip2": "Mỗi ngày có vài vai đặc biệt mở miễn phí, thử ngay trong phòng của bạn.",
     "tip3": "Thắng bằng vai nào sẽ mở lá bài của vai đó trong bộ sưu tập.",
     "tip4": "Đừng thoát giữa ván. Cả làng đang cần lá phiếu của bạn."
+  },
+  "inApp": {
+    "title": "Mở bằng trình duyệt để chơi mượt hơn",
+    "stepsIos": "Bấm nút ⋯ hoặc biểu tượng la bàn ở góc màn hình rồi chọn \"Mở trong trình duyệt\" (Safari). Hoặc sao chép link và dán vào trình duyệt.",
+    "stepsAndroid": "Bấm nút ⋮ ở góc màn hình rồi chọn \"Mở bằng trình duyệt\" (Chrome…). Hoặc sao chép link và dán vào trình duyệt.",
+    "copy": "Sao chép link",
+    "copied": "Đã chép link, dán vào Chrome hoặc Safari nhé",
+    "close": "Đóng"
   }
 }
