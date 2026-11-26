@@ -6,6 +6,7 @@ import vi from "@messages/vi.json";
 import en from "@messages/en.json";
 import type { Locale } from "@shared/types";
 import type { LogEntry } from "@shared/types";
+import { deviceLocale } from "./deviceLocale";
 
 export const MESSAGES = { vi, en } as const;
 const STORAGE_KEY = "msn:locale";
@@ -35,8 +36,16 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       if (saved === "vi" || saved === "en") {
         setLocaleState(saved);
         setExplicit(true);
+        return;
       }
     } catch {}
+    // Nothing picked yet: an English device starts in English. It counts as the
+    // player's own choice (rooms do not switch it back), but is not saved, so
+    // it follows the device if that changes.
+    if (deviceLocale(navigator.languages?.length ? navigator.languages : [navigator.language]) === "en") {
+      setLocaleState("en");
+      setExplicit(true);
+    }
   }, []);
 
   useEffect(() => {
