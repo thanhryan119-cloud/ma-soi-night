@@ -3,16 +3,18 @@ import { SPECIAL_ROLES } from "./freeRoles";
 import { teamOf } from "./roles";
 import type { RoleId } from "./types";
 
-// Profile cosmetics a player can pick: name font, name effect, avatar frame and
-// chat bubble decoration.
+// Profile cosmetics a player can pick: name font, name effect, avatar frame,
+// chat bubble decoration and profile card background.
 // Ids are whitelisted here; labels live in messages (profile.font.<id> etc.),
-// visuals in src/app/globals.css (.nf-<id>, .ne-<id>, .af-<id>, .cb-<id>).
+// visuals in src/app/globals.css (.nf-<id>, .ne-<id>, .af-<id>, .cb-<id>, .pc-<id>).
 
 export const NAME_FONTS = ["default", "serif", "script", "condensed", "mono", "brush"] as const;
 export const NAME_EFFECTS = ["none", "glow", "blood", "flicker", "shimmer", "glitch"] as const;
 export const AVATAR_FRAMES = ["none", "ring", "blood", "double", "moon", "thorns", "pulse"] as const;
 /** Decorations laid over a player's chat colour; "plain" (just the colour) is free. */
 export const CHAT_DECOS = ["plain", "stars", "moon", "blood", "frost", "ember", "gold"] as const;
+/** Backgrounds behind the avatar and name on the profile card; "plain" is free. */
+export const CARD_BGS = ["plain", "stars", "bloodmoon", "pines", "tarot", "mist", "gold"] as const;
 
 /**
  * Basic chat colours. Each player in a room gets one nobody else has (see
@@ -38,19 +40,21 @@ export type NameFont = (typeof NAME_FONTS)[number];
 export type NameEffect = (typeof NAME_EFFECTS)[number];
 export type AvatarFrame = (typeof AVATAR_FRAMES)[number];
 export type ChatDeco = (typeof CHAT_DECOS)[number];
+export type CardBg = (typeof CARD_BGS)[number];
 
 export interface PlayerStyle {
   font: NameFont;
   effect: NameEffect;
   frame: AvatarFrame;
   chat: ChatDeco;
+  card: CardBg;
 }
 
-export const DEFAULT_STYLE: PlayerStyle = { font: "default", effect: "none", frame: "none", chat: "plain" };
+export const DEFAULT_STYLE: PlayerStyle = { font: "default", effect: "none", frame: "none", chat: "plain", card: "plain" };
 
 /** Same look on every part. */
 export const sameStyle = (a: PlayerStyle, b: PlayerStyle) =>
-  a.font === b.font && a.effect === b.effect && a.frame === b.frame && a.chat === b.chat;
+  a.font === b.font && a.effect === b.effect && a.frame === b.frame && a.chat === b.chat && a.card === b.card;
 
 const pick = <T extends string>(list: readonly T[], v: unknown, fallback: T): T =>
   list.includes(v as T) ? (v as T) : fallback;
@@ -63,6 +67,7 @@ export function sanitizeStyle(input: unknown): PlayerStyle {
     effect: pick(NAME_EFFECTS, s.effect, "none"),
     frame: pick(AVATAR_FRAMES, s.frame, "none"),
     chat: pick(CHAT_DECOS, s.chat, "plain"),
+    card: pick(CARD_BGS, s.card, "plain"),
   };
 }
 
@@ -75,7 +80,7 @@ export function sanitizeAvatarUrl(url: unknown): string | null {
 }
 
 // ---------------------------------------------------------------------------
-// Shop: every font, effect, frame and chat decoration except the defaults is sold through payOS.
+// Shop: every font, effect, frame, chat decoration and card background except the defaults is sold through payOS.
 // An item id is "<kind>:<value>", e.g. "effect:glow".
 // Special roles: a few are free each day (see freeRoles.ts); a role card
 // ("role:<id>") keeps one open every day, and a bundle ("bundle:<name>") sells
@@ -94,10 +99,11 @@ const OPTIONS: Record<ItemKind, readonly string[]> = {
   effect: NAME_EFFECTS,
   frame: AVATAR_FRAMES,
   chat: CHAT_DECOS,
+  card: CARD_BGS,
 };
 
 /** What everyone gets for free (the defaults). */
-export const FREE_ITEMS: readonly ItemId[] = ["font:default", "effect:none", "frame:none", "chat:plain"];
+export const FREE_ITEMS: readonly ItemId[] = ["font:default", "effect:none", "frame:none", "chat:plain", "card:plain"];
 
 export const itemId = (kind: ItemKind, value: string): ItemId => `${kind}:${value}`;
 
@@ -176,6 +182,7 @@ export function limitStyle(style: PlayerStyle, owned: readonly string[] | "all")
     effect: has("effect") ? style.effect : DEFAULT_STYLE.effect,
     frame: has("frame") ? style.frame : DEFAULT_STYLE.frame,
     chat: has("chat") ? style.chat : DEFAULT_STYLE.chat,
+    card: has("card") ? style.card : DEFAULT_STYLE.card,
   };
 }
 

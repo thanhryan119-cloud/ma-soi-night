@@ -373,6 +373,137 @@ html { scroll-behavior: smooth; }
   100% { box-shadow: 0 0 0 2px #e5383b, 0 0 0 12px rgba(229, 56, 59, 0); }
 }
 
+/* Profile card backgrounds: the box behind the avatar and name on the profile
+   card and the editor preview (.pc-<id>, see CARD_BGS). Decorations sit on
+   ::before/::after under the content (isolation keeps z-index -1 inside). */
+.profile-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: var(--color-night-900);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.profile-card::before, .profile-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.pc-stars {
+  background-color: #0b0a24;
+  background-image:
+    radial-gradient(1.4px 1.4px at 8% 22%, #fff 99%, transparent),
+    radial-gradient(1px 1px at 27% 68%, #fff 99%, transparent),
+    radial-gradient(1.6px 1.6px at 46% 18%, #fff 99%, transparent),
+    radial-gradient(1px 1px at 61% 52%, rgba(255, 255, 255, 0.8) 99%, transparent),
+    radial-gradient(1.2px 1.2px at 79% 30%, #fff 99%, transparent),
+    radial-gradient(1px 1px at 93% 76%, rgba(255, 255, 255, 0.7) 99%, transparent),
+    linear-gradient(180deg, #17134a, #07060f);
+  background-size: 90px 60px, 90px 60px, 90px 60px, 90px 60px, 90px 60px, 90px 60px, 100% 100%;
+}
+.pc-stars::after {
+  background: radial-gradient(2px 2px at 70% 35%, #fff 99%, transparent), radial-gradient(1.5px 1.5px at 22% 40%, #fff 99%, transparent);
+  animation: pc-twinkle 3.2s ease-in-out infinite;
+}
+@keyframes pc-twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+.pc-bloodmoon {
+  border-color: rgba(200, 50, 59, 0.45);
+  background-image:
+    radial-gradient(circle 80px at 88% 40%, #e25a63 0 24px, #8b1c24 32px, rgba(139, 28, 36, 0.35) 42px, transparent 80px),
+    linear-gradient(180deg, #2a0a12, #0c0408);
+}
+.pc-bloodmoon::before {
+  /* craters */
+  background:
+    radial-gradient(circle 6px at calc(88% - 8px) calc(40% - 7px), rgba(90, 13, 15, 0.55) 0 4px, transparent 5px),
+    radial-gradient(circle 5px at calc(88% + 9px) calc(40% + 6px), rgba(90, 13, 15, 0.45) 0 3px, transparent 4px);
+}
+.pc-bloodmoon::after {
+  background: linear-gradient(0deg, rgba(200, 50, 59, 0.25), transparent 40%);
+}
+.pc-pines {
+  background-image:
+    radial-gradient(circle 70px at 84% 30%, rgba(239, 227, 194, 0.95) 0 14px, rgba(239, 227, 194, 0.15) 22px, transparent 70px),
+    linear-gradient(180deg, #1a2440, #0a0e1c 75%);
+}
+.pc-pines::before {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 50'%3E%3Cpath fill='%23182038' d='M0 50V34l7-14 7 14 5-24 9 24 6-16 6 16 8-28 8 28 5-12 6 12 8-22 8 22 6-14 5 14 8-26 8 26V50Z'/%3E%3C/svg%3E") repeat-x left bottom / 110px 46px;
+  opacity: 0.9;
+}
+.pc-pines::after {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 50'%3E%3Cpath fill='%2304050b' d='M0 50V38l6-10 6 10 6-22 8 22 5-12 5 12 7-30 8 30 6-16 6 16 7-20 8 20 5-10 5 10 8-28 9 28 4-8 3 8V50Z'/%3E%3C/svg%3E") repeat-x -30px bottom / 90px 38px;
+}
+.pc-tarot {
+  border-color: rgba(239, 227, 194, 0.4);
+  background-color: #0d0b16;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(239, 227, 194, 0.06) 0 1px, transparent 1px 12px),
+    repeating-linear-gradient(-45deg, rgba(239, 227, 194, 0.06) 0 1px, transparent 1px 12px);
+}
+.pc-tarot::before {
+  inset: 5px;
+  border: 1px solid rgba(239, 227, 194, 0.55);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 3px #0d0b16, inset 0 0 0 4px rgba(239, 227, 194, 0.25);
+}
+.pc-tarot::after {
+  /* sun rays fanning out from behind the avatar */
+  background: repeating-conic-gradient(from 0deg at 64px 50%, rgba(239, 227, 194, 0.09) 0 4deg, transparent 4deg 12deg);
+  mask-image: radial-gradient(circle at 64px 50%, #000 20%, transparent 70%);
+}
+.pc-mist {
+  background-image: linear-gradient(180deg, #232038, #12101f);
+}
+.pc-mist::before, .pc-mist::after {
+  inset: -20% -40%;
+  background:
+    radial-gradient(ellipse 30% 22% at 20% 70%, rgba(220, 220, 235, 0.22), transparent 70%),
+    radial-gradient(ellipse 34% 18% at 60% 85%, rgba(220, 220, 235, 0.18), transparent 70%),
+    radial-gradient(ellipse 26% 16% at 85% 60%, rgba(220, 220, 235, 0.16), transparent 70%);
+  animation: pc-drift 14s ease-in-out infinite alternate;
+}
+.pc-mist::after {
+  transform: scaleX(-1);
+  animation-duration: 19s;
+  opacity: 0.7;
+}
+@keyframes pc-drift {
+  from { translate: -8% 0; }
+  to { translate: 8% -4%; }
+}
+.pc-gold {
+  border-color: #e8b45a;
+  background-image:
+    radial-gradient(ellipse at 30% 0%, rgba(232, 180, 90, 0.28), transparent 60%),
+    linear-gradient(180deg, #221a2e, #110d1c);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 0 18px rgba(232, 180, 90, 0.18);
+}
+.pc-gold::before {
+  inset: 5px;
+  border: 1px solid rgba(232, 180, 90, 0.6);
+  border-radius: 6px;
+}
+.pc-gold::after {
+  /* corner brackets */
+  inset: 10px;
+  background:
+    linear-gradient(#e8b45a, #e8b45a) top left / 14px 2px no-repeat,
+    linear-gradient(#e8b45a, #e8b45a) top left / 2px 14px no-repeat,
+    linear-gradient(#e8b45a, #e8b45a) top right / 14px 2px no-repeat,
+    linear-gradient(#e8b45a, #e8b45a) top right / 2px 14px no-repeat,
+    linear-gradient(#e8b45a, #e8b45a) bottom left / 14px 2px no-repeat,
+    linear-gradient(#e8b45a, #e8b45a) bottom left / 2px 14px no-repeat,
+    linear-gradient(#e8b45a, #e8b45a) bottom right / 14px 2px no-repeat,
+    linear-gradient(#e8b45a, #e8b45a) bottom right / 2px 14px no-repeat;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc-stars::after, .pc-mist::before, .pc-mist::after { animation: none; }
+}
+
 /* Role collection tiers. A layer over the black-and-white card multiplies its
    white ink into the tier's metal: black stays black, white becomes colour. */
 .tier-card { position: relative; isolation: isolate; }
