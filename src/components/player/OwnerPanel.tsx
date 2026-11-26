@@ -64,6 +64,11 @@ export function OwnerBar({ state, onSettings }: { state: ClientState; onSettings
           </button>
         </div>
       )}
+      {iOwn && kind === "lobby" && (
+        <button className="btn-gold btn-sm" title={t("home.playNowDesc")} onClick={() => act({ type: "playNow" })}>
+          ▶ {t("owner.playNow")}
+        </button>
+      )}
       {iOwn && kind === "lobby" && !ready && (
         <p className="text-xs text-white/50">
           {n < MIN_PLAYERS

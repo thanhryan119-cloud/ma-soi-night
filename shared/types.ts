@@ -369,6 +369,8 @@ export type OwnerAction =
   | { type: "removeBots" }
   | { type: "kick"; playerId: string }
   | { type: "start" }
+  /** Fill with bots, deal the suggested basic roles and start, in one go. */
+  | { type: "playNow" }
   | { type: "newGame" };
 
 // ---------------------------------------------------------------------------
