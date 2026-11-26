@@ -7,6 +7,7 @@ import {
   mentionsName,
   recentSends,
   tableBusy,
+  answerDelay,
   type ChatMessage,
 } from "../shared/social";
 
@@ -56,6 +57,17 @@ describe("mentions", () => {
     expect(mentionsName("ok x", "(x)")).toBe(false);
     expect(mentionsName("hi Dr.Who", "Dr.Who")).toBe(true);
     expect(mentionsName("hi DrxWho", "Dr.Who")).toBe(false);
+  });
+});
+
+describe("bots answer a chat that never pauses", () => {
+  it("waits for a pause, but no longer than the cap after the first message", () => {
+    // First message just now: the usual short wait.
+    expect(answerDelay(1000, 1000, 1800, 5000)).toBe(1800);
+    // Messages kept coming for 4 s: only 1 s left before the bots answer anyway.
+    expect(answerDelay(1000, 5000, 1800, 5000)).toBe(1000);
+    // Past the cap: answer now.
+    expect(answerDelay(1000, 9000, 1800, 5000)).toBe(0);
   });
 });
 

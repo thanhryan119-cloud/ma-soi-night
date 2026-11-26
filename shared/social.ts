@@ -141,7 +141,19 @@ export function chatWaitMs(times: readonly number[], now: number): number {
   return Math.max(0, wait);
 }
 
-/** People are talking a lot right now (4+ lines from humans in 10 s): bots hold back. */
+/**
+ * Bots answer once a burst of messages settles (debounceMs of quiet), but never
+ * wait longer than maxWaitMs after the first unanswered message, so a chat that
+ * never pauses still gets answers. Returns how long to wait from now.
+ */
+export function answerDelay(firstAt: number, now: number, debounceMs: number, maxWaitMs: number): number {
+  return Math.max(0, Math.min(debounceMs, firstAt + maxWaitMs - now));
+}
+
+/** While people talk a lot, a bot's turn to speak only comes up this often (instead of never). */
+export const BUSY_TALK_CHANCE = 0.4;
+
+/** People are talking a lot right now (4+ lines from humans in 10 s): bots slow down. */
 export const BUSY_LINES = 4;
 export const BUSY_WINDOW_MS = 10_000;
 export function tableBusy(chat: readonly ChatMessage[], isHuman: (from: string) => boolean, now: number): boolean {

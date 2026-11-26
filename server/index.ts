@@ -39,7 +39,7 @@ import { createQuests } from "./quests";
 import { createShop } from "./shop";
 import { createSocial } from "./social";
 import { createGlobalChat } from "./globalChat";
-import { tableBusy } from "../shared/social";
+import { BUSY_TALK_CHANCE, tableBusy } from "../shared/social";
 import { gameResults, type PublicProfile } from "../shared/stats";
 import { gameRecord, newGameId } from "../shared/replay";
 import { createGames } from "./games";
@@ -451,9 +451,10 @@ function scheduleBotChat(room: Room) {
       if (!inDiscussion()) return scheduleBotChat(room);
       const talkers = room.players.filter((p) => p.isBot && p.alive && !isSilenced(room, p.id) && !typing.has(p.id) && (mem.said[p.id] ?? 0) < linesPerDay(personaOf(room, p.id)));
       if (!talkers.length) return;
-      // While people are talking fast, bots wait their turn instead of adding to the flood.
+      // While people are talking fast, bots speak less often, but they still take part.
       const human = (from: string) => from === "host" || room.players.some((p) => p.id === from && !p.isBot);
-      if (typing.size < 2 && !tableBusy(social.recentChat(room.code), human, Date.now())) {
+      const busy = tableBusy(social.recentChat(room.code), human, Date.now());
+      if (typing.size < 2 && (!busy || Math.random() < BUSY_TALK_CHANCE)) {
         // Chatty bots are more likely to speak next.
         const weights = talkers.map((p) => personaOf(room, p.id).talk);
         let r = Math.random() * weights.reduce((a, b) => a + b, 0);

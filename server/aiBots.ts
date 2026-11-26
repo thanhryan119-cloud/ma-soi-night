@@ -8,6 +8,7 @@
 // keep their role quiet early). If GEMINI_API_KEY is not set, nothing here
 // runs and the scripted bot lines keep working.
 
+import { answerDelay } from "../shared/social";
 import { chatSide, coverRole, mistakeChance, truthChance, type ChatSide } from "../shared/botChat";
 import type { ChatIntel } from "../shared/botIntel";
 import { personaOf, type Persona } from "../shared/botPersona";
@@ -24,12 +25,16 @@ const ROLE_NAMES: Record<"vi" | "en", Record<RoleId, string>> = {
 
 /** Calls budget per game, so a chatty table can't run up the bill. */
 const MAX_CALLS_PER_GAME = 80;
-/** Wait for a burst of messages to settle before answering. */
+/** Wait for a burst of messages to settle before answering... */
 const DEBOUNCE_MS = 1_800;
+/** ...but never longer than this after the first unanswered message, or a busy chat never gets an answer. */
+const MAX_WAIT_MS = 5_000;
 
 interface RoomState {
   timer: NodeJS.Timeout | null;
   pending: { fromId: string; text: string }[];
+  /** When the oldest unanswered message came in. */
+  firstAt: number;
   calls: number;
   game: object | null;
 }
@@ -59,7 +64,7 @@ export function createAiBots(opts: {
     let s = state.get(room.code);
     if (!s || s.game !== room.game) {
       if (s?.timer) clearTimeout(s.timer);
-      s = { timer: null, pending: [], calls: 0, game: room.game };
+      s = { timer: null, pending: [], firstAt: 0, calls: 0, game: room.game };
       state.set(room.code, s);
     }
     return s;
@@ -259,9 +264,11 @@ export function createAiBots(opts: {
       const from = room.players.find((p) => p.id === fromId);
       if (!from || from.isBot) return;
       const s = stateFor(room);
+      const now = Date.now();
+      if (!s.pending.length) s.firstAt = now;
       s.pending.push({ fromId, text });
       if (s.timer) clearTimeout(s.timer);
-      s.timer = setTimeout(() => void answer(room), DEBOUNCE_MS);
+      s.timer = setTimeout(() => void answer(room), answerDelay(s.firstAt, now, DEBOUNCE_MS, MAX_WAIT_MS));
     },
   };
 }
