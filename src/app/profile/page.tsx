@@ -22,9 +22,11 @@ import { StatsView } from "@/components/Profile";
 import { fetchMyStats } from "@/lib/stats";
 import type { UserStats } from "@shared/stats";
 import { useT } from "@/lib/i18n";
+import { useEmbedded } from "@/lib/embed";
 
 export default function ProfilePage() {
   const t = useT();
+  const embedded = useEmbedded();
   const [profile, setProfile] = useState<LocalProfile | null>(null);
   useEffect(() => {
     setProfile(loadLocalProfile());
@@ -32,13 +34,15 @@ export default function ProfilePage() {
   }, []);
   const backTo = usePaymentReturn(setProfile);
   return (
-    <main className="mx-auto flex min-h-dvh max-w-lg flex-col gap-6 px-4 pt-16 pb-10">
-      <GlobalChat />
-      <LangSwitch />
+    <main className={`mx-auto flex min-h-dvh max-w-lg flex-col gap-6 px-4 pb-10 ${embedded ? "pt-4" : "pt-16"}`}>
+      {!embedded && <GlobalChat />}
+      {!embedded && <LangSwitch />}
       <div className="flex items-center gap-3">
-        <Link href="/" className="btn-ghost btn-sm" title={t("common.back")}>
-          ←<span className="sr-only">{t("common.back")}</span>
-        </Link>
+        {!embedded && (
+          <Link href="/" className="btn-ghost btn-sm" title={t("common.back")}>
+            ←<span className="sr-only">{t("common.back")}</span>
+          </Link>
+        )}
         <h1 className="font-display text-3xl font-black">{t("profile.title")}</h1>
         <span className="ml-auto">
           <QuestsLink />

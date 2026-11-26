@@ -1307,5 +1307,10 @@
     "ownedCard": "Đã có thẻ, dùng mọi ngày",
     "freeToday": "Miễn phí hôm nay",
     "freeIn": "Miễn phí lại sau {days} ngày"
+  },
+  "room": {
+    "signIn": "Đăng nhập",
+    "signInDesc": "Đăng nhập Google để lưu hồ sơ, lịch sử chơi và mở bộ sưu tập. Bạn vẫn ở trong phòng.",
+    "windowHint": "Bạn vẫn ở trong phòng"
   }
 }

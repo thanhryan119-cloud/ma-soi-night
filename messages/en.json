@@ -1307,5 +1307,10 @@
     "ownedCard": "Card owned, open every day",
     "freeToday": "Free today",
     "freeIn": "Free again in {days} days"
+  },
+  "room": {
+    "signIn": "Sign in",
+    "signInDesc": "Sign in with Google to keep your profile and match history and unlock the collection. You stay in the room.",
+    "windowHint": "You are still in the room"
   }
 }

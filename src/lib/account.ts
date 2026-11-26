@@ -52,6 +52,16 @@ function load() {
   if (auth) auth = { ...auth, user: { ...auth.user, owned: sanitizeOwned(auth.user.owned) } };
 }
 
+// Signing in, out or buying in a window over a room (an iframe) shows in the room too.
+if (typeof window !== "undefined")
+  window.addEventListener("storage", (e) => {
+    if (e.key !== AUTH_KEY) return;
+    loaded = false;
+    load();
+    if (!storage.get(AUTH_KEY)) auth = null;
+    listeners.forEach((l) => l());
+  });
+
 function setAuth(next: AuthState) {
   auth = next;
   if (next) storage.set(AUTH_KEY, next);
@@ -197,7 +207,9 @@ export async function buyItem(itemId: ItemId, code?: string): Promise<ApiResult 
   if (r.ok && r.checkoutUrl) {
     // payOS brings the buyer back to /profile; remember where they bought from.
     storage.set(SHOP_RETURN_KEY, window.location.pathname + window.location.search);
-    window.location.assign(r.checkoutUrl);
+    // In a window over a room, pay in a new tab so the game keeps running here.
+    const tab = window.self !== window.top ? window.open(r.checkoutUrl, "_blank") : null;
+    if (!tab) window.location.assign(r.checkoutUrl);
   }
   return r;
 }
