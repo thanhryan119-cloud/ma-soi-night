@@ -78,6 +78,28 @@ export function PlayerGame({ state, offset, connected }: Props) {
     prevTurn.current = myTurn;
   }, [myTurn]);
 
+  // A bot is playing for me: coming back to the tab or touching anything takes the seat back.
+  const standIn = !!self.standIn && kind !== "gameOver";
+  useEffect(() => {
+    if (!standIn) return;
+    let sent = false;
+    const takeBack = () => {
+      if (sent || document.visibilityState !== "visible") return;
+      sent = true;
+      emitAck("player:action", { type: "back" });
+    };
+    const opts = { capture: true, passive: true } as const;
+    const events = ["pointerdown", "keydown", "touchstart"] as const;
+    events.forEach((e) => window.addEventListener(e, takeBack, opts));
+    document.addEventListener("visibilitychange", takeBack);
+    window.addEventListener("focus", takeBack);
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, takeBack, opts));
+      document.removeEventListener("visibilitychange", takeBack);
+      window.removeEventListener("focus", takeBack);
+    };
+  }, [standIn]);
+
   const canSeeRoles = !me.alive && kind !== "gameOver" && state.players.some((p) => p.id !== me.id && p.roleId);
   const showRoleButton = !!me.roleId && kind !== "gameOver" && kind !== "roleReveal";
 
@@ -102,9 +124,6 @@ export function PlayerGame({ state, offset, connected }: Props) {
       {self.standIn && kind !== "gameOver" && (
         <div className="flex shrink-0 items-center gap-2 border-b border-gold/30 bg-gold/10 px-3 py-1.5 text-sm">
           <span className="min-w-0 flex-1">🤖 {t("player.standInYou")}</span>
-          <button className="btn-primary btn-sm shrink-0" onClick={() => emitAck("player:action", { type: "back" })}>
-            {t("player.standInBack")}
-          </button>
         </div>
       )}
 

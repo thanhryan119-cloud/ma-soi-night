@@ -467,8 +467,7 @@
     "votes": "{count} phiếu"
   },
   "player": {
-    "standInYou": "Bạn vắng mặt hơn 1 phút nên bot đang chơi hộ.",
-    "standInBack": "Tôi quay lại rồi",
+    "standInYou": "Bạn vắng mặt hơn 1 phút nên bot đang chơi hộ. Chạm vào màn hình để tự chơi tiếp.",
     "standInBadge": "Bot đang chơi hộ",
     "narrationSoon": "Lời dẫn của quản trò sẽ hiện ở đây khi ván bắt đầu. Bấm 🔇 để nghe đọc thành tiếng.",
     "rename": "Đổi tên",
