@@ -112,7 +112,11 @@ describe("friends and invites over the server chat", () => {
     ub: { id: "ub", name: "Bình", avatarUrl: null, style: null, isAdmin: false },
   };
 
-  async function start(inviteRoom: (to: string) => { code: string } | { error: string }) {
+  async function start(
+    inviteRoom: (to: string) => { code: string } | { error: string },
+    sameGame = () => false,
+    roomAccounts?: () => { sid: string; userId: string }[],
+  ) {
     const dataDir = mkdtempSync(join(tmpdir(), "msn-friends-"));
     http = createServer();
     const io = new Server(http);
@@ -120,7 +124,8 @@ describe("friends and invites over the server chat", () => {
       dataDir,
       accountFor: (token) => (typeof token === "string" ? (users[token.replace("tok-", "u")] ?? null) : null),
       userById: (id) => users[id] ?? null,
-      sameRunningGame: () => false,
+      sameRunningGame: () => sameGame(),
+      roomAccounts,
       inviteRoom: (_socket, to) => inviteRoom(to),
     });
     io.on("connection", (s) => chat.register(s));
@@ -206,5 +211,46 @@ describe("friends and invites over the server chat", () => {
     const a = await client("tok-a");
     await client("tok-b");
     expect(await a.call("invite:send", { to: "ub" })).toEqual({ ok: false, error: "err.inviteStarted" });
+  });
+
+  it("lists someone playing in a room as online even with their chat box closed", async () => {
+    let inRoom: { sid: string; userId: string }[] = [];
+    const { client } = await start(() => ({ error: "err.inviteNoRoom" }), undefined, () => inRoom);
+    const a = await client("tok-a");
+    let update = next(a.c, "global:online");
+    const b = await client("tok-b");
+    const ids = (list: unknown) => (list as { users: { id: string }[] }).users.map((u) => u.id);
+    expect(ids(await update).sort()).toEqual(["ua", "ub"]);
+
+    // Bình's phone hides the chat during the night: the client leaves the channel...
+    update = next(a.c, "global:online");
+    await b.call("global:leave");
+    expect(ids(await update)).toEqual(["ua"]);
+
+    // ...but Bình is still connected to the room, so Bình stays online.
+    inRoom = [{ sid: b.c.id!, userId: "ub" }];
+    await b.call("global:join");
+    update = next(a.c, "global:online");
+    await b.call("global:leave");
+    expect(ids(await update).sort()).toEqual(["ua", "ub"]);
+  });
+
+  it("says up front that friends in the same running game can't write privately, and opens again after", async () => {
+    let playing = true;
+    const { client } = await start(() => ({ error: "err.inviteNoRoom" }), () => playing);
+    const a = await client("tok-a");
+    await client("tok-b");
+    expect(await a.call("dm:status", { to: "ub" })).toEqual({ ok: true, locked: true });
+    expect(await a.call("dm:send", { to: "ub", text: "psst" })).toEqual({ ok: false, error: "err.dmSameGame" });
+
+    playing = false;
+    expect(await a.call("dm:status", { to: "ub" })).toEqual({ ok: true, locked: false });
+    expect(await a.call("dm:send", { to: "ub", text: "gg" })).toMatchObject({ ok: true });
+
+    // Guests and oneself are never "locked" (they can't write anyway).
+    const g = await client("nobody");
+    playing = true;
+    expect(await g.call("dm:status", { to: "ub" })).toEqual({ ok: true, locked: false });
+    expect(await a.call("dm:status", { to: "ua" })).toEqual({ ok: true, locked: false });
   });
 });

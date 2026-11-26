@@ -64,6 +64,11 @@ export function createGlobalChat(
     inviteRoom: (socket: Socket, to: string) => { code: string } | { error: string };
     /** Where the person on this socket is (null: outside any room). */
     whereIs?: (socketId: string) => Whereabouts | null;
+    /**
+     * Signed-in people connected to a room (socket id and account). They are
+     * online even when their chat box is closed (a phone hides it most of the game).
+     */
+    roomAccounts?: () => { sid: string; userId: string }[];
     /** Listed rooms waiting for players, and games being played. */
     roomCounts?: () => { open: number; playing: number };
   },
@@ -182,7 +187,13 @@ export function createGlobalChat(
   function onlineList(): OnlineList {
     const users = new Map<string, OnlineUser>();
     let guests = 0;
-    for (const [sid, a] of present) {
+    const people: [string, Account | null][] = [...present];
+    for (const { sid, userId } of opts.roomAccounts?.() ?? []) {
+      if (present.has(sid)) continue;
+      const a = opts.userById(userId);
+      if (a) people.push([sid, a]);
+    }
+    for (const [sid, a] of people) {
       if (!a) {
         guests++;
         continue;
@@ -254,6 +265,13 @@ export function createGlobalChat(
       ack({ ok: true });
     });
     socket.on("disconnect", leave);
+
+    // Whether private lines to `to` are locked right now (the box says so before anyone writes).
+    on("dm:status", (p, ack) => {
+      const user = opts.accountFor(p.authToken);
+      const to = typeof p.to === "string" ? p.to : "";
+      ack({ ok: true, locked: !!user && !!to && to !== user.id && opts.sameRunningGame(user.id, to) });
+    });
 
     on("dm:send", (p, ack) => {
       const user = opts.accountFor(p.authToken);
