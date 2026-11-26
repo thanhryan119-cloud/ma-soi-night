@@ -1,13 +1,13 @@
 // Links shared in Messenger, Zalo, Facebook, Instagram, TikTok, … open inside
 // that app's own web view, where the game works badly (no install, cramped,
-// mic/voice and sign-in often blocked). We try to hand the link over to the
-// phone's real browser instead:
-// - Android: an `intent://` URL with no package, so Android opens it in the
-//   user's default browser (Chrome, Samsung Internet, Firefox, …).
-// - iPhone / iPad: iOS lets no page leave an app's web view on its own, so
-//   <OpenInBrowser /> shows buttons (a tap is needed) that open Safari
-//   (`x-safari-https://`, iOS 17+) or Chrome (`googlechromes://`), plus how
-//   to do it from the app's menu.
+// mic/voice and sign-in often blocked). We hand the link over to Chrome:
+// - Android: an `intent://` URL aimed at Chrome. Without Chrome, the intent's
+//   fallback reloads the page with `?_ib=1`, which then asks for whatever the
+//   default browser is.
+// - iPhone / iPad: `googlechromes://` right away. Many apps (Messenger, …)
+//   only let a page open another app after a tap, so <OpenInBrowser /> also
+//   opens Chrome on the first tap anywhere, and shows Safari / Chrome buttons
+//   plus how to do it from the app's menu.
 
 /** User agents of in-app browsers (web views inside chat / social apps). */
 export const IN_APP_UA =
@@ -26,7 +26,7 @@ export function isInAppBrowser(ua = typeof navigator === "undefined" ? "" : navi
   return isIos(ua) && !/Safari\//.test(ua) && !standalone;
 }
 
-/** Links that open this page in Safari / Chrome on iOS (they need a tap). */
+/** Links that open this page in Safari / Chrome on iOS. */
 export function iosBrowserLinks(href: string) {
   const https = href.startsWith("https:");
   return {
@@ -37,23 +37,35 @@ export function iosBrowserLinks(href: string) {
 
 /** Query key that carries the #hash through an Android intent (which can't keep a fragment). */
 const HASH_KEY = "_h";
+/** Query flag set by the Chrome intent's fallback: no Chrome, try the default browser. */
+const ANY_KEY = "_ib";
 /** Once per tab: if the hand-over failed, don't loop. */
 const TRIED_KEY = "msn:openedInBrowser";
+
+const k = JSON.stringify;
 
 /**
  * Runs inline in <head> before the app loads:
  * 1. restores a #hash that came through an intent as `?_h=` (so #pw=… still works);
- * 2. inside an Android in-app browser, opens the same link in the default browser.
+ * 2. inside an in-app browser, opens the same link in Chrome (Android falls
+ *    back to the default browser when Chrome isn't installed).
  */
 export const OPEN_IN_BROWSER_SCRIPT = `(function(){try{
-var u=new URL(location.href),h=u.searchParams.get(${JSON.stringify(HASH_KEY)});
-if(h!==null){u.searchParams.delete(${JSON.stringify(HASH_KEY)});history.replaceState(history.state,"",u.pathname+u.search+(h?"#"+h:""));}
-var ua=navigator.userAgent||"";
-if(!${IN_APP_UA.toString()}.test(ua))return;
-try{if(sessionStorage.getItem(${JSON.stringify(TRIED_KEY)}))return;sessionStorage.setItem(${JSON.stringify(TRIED_KEY)},"1");}catch(e){}
+var u=new URL(location.href),h=u.searchParams.get(${k(HASH_KEY)}),any=u.searchParams.get(${k(ANY_KEY)})!==null,hash=h?"#"+h:location.hash;
+if(h!==null||any){u.searchParams.delete(${k(HASH_KEY)});u.searchParams.delete(${k(ANY_KEY)});history.replaceState(history.state,"",u.pathname+u.search+hash);}
+var ua=navigator.userAgent||"",ios=/iPhone|iPad|iPod/i.test(ua);
+var inApp=${IN_APP_UA.toString()}.test(ua)||(ios&&!/Safari\\//.test(ua)&&navigator.standalone!==true);
+if(!inApp)return;
+if(!any){try{if(sessionStorage.getItem(${k(TRIED_KEY)}))return;sessionStorage.setItem(${k(TRIED_KEY)},"1");}catch(e){}}
 if(/Android/i.test(ua)){
-var q=new URLSearchParams(location.search);if(location.hash.length>1)q.set(${JSON.stringify(HASH_KEY)},location.hash.slice(1));
+var q=new URLSearchParams(u.search);if(hash.length>1)q.set(${k(HASH_KEY)},hash.slice(1));
 var s=q.toString();
-location.href="intent://"+location.host+location.pathname+(s?"?"+s:"")+"#Intent;scheme="+location.protocol.replace(":","")+";action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end";
+var intent="intent://"+u.host+u.pathname+(s?"?"+s:"")+"#Intent;scheme="+location.protocol.replace(":","")+";action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;";
+if(any){location.href=intent+"end";return;}
+var f=new URLSearchParams(u.search);f.set(${k(ANY_KEY)},"1");
+var back=u.origin+u.pathname+"?"+f.toString()+hash;
+location.href=intent+"package=com.android.chrome;S.browser_fallback_url="+encodeURIComponent(back)+";end";
+}else if(ios){
+location.href=(u.protocol==="https:"?"googlechromes:":"googlechrome:")+(u.href.split("#")[0]+hash).replace(/^https?:/,"");
 }
 }catch(e){}})();`;

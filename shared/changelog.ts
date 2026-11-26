@@ -12,6 +12,21 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.6.2",
+    date: "2026-11-27",
+    title: { vi: "Link mời mở thẳng bằng Chrome", en: "Invite links open straight in Chrome" },
+    items: {
+      vi: [
+        "Bấm link mời trong Messenger, Zalo hay Facebook sẽ tự mở bằng Chrome. Máy Android không có Chrome thì mở bằng trình duyệt mặc định.",
+        "Trên iPhone, nếu app chặn tự mở thì chạm vào bất kỳ đâu trên trang là sang Chrome.",
+      ],
+      en: [
+        "Invite links tapped in Messenger, Zalo or Facebook open straight in Chrome. Android phones without Chrome use the default browser.",
+        "On iPhone, if the app blocks it, tap anywhere on the page to switch to Chrome.",
+      ],
+    },
+  },
+  {
     version: "1.6.1",
     date: "2026-11-27",
     title: { vi: "Mở link bằng trình duyệt, hồ sơ gọn hơn", en: "Links open in your browser, a tidier profile" },

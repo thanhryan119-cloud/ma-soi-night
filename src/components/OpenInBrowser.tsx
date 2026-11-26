@@ -1,9 +1,10 @@
 "use client";
 
 // Shown inside an app's own browser (Messenger, Zalo, Facebook, …).
-// Android: only if the automatic hand-over to the default browser was blocked.
-// iPhone: right away, since iOS needs a tap to leave the app. Buttons open
-// Safari or Chrome, and the text says how to do it from the app's menu.
+// Android: only if the automatic hand-over to Chrome was blocked.
+// iPhone: right away, and the first tap anywhere opens Chrome (many apps need
+// a tap first). Buttons open Safari or Chrome, and the text says how to do it
+// from the app's menu.
 
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
@@ -26,7 +27,18 @@ export function OpenInBrowser() {
     setIos(onIos);
     // Android: give the automatic hand-over a moment first.
     const timer = window.setTimeout(() => setShow(true), onIos ? 0 : 1500);
-    return () => window.clearTimeout(timer);
+    // iPhone: apps like Messenger only let a page open Chrome after a tap,
+    // so the first tap anywhere (outside this bar) opens it.
+    const onTap = (e: Event) => {
+      if ((e.target as Element | null)?.closest?.("[data-inapp-bar]")) return;
+      document.removeEventListener("click", onTap, true);
+      window.location.href = iosBrowserLinks(window.location.href).chrome;
+    };
+    if (onIos) document.addEventListener("click", onTap, true);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("click", onTap, true);
+    };
   }, []);
 
   if (!show) return null;
@@ -50,7 +62,7 @@ export function OpenInBrowser() {
   const links = ios ? iosBrowserLinks(window.location.href) : null;
 
   return (
-    <div className="fixed inset-x-0 top-0 z-[95] p-2" role="alert">
+    <div className="fixed inset-x-0 top-0 z-[95] p-2" role="alert" data-inapp-bar>
       <div className="card mx-auto flex max-w-md flex-col gap-2 !p-3 text-left text-sm shadow-2xl">
         <p className="font-bold text-moon">🌐 {t("inApp.title")}</p>
         {links && (
