@@ -18,7 +18,7 @@ import { randomInt } from "node:crypto";
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { join } from "node:path";
-import { ITEM_PRICE_VND, SHOP_ITEMS, isShopItem, type ItemId } from "../shared/cosmetics";
+import { BUNDLES, BUNDLE_DISCOUNT, ITEM_PRICE_VND, SHOP_ITEMS, isSellable, itemPrice, type ItemId } from "../shared/cosmetics";
 import { cleanCodeInput, codeProblem, discountedPrice, normalizeCode, type CodeInput, type DiscountCode } from "../shared/codes";
 import { bearer, cors, json, readJson } from "./http";
 import type { PayOS } from "./payos";
@@ -195,7 +195,7 @@ export function createShop<U extends ShopUser>(deps: ShopDeps<U>) {
     }
 
     if (path === "/shop" && req.method === "GET")
-      return json(res, 200, { ok: true, enabled: !!deps.payos, price: ITEM_PRICE_VND, items: SHOP_ITEMS }), true;
+      return json(res, 200, { ok: true, enabled: !!deps.payos, price: ITEM_PRICE_VND, items: SHOP_ITEMS, bundles: BUNDLES, bundleDiscount: BUNDLE_DISCOUNT }), true;
 
     const user = deps.accounts.userForToken(bearer(req));
     if (!user) return json(res, 401, { ok: false, error: "err.sessionExpired" }), true;
@@ -244,21 +244,26 @@ export function createShop<U extends ShopUser>(deps: ShopDeps<U>) {
         const c = codes[code];
         const problem = codeProblem(c, user.id, now());
         if (problem || !c) return json(res, 400, { ok: false, error: problem ?? "err.codeInvalid" }), true;
-        return json(res, 200, { ok: true, code: c.code, kind: c.kind, value: c.value, amount: discountedPrice(ITEM_PRICE_VND, c) }), true;
+        // ?item= prices the code against that item (bundles cost more than one item).
+        const item = new URL(req.url ?? "/", "http://x").searchParams.get("item");
+        const base = isSellable(item) ? itemPrice(item, deps.accounts.ownedFor(user.id)) || ITEM_PRICE_VND : ITEM_PRICE_VND;
+        return json(res, 200, { ok: true, code: c.code, kind: c.kind, value: c.value, amount: discountedPrice(base, c) }), true;
       }
 
       if (path === "/shop/checkout" && req.method === "POST") {
         const body = await readJson<{ itemId?: unknown; returnUrl?: unknown; code?: unknown }>(req, 4 * 1024);
         const itemId = body?.itemId;
-        if (!isShopItem(itemId)) return json(res, 400, { ok: false, error: "err.itemUnknown" }), true;
-        if (deps.accounts.ownedFor(user.id).includes(itemId)) return json(res, 409, { ok: false, error: "err.itemOwned" }), true;
+        if (!isSellable(itemId)) return json(res, 400, { ok: false, error: "err.itemUnknown" }), true;
+        // A bundle only charges for the role cards still missing; nothing missing means owned.
+        const listPrice = itemPrice(itemId, deps.accounts.ownedFor(user.id));
+        if (!listPrice) return json(res, 409, { ok: false, error: "err.itemOwned" }), true;
 
         const codeId = normalizeCode(body?.code);
-        let amount = ITEM_PRICE_VND;
+        let amount = listPrice;
         if (codeId) {
           const problem = codeProblem(codes[codeId], user.id, now());
           if (problem) return json(res, 400, { ok: false, error: problem }), true;
-          amount = discountedPrice(ITEM_PRICE_VND, codes[codeId]);
+          amount = discountedPrice(listPrice, codes[codeId]);
         }
 
         // A code that covers the whole price: unlock now, no payment.
@@ -278,6 +283,7 @@ export function createShop<U extends ShopUser>(deps: ShopDeps<U>) {
           (o) =>
             o.userId === user.id &&
             o.itemId === itemId &&
+            o.amount === amount &&
             (o.code ?? "") === codeId &&
             o.status === "pending" &&
             now() - o.createdAt < CHECKOUT_TTL_MS - 60_000,

@@ -9,7 +9,8 @@ import { join } from "node:path";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import {
   DEFAULT_STYLE,
-  SHOP_ITEMS,
+  OWNABLE_ITEMS,
+  itemsGranted,
   equip,
   limitStyle,
   sanitizeOwned,
@@ -156,7 +157,7 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
 
   const isAdmin = (u: User) => !!u.email && adminEmails().includes(u.email.toLowerCase());
   /** What an account owns. Admins own the whole shop, items added later included. */
-  const ownedOf = (u: User | undefined | null) => (u && isAdmin(u) ? [...SHOP_ITEMS] : sanitizeOwned(u?.owned));
+  const ownedOf = (u: User | undefined | null) => (u && isAdmin(u) ? [...OWNABLE_ITEMS] : sanitizeOwned(u?.owned));
   /** The style others see: anything not (or no longer) owned falls back to the default. */
   const styleOf = (u: User) => limitStyle(u.style ?? DEFAULT_STYLE, ownedOf(u));
   const publicUser = (u: User) => ({
@@ -172,7 +173,7 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
   function grantItem(userId: string, item: ItemId) {
     const u = store.users[userId];
     if (!u) return null;
-    u.owned = sanitizeOwned([...ownedOf(u), item]);
+    u.owned = sanitizeOwned([...ownedOf(u), ...itemsGranted(item)]);
     u.style = equip(styleOf(u), item);
     save();
     return publicUser(u);

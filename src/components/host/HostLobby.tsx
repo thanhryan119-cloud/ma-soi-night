@@ -3,6 +3,7 @@
 import { QRCodeSVG } from "qrcode.react";
 import { ShareRoom } from "@/components/ShareRoom";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { MIN_PLAYERS } from "@shared/engine";
 import { ROLES, ROLE_IDS, SOLO_ROLES, isAdvancedRole, suggestRoles, totalRoles } from "@shared/roles";
 import { AddBots } from "./AddBots";
@@ -166,8 +167,9 @@ function PlayersCard({ state, hideRoles = false }: { state: ClientState; hideRol
             >
               <option value="">{t("host.unassigned")}</option>
               {ROLE_IDS.map((r) => (
-                <option key={r} value={r}>
+                <option key={r} value={r} disabled={!!state.lockedRoles?.includes(r) && p.assignedRole !== r}>
                   {ROLES[r].emoji} {t(`roles.${r}.name`)}
+                  {state.lockedRoles?.includes(r) ? " 🔒" : ""}
                 </option>
               ))}
             </select>
@@ -217,12 +219,19 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
   const [alt, setAlt] = useState<{ n: number; counts: Record<RoleId, number> } | null>(null);
   const suggested = alt?.n === n ? alt.counts : state.suggested;
   const sameAsSuggested = suggested && ROLE_IDS.every((r) => suggested[r] === counts[r]);
+  const locked = state.lockedRoles ?? [];
+  const isLocked = (r: RoleId) => locked.includes(r);
 
   const grid = `grid grid-cols-1 gap-1.5 ${owner ? "" : "sm:grid-cols-2"}`;
   const row = (r: RoleId) => (
     <li key={r} className="flex items-center gap-2 rounded-xl bg-white/5 p-2" title={t(`roles.${r}.desc`)}>
-      <span className="min-w-0 flex-1">
+      <span className={`min-w-0 flex-1 ${isLocked(r) ? "opacity-50" : ""}`}>
         <RoleBadge roleId={r} />
+        {isLocked(r) && (
+          <span className="ml-1" title={t("freeRoles.lockedRole")}>
+            🔒
+          </span>
+        )}
       </span>
       <button className="btn-ghost btn-sm w-8" onClick={() => set(r, counts[r] - 1)} disabled={counts[r] <= 0} aria-label="-">
         −
@@ -231,7 +240,7 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
       <button
         className="btn-ghost btn-sm w-8"
         onClick={() => set(r, counts[r] + 1)}
-        disabled={ROLES[r].max !== undefined && counts[r] >= ROLES[r].max!}
+        disabled={isLocked(r) || (ROLES[r].max !== undefined && counts[r] >= ROLES[r].max!)}
         aria-label="+"
       >
         +
@@ -245,6 +254,14 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
       <ul className={grid}>{BASIC_ROLES.map(row)}</ul>
       <RoleGroup title={t("host.groupAdvanced")} roles={ADVANCED_ROLES} counts={counts} grid={grid} row={row} />
       <RoleGroup title={t("host.groupSolo")} roles={SOLO_GROUP} counts={counts} grid={grid} row={row} />
+      {locked.length > 0 && (
+        <p className="rounded-xl bg-white/5 p-2 text-xs text-white/60">
+          🔒 {t("freeRoles.lockedHint")}{" "}
+          <Link href="/shop#shop-role" className="font-semibold text-gold hover:underline">
+            {t("freeRoles.toShop")}
+          </Link>
+        </p>
+      )}
       <div className={`rounded-xl p-2 text-sm ${total === n ? "bg-emerald-500/10 text-emerald-300" : "bg-blood/15 text-blood-light"}`}>
         {total === n ? t("host.totalRoles", { roles: total, players: n }) : t("host.mismatch", { roles: total, players: n })}
       </div>
@@ -263,7 +280,7 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
           >
             {t("host.useSuggested")}
           </button>
-          <button className="btn-ghost btn-sm" onClick={() => setAlt({ n, counts: suggestRoles(n, ROLE_IDS, Math.random) })}>
+          <button className="btn-ghost btn-sm" onClick={() => setAlt({ n, counts: suggestRoles(n, ROLE_IDS.filter((r) => !isLocked(r)), Math.random) })}>
             🎲 {t("host.otherSuggestion")}
           </button>
         </div>

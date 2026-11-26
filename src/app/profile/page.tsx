@@ -17,7 +17,7 @@ import {
   type LocalProfile,
 } from "@/lib/account";
 import { storage } from "@/lib/socket";
-import type { ItemKind } from "@shared/cosmetics";
+import { useItemName } from "@/components/Checkout";
 import { StatsView } from "@/components/Profile";
 import { fetchMyStats } from "@/lib/stats";
 import type { UserStats } from "@shared/stats";
@@ -78,6 +78,7 @@ export default function ProfilePage() {
  */
 function usePaymentReturn(setProfile: React.Dispatch<React.SetStateAction<LocalProfile | null>>) {
   const t = useT();
+  const itemName = useItemName();
   const [backTo, setBackTo] = useState<string | null>(null);
   const started = useRef(false);
   useEffect(() => {
@@ -108,8 +109,7 @@ function usePaymentReturn(setProfile: React.Dispatch<React.SetStateAction<LocalP
               return next;
             });
           }
-          const [kind, value] = itemId.split(":") as [ItemKind, string];
-          const item = t(`profile.${kind}.${value}`);
+          const item = itemName(itemId);
           return toast(t("shop.paid", { item }), "info");
         }
         if (status === "cancelled" || status === "expired" || params.get("cancel") === "true")
