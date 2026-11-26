@@ -1461,7 +1461,9 @@
   },
   "inApp": {
     "title": "Open in your browser for a smoother game",
-    "stepsIos": "Tap ⋯ or the compass icon in a corner of the screen, then \"Open in browser\" (Safari). Or copy the link and paste it into your browser.",
+    "openSafari": "Open in Safari",
+    "openChrome": "Open in Chrome",
+    "stepsIos": "If the buttons don't work, tap ⋯ or the compass icon in a corner of the screen, then \"Open in browser\". Or copy the link and paste it into your browser.",
     "stepsAndroid": "Tap ⋮ in a corner of the screen, then \"Open in browser\" (Chrome…). Or copy the link and paste it into your browser.",
     "copy": "Copy link",
     "copied": "Link copied, paste it into Chrome or Safari",

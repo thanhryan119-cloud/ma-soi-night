@@ -12,6 +12,27 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.6.1",
+    date: "2026-11-27",
+    title: { vi: "Mở link bằng trình duyệt, hồ sơ gọn hơn", en: "Links open in your browser, a tidier profile" },
+    items: {
+      vi: [
+        "Bấm link mời trong Messenger, Zalo hay Facebook trên Android sẽ tự mở bằng trình duyệt mặc định của máy.",
+        "Trên iPhone, link mời có nút Mở bằng Safari hoặc Chrome ngay đầu trang.",
+        "Thống kê theo vai trong hồ sơ được thu gọn, bấm Xem theo vai để mở.",
+        "Phần Theo phe hiện đủ phe Sói, phe Dân làng và phe độc lập.",
+        "Ván làm Cặp đôi được tính cho phe độc lập.",
+      ],
+      en: [
+        "Invite links tapped in Messenger, Zalo or Facebook on Android open in the phone's default browser.",
+        "On iPhone, invite links show Open in Safari and Open in Chrome buttons at the top.",
+        "Per-role stats on the profile are folded away. Tap Show roles to open them.",
+        "The faction row shows Wolves, Village and Independent.",
+        "Games as one of Cupid's lovers count for the independent faction.",
+      ],
+    },
+  },
+  {
     version: "1.6.0",
     date: "2026-11-26",
     title: { vi: "Phòng chơi gọn gàng, bot chơi hộ, chat người chết", en: "Tidier rooms, stand-in bots, a chat for the dead" },
