@@ -336,6 +336,8 @@ export interface Room {
   assignment: Record<string, RoleId>;
   phase: Phase;
   game: Game | null;
+  /** Which game this is in the room (1 for the first; each new game adds one). */
+  gameNo?: number;
   timer: TimerState;
   log: LogEntry[];
   /** When the auto narrator will move on (ms epoch), or null. */
