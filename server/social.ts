@@ -39,6 +39,9 @@ interface RoomSocial {
 }
 
 type Ack = (res: Record<string, unknown>) => void;
+/** Saved room chat: room code -> its chat and the dead players' chat. */
+export type SavedChat = Record<string, { chat: ChatMessage[]; ghost: ChatMessage[] }>;
+
 interface Data {
   code?: string;
   kind?: string;
@@ -52,6 +55,8 @@ export function createSocial(
   channel: (code: string) => string,
   /** Called for every player/bot chat line (bots learn from the table talk). */
   onChat: (room: Room, fromId: string, text: string) => void = () => {},
+  /** Called whenever a room's chat changes, so it gets saved (and survives a restart or redeploy). */
+  changed: () => void = () => {},
 ) {
   console.log(`[voice] ICE: ${describeIce()}`);
   const social = new Map<string, RoomSocial>();
@@ -137,6 +142,7 @@ export function createSocial(
       const msg: ChatMessage = { id: randomId(10), from: fromKey(c.who), text, t: now, ...chatStage(c.room) };
       if (c.who.kind === "spectator") Object.assign(msg, { name: c.who.name, avatar: c.who.avatar });
       c.s.ghost.push(msg);
+      changed();
       if (c.s.ghost.length > CHAT_HISTORY) c.s.ghost.splice(0, c.s.ghost.length - CHAT_HISTORY);
       // Only to the sockets allowed to read it (never to the living).
       for (const id of io.sockets.adapter.rooms.get(channel(c.room.code)) ?? []) {
@@ -163,6 +169,7 @@ export function createSocial(
       c.s.lastChat.set(key, [...sent, now]);
       const msg: ChatMessage = { id: randomId(10), from: key, text, t: now, ...chatStage(c.room) };
       c.s.chat.push(msg);
+      changed();
       if (c.who.kind === "player") onChat(c.room, key, text);
       if (c.s.chat.length > CHAT_HISTORY) c.s.chat.splice(0, c.s.chat.length - CHAT_HISTORY);
       io.to(channel(c.room.code)).emit("chat:new", msg);
@@ -252,6 +259,7 @@ export function createSocial(
     const s = of(room.code);
     const msg: ChatMessage = { id: randomId(10), from: playerId, text, t: Date.now(), ...chatStage(room) };
     s.chat.push(msg);
+    changed();
     onChat(room, playerId, text);
     if (s.chat.length > CHAT_HISTORY) s.chat.splice(0, s.chat.length - CHAT_HISTORY);
     io.to(channel(room.code)).emit("chat:new", msg);
@@ -269,6 +277,7 @@ export function createSocial(
     const s = social.get(code);
     if (!s) return;
     s.ghost = [];
+    changed();
     s.lastChat.clear();
     io.to(channel(code)).emit("ghost:clear");
   }
@@ -276,5 +285,25 @@ export function createSocial(
   /** The current game's recent chat (for the bots, who should not mix up games). */
   const recentChat = (code: string) => currentGameChat(social.get(code)?.chat ?? [], getRoom(code)?.gameNo);
 
-  return { register, afterChange, dispose, postAs, typing, recentChat, clearForNewGame };
+  /** Every room's chat, to save to disk. */
+  function snapshot(): SavedChat {
+    const out: SavedChat = {};
+    for (const [code, s] of social) if (s.chat.length || s.ghost.length) out[code] = { chat: s.chat, ghost: s.ghost };
+    return out;
+  }
+
+  /** Puts saved chat back after a restart (only for rooms that still exist). */
+  function restore(saved: SavedChat) {
+    let n = 0;
+    for (const [code, v] of Object.entries(saved ?? {})) {
+      if (!getRoom(code)) continue;
+      const s = of(code);
+      s.chat = Array.isArray(v.chat) ? v.chat.slice(-CHAT_HISTORY) : [];
+      s.ghost = Array.isArray(v.ghost) ? v.ghost.slice(-CHAT_HISTORY) : [];
+      n++;
+    }
+    return n;
+  }
+
+  return { register, afterChange, dispose, postAs, typing, recentChat, clearForNewGame, snapshot, restore };
 }

@@ -90,22 +90,43 @@ const botChatMemory = new Map<string, BotChatMemory>();
 // (crash, redeploy, `tsx watch` reload) does not end the games in progress.
 // ---------------------------------------------------------------------------
 const DATA_FILE = process.env.DATA_FILE || join(process.cwd(), ".data", "rooms.json");
+/** The rooms' chat is saved next to them, so a redeploy keeps the talk too. */
+const CHAT_FILE = join(dirname(DATA_FILE), "room-chat.json");
 let saveTimer: NodeJS.Timeout | null = null;
+/** Set once the chat exists (further down). */
+let chatSnapshot: (() => unknown) | null = null;
+
+function writeJson(file: string, value: unknown) {
+  mkdirSync(dirname(file), { recursive: true });
+  const tmp = `${file}.tmp`;
+  writeFileSync(tmp, JSON.stringify(value));
+  renameSync(tmp, file);
+}
+
+/** Writes the rooms and their chat to disk right now. */
+function saveNow() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = null;
+  try {
+    writeJson(DATA_FILE, [...rooms.values()]);
+    if (chatSnapshot) writeJson(CHAT_FILE, chatSnapshot());
+  } catch (err) {
+    console.error("[persist] save failed", err);
+  }
+}
 
 function saveSoon() {
   if (saveTimer) return;
-  saveTimer = setTimeout(() => {
-    saveTimer = null;
-    try {
-      mkdirSync(dirname(DATA_FILE), { recursive: true });
-      const tmp = `${DATA_FILE}.tmp`;
-      writeFileSync(tmp, JSON.stringify([...rooms.values()]));
-      renameSync(tmp, DATA_FILE);
-    } catch (err) {
-      console.error("[persist] save failed", err);
-    }
-  }, 1000);
+  saveTimer = setTimeout(saveNow, 1000);
 }
+
+// A redeploy stops the old server with SIGTERM: save everything before it goes.
+for (const sig of ["SIGTERM", "SIGINT"] as const)
+  process.once(sig, () => {
+    console.log(`[persist] ${sig}: saving rooms and chat`);
+    saveNow();
+    process.exit(0);
+  });
 
 function loadRooms() {
   try {
@@ -227,7 +248,14 @@ const social = createSocial(io, (code) => rooms.get(code), channel, (room, fromI
   ingestChat(room, intelFor(room), fromId, text);
   ai.onHumanChat(room, fromId, text);
   botsReplyTo(room, fromId, text);
-});
+}, saveSoon);
+chatSnapshot = social.snapshot;
+// Chat from before a restart or redeploy comes back with its room.
+try {
+  if (existsSync(CHAT_FILE)) console.log(`[persist] restored chat for ${social.restore(JSON.parse(readFileSync(CHAT_FILE, "utf8")))} room(s)`);
+} catch (err) {
+  console.error("[persist] chat load failed", err);
+}
 /** Bots that read the chat and answer with Gemini (only when GEMINI_API_KEY is set). */
 const ai = createAiBots({
   apiKey: process.env.GEMINI_API_KEY,
