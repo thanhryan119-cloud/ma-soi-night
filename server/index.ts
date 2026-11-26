@@ -26,7 +26,7 @@ import {
   stepKey,
   timerOp,
 } from "../shared/engine";
-import { botDecide } from "../shared/bots";
+import { botDecide, botTalks } from "../shared/bots";
 import { DEFAULT_BOT_SPEED } from "../shared/roles";
 import { botChatLine, botDefenseLine, botGameOverLine, botReplyLine, newBotChatMemory, type BotChatMemory } from "../shared/botChat";
 import { linesPerDay, personaOf, typingMs } from "../shared/botPersona";
@@ -383,7 +383,7 @@ const botDefenseSaid = new Map<string, number>();
 function scheduleBotDefense(room: Room) {
   const game = room.game!;
   const done = game.defenseDone ?? [];
-  const speakers = room.players.filter((p) => p.isBot && p.alive && !isSilenced(room, p.id) && game.nominees.includes(p.id) && !done.includes(p.id));
+  const speakers = room.players.filter((p) => botTalks(p) && p.alive && !isSilenced(room, p.id) && game.nominees.includes(p.id) && !done.includes(p.id));
   if (!speakers.length) return;
   const bot = speakers[0];
   const onStand = () => room.phase.kind === "defense";
@@ -416,7 +416,7 @@ function scheduleGameOverChat(room: Room) {
   if (!game || ggDone.has(game)) return;
   ggDone.add(game);
   const used = new Set<string>();
-  for (const bot of room.players.filter((p) => p.isBot)) {
+  for (const bot of room.players.filter(botTalks)) {
     if (Math.random() > 0.6) continue;
     const line = botGameOverLine(room, bot, Math.random, used);
     if (!line) continue;
@@ -449,10 +449,10 @@ function scheduleBotChat(room: Room) {
       botChatTimers.delete(room.code);
       if (rooms.get(room.code) !== room) return;
       if (!inDiscussion()) return scheduleBotChat(room);
-      const talkers = room.players.filter((p) => p.isBot && p.alive && !isSilenced(room, p.id) && !typing.has(p.id) && (mem.said[p.id] ?? 0) < linesPerDay(personaOf(room, p.id)));
+      const talkers = room.players.filter((p) => botTalks(p) && p.alive && !isSilenced(room, p.id) && !typing.has(p.id) && (mem.said[p.id] ?? 0) < linesPerDay(personaOf(room, p.id)));
       if (!talkers.length) return;
       // While people are talking fast, bots speak less often, but they still take part.
-      const human = (from: string) => from === "host" || room.players.some((p) => p.id === from && !p.isBot);
+      const human = (from: string) => from === "host" || room.players.some((p) => p.id === from && !botTalks(p));
       const busy = tableBusy(social.recentChat(room.code), human, Date.now());
       if (typing.size < 2 && (!busy || Math.random() < BUSY_TALK_CHANCE)) {
         // Chatty bots are more likely to speak next.
@@ -470,11 +470,11 @@ function scheduleBotChat(room: Room) {
 /** Scripted bots answer the people who talk to them (when the AI bots are off). */
 function botsReplyTo(room: Room, fromId: string, text: string) {
   const from = room.players.find((p) => p.id === fromId);
-  if (!room.game || !from || from.isBot || room.phase.kind !== "discussion") return;
+  if (!room.game || !from || botTalks(from) || room.phase.kind !== "discussion") return;
   if (ai.enabled && room.settings.aiBots !== false) return;
   const typing = typingOf(room);
   const lower = text.toLowerCase();
-  const bots = room.players.filter((p) => p.isBot && p.alive && !isSilenced(room, p.id) && !typing.has(p.id));
+  const bots = room.players.filter((p) => botTalks(p) && p.alive && !isSilenced(room, p.id) && !typing.has(p.id));
   const named = bots.filter((b) => lower.includes(b.name.toLowerCase()));
   const responders = named.length ? named.slice(0, 2) : Math.random() < 0.55 ? [bots[Math.floor(Math.random() * bots.length)]].filter(Boolean) : [];
   const mem = memoryFor(room);
