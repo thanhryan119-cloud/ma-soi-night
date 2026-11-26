@@ -234,14 +234,38 @@ function Folds({ d }: { d: string }) {
  * The werewolf's head (drawn at 0.66 scale, centred on the card).
  * The wolf-side roles reuse it so they read as the same beast:
  * `invert` draws it black with a white edge (the Cursed Wolf on its moon),
+ * `fur` fills the face behind the slabs with a pattern (the White Wolf's coat),
  * `eyes` picks open, slit-pupilled or shut eyes, `torn` rips the left ear.
  */
-function WolfHead({ invert = false, eyes = "open", torn = false }: { invert?: boolean; eyes?: "open" | "slit" | "closed"; torn?: boolean }) {
+function WolfHead({
+  invert = false,
+  fur,
+  eyes = "open",
+  torn = false,
+}: {
+  invert?: boolean;
+  fur?: string;
+  eyes?: "open" | "slit" | "closed";
+  torn?: boolean;
+}) {
   const fg = invert ? INK : PALE;
   const cut = invert ? PALE : INK;
-  const edge = invert ? { stroke: PALE, strokeWidth: 2.4, strokeLinejoin: "round" as const } : {};
+  const edge = invert
+    ? { stroke: PALE, strokeWidth: 2.4, strokeLinejoin: "round" as const }
+    : fur
+      ? { stroke: INK, strokeWidth: 1.6, strokeLinejoin: "round" as const }
+      : {};
   return (
     <g transform="translate(60 98) scale(0.66)">
+      {fur &&
+        [INK, fur].flatMap((fill) => [1, -1].map((sx) => (
+          <path
+            key={`${fill}${sx}`}
+            transform={sx === -1 ? "scale(-1 1)" : undefined}
+            d={`M0.6 -62 L-7 -41 L-16 -50 ${torn && sx === 1 ? "L-30 -80 L-34 -73 L-38 -84 L-42 -76" : "L-40 -98"} L-52 -36 L-62 -20 L-53 -18 L-68 -2 L-55 -2 L-66 16 L-51 12 L-58 30 L-46 42 L-32 50 L-20 60 L-4 64 L0.6 64 Z`}
+            fill={fill}
+          />
+        )))}
       {[1, -1].map((sx) => {
         const rip = torn && sx === 1;
         return (
@@ -613,17 +637,18 @@ const ART: Record<RoleId, (f: Fill) => React.ReactNode> = {
       <Heart cx={60} cy={158} s={4} fill={PALE} />
     </>
   ),
-  // The werewolf's head turned black against a huge bleeding moon: a torn ear,
-  // slit eyes, a pentagram burnt on its brow and a broken chain at its throat.
+  // The werewolf's head in a speckled coat on a huge black moon that bleeds
+  // from its rim: a torn ear, slit eyes, a pentagram burnt on its brow and a
+  // broken chain at its throat.
   cursedWolf: (f) => (
     <>
       <circle cx="60" cy="86" r="50" fill="none" stroke={PALE} strokeWidth="0.9" strokeDasharray="2 2.2" />
-      <circle cx="60" cy="86" r="45" fill={PALE} />
+      <circle cx="60" cy="86" r="45" fill={INK} stroke={PALE} strokeWidth="1.6" />
       {/* the moon bleeds */}
       <path d="M24 112 q3 9 1 17 q-1.6 3 -3.6 0 q-1.2 -8 2.6 -17 Z M31 120 q2 6 0.6 11 q-1.3 2.2 -2.8 0 q-0.8 -5 2.2 -11 Z M96 112 q-3 9 -1 17 q1.6 3 3.6 0 q1.2 -8 -2.6 -17 Z M89 120 q-2 6 -0.6 11 q1.3 2.2 2.8 0 q0.8 -5 -2.2 -11 Z" fill={PALE} />
       <path d="M22.5 134 q1.6 3 0 4.6 q-1.6 -1.6 0 -4.6 Z M97.5 134 q1.6 3 0 4.6 q-1.6 -1.6 0 -4.6 Z" fill={PALE} />
       <Sparks pts={[[18, 30, 2.2], [102, 30, 2.2], [16, 76, 1.6], [104, 76, 1.6]]} />
-      <WolfHead invert eyes="slit" torn />
+      <WolfHead fur={f.dots} eyes="slit" torn />
       {/* pentagram burnt on the brow */}
       <circle cx="60" cy="56" r="7" fill={INK} stroke={PALE} strokeWidth="1.2" />
       <path d="M60 50 L63.5 60.8 L54.3 54.1 L65.7 54.1 L56.5 60.8 Z" fill="none" stroke={PALE} strokeWidth="0.9" strokeLinejoin="round" />
@@ -861,49 +886,105 @@ const ART: Record<RoleId, (f: Fill) => React.ReactNode> = {
       <circle cx="22" cy="126" r="1.2" fill={INK} />
     </>
   ),
-  // The wolf with its own muzzle bound shut, a finger to the lips of the moon.
+  // The werewolf's head with a cloth band tied round its muzzle, a small
+  // padlock on the knot, and crossed-out words drifting on either side.
   silencer: () => (
     <>
       <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
       <Crescent cx={22} cy={36} R={7} face />
-      <Sparks pts={[[98, 30, 2], [40, 26, 1.6], [80, 26, 1.6], [16, 80, 1.6], [104, 80, 1.6]]} />
-      <WolfHead eyes="slit" />
-      {/* the gag */}
-      <path d="M36 118 Q60 110 84 118 L84 126 Q60 118 36 126 Z" fill={PALE} stroke={INK} strokeWidth="1.2" />
-      <path d="M50 114 l4 12 M58 113 l4 12 M66 113 l4 12" stroke={INK} strokeWidth="1" />
-      <Cloud cx={22} cy={152} s={1} />
-      <Cloud cx={98} cy={152} s={1} />
+      <Sparks pts={[[98, 30, 2], [40, 30, 1.6], [80, 30, 1.6], [16, 80, 1.6], [104, 80, 1.6]]} />
+      <WolfHead />
+      {/* the cloth band round the muzzle, stitched, tied off at one side */}
+      <path d="M45 115 Q60 110 75 115 L75 122 Q60 117 45 122 Z" fill={PALE} stroke={INK} strokeWidth="1.2" strokeLinejoin="round" />
+      <path d="M49 117.4 l2 2.4 M54.4 116 l2 2.4 M60 115.4 v3 M65.6 116 l-2 2.4 M71 117.4 l-2 2.4" stroke={INK} strokeWidth="0.9" strokeLinecap="round" />
+      <path d="M75 117 Q83 113 87 117 Q83 120 75 119 Z M75 120 Q82 123 84 129 Q79 126 75 121 Z" fill={PALE} stroke={INK} strokeWidth="1" strokeLinejoin="round" />
+      <path d="M79.6 125 V122 A2.6 2.6 0 0 1 84.8 122 V125" fill="none" stroke={PALE} strokeWidth="1.2" />
+      <rect x="78" y="124.4" width="8.4" height="6.6" rx="1.2" fill={PALE} stroke={INK} strokeWidth="0.9" />
+      <circle cx="82.2" cy="127.2" r="0.9" fill={INK} />
+      {[1, -1].map((sx) => (
+        <g key={sx} transform={sx === -1 ? "translate(120 0) scale(-1 1)" : undefined}>
+          {/* crossed-out speech bubble */}
+          <path d="M12 128 Q12 121 20 121 Q28 121 28 128 Q28 135 20 135 L16 139 L17 134 Q12 132 12 128 Z" fill={PALE} />
+          <path d="M17 125 L23 131 M23 125 L17 131" stroke={INK} strokeWidth="1.6" strokeLinecap="round" />
+        </g>
+      ))}
+      <Cloud cx={22} cy={156} s={1} />
+      <Cloud cx={58} cy={162} s={1.1} />
+      <Cloud cx={98} cy={156} s={1} />
     </>
   ),
-  // A huge wolf head, slit-eyed, with a gnawed bone and two moons behind.
+  // The werewolf's head grown big and cruel: a torn ear, slit eyes, claw
+  // scars over one eye and bloody fangs over the lip, a spiked collar, claw
+  // slashes in the sky and a skull on the crossed bones below two moons.
   bigBadWolf: () => (
     <>
       <Rays cx={60} cy={92} r1={44} r2={64} n={56} w={0.9} />
-      <circle cx="24" cy="36" r="8" fill={PALE} />
-      <circle cx="96" cy="36" r="8" fill={PALE} />
-      <Sparks pts={[[44, 26, 1.8], [76, 26, 1.8], [14, 90, 1.6], [106, 90, 1.6]]} />
-      <At x={60} y={96} s={1.25} ay={98}>
+      <circle cx="15" cy="52" r="5.4" fill={PALE} />
+      <circle cx="105" cy="52" r="5.4" fill={PALE} />
+      <Sparks pts={[[44, 28, 1.8], [76, 28, 1.8]]} />
+      {[1, -1].map((sx) => (
+        <g key={sx} transform={sx === -1 ? "translate(120 0) scale(-1 1)" : undefined}>
+          {/* claw slashes torn across the sky */}
+          <path d="M11 28 L19 44 M16 26 L24 42 M21 25 L28 39" stroke={PALE} strokeWidth="1.6" strokeLinecap="round" />
+          {/* gnawed bones */}
+          <g fill={PALE}>
+            <path d="M16 162 L40 148" stroke={PALE} strokeWidth="4.4" strokeLinecap="round" />
+            <circle cx="13.6" cy="160" r="3.2" />
+            <circle cx="16.6" cy="165" r="3.2" />
+            <circle cx="39" cy="145" r="3.2" />
+            <circle cx="42.6" cy="150" r="3.2" />
+          </g>
+        </g>
+      ))}
+      <At x={60} y={92} s={1.12} ay={98}>
         <WolfHead eyes="slit" torn />
       </At>
-      {/* gnawed bone */}
-      <path d="M30 152 H90" stroke={PALE} strokeWidth="5" strokeLinecap="round" />
-      <circle cx="28" cy="149" r="4" fill={PALE} />
-      <circle cx="28" cy="155" r="4" fill={PALE} />
-      <circle cx="92" cy="149" r="4" fill={PALE} />
-      <circle cx="92" cy="155" r="4" fill={PALE} />
+      {/* claw scars over the left eye */}
+      <path d="M37 69 L47 97 M42 67 L52 93 M47 67 L55 87" stroke={INK} strokeWidth="2" strokeLinecap="round" />
+      {/* fangs over the lip, dripping */}
+      {[1, -1].map((sx) => (
+        <g key={sx} transform={sx === -1 ? "translate(120 0) scale(-1 1)" : undefined}>
+          <path d="M52.2 111.4 L54.6 122 L57 112.4 Z" fill={PALE} stroke={INK} strokeWidth="1" strokeLinejoin="round" />
+          <path d="M54.6 124.4 q1.6 2.4 0 3.8 q-1.6 -1.4 0 -3.8 Z" fill={PALE} stroke={INK} strokeWidth="0.6" />
+        </g>
+      ))}
+      {/* spiked collar */}
+      <path d="M36 137 Q60 145 84 137 L84 143 Q60 151 36 143 Z" fill={PALE} stroke={INK} strokeWidth="1" />
+      {[42, 51, 60, 69, 78].map((x) => {
+        const y = x === 60 ? 147 : x === 51 || x === 69 ? 146.2 : 144.4;
+        return <path key={x} d={`M${x - 2.6} ${y} L${x} ${y + 6} L${x + 2.6} ${y} Z`} fill={PALE} stroke={INK} strokeWidth="0.8" strokeLinejoin="round" />;
+      })}
+      {/* a skull among the bones */}
+      <path d="M53 158 Q53 150 60 150 Q67 150 67 158 L65 160 V164 H55 V160 Z" fill={PALE} stroke={INK} strokeWidth="1" strokeLinejoin="round" />
+      <circle cx="57.2" cy="157" r="1.8" fill={INK} />
+      <circle cx="62.8" cy="157" r="1.8" fill={INK} />
+      <path d="M60 159.6 l-1 1.6 h2 Z M57.6 162 v2 M60 162 v2 M62.4 162 v2" stroke={INK} strokeWidth="0.7" fill={INK} />
     </>
   ),
-  // The black wolf turned white, alone on the snow under a black moon.
+  // The werewolf's head turned black on a huge white moon, alone in the
+  // snow with the pack's tracks and a knife for its own pack stuck beside it.
   whiteWolf: (f) => (
     <>
-      <Rays cx={60} cy={92} r1={40} r2={62} n={48} w={0.8} />
-      <circle cx="60" cy="60" r="30" fill={INK} stroke={PALE} strokeWidth="1.2" />
-      <Sparks pts={[[20, 30, 2.2], [100, 30, 2.2], [16, 70, 1.8], [104, 70, 1.8], [30, 130, 1.6], [90, 130, 1.6]]} />
-      <WolfHead eyes="open" />
-      <path d="M12 154 Q36 146 60 150 Q84 146 108 154 V164 H12 Z" fill={PALE} />
-      <path d="M12 158 H108" stroke={INK} strokeWidth="0.8" strokeDasharray="2 3" />
-      <path d="M12 154 Q36 146 60 150 Q84 146 108 154" fill="none" stroke={INK} strokeWidth="0.6" />
-      <rect x="12" y="160" width="96" height="4" fill={f.hatch} />
+      <circle cx="60" cy="86" r="50" fill="none" stroke={PALE} strokeWidth="0.9" strokeDasharray="2 2.2" />
+      <circle cx="60" cy="86" r="45" fill={PALE} />
+      <Sparks pts={[[18, 30, 2.2], [102, 30, 2.2], [16, 76, 1.6], [104, 76, 1.6], [16, 132, 1.4], [104, 132, 1.4]]} />
+      <WolfHead invert />
+      {/* a knife for its own pack, stuck in the snow */}
+      <path d="M17.6 132 H24.4 L22.4 154 L21 157 L19.6 154 Z" fill={INK} stroke={PALE} strokeWidth="1.2" strokeLinejoin="round" />
+      <path d="M14 131 H28" stroke={PALE} strokeWidth="2.6" strokeLinecap="round" />
+      <path d="M21 129 V121" stroke={PALE} strokeWidth="3.4" strokeLinecap="round" />
+      <circle cx="21" cy="119" r="2.2" fill={PALE} />
+      {/* snow */}
+      <path d="M12 152 Q36 146 60 149 Q84 146 108 152 V166 H12 Z" fill={f.dots} />
+      <path d="M12 152 Q36 146 60 149 Q84 146 108 152" fill="none" stroke={PALE} strokeWidth="1.4" />
+      {[[22, 158], [32, 162], [88, 162], [98, 158]].map(([x, y]) => (
+        <g key={`${x}-${y}`} fill={PALE}>
+          <ellipse cx={x} cy={y} rx="2.2" ry="1.8" />
+          <circle cx={x - 2.4} cy={y - 2.6} r="0.9" />
+          <circle cx={x} cy={y - 3.4} r="0.9" />
+          <circle cx={x + 2.4} cy={y - 2.6} r="0.9" />
+        </g>
+      ))}
     </>
   ),
   // A man with a noose around his neck and a contented smile.
