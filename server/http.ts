@@ -1,4 +1,4 @@
-// Small helpers shared by the HTTP routes (accounts, donations, quests).
+// Small helpers shared by the HTTP routes (accounts, quests).
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 

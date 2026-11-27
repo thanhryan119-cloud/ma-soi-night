@@ -12,6 +12,23 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.8.2",
+    date: "2026-11-27",
+    title: { vi: "Danh sách phòng ngay trang chủ, mời sếp ly cà phê", en: "Rooms on the home page, buy the dev a coffee" },
+    items: {
+      vi: [
+        "Trang chủ hiện luôn danh sách phòng đang mở và đang chơi, bấm Vào là ngồi ngay hoặc Xem nếu ván đã bắt đầu.",
+        "Nút ☕ Mời sếp ly cà phê nằm ngay dưới nút Vào chơi ngay. Bấm vào là có mã QR để quét bằng app ngân hàng, có cả nút tải ảnh QR và chép số tài khoản.",
+        "Mọi vai và mọi món trang trí vẫn miễn phí cho tất cả mọi người.",
+      ],
+      en: [
+        "The home page now lists the open rooms and the games in progress. Tap Join to take a seat, or Watch once a game has started.",
+        "A ☕ Buy the dev a coffee button sits right under Play now. It shows a QR code to scan with your banking app, with buttons to download the QR and copy the account number.",
+        "Every role and every cosmetic is still free for everyone.",
+      ],
+    },
+  },
+  {
     version: "1.8.1",
     date: "2026-11-27",
     title: { vi: "Mọi nhân vật và hiệu ứng giờ miễn phí", en: "Every role and effect is now free" },

@@ -14,18 +14,19 @@ export interface LobbyState {
 /**
  * Keeps this tab in the online lobby while the page is open: announces the
  * player's name and look, and follows who is online and which rooms are open.
+ * `watchOnly` (the home page): follow the rooms without showing up in the lobby.
  */
-export function useLobby(profile: LocalProfile | null) {
+export function useLobby(profile: LocalProfile | null, { watchOnly = false }: { watchOnly?: boolean } = {}) {
   const [state, setState] = useState<LobbyState | null>(null);
   const [connected, setConnected] = useState(true);
   const name = profile?.name.trim() ?? "";
   const avatar = profile?.avatar ?? "";
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile && !watchOnly) return;
     const s = getSocket();
     const enter = async () => {
-      const r = await emitAck<LobbyState>("lobby:enter", { profile: { name, avatar }, authToken: getAuth()?.token });
+      const r = await emitAck<LobbyState>("lobby:enter", watchOnly ? {} : { profile: { name, avatar }, authToken: getAuth()?.token });
       if (r.ok && r.online && r.rooms) setState({ online: r.online, rooms: r.rooms });
     };
     // Typing a name: wait a moment before telling everyone.
@@ -47,7 +48,7 @@ export function useLobby(profile: LocalProfile | null) {
       s.off("disconnect", onDisconnect);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, avatar, !!profile]);
+  }, [name, avatar, !!profile, watchOnly]);
 
   // Leaving the page leaves the lobby (joining a room does it on the server too).
   useEffect(() => () => void getSocket().emit("lobby:leave"), []);
