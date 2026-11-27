@@ -14,6 +14,7 @@ import { AddBots } from "@/components/host/AddBots";
 import { RoleConfig } from "@/components/host/HostLobby";
 import { RulesCard } from "@/components/host/RulesCard";
 import { PasswordCard } from "@/components/PasswordField";
+import { ShareRoom } from "@/components/ShareRoom";
 import { ProfileLink } from "@/components/Profile";
 import { useState } from "react";
 import { Avatar, RoleBadge, StyledName, toast, useErrorToast } from "@/components/ui";
@@ -24,6 +25,8 @@ import { useNow } from "@/lib/useRoom";
 /** Switches the machine always keeps on, plus the projector-only one. */
 const LOCKED: (keyof Settings)[] = [...(Object.keys(MACHINE_FORCED) as (keyof Settings)[]), "bilingualScreen"];
 const sendOwner = (action: OwnerAction) => emitAck("owner:action", action);
+/** The owner's lobby toolbar buttons: small, so the setup below keeps the room. */
+const TOOL = "btn-sm gap-1.5 whitespace-nowrap";
 
 function useOwnerAction() {
   const showError = useErrorToast();
@@ -42,28 +45,23 @@ export function OwnerBar({ state, onSettings }: { state: ClientState; onSettings
   const n = state.players.length;
   const ready = n >= MIN_PLAYERS && totalRoles(state.settings.roleCounts) === n;
 
-  // The owner setting up the lobby: one compact row of buttons, so the setup below gets the room.
+  // The owner setting up the lobby: one slim row of small buttons (share and
+  // settings sit in the header, see OwnerTools), so the bots and roles get the room.
   if (iOwn && kind === "lobby")
     return (
-      <div className="flex shrink-0 flex-col gap-1">
-        <div className="flex gap-1.5">
-          <button className="btn-ghost btn-sm shrink-0 px-3" onClick={onSettings} title={t("owner.settings")}>
-            ⚙️<span className="sr-only">{t("owner.settings")}</span>
-          </button>
-          <button className="btn-primary btn-sm min-w-0 flex-1 truncate" disabled={!ready} onClick={() => act({ type: "start" })}>
-            🌙 {t("host.start")}
-          </button>
-          <button className="btn-gold btn-sm min-w-0 flex-1 truncate" title={t("owner.playNowDesc")} onClick={() => act({ type: "playNow" })}>
-            ▶ {t("owner.playNow")}
-          </button>
-          {state.locked && <span className="self-center" title={t("lobby.locked")}>🔒</span>}
-        </div>
+      <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+        <button className={`btn-primary ${TOOL}`} disabled={!ready} onClick={() => act({ type: "start" })}>
+          🌙 {t("host.start")}
+        </button>
+        <button className={`btn-gold ${TOOL}`} title={t("owner.playNowDesc")} onClick={() => act({ type: "playNow" })}>
+          ▶ {t("owner.playNow")}
+        </button>
         {!ready && (
-          <p className="text-xs text-white/50">
+          <span className="text-xs text-white/50">
             {n < MIN_PLAYERS
               ? t("err.notEnoughPlayers", { min: MIN_PLAYERS })
               : t("host.mismatch", { roles: totalRoles(state.settings.roleCounts), players: n })}
-          </p>
+          </span>
         )}
       </div>
     );
@@ -109,6 +107,20 @@ export function OwnerBar({ state, onSettings }: { state: ClientState; onSettings
           🔁 {t("host.newGame")}
         </button>
       )}
+    </div>
+  );
+}
+
+/** The lobby owner's small header buttons: lock badge, share the invite link, room settings. */
+export function OwnerTools({ state, onSettings }: { state: ClientState; onSettings: () => void }) {
+  const t = useT();
+  return (
+    <div className="flex shrink-0 items-center gap-1.5">
+      {state.locked && <span title={t("lobby.locked")}>🔒</span>}
+      <ShareRoom code={state.code} toolbar />
+      <button className={`btn-ghost ${TOOL}`} onClick={onSettings} title={t("owner.settings")}>
+        ⚙️<span className="sr-only">{t("owner.settings")}</span>
+      </button>
     </div>
   );
 }
@@ -168,30 +180,25 @@ export function LobbyHelp({ state, offset }: { state: ClientState; offset: numbe
     );
   }
 
-  if (!state.autoStartAt && humans < MIN_PLAYERS && local - since >= BOT_HINT_AFTER_MS) {
+  // The owner already has the play-with-bots button in their toolbar.
+  if (!iOwn && !state.autoStartAt && humans < MIN_PLAYERS && local - since >= BOT_HINT_AFTER_MS) {
     cards.push(
       <div key="bots" className="flex flex-col gap-2 rounded-xl border border-white/15 bg-white/5 p-2.5 text-sm">
         <span>
           🤖 {t("lobbyHelp.fewPeople", { n: humans, min: MIN_PLAYERS })}
-          <span className="block text-xs text-white/60">{t(iOwn ? "lobbyHelp.botsOwner" : "lobbyHelp.botsOther")}</span>
+          <span className="block text-xs text-white/60">{t("lobbyHelp.botsOther")}</span>
         </span>
-        {iOwn ? (
-          <button className="btn-gold btn-sm" onClick={() => act({ type: "playNow" })}>
-            ▶ {t("owner.playNow")}
+        {!state.leaderAway && (
+          <button
+            className="btn-ghost btn-sm"
+            onClick={async () => {
+              const res = await emitAck("room:nudge");
+              if (res.ok) toast(t("lobbyHelp.nudgeSent"), "info");
+              else showError(res);
+            }}
+          >
+            📣 {t("lobbyHelp.nudge")}
           </button>
-        ) : (
-          !state.leaderAway && (
-            <button
-              className="btn-ghost btn-sm"
-              onClick={async () => {
-                const res = await emitAck("room:nudge");
-                if (res.ok) toast(t("lobbyHelp.nudgeSent"), "info");
-                else showError(res);
-              }}
-            >
-              📣 {t("lobbyHelp.nudge")}
-            </button>
-          )
         )}
       </div>,
     );
@@ -215,8 +222,8 @@ export function LobbySetup({ state }: { state: ClientState }) {
   const total = totalRoles(counts);
 
   const botsRow = (
-    <section className="card flex flex-wrap items-center gap-2 p-2.5">
-      <h3 className="min-w-0 flex-1 font-bold whitespace-nowrap">🤖 {t("lobbySetup.bots", { count: bots })}</h3>
+    <section className="card flex flex-wrap items-center gap-2 px-3 py-1.5">
+      <h3 className="min-w-0 flex-1 truncate text-sm font-bold">🤖 {t("lobbySetup.bots", { count: bots })}</h3>
       {iOwn && <AddBots players={n} onAdd={(count) => act({ type: "addBots", count })} />}
       {iOwn && (
         <button className="btn-ghost btn-sm" disabled={!bots} onClick={() => act({ type: "removeBots" })}>

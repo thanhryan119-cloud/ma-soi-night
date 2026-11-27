@@ -300,7 +300,7 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
   );
 }
 
-/** Ready-made role maps: pick one to see what it deals for this table, then use it. */
+/** Ready-made role maps: tapping one deals its roles for this table right away and shows what they are. */
 function RoleMaps({
   n,
   counts,
@@ -313,7 +313,15 @@ function RoleMaps({
   const t = useT();
   const [pick, setPick] = useState<PresetId | null>(null);
   const map = pick ? presetRoles(pick, n, ROLE_IDS) : null;
-  const same = map && ROLE_IDS.every((r) => map.counts[r] === counts[r]);
+  const inUse = (c: Record<RoleId, number>) => ROLE_IDS.every((r) => c[r] === counts[r]);
+  // Tap: use the map now. Tap the map in use again: just fold its details away.
+  const choose = (id: PresetId) => {
+    const next = presetRoles(id, n, ROLE_IDS).counts;
+    const same = inUse(next);
+    if (pick === id && same) return setPick(null);
+    setPick(id);
+    if (!same) onUse(next);
+  };
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-white/10 p-2">
       <span className="text-sm font-bold">{t("presets.title", { count: n })}</span>
@@ -324,7 +332,7 @@ function RoleMaps({
             type="button"
             className={`btn-sm ${pick === id ? "btn-gold" : "btn-ghost"}`}
             aria-pressed={pick === id}
-            onClick={() => setPick(pick === id ? null : id)}
+            onClick={() => choose(id)}
           >
             {PRESET_EMOJI[id]} {t(`presets.${id}.name`)}
           </button>
@@ -345,9 +353,6 @@ function RoleMaps({
               🔒 {t("presets.partial")} {map.missing.map((r) => ROLES[r].emoji).join(" ")}
             </p>
           )}
-          <button className="btn-gold btn-sm self-start" disabled={!!same} onClick={() => onUse(map.counts)}>
-            {same ? t("presets.inUse") : t("presets.use")}
-          </button>
         </div>
       )}
     </div>

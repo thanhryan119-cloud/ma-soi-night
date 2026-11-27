@@ -420,8 +420,6 @@
   },
   "presets": {
     "title": "Map gợi ý cho {count} người",
-    "use": "Dùng map này",
-    "inUse": "Đang dùng map này",
     "partial": "Vài vai của map đang khóa nên được thay bằng Sói hoặc Dân thường",
     "basic": { "name": "Cơ bản", "desc": "Chỉ các vai cơ bản. Dễ chơi, hợp với người mới." },
     "advanced": { "name": "Nâng cao", "desc": "Đủ loại vai, thêm sói đặc biệt và phe thứ 3 khi bàn đông người." },
@@ -505,7 +503,6 @@
   "player": {
     "standInYou": "Bạn vắng mặt hơn 1 phút nên bot đang chơi hộ. Chạm vào màn hình để tự chơi tiếp.",
     "standInBadge": "Bot đang chơi hộ",
-    "narrationSoon": "Lời dẫn của quản trò sẽ hiện ở đây khi ván bắt đầu. Bấm 🔇 để nghe đọc thành tiếng.",
     "rename": "Đổi tên",
     "otherRoomTitle": "Bạn đang chơi ở phòng {code}",
     "otherRoomDesc": "Mỗi người chỉ ở một phòng cùng lúc. Rời ván đang chơi sẽ tính là thua, và một bot sẽ chơi tiếp chỗ của bạn.",
@@ -1467,7 +1464,6 @@
     "hostAway": "Quản trò đang vắng mặt",
     "claim": "Nhận làm chủ phòng",
     "fewPeople": "Mới có {n} người, cần ít nhất {min} người",
-    "botsOwner": "Thêm bot cho đủ chỗ để vào trận ngay, không phải chờ",
     "botsOther": "Nhắc chủ phòng thêm bot để cả phòng vào trận ngay",
     "nudge": "Nhắc chủ phòng thêm bot",
     "nudgeSent": "Đã nhắc chủ phòng",
