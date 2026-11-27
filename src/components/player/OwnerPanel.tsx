@@ -15,9 +15,11 @@ import { RoleConfig } from "@/components/host/HostLobby";
 import { RulesCard } from "@/components/host/RulesCard";
 import { PasswordCard } from "@/components/PasswordField";
 import { ProfileLink } from "@/components/Profile";
-import { Avatar, RoleBadge, StyledName, useErrorToast } from "@/components/ui";
+import { useState } from "react";
+import { Avatar, RoleBadge, StyledName, toast, useErrorToast } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { emitAck } from "@/lib/socket";
+import { useNow } from "@/lib/useRoom";
 
 /** Switches the machine always keeps on, plus the projector-only one. */
 const LOCKED: (keyof Settings)[] = [...(Object.keys(MACHINE_FORCED) as (keyof Settings)[]), "bilingualScreen"];
@@ -109,6 +111,94 @@ export function OwnerBar({ state, onSettings }: { state: ClientState; onSettings
       )}
     </div>
   );
+}
+
+/** Few people for this long: suggest bots so the game can start now. */
+const BOT_HINT_AFTER_MS = 45_000;
+
+/**
+ * Lobby helpers everyone sees, so a room never waits on one person: the
+ * countdown before the game starts by itself, taking over from an owner (or
+ * host) who walked away, and adding bots when too few people are here.
+ */
+export function LobbyHelp({ state, offset }: { state: ClientState; offset: number }) {
+  const t = useT();
+  const act = useOwnerAction();
+  const showError = useErrorToast();
+  const [since] = useState(() => Date.now());
+  const local = useNow(500);
+  const now = local + offset;
+  if (state.phase.kind !== "lobby" || !state.me) return null;
+  const iOwn = state.machineHost && state.me.id === state.ownerId;
+  const humans = state.players.filter((p) => !p.isBot && p.connected).length;
+  const cards: React.ReactNode[] = [];
+
+  if (state.autoStartAt) {
+    const secs = Math.max(0, Math.ceil((state.autoStartAt - now) / 1000));
+    cards.push(
+      <div key="auto" className="flex items-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-400/10 p-2.5 text-sm">
+        <span className="min-w-0 flex-1">
+          <b className="text-emerald-200">⏳ {t("lobbyHelp.autoStart", { n: secs })}</b>
+          <span className="block text-xs text-white/60">{t("lobbyHelp.autoStartDesc")}</span>
+        </span>
+        {iOwn && (
+          <button className="btn-ghost btn-sm shrink-0" onClick={() => act({ type: "holdAutoStart" })}>
+            {t("lobbyHelp.hold")}
+          </button>
+        )}
+      </div>,
+    );
+  }
+
+  if (state.leaderAway) {
+    cards.push(
+      iOwn ? (
+        <div key="away" className="flex items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 p-2.5 text-sm">
+          <span className="min-w-0 flex-1">👀 {t("lobbyHelp.youAway")}</span>
+          <button className="btn-gold btn-sm shrink-0">{t("lobbyHelp.imHere")}</button>
+        </div>
+      ) : (
+        <div key="away" className="flex items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 p-2.5 text-sm">
+          <span className="min-w-0 flex-1">💤 {t(state.machineHost ? "lobbyHelp.ownerAway" : "lobbyHelp.hostAway")}</span>
+          <button className="btn-gold btn-sm shrink-0" onClick={async () => showError(await emitAck("room:claim"))}>
+            👑 {t("lobbyHelp.claim")}
+          </button>
+        </div>
+      ),
+    );
+  }
+
+  if (!state.autoStartAt && humans < MIN_PLAYERS && local - since >= BOT_HINT_AFTER_MS) {
+    cards.push(
+      <div key="bots" className="flex flex-col gap-2 rounded-xl border border-white/15 bg-white/5 p-2.5 text-sm">
+        <span>
+          🤖 {t("lobbyHelp.fewPeople", { n: humans, min: MIN_PLAYERS })}
+          <span className="block text-xs text-white/60">{t(iOwn ? "lobbyHelp.botsOwner" : "lobbyHelp.botsOther")}</span>
+        </span>
+        {iOwn ? (
+          <button className="btn-gold btn-sm" onClick={() => act({ type: "playNow" })}>
+            ▶ {t("owner.playNow")}
+          </button>
+        ) : (
+          !state.leaderAway && (
+            <button
+              className="btn-ghost btn-sm"
+              onClick={async () => {
+                const res = await emitAck("room:nudge");
+                if (res.ok) toast(t("lobbyHelp.nudgeSent"), "info");
+                else showError(res);
+              }}
+            >
+              📣 {t("lobbyHelp.nudge")}
+            </button>
+          )
+        )}
+      </div>,
+    );
+  }
+
+  if (!cards.length) return null;
+  return <div className="flex shrink-0 flex-col gap-1.5">{cards}</div>;
 }
 
 /**

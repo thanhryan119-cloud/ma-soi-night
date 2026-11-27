@@ -135,6 +135,11 @@ function LiveStats({ online }: { online: OnlineList }) {
       {rooms && (
         <>
           <span className="rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-gold">🚪 {t("home.liveOpen", { n: rooms.open })}</span>
+          {!!rooms.waiting && (
+            <Link href="/lobby?quick=1" className="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-emerald-200 hover:bg-emerald-400/20">
+              🙋 {t("home.liveWaiting", { n: rooms.waiting })}
+            </Link>
+          )}
           <span className="rounded-full border border-blood/40 bg-blood/10 px-3 py-1 text-red-200">🔥 {t("home.livePlaying", { n: rooms.playing })}</span>
         </>
       )}

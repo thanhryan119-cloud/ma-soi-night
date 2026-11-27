@@ -17,6 +17,7 @@ import {
   voteEligible,
 } from "./engine";
 import { SKIP } from "./rules";
+import { leaderAway } from "./multiplayer";
 import { SPECTATOR_KEY, prophecyView, type ProphecyView } from "./prophecy";
 
 /** How long a rejoin request waits for the host. */
@@ -182,6 +183,10 @@ export interface ClientState {
   /** The machine narrates; `ownerId` (a player) sets the room up. */
   machineHost: boolean;
   ownerId: string | null;
+  /** Lobby: whoever runs the room has been away a while, the others may take it over. */
+  leaderAway: boolean;
+  /** Lobby: the game starts by itself at this time (server clock), or null. */
+  autoStartAt: number | null;
   /** The room needs a password to join. */
   locked: boolean;
   settings: Settings;
@@ -479,6 +484,8 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
     roomLocale: room.locale,
     machineHost: !!room.machineHost,
     ownerId: room.machineHost ? room.ownerId ?? null : null,
+    leaderAway: leaderAway(room),
+    autoStartAt: room.phase.kind === "lobby" ? room.autoStartAt ?? null : null,
     locked: !!room.passwordHash,
     settings: room.settings,
     phase: {

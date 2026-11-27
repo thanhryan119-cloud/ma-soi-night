@@ -229,7 +229,7 @@ export interface OnlineList {
   /** People reading without an account: counted, not listed. */
   guests: number;
   /** Listed rooms still waiting for players, and games being played anywhere. */
-  rooms?: { open: number; playing: number };
+  rooms?: { open: number; playing: number; waiting?: number };
 }
 
 
