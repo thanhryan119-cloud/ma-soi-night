@@ -8,7 +8,7 @@ import type { ClientState, PlayerView } from "@shared/views";
 import { RolesGrid, Timeline, WinnerBanner } from "@/components/GameOver";
 import { useJoinUrl } from "@/components/host/HostLobby";
 import { SceneArt } from "@/components/art/Woodcut";
-import { CardBack, RoleArt } from "@/components/art/Tarot";
+import { CardBack, RevealCard, RoleArt } from "@/components/art/Tarot";
 import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown";
 import { Avatar, LangSwitch, PhaseIn, Spinner, StyledName, TimerDisplay, phaseKeyOf } from "@/components/ui";
 import { translatorFor, useLocale, useT, type T } from "@/lib/i18n";
@@ -274,7 +274,17 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
             <>
               <Bi k="player.diedLastNight" className="text-3xl text-white/70" />
               <div className="flex flex-wrap justify-center gap-6">
-                {state.lastDeaths.map((d) => players.get(d.playerId)).map((p) => p && <PlayerBubble key={p.id} p={p} size="xl" />)}
+                {state.lastDeaths
+                  .map((d) => players.get(d.playerId))
+                  .map(
+                    (p, i) =>
+                      p && (
+                        <div key={p.id} className="flex flex-col items-center gap-3">
+                          <PlayerBubble p={p} size="xl" />
+                          <RevealCard role={p.roleId} delay={0.4 + i * 0.25} className="h-40" />
+                        </div>
+                      ),
+                  )}
               </div>
             </>
           ) : (
@@ -370,6 +380,7 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
           <div className="flex items-center gap-6">
             <SceneArt scene={r.executed ? "execute" : "spare"} className="w-72" />
             {p && <PlayerBubble p={p} size="xl" />}
+            {p?.roleId && (r.executed || r.idiotRevealed) && <RevealCard role={p.roleId} delay={0.4} className="h-48" />}
           </div>
           <Bi
             k={r.idiotRevealed ? "player.idiotRevealed" : r.executed ? "screen.executed" : "screen.spared"}

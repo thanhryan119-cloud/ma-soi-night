@@ -12,6 +12,29 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.9.1",
+    date: "2026-11-27",
+    title: { vi: "Lá bài lật ra ngay trong ván", en: "Role cards turn over during the game" },
+    items: {
+      vi: [
+        "Sáng ra, dưới mỗi người nằm xuống có một lá bài. Lộ vai thì lá lật ngửa, giữ bí mật thì lá úp.",
+        "Người bị treo cổ và Thằng ngốc lộ mặt cũng lật bài trên màn hình chung.",
+        "Sói tiên tri và Đồng cốt thấy luôn lá bài của người vừa soi.",
+        "Tới lượt mình ban đêm, lá bài của bạn hiện cạnh lời nhắc.",
+        "Hết ván, cả bàn lật bài lần lượt từng người.",
+        "Chạm vào tên một vai để xem lá bài kèm lời giải thích.",
+      ],
+      en: [
+        "At dawn each fallen player gets a card, face up when roles are revealed and face down when they stay secret.",
+        "The hanged player and a revealed Idiot turn their card over on the shared screen.",
+        "The Wolf Seer and the Medium see the card of the player they looked at.",
+        "When your night turn comes, your own card shows next to the prompt.",
+        "At the end of the game the whole table turns their cards over one by one.",
+        "Tap a role name to see its card along with what it does.",
+      ],
+    },
+  },
+  {
     version: "1.9.0",
     date: "2026-11-27",
     title: { vi: "Sổ Tiên Tri cho người đã chết", en: "The Ghosts' Prophecy for dead players" },

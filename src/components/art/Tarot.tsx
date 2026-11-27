@@ -1432,6 +1432,28 @@ export function RoleArt({
   );
 }
 
+/**
+ * A small card turned over in play: the role's face when it is known, its
+ * back when it stays secret. `delay` (seconds) staggers a row of reveals.
+ */
+export function RevealCard({
+  role,
+  className = "",
+  delay = 0,
+  tier,
+}: {
+  role?: RoleId | null;
+  className?: string;
+  delay?: number;
+  tier?: CardTier | null;
+}) {
+  return (
+    <span className={`card-reveal ${className}`} style={{ "--flip-delay": `${delay}s` } as React.CSSProperties}>
+      {role ? <RoleArt role={role} tier={tier} className="h-full w-full" /> : <CardBack className="h-full w-full" />}
+    </span>
+  );
+}
+
 /** The back of a card: a sun face in a ring of moon phases. */
 export function CardBack({ className = "" }: { className?: string }) {
   const id = `b${useId().replace(/[^a-zA-Z0-9]/g, "")}`;

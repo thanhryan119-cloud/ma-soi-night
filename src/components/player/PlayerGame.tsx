@@ -22,7 +22,7 @@ import { play } from "@/lib/sfx";
 import { useSocial } from "@/lib/social";
 import { ShareRoom } from "@/components/ShareRoom";
 import { SceneArt } from "@/components/art/Woodcut";
-import { CardBack, RoleCardFull } from "@/components/art/Tarot";
+import { CardBack, RevealCard, RoleArt, RoleCardFull } from "@/components/art/Tarot";
 import { useLocale, useT } from "@/lib/i18n";
 import { emitAck, playerKey, storage } from "@/lib/socket";
 import { loadLocalProfile, saveLocalProfile, useAccount } from "@/lib/account";
@@ -836,11 +836,14 @@ function RoleSheet(ctx: Ctx) {
           </h4>
           <ul className="space-y-1 text-sm">
             {me.seerResults.map((r, i) => (
-              <li key={i} className={r.isWolf ? "text-blood-light" : "text-emerald-300"}>
+              <li key={i} className={`flex items-center gap-2 ${r.isWolf ? "text-blood-light" : "text-emerald-300"}`}>
+                {r.roleId && <RoleArt role={r.roleId} className="h-10 w-auto shrink-0" />}
+                <span>
                 {t("phase.night", { n: r.night })}:{" "}
                 {r.roleId
                   ? t("player.wolfSeerSaw", { name: players.get(r.targetId)?.name ?? "?", role: t(`roles.${r.roleId}.name`) })
                   : t(r.isWolf ? "player.seerIsWolf" : "player.seerNotWolf", { name: players.get(r.targetId)?.name ?? "?" })}
+                </span>
               </li>
             ))}
           </ul>
@@ -1012,12 +1015,15 @@ function PackStrip({ me, players, pack }: { me: MeView; players: Map<string, Pla
 function TurnBanner({ roleId, extra }: { roleId: NonNullable<MeView["roleId"]>; extra?: React.ReactNode }) {
   const t = useT();
   return (
-    <div className="pulse-ring shrink-0 rounded-lg border border-blood/50 bg-blood/10 px-3 py-2 text-center">
-      <div className="flex items-center justify-center gap-2 text-xs font-bold text-blood-light">
-        {t("player.yourTurn")} <RoleBadge roleId={roleId} />
+    <div className="pulse-ring flex shrink-0 items-center gap-3 rounded-lg border border-blood/50 bg-blood/10 px-3 py-2">
+      <RevealCard role={roleId} className="h-16" />
+      <div className="min-w-0 flex-1 text-center">
+        <div className="flex items-center justify-center gap-2 text-xs font-bold text-blood-light">
+          {t("player.yourTurn")} <RoleBadge roleId={roleId} />
+        </div>
+        <p className="mt-1 text-base font-semibold leading-snug">{t(`roles.${roleId}.action`)}</p>
+        {extra}
       </div>
-      <p className="mt-1 text-base font-semibold leading-snug">{t(`roles.${roleId}.action`)}</p>
-      {extra}
     </div>
   );
 }
@@ -1035,6 +1041,7 @@ function NightTurn({ state, me, players }: Ctx) {
     const last = turn.step === "seer" || turn.step === "wolfSeer" || turn.step === "medium" ? me.seerResults[me.seerResults.length - 1] : null;
     return (
       <CloseEyes>
+        {last && last.night === state.phase.night && last.roleId && <RevealCard role={last.roleId} delay={0.15} className="h-36" />}
         {last && last.night === state.phase.night && (
           <div
             className={`rise shrink-0 rounded-lg border p-4 text-lg font-bold ${
@@ -1259,10 +1266,11 @@ function Dawn({ state, me, players }: Ctx) {
         <>
           <p className="text-white/70">{t("player.diedLastNight")}</p>
           <div className="flex flex-wrap justify-center gap-3">
-            {deaths.map((d) => {
+            {deaths.map((d, i) => {
               const p = players.get(d.playerId);
               return p ? (
                 <div key={d.playerId} className="flex flex-col items-center gap-1">
+                  <RevealCard role={p.roleId} delay={0.3 + i * 0.2} className="mb-1 h-24" />
                   <ProfileLink playerId={p.id}>
                     <Avatar p={p} size="lg" />
                   </ProfileLink>
