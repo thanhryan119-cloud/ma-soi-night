@@ -89,7 +89,7 @@ Log và thông báo hệ thống lưu **key i18n + tham số**, client tự dị
 
 Chỉ người chơi đăng nhập Google mới có thống kê (khách và bot thì không). Khi ván chuyển sang `gameOver`, server cộng ván đó vào `stats.json` (cạnh `users.json`) đúng một lần (`game.statsRecorded`): số ván, thắng/thua/hòa, sống sót, theo vai, theo phe, cặp đôi, chuỗi thắng và 10 ván gần nhất. Thắng/thua tính theo vai cuối cùng: thắng cùng phe của mình, cặp đôi thắng khi `winner = lovers`, hòa không tính là thắng. Mọi ván đều được ghi lại, chia hai loại. Ván có từ `MIN_HUMANS_FOR_STATS` = 6 người thật (không kể bot) là **Standard**: cộng vào các con số chính (số ván, tỉ lệ thắng, chuỗi thắng), bảng xếp hạng và nhiệm vụ. Ván ít người hơn là **Casual**: cộng vào `stats.casual` (số ván, thắng/thua/hòa, bỏ ván, theo vai) với tỉ lệ thắng riêng, hiện trong "ván gần đây" với nhãn "Casual". Bản ghi cũ chưa có `casual` thì `casualOf()` dựng lại từ các ván Casual còn trong 10 ván gần nhất. Bộ sưu tập vai (`shared/achievements.ts`) đếm thắng của cả Standard lẫn Casual.
 
-HTTP công khai: `GET /leaderboard` (mọi tài khoản; ai đủ `MIN_RANKED_GAMES` = 5 ván mới được xếp hạng, theo tỉ lệ thắng → số ván thắng → số ván; người chưa đủ xếp bên dưới theo số ván đã chơi), `GET /profiles/:userId`. `GET /me` trả thêm `stats` của chính mình.
+HTTP công khai: `GET /leaderboard` (mọi tài khoản, kèm số ván/thắng theo phe `teams`; client xếp hạng bằng `rankCategory` theo hạng mục Tổng, Phe Sói, Phe Dân, Phe độc lập, cần `minGamesFor` = 5 ván, riêng Phe độc lập 3 ván; theo tỉ lệ thắng → số ván thắng → số ván), `GET /profiles/:userId`. `GET /me` trả thêm `stats` của chính mình.
 
 ### Cửa hàng (`server/shop.ts`, `server/payos.ts`)
 
