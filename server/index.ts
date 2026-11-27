@@ -35,9 +35,7 @@ import { ingestChat, newChatIntel, type ChatIntel } from "../shared/botIntel";
 import { createAiBots } from "./aiBots";
 import { createAccounts } from "./accounts";
 import { roleWins, tierReached, type AchievementNews } from "../shared/achievements";
-import { payOSFromEnv } from "./payos";
 import { createQuests } from "./quests";
-import { createDonations } from "./donate";
 import { createSocial } from "./social";
 import { createGlobalChat } from "./globalChat";
 import { BUSY_TALK_CHANCE, tableBusy } from "../shared/social";
@@ -146,13 +144,6 @@ function loadRooms() {
 loadRooms();
 const accounts = createAccounts(dirname(DATA_FILE), CORS_ORIGIN);
 if (!accounts.enabled) console.log("[accounts] GOOGLE_CLIENT_ID not set: Google sign-in disabled");
-const donations = createDonations({
-  dataDir: dirname(DATA_FILE),
-  corsOrigin: CORS_ORIGIN,
-  payos: payOSFromEnv(),
-  webUrl: process.env.PUBLIC_WEB_URL || undefined,
-});
-if (!donations.enabled) console.log("[donate] PAYOS_CLIENT_ID / PAYOS_API_KEY / PAYOS_CHECKSUM_KEY not set: donations off");
 const quests = createQuests({ dataDir: dirname(DATA_FILE), corsOrigin: CORS_ORIGIN, accounts });
 const games = createGames(dirname(DATA_FILE), CORS_ORIGIN);
 
@@ -177,7 +168,6 @@ function lanAddresses(): string[] {
 
 const httpServer = createServer(async (req, res) => {
   if (await accounts.handle(req, res)) return;
-  if (await donations.handle(req, res)) return;
   if (await quests.handle(req, res)) return;
   if (await games.handle(req, res)) return;
   res.setHeader("Access-Control-Allow-Origin", "*");

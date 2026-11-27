@@ -174,54 +174,6 @@ export async function uploadAvatar(file: File): Promise<ApiResult> {
 }
 
 // ---------------------------------------------------------------------------
-// Donations (payOS)
-// ---------------------------------------------------------------------------
-
-export interface DonateInfo {
-  enabled: boolean;
-  presets: number[];
-  min: number;
-  max: number;
-  recent: { name: string; amount: number; paidAt: number }[];
-}
-
-export type DonationStatus = "pending" | "paid" | "cancelled" | "expired";
-
-export interface DonationView {
-  orderCode: number;
-  amount: number;
-  status: DonationStatus;
-  expiresAt: number;
-  checkoutUrl: string | null;
-  qrCode: string | null;
-  bin: string | null;
-  accountNumber: string | null;
-  accountName: string | null;
-  description: string | null;
-}
-
-/** Are donations on, suggested amounts and the latest supporters. */
-export async function fetchDonateInfo(): Promise<DonateInfo | null> {
-  const r = (await api("/donate")) as ApiResult & Partial<DonateInfo>;
-  if (!r.ok) return null;
-  return { enabled: !!r.enabled, presets: r.presets ?? [], min: r.min ?? 10_000, max: r.max ?? 10_000_000, recent: r.recent ?? [] };
-}
-
-/** Opens a donation: payOS makes a payment link and a VietQR code to show on the page. */
-export async function startDonation(amount: number, name: string, message: string): Promise<ApiResult & { donation?: DonationView }> {
-  return (await api("/donate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ amount, name, message, returnUrl: window.location.origin }),
-  })) as ApiResult & { donation?: DonationView };
-}
-
-/** Did the transfer land? (the server asks payOS while it is pending) */
-export async function checkDonation(orderCode: number): Promise<ApiResult & { donation?: DonationView }> {
-  return (await api(`/donate/${orderCode}`)) as ApiResult & { donation?: DonationView };
-}
-
-// ---------------------------------------------------------------------------
 // Quests and gold
 // ---------------------------------------------------------------------------
 
