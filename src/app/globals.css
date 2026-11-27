@@ -700,6 +700,18 @@ html { scroll-behavior: smooth; }
   z-index: -1;
   pointer-events: none;
 }
+/* A card background behind a list row (CardBackdrop): fills the row, under
+   its content, a little dimmer so names stay easy to read. */
+.profile-card.card-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  border: 0;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
 /* Card scenes: art in public/decor/card-*.svg (scripts/decor-art.mjs), laid
    with cover from the right. The dark fade on the left keeps the name easy to
    read. ::before and ::after carry the moving parts over the same box. */

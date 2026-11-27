@@ -10,7 +10,7 @@ import { useAccount } from "@/lib/account";
 import { useT } from "@/lib/i18n";
 import { fetchLeaderboard } from "@/lib/stats";
 import { ProfileLink } from "./Profile";
-import { Avatar, Spinner, StyledName } from "./ui";
+import { Avatar, CardBackdrop, Spinner, StyledName } from "./ui";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 /** Rows shown at first, and after "show more". Your own row is always added when it falls outside. */
@@ -75,11 +75,11 @@ export function Leaderboard({ className = "mt-10" }: { className?: string }) {
         <p className="py-6 text-center text-white/50">{t("leaderboard.empty")}</p>
       ) : (
         <>
-          <div className="overflow-hidden rounded-xl border border-white/10">
-            <table className="w-full text-sm">
-              <thead className="bg-white/5 text-xs text-white/60">
+          <div className="@container overflow-hidden rounded-xl border border-white/10">
+            <table className="isolate w-full text-sm">
+              <thead className="bg-white/5 text-xs whitespace-nowrap text-white/60">
                 <tr>
-                  <th className="w-10 py-2 pl-3 text-left font-semibold">#</th>
+                  <th className="w-10 min-w-10 py-2 pl-3 text-left font-semibold">#</th>
                   <th className="py-2 text-left font-semibold">{t("leaderboard.player")}</th>
                   <th className="hidden px-2 py-2 text-right font-semibold sm:table-cell">🐺 {t("leaderboard.wolf")}</th>
                   <th className="px-2 py-2 text-right font-semibold">{t("stats.games")}</th>
@@ -109,10 +109,12 @@ export function Leaderboard({ className = "mt-10" }: { className?: string }) {
                       </tr>
                     )}
                     <tr className={`border-t border-white/5 ${r.userId === me ? "bg-gold/10" : ""}`}>
-                      <td className="py-2 pl-3 font-display text-lg font-black text-gold tabular-nums">
+                      <td className="relative min-w-10 py-2 pl-3 font-display text-lg font-black text-gold tabular-nums">
+                        {/* The card background spans the whole row: the table is a size container. */}
+                        <CardBackdrop card={r.style?.card} className="rounded-none" style={{ width: "100cqw", right: "auto" }} />
                         {ranked ? (MEDALS[i] ?? i + 1) : "·"}
                       </td>
-                      <td className="max-w-0 py-2">
+                      <td className="w-full max-w-0 py-2">
                         <ProfileLink userId={r.userId} className="max-w-full gap-2">
                           <Avatar p={look} size="sm" />
                           <StyledName p={look} className="truncate font-semibold" />

@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { CHAT_MAX_LEN, dmPeer, type DirectMessage, type GlobalMessage, type OnlineList, type OnlineUser } from "@shared/social";
 import type { FriendRelation, FriendsState, JoinAsk, RoomInvite } from "@shared/friends";
-import { Avatar, StyledName, toast, useErrorToast } from "@/components/ui";
+import { Avatar, CardBackdrop, StyledName, toast, useErrorToast } from "@/components/ui";
 import { ProfileLink } from "@/components/Profile";
 import { useOtherRoom } from "@/components/CreateRoomGate";
 import { getAuth, loadLocalProfile, useAccount } from "@/lib/account";
@@ -500,7 +500,8 @@ function PersonRow({ chat, u, online, children }: { chat: Global; u: OnlineUser;
   const look = lookOf(u);
   const self = u.id === chat.me?.id;
   return (
-    <li className="flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-white/5">
+    <li className="relative isolate flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-white/5">
+      <CardBackdrop card={u.style?.card} />
       <ProfileLink userId={u.id} className="min-w-0 flex-1 gap-2">
         <span className="relative shrink-0">
           <Avatar p={look} size="sm" />
