@@ -68,7 +68,7 @@
     "feature2Title": "The machine hosts",
     "feature2Desc": "It deals roles, runs the night and counts votes",
     "feature3Title": "{n} roles",
-    "feature3Desc": "Special roles open free on a daily rotation",
+    "feature3Desc": "Every special role is free to play",
     "feature4Title": "Voice and chat",
     "feature4Desc": "Argue it out live, right in the game",
     "finalTitle": "Who's the wolf tonight?",
@@ -422,12 +422,30 @@
     "use": "Use this map",
     "inUse": "Using this map",
     "partial": "Some roles of this map are locked, so plain Werewolves or Villagers take their place",
-    "basic": { "name": "Basic", "desc": "Only the basic roles. Easy to play and good for new players." },
-    "advanced": { "name": "Advanced", "desc": "Every kind of role, with special wolves and solo roles on bigger tables." },
-    "noVillager": { "name": "No villagers", "desc": "Everyone in the village has a power, no plain Villagers. The pack gets a little bigger to keep it fair." },
-    "strongPack": { "name": "Strong pack", "desc": "Special wolves instead of plain ones, plus a Minion. The village has to stick together." },
-    "thirdParty": { "name": "Third party", "desc": "Solo roles that play for themselves. The bigger the table, the more strangers." },
-    "blind": { "name": "Blind village", "desc": "No role that sees anything at night. The village only has talk and votes, and the pack is one wolf smaller." }
+    "basic": {
+      "name": "Basic",
+      "desc": "Only the basic roles. Easy to play and good for new players."
+    },
+    "advanced": {
+      "name": "Advanced",
+      "desc": "Every kind of role, with special wolves and solo roles on bigger tables."
+    },
+    "noVillager": {
+      "name": "No villagers",
+      "desc": "Everyone in the village has a power, no plain Villagers. The pack gets a little bigger to keep it fair."
+    },
+    "strongPack": {
+      "name": "Strong pack",
+      "desc": "Special wolves instead of plain ones, plus a Minion. The village has to stick together."
+    },
+    "thirdParty": {
+      "name": "Third party",
+      "desc": "Solo roles that play for themselves. The bigger the table, the more strangers."
+    },
+    "blind": {
+      "name": "Blind village",
+      "desc": "No role that sees anything at night. The village only has talk and votes, and the pack is one wolf smaller."
+    }
   },
   "settings": {
     "nightOrder": "Night wake-up order",
@@ -1442,7 +1460,7 @@
     "rolesTitle": "The basic roles",
     "tipsTitle": "Tips for your first game",
     "tip1": "Dying isn't the end. The dead get their own chat and can watch the rest of the game.",
-    "tip2": "A few special roles are free every day. Try them in your room.",
+    "tip2": "Every special role is free. Try them in your room, and see how each one plays in the Guide.",
     "tip3": "Winning with a role unlocks its card in your collection.",
     "tip4": "Don't leave mid-game. The village needs your vote."
   },
@@ -1478,5 +1496,327 @@
     "label": "Effects",
     "mute": "Mute sound effects",
     "unmute": "Turn on sound effects"
+  },
+  "guide": {
+    "title": "Guide",
+    "subtitle": "Everything a newcomer needs for a first game, how to play every role, and how to get better every day.",
+    "open": "Guide",
+    "replayIntro": "Replay the quick tour",
+    "nav": {
+      "start": "Get started",
+      "roles": "Roles",
+      "features": "Cool features",
+      "faq": "Q&A"
+    },
+    "path": {
+      "title": "The beginner path",
+      "desc": "Work through these 5 steps in order. Each one gets ticked off once you have done it.",
+      "progress": "{n}/{total} done",
+      "reset": "Start over",
+      "done": "Path complete. You are ready to run the village 🎉",
+      "mark": "Mark as done",
+      "intro": {
+        "title": "Take the quick tour",
+        "desc": "A one minute run through the rules and how your phone works in a game.",
+        "cta": "Open the tour"
+      },
+      "roles": {
+        "title": "Learn the 6 basic roles",
+        "desc": "A first game usually has only Villager, Werewolf, Seer, Bodyguard, Witch and Hunter.",
+        "cta": "See the roles"
+      },
+      "bots": {
+        "title": "Play a practice game",
+        "desc": "Hit Play now. Bots fill the empty seats, and nobody laughs if you play badly.",
+        "cta": "Try it"
+      },
+      "signIn": {
+        "title": "Sign in to keep your progress",
+        "desc": "Keep your game history, win rate and unlock a card for every role.",
+        "cta": "Sign in"
+      },
+      "friends": {
+        "title": "Open a room for your friends",
+        "desc": "Create a room, drop the link in your group chat and use the suggested roles.",
+        "cta": "How to set up a room"
+      }
+    },
+    "roles": {
+      "title": "How to play every role",
+      "desc": "{n} roles by team. Tap a role to see what it does, when it is called and how to play it well.",
+      "search": "Search roles, e.g. Seer",
+      "filter": {
+        "all": "All",
+        "basic": "Basic roles",
+        "village": "Village",
+        "wolves": "Wolves",
+        "solo": "Solo"
+      },
+      "count": "{n} roles",
+      "empty": "No role matches.",
+      "starter": "Learn first",
+      "advanced": "Advanced",
+      "wakeTitle": "At night",
+      "wake": {
+        "every": "Wakes up every night",
+        "firstNight": "Wakes up on the first night only",
+        "otherNight": "Wakes up every other night",
+        "afterDeath": "Wakes up once someone has died",
+        "withPack": "Wakes up with the pack",
+        "never": "Sleeps through the night"
+      },
+      "packToo": "Also bites with the pack",
+      "seerTitle": "The Seer sees",
+      "seerWolf": "A wolf",
+      "seerVillage": "Not a wolf",
+      "actionTitle": "What you do",
+      "tipsTitle": "Tips",
+      "goalTitle": "Goal",
+      "goal": {
+        "village": "Work with the village to find and remove every wolf, and any solo killer.",
+        "wolves": "Keep the pack alive until it is as big as everyone else left.",
+        "solo": "On nobody's side. Win alone, the role's own way."
+      },
+      "prev": "Previous role",
+      "next": "Next role",
+      "close": "Close"
+    },
+    "features": {
+      "title": "Cool features you may have missed",
+      "desc": "There is more here than dealing roles and counting votes. These make every game more fun.",
+      "try": "Try it",
+      "items": {
+        "quick": {
+          "title": "Play now",
+          "desc": "One tap drops you into a room waiting for players. None open? Create one and tap Play now with bots."
+        },
+        "machine": {
+          "title": "Machine host",
+          "desc": "The machine deals roles, calls each role at night and counts votes. Everyone plays, nobody has to narrate."
+        },
+        "bots": {
+          "title": "Bots that chat",
+          "desc": "Bots fill empty seats, vote, get suspicious and even argue in chat like real people."
+        },
+        "voice": {
+          "title": "Voice and chat",
+          "desc": "Turn on your mic to argue live, or just listen and type."
+        },
+        "ghost": {
+          "title": "Chat for the dead",
+          "desc": "Dead players keep watching and talk with the other ghosts. The village reads it only when the game ends."
+        },
+        "watch": {
+          "title": "Watch a running game",
+          "desc": "Watch a game in progress as a spectator, then join the next one."
+        },
+        "screen": {
+          "title": "Projector screen",
+          "desc": "Sitting together? Open the projector screen on a TV or projector so the whole group can watch."
+        },
+        "replay": {
+          "title": "Game replays",
+          "desc": "After a game, step through every night and every vote to see who fooled whom."
+        },
+        "collection": {
+          "title": "Card collection",
+          "desc": "Win with a role to unlock its card, then level it up to bronze, silver, gold and rainbow."
+        },
+        "quests": {
+          "title": "Daily quests",
+          "desc": "Check in and finish small daily quests to earn gold to show off."
+        },
+        "friends": {
+          "title": "Friends and who's online",
+          "desc": "Add friends, see who is online and join the room your friends are in."
+        },
+        "leaderboard": {
+          "title": "Leaderboard",
+          "desc": "Games with {min} or more real people count toward the leaderboard."
+        },
+        "password": {
+          "title": "Password rooms",
+          "desc": "Turn on a password when you create a room so only friends can join."
+        },
+        "style": {
+          "title": "Free profile styles",
+          "desc": "Fonts, name effects, avatar frames, chat decorations and card backgrounds, all free."
+        },
+        "sfx": {
+          "title": "Sound effects",
+          "desc": "Wolves howl at nightfall, bells ring at dawn, the gavel bangs at the vote. Toggle them with the speaker button."
+        },
+        "install": {
+          "title": "Install it like an app",
+          "desc": "Add it to your home screen to open it full screen like a real app."
+        }
+      }
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "desc": "Pick a topic or type what you are wondering about.",
+      "search": "Search questions",
+      "empty": "No answer for that yet. Ask everyone in the server chat.",
+      "count": "{n} questions",
+      "cat": {
+        "all": "All",
+        "start": "Getting started",
+        "game": "In a game",
+        "roles": "Roles",
+        "account": "Account",
+        "tech": "Technical"
+      },
+      "items": {
+        "install": {
+          "q": "Do I need to install an app?",
+          "a": "No. Open the site in your phone's browser and play. If you play often, tap Install app to add it to your home screen and open it full screen."
+        },
+        "free": {
+          "q": "Does it cost anything?",
+          "a": "No. Every role, every style and every feature is free. If you want to help keep the servers running, you can donate with the 💝 button. Donations unlock nothing extra."
+        },
+        "players": {
+          "q": "How many players do I need?",
+          "a": "At least {min} and at most {max} per room. Bots fill missing seats. A game needs {stats} or more real people to count as Standard and reach the leaderboard."
+        },
+        "signIn": {
+          "q": "Do I have to sign in?",
+          "a": "Not to play. The room creator needs a Google account. Sign in to keep your game history, win rate, card collection and quests."
+        },
+        "narrator": {
+          "q": "Machine host or I'll host?",
+          "a": "If everyone plays online from different places, pick Machine host. It runs the game and you play too. If the group sits together and wants a narrator, pick I'll host and open the projector screen on a TV."
+        },
+        "seeRole": {
+          "q": "Where do I see my role?",
+          "a": "Press and hold the card on your phone to see it, let go to hide it. Not sure what to do? Tap 💡 Tips for this role. Keep your screen to yourself."
+        },
+        "noPower": {
+          "q": "My role has nothing to do tonight. Now what?",
+          "a": "Just wait. When a role is called, only its holder sees the buttons. In the day, talk naturally and don't give away that you did nothing last night."
+        },
+        "vote": {
+          "q": "How does voting work?",
+          "a": "During the day the village picks suspects to put on the stand. They get to defend themselves, then the village decides to hang or spare them. A tie means a revote between the tied players. The {mayor} counts twice."
+        },
+        "dead": {
+          "q": "I died. What now?",
+          "a": "You keep watching the game and talk in the Chat for the dead. The living can't read it, the village sees it when the game ends. Don't tip off the living!"
+        },
+        "leave": {
+          "q": "What if I leave or lose connection mid-game?",
+          "a": "Open the room link again and pick your name to take back your seat with the same role. Away for more than 1 minute, a bot plays for you until you tap the screen. Away for more than 5 minutes, you are out and a bot plays your seat to the end."
+        },
+        "win": {
+          "q": "Who wins?",
+          "a": "The village wins when every wolf is gone. The wolves win when they are as many as everyone else left alive. Solo roles have their own win, and while a solo killer is alive no team has won yet."
+        },
+        "firstRole": {
+          "q": "Which role is best for a beginner?",
+          "a": "{villager} is the easiest, you just listen, ask and vote. {bodyguard} and {hunter} are easy too. {seer} and {witch} matter a lot, so keep them secret. Being the {werewolf} the first time is scary, just talk like a villager."
+        },
+        "seer": {
+          "q": "What does the Seer see?",
+          "a": "The Seer learns whether a player is a wolf, not their role. Careful, a few roles fool the Seer, namely {roles}."
+        },
+        "roleSet": {
+          "q": "How do I pick a balanced set of roles?",
+          "a": "In the room settings tap Use suggestion and the machine deals a balanced set for your player count. To tune it yourself, the number of roles must match the number of players. The standard sets are in How to play on the home page."
+        },
+        "solo": {
+          "q": "What is a solo role?",
+          "a": "A solo role is neither village nor wolf. Each wins its own way, for example the {tanner} wants to be hanged and the {arsonist} must be the last one standing."
+        },
+        "collection": {
+          "q": "How do I unlock cards in the collection?",
+          "a": "Win a game with a role to unlock its card. {bronze} win for bronze, {silver} for silver, {gold} for gold and {rainbow} for rainbow. Every win counts."
+        },
+        "quests": {
+          "q": "What are quests and gold for?",
+          "a": "Open 📜 Quests to check in and do small quests every day. Finishing them earns gold. Gold is a score to show off, it doesn't buy anything."
+        },
+        "friends": {
+          "q": "How do I add friends?",
+          "a": "Tap a player to open their profile and tap Add friend. Requests show up in Chat under Friends. Friends in a room show up so you can join or watch."
+        },
+        "voice": {
+          "q": "Voice isn't working?",
+          "a": "Tap Turn on mic to talk or Listen in to just listen, and let the browser use your microphone. Can't hear anything? Tap Tap to hear. Mobile data sometimes blocks voice, chat still works fine."
+        },
+        "inApp": {
+          "q": "The link breaks inside Zalo, Messenger or Facebook?",
+          "a": "Browsers inside those apps often block the mic and drop the connection. Tap ⋯ or ⋮ in the corner and pick Open in browser, or copy the link into Chrome or Safari."
+        },
+        "language": {
+          "q": "How do I change the language?",
+          "a": "Tap the language button in the top left corner. Each player picks their own language, so Vietnamese and English speakers can share a room."
+        },
+        "screen": {
+          "q": "Is there a shared screen for a TV?",
+          "a": "Yes. In a room you host, tap Open projector screen and open that page on a TV, laptop or projector for everyone to see."
+        }
+      }
+    }
+  },
+  "onboard": {
+    "skip": "Skip",
+    "next": "Next",
+    "prev": "Back",
+    "stepOf": "Step {n}/{total}",
+    "ask": {
+      "title": "Welcome to Ma Sói Online 🐺",
+      "desc": "Let us show you around so your first game goes smoothly. Do you already know how to play Werewolf?",
+      "new": {
+        "title": "I'm brand new",
+        "desc": "Explain the rules from scratch, about a minute"
+      },
+      "know": {
+        "title": "I know the rules",
+        "desc": "Just show me how this site works"
+      },
+      "skip": {
+        "title": "Let me play right away",
+        "desc": "Reopen the guide any time with the 📖 button"
+      }
+    },
+    "rules": {
+      "title": "The rules in 30 seconds",
+      "desc": "Everyone gets a secret role. The village must find the wolves, while the pack quietly eats a villager every night."
+    },
+    "roles": {
+      "title": "The first roles to learn",
+      "desc": "A first game usually has only these 6. Tap a role to see what it does.",
+      "all": "How to play all {n} roles"
+    },
+    "phone": {
+      "title": "Your phone is your card",
+      "tip1": "Press and hold the card to see your role, let go to hide it. Keep your screen to yourself.",
+      "tip2": "Tap 💡 Tips for this role when you are not sure what to do.",
+      "tip3": "When your role is called at night, your phone shows the buttons to pick someone.",
+      "tip4": "In the day, talk in chat or turn on your mic, then vote right on your phone."
+    },
+    "manners": {
+      "title": "Play nice so everyone has fun",
+      "tip1": "Don't reveal your role outside the game or share screenshots.",
+      "tip2": "Once dead, talk in the Chat for the dead and don't tip off the living.",
+      "tip3": "Don't leave mid-game. After 1 minute away a bot plays for you, after 5 minutes you are out.",
+      "tip4": "Suspect away, but keep the arguing fun and friendly."
+    },
+    "start": {
+      "title": "How do you want to play?",
+      "desc": "Pick a way to start. The full guide is always behind the 📖 button on the home page.",
+      "quick": {
+        "title": "Play now",
+        "desc": "We find a room waiting for players"
+      },
+      "lobby": {
+        "title": "Open the lobby",
+        "desc": "Browse open rooms or create one for your group"
+      },
+      "guide": {
+        "title": "Read the full guide",
+        "desc": "Every role, cool features and Q&A"
+      }
+    }
   }
 }

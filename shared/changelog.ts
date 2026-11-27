@@ -12,6 +12,27 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.9.0",
+    date: "2026-11-27",
+    title: { vi: "Trang Hướng dẫn cho người mới", en: "A Guide for newcomers" },
+    items: {
+      vi: [
+        "Lần đầu vào web sẽ có hướng dẫn nhanh. Chọn mới hoàn toàn hay đã biết luật, rồi đi qua luật chơi, 6 vai cơ bản, cách dùng điện thoại trong ván và cách chơi đẹp.",
+        "Trang Hướng dẫn mới (nút 📖) với lộ trình 5 bước cho người mới, tự đánh dấu bước đã xong.",
+        "Cách chơi từng nhân vật, lọc theo phe, tìm theo tên. Mỗi vai có mục tiêu, khi nào thức dậy, Tiên tri soi ra gì và mẹo chơi.",
+        "Mục Chức năng hay và Hỏi đáp chia theo chủ đề, gõ để tìm câu hỏi.",
+        "Trong ván, mục 💡 Gợi ý có thêm link mở hướng dẫn đầy đủ cho vai của bạn.",
+      ],
+      en: [
+        "Your first visit now opens a quick tour. Pick brand new or already know the rules, then go through the rules, the 6 basic roles, how your phone works in a game and table manners.",
+        "New Guide page (the 📖 button) with a 5 step beginner path that ticks off what you have done.",
+        "How to play every role, filtered by team and searchable. Each role shows its goal, when it wakes up, what the Seer sees and tips.",
+        "Cool features and a Q&A grouped by topic, with search.",
+        "In a game, the 💡 Tips panel links to the full guide for your role.",
+      ],
+    },
+  },
+  {
     version: "1.8.1",
     date: "2026-11-27",
     title: { vi: "Mọi nhân vật và hiệu ứng giờ miễn phí", en: "Every role and effect is now free" },

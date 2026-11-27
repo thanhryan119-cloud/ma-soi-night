@@ -73,6 +73,7 @@ App gồm 2 phần deploy riêng:
   - `DATA_FILE` *(tùy chọn)* — đường dẫn file snapshot, ví dụ `/data/rooms.json` nếu gắn Volume, để phòng sống sót qua lần redeploy.
   - `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY` *(tùy chọn)* — bật trang ủng hộ (xem mục Ủng hộ bên dưới).
   - `PUBLIC_WEB_URL` *(tùy chọn)* — domain web để payOS đưa người ủng hộ quay về `/donate`, ví dụ `https://ma-soi.vercel.app`.
+  - `DISCORD_WEBHOOK_URL` *(tùy chọn)* — webhook của kênh Discord (Cài đặt máy chủ → Tích hợp → Webhook). Mỗi phòng mới tạo sẽ được gửi lên kênh đó, kèm link vào phòng nếu có `PUBLIC_WEB_URL`.
   - `ADMIN_EMAILS` *(tùy chọn)* — email Google có quyền quản trị (kiểm duyệt chat máy chủ), nhiều email cách nhau bằng dấu phẩy.
 - Kiểm tra: `https://<server>/health` trả `{"ok":true}`.
 
