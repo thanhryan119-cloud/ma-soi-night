@@ -8,7 +8,6 @@ describe("play now", () => {
     const room = createRoom("TEST", "vi");
     const res = addPlayer(room, { name: "Chu", avatar: "🐺", locale: "vi" });
     makeMachineRoom(room, res.player!.id);
-    room.lockedRoles = ["tanner"];
     expect(ownerAction(room, res.player!.id, { type: "playNow" }).ok).toBe(true);
     expect(room.players).toHaveLength(PLAY_NOW_PLAYERS);
     expect(room.players.filter((p) => p.isBot)).toHaveLength(PLAY_NOW_PLAYERS - 1);

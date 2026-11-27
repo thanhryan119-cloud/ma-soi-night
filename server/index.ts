@@ -35,10 +35,9 @@ import { ingestChat, newChatIntel, type ChatIntel } from "../shared/botIntel";
 import { createAiBots } from "./aiBots";
 import { createAccounts } from "./accounts";
 import { roleWins, tierReached, type AchievementNews } from "../shared/achievements";
-import { lockedRolesAt } from "../shared/freeRoles";
 import { payOSFromEnv } from "./payos";
 import { createQuests } from "./quests";
-import { createShop } from "./shop";
+import { createDonations } from "./donate";
 import { createSocial } from "./social";
 import { createGlobalChat } from "./globalChat";
 import { BUSY_TALK_CHANCE, tableBusy } from "../shared/social";
@@ -147,14 +146,13 @@ function loadRooms() {
 loadRooms();
 const accounts = createAccounts(dirname(DATA_FILE), CORS_ORIGIN);
 if (!accounts.enabled) console.log("[accounts] GOOGLE_CLIENT_ID not set: Google sign-in disabled");
-const shop = createShop({
+const donations = createDonations({
   dataDir: dirname(DATA_FILE),
   corsOrigin: CORS_ORIGIN,
   payos: payOSFromEnv(),
-  accounts,
   webUrl: process.env.PUBLIC_WEB_URL || undefined,
 });
-if (!shop.enabled) console.log("[shop] PAYOS_CLIENT_ID / PAYOS_API_KEY / PAYOS_CHECKSUM_KEY not set: shop disabled");
+if (!donations.enabled) console.log("[donate] PAYOS_CLIENT_ID / PAYOS_API_KEY / PAYOS_CHECKSUM_KEY not set: donations off");
 const quests = createQuests({ dataDir: dirname(DATA_FILE), corsOrigin: CORS_ORIGIN, accounts });
 const games = createGames(dirname(DATA_FILE), CORS_ORIGIN);
 
@@ -179,7 +177,7 @@ function lanAddresses(): string[] {
 
 const httpServer = createServer(async (req, res) => {
   if (await accounts.handle(req, res)) return;
-  if (await shop.handle(req, res)) return;
+  if (await donations.handle(req, res)) return;
   if (await quests.handle(req, res)) return;
   if (await games.handle(req, res)) return;
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -324,13 +322,7 @@ console.log(`[ai] chat bots ${ai.enabled ? "ON (Gemini)" : "off — set GEMINI_A
 const normCode = (code: unknown) => String(code ?? "").trim().toUpperCase().slice(0, 8);
 const safeAck = (ack: unknown): Ack => (typeof ack === "function" ? (ack as Ack) : () => {});
 
-/** Special roles the room cannot use today: not in the free rotation, and its creator has no card for them. */
-function refreshLocks(room: Room) {
-  room.lockedRoles = lockedRolesAt(Date.now(), room.creatorId ? accounts.ownedFor(room.creatorId) : []);
-}
-
 function broadcast(room: Room) {
-  refreshLocks(room);
   // Who is playing where (the Online list and the home page counts).
   globalChat.presenceChanged();
   const ids = io.sockets.adapter.rooms.get(channel(room.code));
@@ -931,12 +923,6 @@ function grantSeat(room: Room, playerId: string): string {
   return p.token;
 }
 
-/** Shop items bought since the player joined count right away. */
-function refreshOwned(room: Room, playerId: string) {
-  const p = getPlayer(room, playerId);
-  if (p?.userId) p.owned = accounts.ownedFor(p.userId);
-}
-
 /**
  * The room an account made and still runs: a human-host room it created, or a
  * machine-host room where it is still the owner (an owner who left or handed
@@ -1151,7 +1137,6 @@ io.on("connection", (raw) => {
         locale,
         avatarUrl: user?.avatarUrl ?? null,
         style: profile.style,
-        owned: accounts.ownedFor(user?.id),
         userId: user?.id ?? null,
         deviceId: p.deviceId,
       });
@@ -1174,8 +1159,6 @@ io.on("connection", (raw) => {
       const room = code ? rooms.get(code) : undefined;
       if (!room || kind !== "player" || !playerId) return { ok: false, error: "err.notInRoom" };
       const action = p as unknown as OwnerAction;
-      refreshOwned(room, playerId);
-      refreshLocks(room);
       const res = ownerAction(room, playerId, action);
       if (res.ok && action.type === "kick") kickSockets(room, action.playerId);
       if (res.ok && action.type === "newGame") social.clearForNewGame(room.code);
@@ -1282,7 +1265,6 @@ io.on("connection", (raw) => {
       const mine = seatHere(room, user?.id, p.deviceId);
       if (mine) {
         const token = grantSeat(room, mine.id);
-        refreshOwned(room, mine.id);
         mine.connected = true;
         attach(socket, room, "player", mine.id);
         back(room, mine);
@@ -1299,7 +1281,6 @@ io.on("connection", (raw) => {
         locale: p.locale === "en" ? "en" : "vi",
         avatarUrl: user?.avatarUrl ?? null,
         style: p.style,
-        owned: accounts.ownedFor(user?.id),
         userId: user?.id ?? null,
       });
       if (!res.ok || !res.player) return { ok: false, error: res.error, params: res.params };
@@ -1320,7 +1301,6 @@ io.on("connection", (raw) => {
       if (player && room.abandoned?.includes(player.id)) return { ok: false, error: "err.abandoned" };
       if (!player || player.token !== p.token) return { ok: false, error: "err.sessionExpired" };
       dropRejoinRequest(room, player.id);
-      refreshOwned(room, player.id);
       attach(socket, room, "player", player.id);
       player.connected = true;
       back(room, player); // coming back takes the seat back from the stand-in bot
@@ -1414,9 +1394,7 @@ io.on("connection", (raw) => {
       const { code, kind, playerId } = socket.data;
       const room = code ? rooms.get(code) : undefined;
       if (!room || kind !== "player" || !playerId) return { ok: false, error: "err.notInRoom" };
-      // Items bought since joining count right away.
       const me = getPlayer(room, playerId);
-      if (me?.userId && (p as { type?: string })?.type === "updateProfile") me.owned = accounts.ownedFor(me.userId);
       // "I'm back": the stand-in bot gives the seat back.
       if ((p as { type?: string })?.type === "back") {
         if (!me?.standIn) return { ok: true };
@@ -1474,7 +1452,6 @@ io.on("connection", (raw) => {
       if (!room || kind !== "host") return { ok: false, error: "err.notHost" };
       const action = p as unknown as HostAction;
       const kickedId = action.type === "kick" ? action.playerId : null;
-      refreshLocks(room);
       const res = hostAction(room, action);
       if (res.ok && kickedId) kickSockets(room, kickedId);
       if (res.ok && action.type === "newGame") social.clearForNewGame(room.code);

@@ -1,6 +1,6 @@
 "use client";
 
-// Profile (or sign-in), shop and collection from inside a room. They open in a
+// Profile (or sign-in), donations and collection from inside a room. They open in a
 // window over the game, so the player never leaves the room; the window closes
 // by itself when the game starts, or when the game moves on while you are alive.
 
@@ -10,8 +10,8 @@ import { GoogleButton } from "@/components/ProfileEditor";
 import { GOOGLE_CLIENT_ID, useAccount } from "@/lib/account";
 import { useT } from "@/lib/i18n";
 
-type Win = "profile" | "shop" | "collection" | "signIn";
-const PAGES: Record<Exclude<Win, "signIn">, string> = { profile: "/profile", shop: "/shop", collection: "/collection" };
+type Win = "profile" | "donate" | "collection" | "signIn";
+const PAGES: Record<Exclude<Win, "signIn">, string> = { profile: "/profile", donate: "/donate", collection: "/collection" };
 
 export function RoomWindows({ state }: { state: ClientState }) {
   const t = useT();
@@ -47,7 +47,7 @@ export function RoomWindows({ state }: { state: ClientState }) {
   );
   const titles: Record<Win, string> = {
     profile: t("profile.open"),
-    shop: t("shop.open"),
+    donate: t("donate.open"),
     collection: t("collection.open"),
     signIn: t("room.signIn"),
   };
@@ -55,7 +55,7 @@ export function RoomWindows({ state }: { state: ClientState }) {
   return (
     <>
       {account ? button("profile", "👤", titles.profile) : button("signIn", "🔐", titles.signIn, "border-gold/50 text-gold")}
-      {button("shop", "🛒", titles.shop, "border-gold/50 text-gold")}
+      {button("donate", "💝", titles.donate, "border-gold/50 text-gold")}
       {button("collection", "🃏", titles.collection)}
       {open && (
         <div

@@ -2,7 +2,6 @@
 //
 //   GET   /quests          my gold, today's quests and the gold quests
 //   POST  /quests/claim    { id } -> collect a finished quest's gold
-//   POST  /quests/buy      { itemId } -> buy a shop item with gold (GOLD_PRICES only)
 //
 // Progress comes from finished games (recordGame, called before the career
 // stats are updated). State lives in quests.json, one record per account.
@@ -10,8 +9,7 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { join } from "node:path";
-import { isShopItem, type ItemId } from "../shared/cosmetics";
-import { GOLD_PRICES, applyGame, claimQuest, goldPrice, newQuestState, questsView, rollDay, type QuestState } from "../shared/quests";
+import { applyGame, claimQuest, newQuestState, questsView, rollDay, type QuestState } from "../shared/quests";
 import type { GameResult, UserStats } from "../shared/stats";
 import { bearer, cors, json, readJson } from "./http";
 
@@ -26,9 +24,6 @@ export interface QuestDeps<U extends QuestUser> {
     userForToken: (token: unknown) => U | null;
     hasUser: (userId: string) => boolean;
     statsOf: (userId: string) => UserStats | null;
-    ownedFor: (userId: string) => string[];
-    grantItem: (userId: string, item: ItemId) => unknown;
-    publicUser: (u: U) => unknown;
   };
   now?: () => number;
 }
@@ -77,7 +72,7 @@ export function createQuests<U extends QuestUser>(deps: QuestDeps<U>) {
     if (!user) return json(res, 401, { ok: false, error: "err.sessionExpired" }), true;
 
     try {
-      if (path === "/quests" && req.method === "GET") return json(res, 200, { ok: true, quests: view(user.id), prices: GOLD_PRICES }), true;
+      if (path === "/quests" && req.method === "GET") return json(res, 200, { ok: true, quests: view(user.id) }), true;
 
       if (path === "/quests/claim" && req.method === "POST") {
         const body = await readJson<{ id?: unknown }>(req, 1024);
@@ -87,21 +82,6 @@ export function createQuests<U extends QuestUser>(deps: QuestDeps<U>) {
         return json(res, 200, { ok: true, gold: r.gold, quests: view(user.id) }), true;
       }
 
-      if (path === "/quests/buy" && req.method === "POST") {
-        const body = await readJson<{ itemId?: unknown }>(req, 1024);
-        const itemId = body?.itemId;
-        if (!isShopItem(itemId)) return json(res, 400, { ok: false, error: "err.itemUnknown" }), true;
-        const price = goldPrice(itemId);
-        if (price === null) return json(res, 400, { ok: false, error: "err.notForGold" }), true;
-        if (deps.accounts.ownedFor(user.id).includes(itemId)) return json(res, 409, { ok: false, error: "err.itemOwned" }), true;
-        const s = stateFor(user.id);
-        if (s.gold < price) return json(res, 400, { ok: false, error: "err.notEnoughGold", quests: view(user.id) }), true;
-        s.gold -= price;
-        save();
-        deps.accounts.grantItem(user.id, itemId);
-        console.log(`[quests] ${user.id} bought ${itemId} for ${price} gold`);
-        return json(res, 200, { ok: true, quests: view(user.id), user: deps.accounts.publicUser(user) }), true;
-      }
 
       return json(res, 404, { ok: false }), true;
     } catch (err) {

@@ -6,6 +6,7 @@
 
 import Link from "next/link";
 import { CollectionLink } from "@/components/RoleCollection";
+import { DonateLink } from "@/components/Donate";
 import { QuestsLink } from "@/components/Quests";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -114,9 +115,7 @@ function Lobby({ chat }: { chat: Chat }) {
         <Mailbox />
         <QuestsLink />
         <CollectionLink />
-        <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold" title={t("shop.open")}>
-          🛒 <span className="sr-only">{t("shop.open")}</span>
-        </Link>
+        <DonateLink />
         <Link href="/profile" className="btn-ghost btn-sm" title={t("profile.open")}>
           👤 <span className="sr-only">{t("profile.open")}</span>
         </Link>
