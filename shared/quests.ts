@@ -16,7 +16,7 @@ import type { RecentGame, UserStats } from "./stats";
 // ---------------------------------------------------------------- quests --
 
 /** What a game can move forward. */
-export type Counter = "play" | "win" | "wolfWin" | "villageWin" | "survive" | "power" | "streak" | "roles";
+export type Counter = "play" | "win" | "wolfWin" | "villageWin" | "survive" | "power" | "streak" | "roles" | "prophecy" | "teller";
 
 export interface QuestDef {
   id: string;
@@ -39,6 +39,7 @@ export const DAILY_POOL: readonly QuestDef[] = [
   { id: "villageWin1", counter: "villageWin", goal: 1, reward: 140 },
   { id: "survive2", counter: "survive", goal: 2, reward: 130 },
   { id: "power2", counter: "power", goal: 2, reward: 120 },
+  { id: "prophecy3", counter: "prophecy", goal: 3, reward: 120 },
 ];
 
 /** One-time gold quests (milestones). `streak` is the best run of wins in a row; `roles` the different roles played. */
@@ -47,6 +48,8 @@ export const GOLD_QUESTS: readonly QuestDef[] = [
   { id: "firstWin", counter: "win", goal: 1, reward: 300 },
   { id: "games10", counter: "play", goal: 10, reward: 400 },
   { id: "firstWolfWin", counter: "wolfWin", goal: 1, reward: 300 },
+  { id: "firstTeller", counter: "teller", goal: 1, reward: 300 },
+  { id: "tellers5", counter: "teller", goal: 5, reward: 800 },
   { id: "streak3", counter: "streak", goal: 3, reward: 600 },
   { id: "roles6", counter: "roles", goal: 6, reward: 600 },
   { id: "survive20", counter: "survive", goal: 20, reward: 800 },
@@ -75,7 +78,7 @@ export interface QuestState {
   claimed: string[];
 }
 
-const emptyTally = (): Tally => ({ play: 0, win: 0, wolfWin: 0, villageWin: 0, survive: 0, power: 0 });
+const emptyTally = (): Tally => ({ play: 0, win: 0, wolfWin: 0, villageWin: 0, survive: 0, power: 0, prophecy: 0, teller: 0 });
 
 /**
  * A new player's quests. Existing players start with what their career stats
@@ -94,6 +97,8 @@ export function newQuestState(t: number, stats?: UserStats | null): QuestState {
     life.streak = stats.streak;
     life.bestStreak = stats.bestStreak;
     life.roles = roles;
+    life.prophecy = stats.prophecy?.hits ?? 0;
+    life.teller = stats.prophecy?.tellers ?? 0;
   }
   return { gold: 0, earned: 0, day: dayKey(t), today: emptyTally(), claimedToday: [], life, claimed: [] };
 }
@@ -153,10 +158,12 @@ export function applyGame(s: QuestState, g: RecentGame, t: number): QuestState {
   }
   const won = g.outcome === "win";
   const wolf = teamOf(g.role) === "wolves";
-  const bump = (c: keyof Tally, yes = true) => {
-    if (!yes) return;
-    s.today[c]++;
-    s.life[c]++;
+  // Records made before a counter existed have no number for it yet.
+  const bump = (c: keyof Tally, yes: boolean | number = true) => {
+    const by = typeof yes === "number" ? yes : yes ? 1 : 0;
+    if (!by) return;
+    s.today[c] = (s.today[c] ?? 0) + by;
+    s.life[c] = (s.life[c] ?? 0) + by;
   };
   bump("play");
   bump("win", won);
@@ -164,6 +171,8 @@ export function applyGame(s: QuestState, g: RecentGame, t: number): QuestState {
   bump("villageWin", won && teamOf(g.role) === "village");
   bump("survive", g.survived);
   bump("power", hasPower(g.role));
+  bump("prophecy", g.prophecy?.hits ?? 0);
+  bump("teller", !!g.prophecy?.teller);
   s.life.streak = won ? s.life.streak + 1 : g.outcome === "draw" ? s.life.streak : 0;
   s.life.bestStreak = Math.max(s.life.bestStreak, s.life.streak);
   if (!s.life.roles.includes(g.role)) s.life.roles.push(g.role);
@@ -171,8 +180,8 @@ export function applyGame(s: QuestState, g: RecentGame, t: number): QuestState {
 }
 
 const lifeProgress = (s: QuestState, c: Counter) =>
-  c === "streak" ? s.life.bestStreak : c === "roles" ? s.life.roles.length : s.life[c];
-const todayProgress = (s: QuestState, c: Counter) => (c === "streak" || c === "roles" ? 0 : s.today[c]);
+  c === "streak" ? s.life.bestStreak : c === "roles" ? s.life.roles.length : (s.life[c] ?? 0);
+const todayProgress = (s: QuestState, c: Counter) => (c === "streak" || c === "roles" ? 0 : (s.today[c] ?? 0));
 
 export interface QuestView {
   id: string;

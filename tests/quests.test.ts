@@ -56,10 +56,10 @@ describe("daily quests", () => {
     expect(claimQuest("u1", s, first.id, T0)).toEqual({ ok: false, error: "err.questNotDone" });
     expect(claimQuest("u1", s, "bonus", T0)).toEqual({ ok: false, error: "err.questNotDone" });
 
-    // Enough games to finish any daily quest: 5 wins as a wolf, 5 as a seer.
+    // Enough games to finish any daily quest: 5 wins as a wolf, 5 as a seer, and right guesses as a ghost.
     for (let i = 0; i < 5; i++) {
       applyGame(s, game("werewolf", "win"), T0);
-      applyGame(s, game("seer", "win"), T0);
+      applyGame(s, { ...game("seer", "win"), prophecy: { score: 100, hits: 1, rounds: 1, teller: false } }, T0);
     }
     let total = CHECKIN_GOLD;
     for (const q of dailyQuests("u1", s.day)) {

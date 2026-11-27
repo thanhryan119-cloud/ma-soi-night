@@ -17,6 +17,7 @@ import { getAuth, loadLocalProfile } from "@/lib/account";
 import { SocialPanel } from "@/components/SocialPanel";
 import { useRoomState } from "@/lib/useRoom";
 import { SfxToggle } from "@/components/Sfx";
+import { ProphecyEnd, ProphecyPanel, prophecyPending } from "@/components/Prophecy";
 
 /** Renders a message in the screen language, plus the other language when bilingual. */
 function Bi({
@@ -137,6 +138,8 @@ export default function ScreenApp({ code, spectate = false }: { code: string; sp
 function Spectating({ state, code, screen }: { state: ClientState | null; code: string; screen: React.ReactNode }) {
   const t = useT();
   const [chatOpen, setChatOpen] = useState(false);
+  const [prophecyOpen, setProphecyOpen] = useState(false);
+  const canBet = !!state?.prophecy?.canBet;
   return (
     <div className="lg:flex lg:h-dvh">
       <div className="relative min-w-0 lg:flex-1 lg:overflow-y-auto">
@@ -161,6 +164,31 @@ function Spectating({ state, code, screen }: { state: ClientState | null; code: 
           >
             💬 {t("watch.chat")}
           </button>
+          {canBet && (
+            <button
+              type="button"
+              className="btn fixed bottom-4 left-4 z-40 rounded-full bg-violet-500 px-4 py-3 font-bold text-white shadow-xl hover:bg-violet-400"
+              onClick={() => setProphecyOpen(true)}
+            >
+              🔮 {t("prophecy.button")}
+              {prophecyPending(state) && <span className="absolute -top-1 -right-1 h-3 w-3 animate-pulse rounded-full bg-gold ring-2 ring-night-950" />}
+            </button>
+          )}
+          {prophecyOpen && canBet && (
+            <div className="fixed inset-0 z-50 flex justify-center bg-night-950/95 p-2">
+              <div className="flex w-full max-w-lg flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <h2 className="min-w-0 flex-1 truncate font-display text-lg font-black text-moon">🔮 {t("prophecy.title")}</h2>
+                  <button className="btn-ghost btn-sm" onClick={() => setProphecyOpen(false)} aria-label={t("common.close")}>
+                    ✕
+                  </button>
+                </div>
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <ProphecyPanel state={state} />
+                </div>
+              </div>
+            </div>
+          )}
           {chatOpen && (
             <div className="fixed inset-0 z-50 flex flex-col gap-2 bg-night-950/95 p-2 lg:hidden">
               <div className="flex items-center gap-2">
@@ -368,6 +396,7 @@ function ScreenBody({ state, offset, t }: { state: ClientState; offset: number; 
         <div className="grid w-full max-w-7xl gap-10 text-left lg:grid-cols-[1.4fr_1fr]">
           <div className="flex flex-col gap-8">
             <WinnerBanner state={state} t={t} big />
+            <ProphecyEnd state={state} big />
             <RolesGrid state={state} />
           </div>
           {state.log && (
