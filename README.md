@@ -87,7 +87,7 @@ npm run deploy:server
 
 ## Ủng hộ
 
-Không bán gì cả: mọi vai và mọi món trang trí đều miễn phí cho mọi người, kể cả khách. Nút ☕ "Mời sếp ly cà phê" (dưới nút Vào chơi ngay ở trang chủ, ở thanh trên cùng và trong phòng chơi) mở thẻ có mã VietQR Techcombank của chủ game (`public/donate-qr.png`), số tài khoản để chép và nút tải ảnh QR. Người chơi tự quét bằng app ngân hàng, game không xử lý thanh toán nào. Đổi tài khoản thì thay ảnh và các hằng số ở đầu `src/components/Donate.tsx`.
+Không bán gì cả: mọi vai và mọi món trang trí đều miễn phí cho mọi người, kể cả khách. Nút ☕ "Mời sốp ly cà phê" (dưới nút Vào chơi ngay ở trang chủ, ở thanh trên cùng và trong phòng chơi) mở thẻ có mã VietQR Techcombank của chủ game (`public/donate-qr.png`), số tài khoản để chép và nút tải ảnh QR. Người chơi tự quét bằng app ngân hàng, game không xử lý thanh toán nào. Đổi tài khoản thì thay ảnh và các hằng số ở đầu `src/components/Donate.tsx`.
 
 ## Cấu trúc thư mục
 

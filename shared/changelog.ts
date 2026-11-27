@@ -14,11 +14,11 @@ export const CHANGELOG: Release[] = [
   {
     version: "1.8.2",
     date: "2026-11-27",
-    title: { vi: "Danh sách phòng ngay trang chủ, mời sếp ly cà phê", en: "Rooms on the home page, buy the dev a coffee" },
+    title: { vi: "Danh sách phòng ngay trang chủ, mời sốp ly cà phê", en: "Rooms on the home page, buy the dev a coffee" },
     items: {
       vi: [
         "Trang chủ hiện luôn danh sách phòng đang mở và đang chơi, bấm Vào là ngồi ngay hoặc Xem nếu ván đã bắt đầu.",
-        "Nút ☕ Mời sếp ly cà phê nằm ngay dưới nút Vào chơi ngay. Bấm vào là có mã QR để quét bằng app ngân hàng, có cả nút tải ảnh QR và chép số tài khoản.",
+        "Nút ☕ Mời sốp ly cà phê nằm ngay dưới nút Vào chơi ngay. Bấm vào là có mã QR để quét bằng app ngân hàng, có cả nút tải ảnh QR và chép số tài khoản.",
         "Mọi vai và mọi món trang trí vẫn miễn phí cho tất cả mọi người.",
       ],
       en: [
