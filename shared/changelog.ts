@@ -12,6 +12,29 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.1",
+    date: "2026-11-27",
+    title: { vi: "Nick nhanh và rủ nhau chơi từ sảnh chờ", en: "Quick accounts and getting a game going from the lobby" },
+    items: {
+      vi: [
+        "Danh sách người đang online nằm ngay dưới danh sách phòng trong sảnh chờ.",
+        "Cạnh mỗi người có nút Kết bạn, Xin vào phòng họ đang chờ, Xem ván họ đang chơi và Rủ chơi để tạo phòng mới rồi mời họ vào.",
+        "Khi có người xin vào, bạn thấy một thẻ để cho họ vào phòng chỉ bằng một chạm.",
+        "Nút Đăng xuất ở cuối trang hồ sơ của bạn.",
+        "Vào sảnh hay Chơi ngay cần đăng nhập trước, bằng Google hoặc nick nhanh với tên đăng nhập và mật khẩu.",
+        "Nick nhanh liên kết được với Google ở trang hồ sơ, hoặc tự liên kết khi bấm nút đăng nhập Google lúc đang dùng nick đó.",
+      ],
+      en: [
+        "Who is online now sits right under the room list in the lobby.",
+        "Each person has buttons to add them as a friend, ask to join the room they wait in, watch their game, or make a new room and invite them.",
+        "When someone asks to join, a card lets you bring them in with one tap.",
+        "A Sign out button at the bottom of your profile page.",
+        "The lobby and Play now ask you to sign in first, with Google or a quick account made from a login name and a password.",
+        "A quick account can link Google from the profile page, or links it by itself when you press a Google sign-in button while using it.",
+      ],
+    },
+  },
+  {
     version: "1.7.0",
     date: "2026-11-27",
     title: { vi: "Bạn bè, bộ sưu tập vai và lá bài sói mới", en: "Friends, a role collection and new wolf cards" },

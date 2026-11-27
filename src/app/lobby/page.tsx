@@ -1,35 +1,53 @@
 "use client";
 
-// Online lobby. The open rooms are the main part; beside them (below on a
-// phone) your name, making a room (options folded away) and who is online.
+// Online lobby. The open rooms are the main part, with who is online right
+// under them (add a friend, ask to join their room, or make a room and invite
+// them). Beside them (below on a phone) your name and making a room.
 
 import Link from "next/link";
 import { CollectionLink } from "@/components/RoleCollection";
 import { QuestsLink } from "@/components/Quests";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import type { LobbyPerson, RoomSummary } from "@shared/multiplayer";
+import { useEffect, useRef, useState } from "react";
+import type { RoomSummary } from "@shared/multiplayer";
 import { PASSWORD_MAX } from "@shared/multiplayer";
+import type { OnlineUser } from "@shared/social";
 import type { Locale } from "@shared/types";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { ProfileLink } from "@/components/Profile";
 import { PasswordField } from "@/components/PasswordField";
-import { Avatar, ConnectionDot, LangSwitch, Spinner, toast, useErrorToast } from "@/components/ui";
+import { Avatar, ConnectionDot, LangSwitch, Spinner, StyledName, toast, useErrorToast } from "@/components/ui";
 import { shuffle } from "@shared/engine";
 import { getAuth, loadLocalProfile, saveLocalProfile, type LocalProfile } from "@/lib/account";
 import { ExistingRoomDialog, SignInToCreate, useEnterRoom, useNeedsSignInToCreate, useOtherRoom } from "@/components/CreateRoomGate";
 import { useLocale, useT } from "@/lib/i18n";
 import { useLobby } from "@/lib/lobby";
-import { GlobalChat } from "@/components/GlobalChat";
+import { GlobalChat, useGlobalChat } from "@/components/GlobalChat";
+import { SignInGate } from "@/components/AuthPanel";
+import { WhereChip, sortByPresence } from "@/components/Friends";
 import { Mailbox } from "@/components/Mailbox";
 import { rememberRoomPassword } from "@/components/ShareRoom";
 import { emitAck, getDeviceId, playerKey, storage, watchPasswordKey } from "@/lib/socket";
 
+type Chat = ReturnType<typeof useGlobalChat>;
+type Creator = ReturnType<typeof useCreateRoom>;
+
 export default function LobbyPage() {
+  // One server-chat connection for the corner panel and the online list here.
+  // Play now and the lobby need an account (Google or a quick one) first.
+  return (
+    <SignInGate>
+      <GlobalChat render={(chat) => <Lobby chat={chat} />} />
+    </SignInGate>
+  );
+}
+
+function Lobby({ chat }: { chat: Chat }) {
   const t = useT();
   const [profile, setProfile] = useState<LocalProfile | null>(null);
   useEffect(() => setProfile(loadLocalProfile()), []);
   const { state, connected } = useLobby(profile);
+  const creator = useCreateRoom(profile, chat);
   const router = useRouter();
   const { locale } = useLocale();
   const showError = useErrorToast();
@@ -92,7 +110,6 @@ export default function LobbyPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col gap-4 px-4 pt-16 pb-10">
       <LangSwitch />
-      <GlobalChat />
       <div className="fixed top-3 right-3 z-50 flex gap-2">
         <Mailbox />
         <QuestsLink />
@@ -112,67 +129,125 @@ export default function LobbyPage() {
         {!connected && <ConnectionDot connected={false} />}
       </div>
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <RoomsCard rooms={state?.rooms ?? null} profile={profile} onQuick={() => quickJoin()} quickBusy={quickBusy} />
+        <div className="flex flex-col gap-4">
+          <RoomsCard rooms={state?.rooms ?? null} profile={profile} onQuick={() => quickJoin()} quickBusy={quickBusy} />
+          <OnlineCard chat={chat} creator={creator} />
+        </div>
         {quickOther.dialog}
         <div className="flex flex-col gap-4">
           <section className="card flex flex-col gap-3 p-4">
             <h2 className="text-lg font-bold">{t("lobby.you")}</h2>
             {profile ? <ProfileEditor value={profile} onChange={change} compact /> : <Spinner />}
           </section>
-          <CreateRoomCard profile={profile} />
-          <OnlineCard online={state?.online ?? null} />
+          <CreateRoomCard profile={profile} creator={creator} />
         </div>
       </div>
+      {creator.dialogs}
     </main>
   );
 }
 
-function OnlineCard({ online }: { online: LobbyPerson[] | null }) {
+const lookOf = (u: OnlineUser) => ({ name: u.name, avatar: "👤", avatarUrl: u.avatarUrl, style: u.style ?? undefined, alive: true });
+const actBtn = "btn-ghost btn-sm shrink-0 gap-1 px-2.5 text-xs";
+
+/** Everyone signed in who is online, busiest first, each with what you can do with them. */
+function OnlineCard({ chat, creator }: { chat: Chat; creator: Creator }) {
   const t = useT();
+  const { online, me } = chat;
+  const needsSignIn = useNeedsSignInToCreate();
+  const rows = sortByPresence(online.users.map((u) => ({ ...u, online: true })));
   return (
-    <section className="card flex flex-col gap-3 p-4">
+    <section className="card flex flex-col gap-3 p-4 sm:p-5">
       <div className="flex items-center gap-2">
         <span className="h-2 w-2 rounded-full bg-emerald-400" />
         <h2 className="text-lg font-bold">{t("lobby.online")}</h2>
-        {online && <span className="chip">{online.length}</span>}
+        <span className="chip">{online.users.length + online.guests}</span>
       </div>
-      {!online ? (
-        <Spinner />
-      ) : !online.length ? (
-        <p className="text-sm text-white/50">{t("lobby.nobodyOnline")}</p>
+      {!rows.length ? (
+        <p className="text-sm text-white/50">{t("globalChat.onlineEmpty")}</p>
       ) : (
-        <ul className="flex max-h-60 flex-col gap-1.5 overflow-y-auto">
-          {online.map((p) => {
-            const look = { ...p, alive: true };
-            const row = (
-              <>
-                <Avatar p={look} size="sm" />
-                <span className="truncate font-semibold">{p.name}</span>
-              </>
-            );
-            return (
-              <li key={p.id} className="flex items-center gap-2 rounded-lg bg-white/5 px-2 py-1.5">
-                {p.userId ? (
-                  <ProfileLink userId={p.userId} className="min-w-0 gap-2">
-                    {row}
-                  </ProfileLink>
-                ) : (
-                  <span className="flex min-w-0 items-center gap-2">{row}</span>
-                )}
-                {p.userId && <span className="ml-auto shrink-0 text-xs text-gold">✓</span>}
-              </li>
-            );
-          })}
+        <ul className="flex max-h-[28rem] flex-col gap-1.5 overflow-y-auto">
+          {rows.map((u) => (
+            <li key={u.id} className="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg bg-white/5 px-2 py-1.5">
+              <ProfileLink userId={u.id} className="min-w-0 flex-1 basis-44 gap-2">
+                <Avatar p={lookOf(u)} size="sm" />
+                <span className="flex min-w-0 flex-col items-start">
+                  <span className="flex max-w-full items-center gap-1">
+                    <StyledName p={lookOf(u)} className="truncate font-semibold" />
+                    {u.id === me?.id && <span className="shrink-0 text-[10px] text-white/40">({t("globalChat.you")})</span>}
+                  </span>
+                  <WhereChip where={u.where} link={false} />
+                </span>
+              </ProfileLink>
+              {me && u.id !== me.id && <PersonButtons chat={chat} creator={creator} u={u} />}
+            </li>
+          ))}
         </ul>
       )}
+      {online.guests > 0 && <p className="text-center text-xs text-white/40">{t("people.guests", { n: online.guests })}</p>}
+      {!me && (needsSignIn ? <SignInToCreate /> : <p className="text-xs text-white/50">{t("lobby.signInForPeople")}</p>)}
     </section>
   );
 }
 
-function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
+/** Add as a friend, ask into their room (or watch their game), make a room and invite them. */
+function PersonButtons({ chat, creator, u }: { chat: Chat; creator: Creator; u: OnlineUser }) {
   const t = useT();
+  const rel = chat.relation(u.id);
+  const where = u.where;
+  return (
+    <span className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1">
+      {rel === "none" ? (
+        <button type="button" className={`${actBtn} border-gold/40 text-gold`} onClick={() => chat.addFriend(u)}>
+          🤝 {t("friends.add")}
+        </button>
+      ) : rel === "received" ? (
+        <button type="button" className="btn-primary btn-sm shrink-0 px-2.5 text-xs" onClick={() => chat.answerFriend(u, true)}>
+          ✔️ {t("friends.accept")}
+        </button>
+      ) : rel === "sent" ? (
+        <span className="px-1 text-[11px] text-white/40" title={t("friends.pending")}>
+          ⏳ {t("friends.outgoing")}
+        </span>
+      ) : (
+        <span className="px-1 text-xs text-emerald-300" title={t("friends.isFriend")}>
+          👥 {t("friends.isFriend")}
+        </span>
+      )}
+      {where?.status === "waiting" && (
+        <button
+          type="button"
+          className={`${actBtn} border-emerald-300/40 text-emerald-200`}
+          onClick={() => chat.askToJoin(u)}
+          title={t("lobby.askJoinHint", { name: u.name })}
+        >
+          🙋 {t("lobby.askJoin")}
+        </button>
+      )}
+      {where?.status === "playing" && where.code && (
+        <Link href={`/watch/${where.code}`} className={`${actBtn} border-sky-300/40 text-sky-200`} title={t("lobby.watchHint")}>
+          👁️ {t("lobby.watch")}
+        </Link>
+      )}
+      <button
+        type="button"
+        className="btn-gold btn-sm shrink-0 gap-1 px-2.5 text-xs"
+        disabled={creator.busy}
+        onClick={() => creator.createFor(u)}
+        title={t("lobby.playWithHint", { name: u.name })}
+      >
+        ➕ {t("lobby.playWith")}
+      </button>
+    </span>
+  );
+}
+
+/**
+ * Making a room: the options, and the call itself. `createFor` makes one and
+ * invites someone from the online list into it before going in.
+ */
+function useCreateRoom(profile: LocalProfile | null, chat: Chat) {
   const enter = useEnterRoom();
-  const needsSignIn = useNeedsSignInToCreate();
   /** The room this account already runs, when it tried to make another. */
   const [existing, setExisting] = useState<string | null>(null);
   const other = useOtherRoom();
@@ -183,8 +258,8 @@ function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
   const [withPassword, setWithPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  /** Host, language and password stay folded away: the defaults suit most rooms. */
-  const [showOptions, setShowOptions] = useState(false);
+  /** Who to invite once the room is made (kept across the "you already have a room" question). */
+  const invitee = useRef<OnlineUser | null>(null);
   useEffect(() => setRoomLocale(locale), [locale]);
 
   async function create(replace = false, leaveOther = false) {
@@ -205,15 +280,66 @@ function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
       deviceId: getDeviceId(),
       leaveOther,
     });
-    setBusy(false);
-    if (other.caught(res, () => create(replace, true))) return;
-    if (!res.ok && res.error === "err.oneRoom" && res.params?.code) return setExisting(String(res.params.code));
-    if (!showError(res) || !res.code) return;
+    if (other.caught(res, () => create(replace, true))) return setBusy(false);
+    if (!res.ok && res.error === "err.oneRoom" && res.params?.code) {
+      setBusy(false);
+      return setExisting(String(res.params.code));
+    }
+    if (!showError(res) || !res.code) return setBusy(false);
     setExisting(null);
     // So the room's invite link can carry the password (friends then only type a name).
     if (withPassword) rememberRoomPassword(res.code, password);
+    const who = invitee.current;
+    invitee.current = null;
+    if (who) await chat.invite(who, res.code);
+    setBusy(false);
     enter(res);
   }
+
+  return {
+    machine,
+    setMachine,
+    roomLocale,
+    setRoomLocale,
+    withPassword,
+    setWithPassword,
+    password,
+    setPassword,
+    busy,
+    /** The Create button: a room for nobody in particular. */
+    create: () => {
+      invitee.current = null;
+      void create();
+    },
+    createFor: (u: OnlineUser) => {
+      invitee.current = u;
+      void create();
+    },
+    dialogs: (
+      <>
+        {existing && (
+          <ExistingRoomDialog
+            code={existing}
+            busy={busy}
+            onReplace={() => create(true)}
+            onClose={() => {
+              invitee.current = null;
+              setExisting(null);
+            }}
+          />
+        )}
+        {other.dialog}
+      </>
+    ),
+  };
+}
+
+function CreateRoomCard({ profile, creator }: { profile: LocalProfile | null; creator: Creator }) {
+  const t = useT();
+  const needsSignIn = useNeedsSignInToCreate();
+  const { machine, setMachine, roomLocale, setRoomLocale, withPassword, setWithPassword, password, setPassword, busy } = creator;
+  /** Host, language and password stay folded away: the defaults suit most rooms. */
+  const [showOptions, setShowOptions] = useState(false);
 
   const choice = (on: boolean, icon: string, title: string, desc: string, pick: () => void) => (
     <button
@@ -281,12 +407,10 @@ function CreateRoomCard({ profile }: { profile: LocalProfile | null }) {
       {needsSignIn ? (
         <SignInToCreate />
       ) : (
-        <button className="btn-primary py-3 text-lg" onClick={() => create()} disabled={busy || !profile}>
+        <button className="btn-primary py-3 text-lg" onClick={creator.create} disabled={busy || !profile}>
           {busy ? t("home.creating") : t("home.createButton")}
         </button>
       )}
-      {existing && <ExistingRoomDialog code={existing} busy={busy} onReplace={() => create(true)} onClose={() => setExisting(null)} />}
-      {other.dialog}
     </section>
   );
 }
