@@ -39,6 +39,7 @@
     "ios3": "Bấm \"Thêm\" là xong"
   },
   "home": {
+    "liveWaiting": "{n} người đang chờ ván, vào ngay",
     "signInToCreate": "Đăng nhập Google để tạo phòng. Người vào chơi thì không cần đăng nhập.",
     "oneRoomTitle": "Bạn đang có một phòng",
     "oneRoomDesc": "Phòng {code} của bạn vẫn đang mở. Mỗi tài khoản chỉ mở được một phòng cùng lúc. Nếu tạo phòng mới, phòng cũ sẽ chuyển cho người chơi tiếp theo làm trưởng phòng và máy dẫn tiếp.",
@@ -774,6 +775,8 @@
     }
   },
   "err": {
+    "leaderHere": "Chủ phòng vẫn đang ở đây",
+    "nudgeWait": "Vừa nhắc rồi, đợi một chút nhé",
     "prophecyPlaced": "Bạn đã chọn phe thắng rồi.",
     "prophecyClosed": "Vòng này đã khoá.",
     "spectatorReadOnly": "Người xem chỉ chat được với người đã chết.",
@@ -1208,6 +1211,7 @@
     "showLess": "Thu gọn"
   },
   "lobby": {
+    "quickMade": "Chưa có phòng nào đang chờ nên đã mở phòng mới cho bạn. Ai bấm Chơi ngay sẽ vào cùng phòng này",
     "watch": "Xem",
     "watchHint": "Xem ván đang chơi và chat với người đã chết",
     "title": "Sảnh chờ online",
@@ -1452,6 +1456,22 @@
     "label": "Hiệu ứng",
     "mute": "Tắt hiệu ứng âm thanh",
     "unmute": "Bật hiệu ứng âm thanh"
+  },
+  "lobbyHelp": {
+    "autoStart": "Ván tự bắt đầu sau {n} giây",
+    "autoStartDesc": "Đủ người rồi. Thiếu ghế thì bot sẽ vào cho đủ",
+    "hold": "Đợi thêm",
+    "youAway": "Mọi người đang đợi bạn bắt đầu",
+    "imHere": "Tôi đây",
+    "ownerAway": "Chủ phòng đang vắng mặt",
+    "hostAway": "Quản trò đang vắng mặt",
+    "claim": "Nhận làm chủ phòng",
+    "fewPeople": "Mới có {n} người, cần ít nhất {min} người",
+    "botsOwner": "Thêm bot cho đủ chỗ để vào trận ngay, không phải chờ",
+    "botsOther": "Nhắc chủ phòng thêm bot để cả phòng vào trận ngay",
+    "nudge": "Nhắc chủ phòng thêm bot",
+    "nudgeSent": "Đã nhắc chủ phòng",
+    "nudged": "{name} muốn thêm bot để vào trận ngay"
   },
   "prophecy": {
     "title": "Sổ Tiên Tri",

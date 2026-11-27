@@ -115,6 +115,10 @@ export interface Player {
   standIn?: boolean;
   alive: boolean;
   joinedAt: number;
+  /** Last time the person touched the page (server side, ms epoch): the room owner's lobby idle check. */
+  activeAt?: number;
+  /** When the person went offline (server side), or absent while online. */
+  offlineSince?: number;
 }
 
 export interface NominationSettings {
@@ -359,6 +363,14 @@ export interface Room {
   abandoned?: string[];
   /** "salt:sha256" of the room password, or null/absent when the room is open. Never sent to clients. */
   passwordHash?: string | null;
+  /** Human-host rooms: the last time the host view was touched (lobby idle check). */
+  hostActiveAt?: number;
+  /** Lobby: the game starts by itself at this time (enough people are here), or null. */
+  autoStartAt?: number | null;
+  /** How many people were online when the countdown last changed (someone new gives it more time). */
+  autoStartCount?: number;
+  /** The owner stopped the countdown with this many people online: it waits for someone new. */
+  autoStartHold?: number | null;
 }
 
 /** What the room owner of a machine-host room may do (a safe subset of the host's actions). */
@@ -374,6 +386,8 @@ export type OwnerAction =
   | { type: "start" }
   /** Fill with bots, deal the suggested basic roles and start, in one go. */
   | { type: "playNow" }
+  /** Stop the lobby countdown (it comes back when someone new joins). */
+  | { type: "holdAutoStart" }
   | { type: "newGame" };
 
 // ---------------------------------------------------------------------------

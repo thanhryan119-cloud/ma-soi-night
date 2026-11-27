@@ -73,7 +73,7 @@ export function createGlobalChat(
      */
     roomAccounts?: () => { sid: string; userId: string }[];
     /** Listed rooms waiting for players, and games being played. */
-    roomCounts?: () => { open: number; playing: number };
+    roomCounts?: () => { open: number; playing: number; waiting: number };
   },
 ) {
   const file = join(opts.dataDir, "global-chat.json");

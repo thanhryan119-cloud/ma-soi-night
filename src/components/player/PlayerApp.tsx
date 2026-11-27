@@ -9,7 +9,7 @@ import { getAuth, loadLocalProfile, saveLocalProfile, type LocalProfile } from "
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { emitAck, getSocket, playerKey, storage, type PlayerSession, getDeviceId } from "@/lib/socket";
 import { useOtherRoom } from "@/components/CreateRoomGate";
-import { useRoomState } from "@/lib/useRoom";
+import { useLobbyPresence, useRoomState } from "@/lib/useRoom";
 import { PlayerGame } from "./PlayerGame";
 import { passwordFromLink, rememberRoomPassword } from "@/components/ShareRoom";
 import { PASSWORD_MAX } from "@shared/multiplayer";
@@ -68,6 +68,8 @@ export default function PlayerApp({ code }: { code: string }) {
   }, [code, suggestLocale]);
 
   const { state, connected, offset } = useRoomState(enter);
+  // In the lobby: tell the server I'm still here (the owner's idle check); the owner gets "add bots" nudges.
+  useLobbyPresence(status === "in" && state?.phase.kind === "lobby", (name) => toast(t("lobbyHelp.nudged", { name }), "info"));
 
   useEffect(() => {
     const s = getSocket();

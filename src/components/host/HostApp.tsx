@@ -10,7 +10,7 @@ import { hasVoiceFor, speak, stopSpeaking, useTtsSupported, whenVoicesReady } fr
 import { scriptLines } from "./common";
 import { emitAck, getSocket, hostKey, storage } from "@/lib/socket";
 import { getAuth, useAccount } from "@/lib/account";
-import { useRoomState } from "@/lib/useRoom";
+import { useLobbyPresence, useRoomState } from "@/lib/useRoom";
 import { HostGame } from "./HostGame";
 import { HostLobby } from "./HostLobby";
 
@@ -44,6 +44,8 @@ export default function HostApp({ code }: { code: string }) {
   }, [code]);
 
   const { state, connected, offset } = useRoomState(resume);
+  // In the lobby: tell the server the host is still here; players may ask for bots.
+  useLobbyPresence(state?.phase.kind === "lobby", (name) => toast(t("lobbyHelp.nudged", { name }), "info"));
 
   // Signing in or out on this page reconnects with the new account right away.
   const authToken = useAccount()?.token;

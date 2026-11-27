@@ -32,7 +32,7 @@ import { useMyStats } from "@/lib/stats";
 import { roleTier } from "@shared/achievements";
 import { useRouter } from "next/navigation";
 import { speak, stopSpeaking, ttsHeard, unlockTts, useTtsSupported } from "@/lib/tts";
-import { LobbySetup, OwnerBar, OwnerSettings } from "./OwnerPanel";
+import { LobbyHelp, LobbySetup, OwnerBar, OwnerSettings } from "./OwnerPanel";
 
 type Props = { state: ClientState; offset: number; connected: boolean };
 type Ctx = { state: ClientState; me: MeView; players: Map<string, PlayerView> };
@@ -547,7 +547,7 @@ function PhaseBody({
   const ctx = { state, me, players };
   switch (state.phase.kind) {
     case "lobby":
-      return <Lobby state={state} onOwnerSettings={onOwnerSettings} />;
+      return <Lobby state={state} offset={offset} onOwnerSettings={onOwnerSettings} />;
     case "roleReveal":
       return (
         <Fill>
@@ -648,7 +648,7 @@ function Defense({ state, me, players, offset }: Ctx & { offset: number }) {
 // Lobby & role card
 // ---------------------------------------------------------------------------
 
-function Lobby({ state, onOwnerSettings }: { state: ClientState; onOwnerSettings: () => void }) {
+function Lobby({ state, offset, onOwnerSettings }: { state: ClientState; offset: number; onOwnerSettings: () => void }) {
   const t = useT();
   const wide = useWideLayout();
   const iOwn = state.machineHost && state.ownerId === state.me?.id;
@@ -665,6 +665,7 @@ function Lobby({ state, onOwnerSettings }: { state: ClientState; onOwnerSettings
         </div>
       </div>
       <OwnerBar state={state} onSettings={onOwnerSettings} />
+      <LobbyHelp state={state} offset={offset} />
       {wide ? (
         <>
           <ShareRoom code={state.code} className="shrink-0" compact={!!iOwn} />
