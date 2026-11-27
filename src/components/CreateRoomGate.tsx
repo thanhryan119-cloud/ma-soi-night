@@ -1,6 +1,6 @@
 "use client";
 
-// Making a room needs a Google account, and each account runs one room at a
+// Making a room needs an account (Google or a quick one), and each runs one room at a
 // time (joining a room needs neither). Each person also sits in one room at a
 // time. These are the pieces the home page, the online lobby and the join page
 // share: the sign-in prompt, and the dialogs shown when the account already
@@ -8,9 +8,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GoogleButton } from "@/components/ProfileEditor";
+import { AuthPanel } from "@/components/AuthPanel";
 import { useErrorToast } from "@/components/ui";
-import { GOOGLE_CLIENT_ID, getAuth, useAccount } from "@/lib/account";
+import { getAuth, useAccount } from "@/lib/account";
 import { useT } from "@/lib/i18n";
 import { emitAck, hostKey, playerKey, storage } from "@/lib/socket";
 
@@ -25,7 +25,7 @@ export interface RoomEntry {
 /** True when this browser must sign in before it can make a room. */
 export function useNeedsSignInToCreate() {
   const account = useAccount();
-  return !!GOOGLE_CLIENT_ID && !account;
+  return !account;
 }
 
 /** Saves the room's credentials and opens it (host view or player seat). */
@@ -43,13 +43,13 @@ export function useEnterRoom() {
   };
 }
 
-/** "Sign in with Google to make a room", shown in place of the create button. */
+/** "Sign in to make a room" (Google or a quick account), shown in place of the create button. */
 export function SignInToCreate() {
   const t = useT();
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-gold/40 bg-gold/5 p-3">
       <p className="text-sm text-gold">🔐 {t("home.signInToCreate")}</p>
-      <GoogleButton />
+      <AuthPanel />
     </div>
   );
 }

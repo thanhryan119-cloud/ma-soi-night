@@ -89,7 +89,7 @@ npm run deploy:server
 
 ## Cửa hàng (payOS)
 
-Font tên, hiệu ứng tên và khung avatar (trừ mặc định) được bán qua [payOS](https://payos.vn), **50.000đ mỗi món** (`ITEM_PRICE_VND` trong `shared/cosmetics.ts`). Mua một lần, món đồ gắn với tài khoản Google và tự đeo ngay. Khách chưa đăng nhập vẫn thử xem trước được nhưng phải đăng nhập mới mua.
+Font tên, hiệu ứng tên và khung avatar (trừ mặc định) được bán qua [payOS](https://payos.vn), **49.000đ mỗi món** (`ITEM_PRICE_VND` trong `shared/cosmetics.ts`). Mua một lần, món đồ gắn với tài khoản Google và tự đeo ngay. Khách chưa đăng nhập vẫn thử xem trước được nhưng phải đăng nhập mới mua.
 
 1. Tạo kênh thanh toán trên https://my.payos.vn, lấy *Client ID*, *API Key*, *Checksum Key* và đặt vào biến môi trường của socket server.
 2. Trong kênh thanh toán, đặt **Webhook URL** = `https://<socket-server>/payos/webhook` (payOS gửi thử một đơn mẫu, server trả 200).
@@ -97,7 +97,7 @@ Font tên, hiệu ứng tên và khung avatar (trừ mặc định) được bá
 
 ### Mã giảm giá
 
-Trang **`/admin/codes`** (nút "Quản lý mã giảm giá" ở trang Hồ sơ) dành cho email trong `ADMIN_EMAILS`. Sau khi thêm email, hãy đăng xuất rồi đăng nhập Google lại để server ghi nhận email. Ở trang này có thể tạo mã giảm theo % hoặc theo số tiền, giới hạn tổng lượt dùng, đặt ngày hết hạn, tạm dừng hoặc xoá mã, và xem số lượt đã dùng cùng doanh thu của từng mã. Mỗi tài khoản chỉ dùng mỗi mã một lần; lượt dùng được tính khi thanh toán xong. Mã giảm 100% (hoặc giảm từ 50.000đ trở lên) mở khoá món ngay, không qua payOS. Người mua nhập mã ở khung mua ("Có mã giảm giá?"). Mã lưu ở `codes.json`.
+Trang **`/admin/codes`** (nút "Quản lý mã giảm giá" ở trang Hồ sơ) dành cho email trong `ADMIN_EMAILS`. Sau khi thêm email, hãy đăng xuất rồi đăng nhập Google lại để server ghi nhận email. Ở trang này có thể tạo mã giảm theo % hoặc theo số tiền, giới hạn tổng lượt dùng, đặt ngày hết hạn, tạm dừng hoặc xoá mã, và xem số lượt đã dùng cùng doanh thu của từng mã. Mỗi tài khoản chỉ dùng mỗi mã một lần; lượt dùng được tính khi thanh toán xong. Mã giảm 100% (hoặc giảm từ 49.000đ trở lên) mở khoá món ngay, không qua payOS. Người mua nhập mã ở khung mua ("Có mã giảm giá?"). Mã lưu ở `codes.json`.
 
 Server luôn kiểm tra quyền sở hữu (vào phòng, đổi hồ sơ, `PATCH /me`), nên món chưa mua không hiện cho người khác dù máy khách gửi lên. Bot vẫn đeo đồ ngẫu nhiên để khoe hàng. Đơn hàng lưu ở `orders.json`, món đã mua lưu trong `users.json` (cùng thư mục `DATA_FILE`).
 

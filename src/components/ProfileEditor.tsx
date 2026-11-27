@@ -33,6 +33,7 @@ import {
 import { useLocale, useT } from "@/lib/i18n";
 import { Avatar, ChatBubble, ProfileCard, StyledName, toast, useErrorToast } from "./ui";
 import { CheckoutPanel, usePrice } from "./Checkout";
+import { AuthPanel } from "./AuthPanel";
 
 export { usePrice };
 import { AvatarArt } from "./art/Woodcut";
@@ -69,18 +70,26 @@ export function GoogleButton() {
   const ref = useRef<HTMLDivElement>(null);
   const { locale } = useLocale();
   const showError = useErrorToast();
+  const t = useT();
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || !ref.current) return;
     let cancelled = false;
+    // Each run draws into its own slot, removed on cleanup: Google fills the
+    // button in later, so clearing the box alone could leave an old one (two buttons after a language change).
+    const slot = document.createElement("div");
+    ref.current.replaceChildren(slot);
     loadGsi()
       .then((g) => {
-        if (cancelled || !ref.current) return;
+        if (cancelled) return;
         g.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
-          callback: async ({ credential }) => showError(await signInWithGoogle(credential)),
+          // Signed in to a quick account already: this links Google to it.
+          callback: async ({ credential }) => {
+            const r = await signInWithGoogle(credential);
+            if (showError(r) && r.linked) toast(t("auth.linked"), "info");
+          },
         });
-        ref.current.innerHTML = "";
-        g.accounts.id.renderButton(ref.current, {
+        g.accounts.id.renderButton(slot, {
           theme: "filled_black",
           size: "large",
           shape: "rectangular",
@@ -91,6 +100,7 @@ export function GoogleButton() {
       .catch(() => {});
     return () => {
       cancelled = true;
+      slot.remove();
     };
   }, [locale]); // eslint-disable-line react-hooks/exhaustive-deps
   return <div ref={ref} className="min-h-11" />;
@@ -420,19 +430,23 @@ export function ProfileEditor({
       <div className="rounded-lg border border-white/10 p-4">
         <span className="ui-label">{t("profile.account")}</span>
         {user ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm">{t("profile.signedInAs", { name: user.name })}</span>
-            <button type="button" className="btn-ghost btn-sm ml-auto" onClick={() => signOut().then(() => toast(t("profile.signOut"), "info"))}>
-              {t("profile.signOut")}
-            </button>
-          </div>
-        ) : GOOGLE_CLIENT_ID ? (
-          <div className="flex flex-col gap-2">
-            <p className="text-sm text-white/60">{t("profile.signInHint")}</p>
-            <GoogleButton />
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm">
+                {t("profile.signedInAs", { name: user.name })}
+                {user.username && <span className="ml-1 text-xs text-white/50">@{user.username}</span>}
+                {user.hasGoogle && <span className="ml-1 text-xs text-emerald-300">· Google ✓</span>}
+              </span>
+              <button type="button" className="btn-ghost btn-sm ml-auto" onClick={() => signOut().then(() => toast(t("profile.signOut"), "info"))}>
+                {t("profile.signOut")}
+              </button>
+            </div>
           </div>
         ) : (
-          <p className="text-sm text-white/50">{t("profile.authUnavailable")}</p>
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-white/60">{t("profile.signInHint")}</p>
+            <AuthPanel />
+          </div>
         )}
       </div>
       )}

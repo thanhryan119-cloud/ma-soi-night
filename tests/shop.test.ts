@@ -16,8 +16,8 @@ const KEY = "test-checksum-key";
 const hmac = (s: string) => createHmac("sha256", KEY).update(s).digest("hex");
 
 describe("shop catalog", () => {
-  it("sells every font, effect and frame except the defaults, 50k each", () => {
-    expect(ITEM_PRICE_VND).toBe(50_000);
+  it("sells every font, effect and frame except the defaults, 49k each", () => {
+    expect(ITEM_PRICE_VND).toBe(49_000);
     expect(SHOP_ITEMS).toContain("effect:glow");
     expect(SHOP_ITEMS).toContain("frame:moon");
     expect(SHOP_ITEMS).toContain("font:script");
@@ -70,15 +70,15 @@ describe("shop catalog", () => {
 
 describe("payOS signatures", () => {
   it("signs a payment request over the five fields in alphabetical order", () => {
-    const r = { amount: 50000, cancelUrl: "https://a/c", description: "MASOI1234", orderCode: 123, returnUrl: "https://a/r" };
+    const r = { amount: 49000, cancelUrl: "https://a/c", description: "MASOI1234", orderCode: 123, returnUrl: "https://a/r" };
     expect(signPaymentRequest(KEY, r)).toBe(
-      hmac("amount=50000&cancelUrl=https://a/c&description=MASOI1234&orderCode=123&returnUrl=https://a/r"),
+      hmac("amount=49000&cancelUrl=https://a/c&description=MASOI1234&orderCode=123&returnUrl=https://a/r"),
     );
   });
 
   it("verifies webhooks (sorted keys, null as empty) and rejects tampering", () => {
-    const data = { orderCode: 123, amount: 50000, description: "MASOI1234", code: "00", reference: "FT1", counterAccountName: null };
-    expect(signData(KEY, data)).toBe(hmac("amount=50000&code=00&counterAccountName=&description=MASOI1234&orderCode=123&reference=FT1"));
+    const data = { orderCode: 123, amount: 49000, description: "MASOI1234", code: "00", reference: "FT1", counterAccountName: null };
+    expect(signData(KEY, data)).toBe(hmac("amount=49000&code=00&counterAccountName=&description=MASOI1234&orderCode=123&reference=FT1"));
     const body = { code: "00", desc: "success", success: true, data, signature: signData(KEY, data) };
     expect(verifyWebhook(KEY, body)).toEqual(data);
     expect(verifyWebhook(KEY, { ...body, data: { ...data, amount: 1 } })).toBeNull();
@@ -127,7 +127,7 @@ function setup() {
       return new Response(JSON.stringify({ code: "00", desc: "success", data: { checkoutUrl: `https://pay.payos.vn/web/${b.orderCode}`, paymentLinkId: "pl1", orderCode: b.orderCode } }));
     }
     const orderCode = Number(u.split("/").pop());
-    return new Response(JSON.stringify({ code: "00", desc: "success", data: { orderCode, amount: 50000, amountPaid: payStatus === "PAID" ? 50000 : 0, status: payStatus } }));
+    return new Response(JSON.stringify({ code: "00", desc: "success", data: { orderCode, amount: 49000, amountPaid: payStatus === "PAID" ? 49000 : 0, status: payStatus } }));
   }) as typeof fetch;
   const payos = createPayOS({ clientId: "c", apiKey: "a", checksumKey: KEY, fetch: fakeFetch });
   const shop = createShop({
@@ -153,7 +153,7 @@ describe("shop routes", () => {
   it("is public about being open and the price", async () => {
     const { shop } = setup();
     const r = await call(shop.handle, "GET", "/shop");
-    expect(r.body).toMatchObject({ ok: true, enabled: true, price: 50000 });
+    expect(r.body).toMatchObject({ ok: true, enabled: true, price: 49000 });
   });
 
   it("needs a signed-in account and a real item", async () => {
@@ -162,13 +162,13 @@ describe("shop routes", () => {
     expect((await call(shop.handle, "POST", "/shop/checkout", { itemId: "effect:none" }, "tok1")).body.error).toBe("err.itemUnknown");
   });
 
-  it("creates a signed 50k payOS link and reuses it on a second click", async () => {
+  it("creates a signed 49k payOS link and reuses it on a second click", async () => {
     const { shop, created } = setup();
     const r = await call(shop.handle, "POST", "/shop/checkout", { itemId: "frame:moon", returnUrl: "http://localhost:3000" }, "tok1");
     expect(r.body.ok).toBe(true);
     expect(String(r.body.checkoutUrl)).toMatch(/^https:\/\/pay\.payos\.vn\//);
     const req = created[0] as Record<string, string | number>;
-    expect(req.amount).toBe(50000);
+    expect(req.amount).toBe(49000);
     expect(String(req.description).length).toBeLessThanOrEqual(9);
     expect(req.returnUrl).toBe(`http://localhost:3000/profile?order=${req.orderCode}`);
     expect(req.signature).toBe(signPaymentRequest(KEY, req as never));
@@ -181,7 +181,7 @@ describe("shop routes", () => {
     const { shop, grants, users } = setup();
     const r = await call(shop.handle, "POST", "/shop/checkout", { itemId: "effect:glow", returnUrl: "http://localhost:3000" }, "tok1");
     const orderCode = r.body.orderCode as number;
-    const data = { orderCode, amount: 50000, description: "MASOI", code: "00", reference: "FT1" };
+    const data = { orderCode, amount: 49000, description: "MASOI", code: "00", reference: "FT1" };
 
     const forged = await call(shop.handle, "POST", "/payos/webhook", { code: "00", data, signature: "ab".repeat(32) });
     expect(forged.status).toBe(400);
@@ -269,22 +269,22 @@ describe("discount codes in the shop", () => {
     const { shop, created } = setup();
     await create(shop, { code: "SALE20", kind: "percent", value: 20 });
     const check = await call(shop.handle, "GET", "/shop/codes/sale20", undefined, "tok1");
-    expect(check.body).toMatchObject({ ok: true, code: "SALE20", amount: 40000 });
+    expect(check.body).toMatchObject({ ok: true, code: "SALE20", amount: 39200 });
 
     const r = await call(shop.handle, "POST", "/shop/checkout", { itemId: "effect:glow", returnUrl: "http://localhost:3000", code: "sale20" }, "tok1");
     expect(r.body.ok).toBe(true);
     const req = created[0] as Record<string, number>;
-    expect(req.amount).toBe(40000);
+    expect(req.amount).toBe(39200);
     expect(req.signature).toBe(signPaymentRequest(KEY, req as never));
 
     // Not counted while unpaid.
     let list = (await call(shop.handle, "GET", "/shop/admin/codes", undefined, "tokBoss")).body.codes as { uses: number; revenue: number }[];
     expect(list[0].uses).toBe(0);
 
-    const data = { orderCode: r.body.orderCode, amount: 40000, description: "MASOI", code: "00" };
+    const data = { orderCode: r.body.orderCode, amount: 39200, description: "MASOI", code: "00" };
     await call(shop.handle, "POST", "/payos/webhook", { code: "00", data, signature: signData(KEY, data) });
     list = (await call(shop.handle, "GET", "/shop/admin/codes", undefined, "tokBoss")).body.codes as { uses: number; revenue: number }[];
-    expect(list[0]).toMatchObject({ uses: 1, revenue: 40000 });
+    expect(list[0]).toMatchObject({ uses: 1, revenue: 39200 });
 
     // One use per account.
     const again = await call(shop.handle, "POST", "/shop/checkout", { itemId: "frame:moon", code: "SALE20" }, "tok1");

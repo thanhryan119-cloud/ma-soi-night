@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { CHAT_MAX_LEN, dmPeer, type DirectMessage, type GlobalMessage, type OnlineList, type OnlineUser } from "@shared/social";
-import type { FriendRelation, FriendsState, RoomInvite } from "@shared/friends";
+import type { FriendRelation, FriendsState, JoinAsk, RoomInvite } from "@shared/friends";
 import { Avatar, StyledName, toast, useErrorToast } from "@/components/ui";
 import { ProfileLink } from "@/components/Profile";
 import { useOtherRoom } from "@/components/CreateRoomGate";
@@ -23,10 +23,13 @@ import { WhereChip } from "@/components/Friends";
 
 type Friends = FriendsState<OnlineUser>;
 type Invite = RoomInvite<OnlineUser>;
+type Ask = JoinAsk<OnlineUser>;
 const NO_FRIENDS: Friends = { friends: [], incoming: [], outgoing: [] };
 
 const SEEN_KEY = "msn:globalChatSeen";
 const DM_SEEN_KEY = "msn:dmSeen";
+/** Private conversations closed by this player: peer id → newest message time when closed. */
+const DM_HIDDEN_KEY = "msn:dmHidden";
 const OPEN_KEY = "msn:globalChatOpen";
 /** How many components listen: the channel is only left when the last one goes. */
 let listeners = 0;
@@ -55,17 +58,20 @@ export function useGlobalChat(visible: boolean) {
   const me = account?.user ?? null;
   const [friends, setFriends] = useState<Friends>(NO_FRIENDS);
   const [invites, setInvites] = useState<Invite[]>([]);
+  const [asks, setAsks] = useState<Ask[]>([]);
   const [messages, setMessages] = useState<GlobalMessage[]>([]);
   const [online, setOnline] = useState<OnlineList>({ users: [], guests: 0 });
   const [dms, setDms] = useState<DirectMessage[]>([]);
   const [peers, setPeers] = useState<Record<string, OnlineUser>>({});
   const [seen, setSeen] = useState(0);
   const [dmSeen, setDmSeen] = useState<Record<string, number>>({});
+  const [dmHidden, setDmHidden] = useState<Record<string, number>>({});
   const [view, setView] = useState<ChatView>("global");
 
   useEffect(() => {
     setSeen(storage.get<number>(SEEN_KEY) ?? 0);
     setDmSeen(storage.get<Record<string, number>>(DM_SEEN_KEY) ?? {});
+    setDmHidden(storage.get<Record<string, number>>(DM_HIDDEN_KEY) ?? {});
   }, []);
 
   // Join (again whenever the account changes, so the server knows who this is).
@@ -109,6 +115,7 @@ export function useGlobalChat(visible: boolean) {
     const accepted = (e: { user: OnlineUser }) => toast(tRef.current("friends.acceptedToast", { name: e.user.name }), "info");
     const invited = (i: Invite) => setInvites((xs) => [...xs.filter((x) => x.id !== i.id && x.from.id !== i.from.id), i]);
     const inviteGone = (e: { id: string }) => setInvites((xs) => xs.filter((x) => x.id !== e.id));
+    const askedIn = (a: Ask) => setAsks((xs) => [...xs.filter((x) => x.from.id !== a.from.id), a]);
     listeners++;
     s.on("global:new", added);
     s.on("global:deleted", deleted);
@@ -119,6 +126,7 @@ export function useGlobalChat(visible: boolean) {
     s.on("friends:accepted", accepted);
     s.on("invite:new", invited);
     s.on("invite:gone", inviteGone);
+    s.on("invite:asked", askedIn);
     return () => {
       s.off("global:new", added);
       s.off("global:deleted", deleted);
@@ -129,6 +137,7 @@ export function useGlobalChat(visible: boolean) {
       s.off("friends:accepted", accepted);
       s.off("invite:new", invited);
       s.off("invite:gone", inviteGone);
+      s.off("invite:asked", askedIn);
       if (--listeners === 0) emitAck("global:leave");
     };
   }, []);
@@ -154,9 +163,11 @@ export function useGlobalChat(visible: boolean) {
   const unreadGlobal = visible && view === "global" ? 0 : messages.filter((m) => m.t > seen && m.userId !== me?.id).length;
   const unreadDm = (peer: string) =>
     !me || (visible && openPeer === peer) ? 0 : dms.filter((m) => m.from === peer && m.to === me.id && m.t > (dmSeen[peer] ?? 0)).length;
-  // Conversations, the most recent first.
+  /** The time of the newest line with `peer`, 0 when there is none. */
+  const lastDm = (peer: string) => (me ? (dms.filter((m) => dmPeer(m, me.id) === peer).at(-1)?.t ?? 0) : 0);
+  // Conversations, the most recent first. A closed one comes back when a new line arrives.
   const conversations = me
-    ? [...new Set(dms.map((m) => dmPeer(m, me.id)).reverse())].filter((id) => peers[id])
+    ? [...new Set(dms.map((m) => dmPeer(m, me.id)).reverse())].filter((id) => peers[id] && !(lastDm(id) <= (dmHidden[id] ?? -1)))
     : [];
   const unreadDms = conversations.reduce((n, id) => n + unreadDm(id), 0);
 
@@ -164,6 +175,22 @@ export function useGlobalChat(visible: boolean) {
   const openDm = (u: OnlineUser) => {
     setPeers((ps) => ({ ...ps, [u.id]: ps[u.id] ?? u }));
     setView({ dm: u.id });
+  };
+
+  /** Closes a private conversation tab (marks it read; it reopens on the next message). */
+  const closeDm = (peer: string) => {
+    const at = lastDm(peer);
+    setDmHidden((h) => {
+      const next = { ...h, [peer]: at };
+      storage.set(DM_HIDDEN_KEY, next);
+      return next;
+    });
+    setDmSeen((d) => {
+      const next = { ...d, [peer]: Math.max(d[peer] ?? 0, at) };
+      storage.set(DM_SEEN_KEY, next);
+      return next;
+    });
+    setView((v) => (typeof v === "object" && v.dm === peer ? "global" : v));
   };
 
   /** Where `id` stands with me: friends, a request either way, or nothing. */
@@ -187,10 +214,22 @@ export function useGlobalChat(visible: boolean) {
   };
   const answerFriend = (u: OnlineUser, accept: boolean) => friendCall("friend:answer", { id: u.id, accept });
   const removeFriend = (u: OnlineUser) => friendCall("friend:remove", { id: u.id });
-  /** Asks someone online into the room this player is in. */
-  const invite = async (u: OnlineUser) => {
-    const res = await emitAck("invite:send", { to: u.id, authToken: getAuth()?.token });
+  /** Asks someone online into the room this player is in (or room `code`, one this account made or sits in). */
+  const invite = async (u: OnlineUser, code?: string) => {
+    const res = await emitAck("invite:send", { to: u.id, code, authToken: getAuth()?.token });
     if (showError(res)) toast(t("friends.inviteSent", { name: u.name }), "info");
+    return res.ok;
+  };
+  /** Asks someone waiting in a room to let me in. */
+  const askToJoin = async (u: OnlineUser) => {
+    const res = await emitAck("invite:ask", { to: u.id, authToken: getAuth()?.token });
+    if (showError(res)) toast(t("friends.askSent", { name: u.name }), "info");
+  };
+  const dropAsk = (a: Ask) => setAsks((xs) => xs.filter((x) => x.id !== a.id));
+  /** Lets in someone who asked: they get an ordinary invite to my room. */
+  const letIn = async (a: Ask) => {
+    dropAsk(a);
+    await invite(a.from);
   };
   const declineInvite = (i: Invite) => {
     setInvites((xs) => xs.filter((x) => x.id !== i.id));
@@ -207,6 +246,7 @@ export function useGlobalChat(visible: boolean) {
     view,
     setView,
     openDm,
+    closeDm,
     conversations,
     unreadDm,
     unreadGlobal,
@@ -219,6 +259,10 @@ export function useGlobalChat(visible: boolean) {
     invite,
     declineInvite,
     dropInvite,
+    asks,
+    askToJoin,
+    letIn,
+    dropAsk,
     unread: unreadGlobal + unreadDms + friends.incoming.length,
   };
 }
@@ -259,9 +303,20 @@ export function ServerChat({ chat, canInvite = false, className = "" }: { chat: 
           const p = peers[id];
           if (!p) return null;
           return (
-            <button key={id} role="tab" aria-selected={openPeer === id} className={tab(openPeer === id)} onClick={() => setView({ dm: id })}>
-              ✉️ <span className="max-w-24 truncate">{p.name}</span> <Badge n={chat.unreadDm(id)} />
-            </button>
+            <span key={id} className={`${tab(openPeer === id)} pr-1`}>
+              <button role="tab" aria-selected={openPeer === id} className="flex items-center gap-1" onClick={() => setView({ dm: id })}>
+                ✉️ <span className="max-w-24 truncate">{p.name}</span> <Badge n={chat.unreadDm(id)} />
+              </button>
+              <button
+                type="button"
+                className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[10px] leading-none text-white/50 hover:bg-white/15 hover:text-white"
+                onClick={() => chat.closeDm(id)}
+                aria-label={t("globalChat.closeDm", { name: p.name })}
+                title={t("globalChat.closeDm", { name: p.name })}
+              >
+                ✕
+              </button>
+            </span>
           );
         })}
       </div>
@@ -580,7 +635,7 @@ export function InviteCards({ chat }: { chat: Global }) {
     router.push(`/join/${i.code}`);
   }
 
-  if (!chat.invites.length && !other.dialog) return null;
+  if (!chat.invites.length && !chat.asks.length && !other.dialog) return null;
   return (
     <>
       {other.dialog}
@@ -607,6 +662,23 @@ export function InviteCards({ chat }: { chat: Global }) {
             </div>
           );
         })}
+        {chat.asks.slice(-3).map((a) => (
+          <div
+            key={a.id}
+            className="rise pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-lg border border-sky-300/60 bg-night-800/95 p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur"
+          >
+            <Avatar p={lookOf(a.from)} size="sm" />
+            <p className="min-w-0 flex-1 text-sm leading-snug text-white/90">{t("friends.askCard", { name: a.from.name })}</p>
+            <div className="flex shrink-0 flex-col gap-1">
+              <button className="btn-primary btn-sm px-3 text-xs" onClick={() => chat.letIn(a)}>
+                {t("friends.askLetIn")}
+              </button>
+              <button className="btn-ghost btn-sm px-3 text-xs" onClick={() => chat.dropAsk(a)}>
+                {t("friends.inviteLater")}
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </>
   );

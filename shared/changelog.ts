@@ -12,7 +12,7 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
-    version: "1.7.1",
+    version: "1.7.3",
     date: "2026-11-27",
     title: { vi: "Cảnh báo bộ vai lệch phe", en: "A warning for lopsided setups" },
     items: {
@@ -25,6 +25,48 @@ export const CHANGELOG: Release[] = [
         "When the roles you pick or hand out make one side much stronger, the role setup now says which side leads and by how much.",
         "The warning explains why, such as too many wolves, no Seer or a role that is too strong.",
         "It suggests a few role swaps to even the sides that you apply with one button, or you can switch to the standard setup.",
+      ],
+    },
+  },
+  {
+    version: "1.7.2",
+    date: "2026-11-27",
+    title: { vi: "Cửa hàng mới, mỗi món chỉ 49.000đ", en: "A new shop, every item now 49,000 VND" },
+    items: {
+      vi: [
+        "Mỗi món trong cửa hàng giảm từ 50.000đ còn 49.000đ.",
+        "Cửa hàng được làm lại với banner mới, menu theo bạn khi cuộn và lời giới thiệu cho từng mục.",
+        "Bộ thẻ vai liệt kê từng vai kèm một dòng nói vai đó làm gì, cùng số tiền bạn tiết kiệm khi mua theo bộ.",
+        "Đóng được từng cuộc trò chuyện riêng trong khung chat. Khi người đó nhắn mới thì cuộc trò chuyện tự hiện lại.",
+      ],
+      en: [
+        "Every item in the shop drops from 50,000 VND to 49,000 VND.",
+        "The shop is redone with a new banner, a menu that follows you as you scroll and a line about each section.",
+        "Role card bundles list every role with a line about what it does, and how much you save by buying the bundle.",
+        "Private conversations in the chat box can be closed one by one. They come back when that person writes again.",
+      ],
+    },
+  },
+  {
+    version: "1.7.1",
+    date: "2026-11-27",
+    title: { vi: "Nick nhanh và rủ nhau chơi từ sảnh chờ", en: "Quick accounts and getting a game going from the lobby" },
+    items: {
+      vi: [
+        "Danh sách người đang online nằm ngay dưới danh sách phòng trong sảnh chờ.",
+        "Cạnh mỗi người có nút Kết bạn, Xin vào phòng họ đang chờ, Xem ván họ đang chơi và Rủ chơi để tạo phòng mới rồi mời họ vào.",
+        "Khi có người xin vào, bạn thấy một thẻ để cho họ vào phòng chỉ bằng một chạm.",
+        "Nút Đăng xuất ở cuối trang hồ sơ của bạn.",
+        "Vào sảnh hay Chơi ngay cần đăng nhập trước, bằng Google hoặc nick nhanh với tên đăng nhập và mật khẩu.",
+        "Nick nhanh liên kết được với Google ở trang hồ sơ, hoặc tự liên kết khi bấm nút đăng nhập Google lúc đang dùng nick đó.",
+      ],
+      en: [
+        "Who is online now sits right under the room list in the lobby.",
+        "Each person has buttons to add them as a friend, ask to join the room they wait in, watch their game, or make a new room and invite them.",
+        "When someone asks to join, a card lets you bring them in with one tap.",
+        "A Sign out button at the bottom of your profile page.",
+        "The lobby and Play now ask you to sign in first, with Google or a quick account made from a login name and a password.",
+        "A quick account can link Google from the profile page, or links it by itself when you press a Google sign-in button while using it.",
       ],
     },
   },

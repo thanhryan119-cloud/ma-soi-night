@@ -728,7 +728,7 @@
     "claimFree": "Nhận miễn phí",
     "open": "Cửa hàng",
     "rolesTitle": "Vai đặc biệt",
-    "pageHint": "Mọi thứ bán trong game ở cùng một chỗ. Thẻ vai đặc biệt, hiệu ứng tên, font tên, khung avatar, nền chat và nền thẻ hồ sơ. Mỗi món 50.000đ, mua thẻ vai theo bộ được giảm 20%. Mua một lần, gắn với tài khoản Google và dùng trên mọi máy.",
+    "pageHint": "Mọi thứ bán trong game ở cùng một chỗ. Thẻ vai đặc biệt, hiệu ứng tên, font tên, khung avatar, nền chat và nền thẻ hồ sơ. Mỗi món chỉ 49.000đ, mua thẻ vai theo bộ được giảm 20%. Mua một lần, gắn với tài khoản Google và dùng trên mọi máy.",
     "signInFirst": "Đăng nhập Google để mua. Món đồ sẽ gắn với tài khoản của bạn.",
     "ownedCount": "Đã có {owned}/{total}",
     "wear": "Dùng",
@@ -739,6 +739,22 @@
     "buyGold": "Mua bằng vàng",
     "boughtWithGold": "Đã mua {item} bằng vàng!",
     "needGold": "Còn thiếu {gold} vàng",
+    "heroTag": "Cửa hàng Ma Sói",
+    "heroTitle": "Nổi bật trong mọi ván đấu",
+    "heroSub": "Mở khóa vai đặc biệt cho phòng của bạn, trang trí tên, avatar và khung chat để cả bàn nhớ mặt bạn.",
+    "heroFrom": "Chỉ từ",
+    "heroEach": "mỗi món",
+    "perkForever": "Mua một lần, dùng mãi mãi",
+    "perkDevices": "Gắn với tài khoản Google, dùng trên mọi máy",
+    "perkBundle": "Mua thẻ vai theo bộ giảm 20%",
+    "sectionDesc": {
+      "role": "Phòng bạn tạo được dùng vai đó mọi ngày, không phải chờ lượt miễn phí.",
+      "effect": "Tên bạn phát sáng, lấp lánh hay đổi màu ở mọi nơi trong game.",
+      "font": "Kiểu chữ riêng cho tên, nhìn là nhận ra bạn ngay.",
+      "frame": "Khung viền cho avatar, đi theo bạn ở mọi nơi bạn xuất hiện.",
+      "chat": "Bong bóng chat có họa tiết riêng, tin nhắn của bạn luôn nổi bật.",
+      "card": "Nền cho thẻ hồ sơ mà người khác thấy khi bấm vào tên bạn."
+    },
     "bundle": {
       "wolves": "Bộ Sói",
       "village": "Bộ Dân làng",
@@ -916,7 +932,14 @@
     "inviteStarted": "Ván đã bắt đầu, chỉ mời được khi phòng còn đang chờ.",
     "inviteFull": "Phòng đã đầy.",
     "inviteAlreadyIn": "Người này đã ở trong phòng của bạn.",
-    "inviteSlow": "Bạn vừa mời người này. Thử lại sau {seconds} giây."
+    "inviteSlow": "Bạn vừa mời người này. Thử lại sau {seconds} giây.",
+    "askNoRoom": "Người này không còn ở phòng đang chờ nữa.",
+    "usernameInvalid": "Tên đăng nhập cần 3 đến 20 ký tự gồm chữ thường không dấu, số, dấu _ hoặc dấu chấm.",
+    "passwordWeak": "Mật khẩu cần ít nhất {min} ký tự.",
+    "usernameTaken": "Tên đăng nhập này đã có người dùng.",
+    "loginWrong": "Sai tên đăng nhập hoặc mật khẩu.",
+    "loginPaused": "Sai quá nhiều lần. Thử lại sau {seconds} giây.",
+    "googleTaken": "Tài khoản Google này đã gắn với một nick khác."
   },
   "log": {
     "standIn": "{name} vắng mặt, bot chơi hộ cho tới khi quay lại.",
@@ -1136,6 +1159,7 @@
   },
   "globalChat": {
     "button": "Chat chung",
+    "closeDm": "Đóng cuộc trò chuyện với {name}",
     "title": "Chat toàn server",
     "hint": "Mọi người trên web đều thấy, kể cả người đang chơi. Đừng lộ vai nhé, và hãy lịch sự.",
     "empty": "Chưa có ai nói gì. Chào mọi người đi!",
@@ -1179,7 +1203,10 @@
     "inviteSent": "Đã mời {name} vào phòng.",
     "inviteCard": "{name} mời bạn vào phòng {code}.",
     "inviteJoin": "Vào phòng",
-    "inviteLater": "Để sau"
+    "inviteLater": "Để sau",
+    "askSent": "Đã nhờ {name} cho bạn vào phòng.",
+    "askCard": "{name} xin vào phòng của bạn.",
+    "askLetIn": "Cho vào"
   },
   "mail": {
     "button": "Thư",
@@ -1264,7 +1291,12 @@
     "over": "Vừa xong ván",
     "full": "Đã đầy",
     "join": "Vào",
-    "enter": "Vào phòng"
+    "enter": "Vào phòng",
+    "askJoin": "Xin vào",
+    "askJoinHint": "Nhờ {name} cho bạn vào phòng đang chờ",
+    "playWith": "Rủ chơi",
+    "playWithHint": "Tạo phòng mới và mời {name} vào",
+    "signInForPeople": "Đăng nhập Google để kết bạn, xin vào phòng hoặc rủ người khác chơi."
   },
   "owner": {
     "machineHosts": "Máy làm quản trò",
@@ -1416,7 +1448,37 @@
     "bundleCount": "{count} thẻ",
     "bundleHave": "Đã có {have}/{total} thẻ, chỉ tính tiền phần còn thiếu",
     "ownedCard": "Đã có thẻ, dùng mọi ngày",
-    "freeToday": "Miễn phí hôm nay"
+    "freeToday": "Miễn phí hôm nay",
+    "bundleTag": {
+      "wolves": "Cho người thích đi săn trong bóng tối. Thêm chiêu trò cho bầy Sói và làm cả làng hoang mang.",
+      "village": "Cho người thích suy luận. Thêm công cụ để dân làng soi ra Sói và lật ngược thế cờ.",
+      "solo": "Cho người thích chơi một mình. Mỗi vai có cách thắng riêng, khiến ván nào cũng khó đoán.",
+      "all": "Mở khóa vĩnh viễn toàn bộ vai đặc biệt. Phòng bạn tạo luôn đủ vai cho mọi kiểu chơi, không phải chờ ngày miễn phí."
+    },
+    "bestValue": "Đáng mua nhất",
+    "perCard": "chỉ {price} mỗi thẻ",
+    "save": "Tiết kiệm {price}",
+    "haveRole": "Đã có",
+    "forever": "Mua một lần, dùng mãi mãi",
+    "roleHook": {
+      "cursedWolf": "Biến người bị cắn thành Sói",
+      "wolfSeer": "Sói biết chính xác vai người khác",
+      "bigBadWolf": "Mỗi đêm cắn thêm một mạng",
+      "minion": "Nội gián âm thầm giúp bầy Sói",
+      "silencer": "Bịt miệng một người cả ngày hôm sau",
+      "elder": "Sống sót qua lần bị cắn đầu tiên",
+      "idiot": "Bị treo cổ vẫn lật bài sống sót",
+      "lycan": "Mang máu Sói nhưng thắng cùng làng",
+      "sister": "Hai chị em biết nhau từ đầu",
+      "wildChild": "Hóa Sói khi thần tượng chết",
+      "medium": "Gọi hồn người chết để biết vai",
+      "mayor": "Một phiếu tính bằng hai",
+      "knight": "Bị Sói cắn chết thì một Sói chết theo",
+      "tanner": "Thắng một mình khi bị treo cổ",
+      "whiteWolf": "Sói phản bầy, muốn sống sót một mình",
+      "serialKiller": "Mỗi đêm giết một người, Sói cắn không chết",
+      "arsonist": "Tưới xăng từng nhà rồi đốt một lần"
+    }
   },
   "room": {
     "signIn": "Đăng nhập",
@@ -1493,5 +1555,23 @@
     "copy": "Sao chép link",
     "copied": "Đã chép link, dán vào Chrome hoặc Safari nhé",
     "close": "Đóng"
+  },
+  "auth": {
+    "title": "Đăng nhập để chơi",
+    "subtitle": "Đăng nhập bằng Google, hoặc tạo nick nhanh bằng tên đăng nhập và mật khẩu. Có thể liên kết Google sau trong Hồ sơ.",
+    "googleHint": "Đã có nick nhanh và đang đăng nhập thì bấm nút này sẽ liên kết Google vào nick đó.",
+    "or": "hoặc",
+    "register": "Tạo nick nhanh",
+    "login": "Đã có nick",
+    "username": "Tên đăng nhập",
+    "usernamePlaceholder": "vd: soi_gia",
+    "usernameHint": "3 đến 20 ký tự gồm chữ thường không dấu, số, dấu _ hoặc dấu chấm.",
+    "password": "Mật khẩu",
+    "passwordPlaceholder": "Ít nhất {min} ký tự",
+    "registerButton": "Tạo nick và vào chơi",
+    "loginButton": "Đăng nhập",
+    "linkTitle": "Liên kết Google",
+    "linkHint": "Liên kết để đăng nhập bằng Google từ nay về sau và giữ nick trên mọi thiết bị.",
+    "linked": "Đã liên kết Google với nick của bạn."
   }
 }
