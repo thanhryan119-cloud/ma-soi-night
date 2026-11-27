@@ -12,6 +12,27 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.10.3",
+    date: "2026-11-27",
+    title: { vi: "Chỉnh vai không cần cuộn", en: "Set up roles without scrolling" },
+    items: {
+      vi: [
+        "Trên máy tính, phần chỉnh vai của chủ phòng vừa khít màn hình, không phải cuộn lên xuống.",
+        "Bảng Vai trong ván liệt kê đủ các vai sẽ có và báo số vai đã khớp số người chưa.",
+        "Vai chia thành ba thẻ Cơ bản, Nâng cao, Phe thứ 3, mỗi vai là một ô nhỏ có nút cộng trừ.",
+        "Nút thêm bot và xóa bot nằm chung hàng với nút Bắt đầu.",
+        "Nút xúc xắc cạnh các map chia ngay một bộ vai ngẫu nhiên.",
+      ],
+      en: [
+        "On a computer the owner's role setup fits the screen, no scrolling up and down.",
+        "The Roles in play box lists every role in the game and says whether the count matches the players.",
+        "Roles sit in three tabs, Basic, Advanced and Third party, each one a small tile with plus and minus.",
+        "Add bots and remove bots sit on the same row as Start.",
+        "The dice next to the maps deals a random set of roles right away.",
+      ],
+    },
+  },
+  {
     version: "1.10.2",
     date: "2026-11-27",
     title: { vi: "Chủ phòng chuẩn bị ván gọn hơn", en: "A tidier setup for the room owner" },

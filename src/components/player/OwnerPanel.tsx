@@ -6,18 +6,18 @@
 
 import { MIN_PLAYERS } from "@shared/engine";
 import { MACHINE_FORCED } from "@shared/multiplayer";
-import { ROLE_IDS, totalRoles } from "@shared/roles";
+import { totalRoles } from "@shared/roles";
 import type { OwnerAction, Settings } from "@shared/types";
 import type { ClientState } from "@shared/views";
 import { HostActionProvider } from "@/components/host/common";
 import { AddBots } from "@/components/host/AddBots";
-import { RoleConfig } from "@/components/host/HostLobby";
+import { OwnerRoleSetup, RoleSummary } from "@/components/host/HostLobby";
 import { RulesCard } from "@/components/host/RulesCard";
 import { PasswordCard } from "@/components/PasswordField";
 import { ShareRoom } from "@/components/ShareRoom";
 import { ProfileLink } from "@/components/Profile";
 import { useState } from "react";
-import { Avatar, RoleBadge, StyledName, toast, useErrorToast } from "@/components/ui";
+import { Avatar, StyledName, toast, useErrorToast } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { emitAck } from "@/lib/socket";
 import { useNow } from "@/lib/useRoom";
@@ -45,9 +45,10 @@ export function OwnerBar({ state, onSettings }: { state: ClientState; onSettings
   const n = state.players.length;
   const ready = n >= MIN_PLAYERS && totalRoles(state.settings.roleCounts) === n;
 
-  // The owner setting up the lobby: one slim row of small buttons (share and
-  // settings sit in the header, see OwnerTools), so the bots and roles get the room.
-  if (iOwn && kind === "lobby")
+  // The owner setting up the lobby: one slim row of small buttons with the bots
+  // on the right (share and settings sit in the header, see OwnerTools), so the roles get the room.
+  if (iOwn && kind === "lobby") {
+    const bots = state.players.filter((p) => p.isBot).length;
     return (
       <div className="flex shrink-0 flex-wrap items-center gap-1.5">
         <button className={`btn-primary ${TOOL}`} disabled={!ready} onClick={() => act({ type: "start" })}>
@@ -63,8 +64,16 @@ export function OwnerBar({ state, onSettings }: { state: ClientState; onSettings
               : t("host.mismatch", { roles: totalRoles(state.settings.roleCounts), players: n })}
           </span>
         )}
+        <span className="ml-auto flex shrink-0 items-center gap-1.5">
+          <span className="text-xs text-white/60">{t("lobbySetup.bots", { count: bots })}</span>
+          <AddBots players={n} onAdd={(count) => act({ type: "addBots", count })} />
+          <button className={`btn-ghost ${TOOL}`} disabled={!bots} onClick={() => act({ type: "removeBots" })}>
+            {t("host.removeBots")}
+          </button>
+        </span>
       </div>
     );
+  }
 
   return (
     <div className="flex shrink-0 flex-col gap-2 rounded-xl border border-gold/30 bg-gold/5 p-2.5 text-sm">
@@ -214,55 +223,21 @@ export function LobbyHelp({ state, offset }: { state: ClientState; offset: numbe
  */
 export function LobbySetup({ state }: { state: ClientState }) {
   const t = useT();
-  const act = useOwnerAction();
   const iOwn = !!state.machineHost && !!state.me && state.ownerId === state.me.id;
-  const n = state.players.length;
   const bots = state.players.filter((p) => p.isBot).length;
-  const counts = state.settings.roleCounts;
-  const total = totalRoles(counts);
 
-  const botsRow = (
-    <section className="card flex flex-wrap items-center gap-2 px-3 py-1.5">
-      <h3 className="min-w-0 flex-1 truncate text-sm font-bold">🤖 {t("lobbySetup.bots", { count: bots })}</h3>
-      {iOwn && <AddBots players={n} onAdd={(count) => act({ type: "addBots", count })} />}
-      {iOwn && (
-        <button className="btn-ghost btn-sm" disabled={!bots} onClick={() => act({ type: "removeBots" })}>
-          {t("host.removeBots")}
-        </button>
-      )}
-    </section>
-  );
-
+  // The owner's bots sit in their toolbar (OwnerBar); here go the roles.
   if (iOwn)
     return (
       <HostActionProvider value={(a) => sendOwner(a as OwnerAction)}>
-        <div className="flex flex-col gap-3">
-          {botsRow}
-          <RoleConfig state={state} owner />
-        </div>
+        <OwnerRoleSetup state={state} />
       </HostActionProvider>
     );
 
   return (
-    <div className="flex flex-col gap-3">
-      {botsRow}
-      <section className="card flex flex-col gap-2 p-3">
-        <h3 className="font-bold">🃏 {t("host.roleConfig")}</h3>
-        {total ? (
-          <ul className="flex flex-wrap gap-1.5">
-            {ROLE_IDS.filter((r) => counts[r] > 0).map((r) => (
-              <li key={r} className="flex items-center gap-1 rounded-lg bg-white/5 px-2 py-1 text-sm" title={t(`roles.${r}.desc`)}>
-                <RoleBadge roleId={r} /> <b className="font-mono">×{counts[r]}</b>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-white/50">{t("lobbySetup.noRoles")}</p>
-        )}
-        <p className={`rounded-lg p-1.5 text-xs ${total === n ? "bg-emerald-500/10 text-emerald-300" : "bg-blood/15 text-blood-light"}`}>
-          {total === n ? t("host.totalRoles", { roles: total, players: n }) : t("host.mismatch", { roles: total, players: n })}
-        </p>
-      </section>
+    <div className="flex flex-col gap-2">
+      <p className="text-sm font-bold">🤖 {t("lobbySetup.bots", { count: bots })}</p>
+      <RoleSummary counts={state.settings.roleCounts} n={state.players.length} />
     </div>
   );
 }

@@ -206,8 +206,8 @@ function PlayersCard({ state, hideRoles = false }: { state: ClientState; hideRol
   );
 }
 
-/** Role counts. `owner`: the room owner of a machine-host room (the machine deals and starts). */
-export function RoleConfig({ state, owner = false }: { state: ClientState; owner?: boolean }) {
+/** Role counts on the human host's screen (the machine-host room owner gets OwnerRoleSetup). */
+export function RoleConfig({ state }: { state: ClientState }) {
   const t = useT();
   const act = useHostAction();
   const counts = state.settings.roleCounts;
@@ -221,7 +221,7 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
   const suggested = alt?.n === n ? alt.counts : state.suggested;
   const sameAsSuggested = suggested && ROLE_IDS.every((r) => suggested[r] === counts[r]);
 
-  const grid = `grid grid-cols-1 gap-1.5 ${owner ? "" : "sm:grid-cols-2"}`;
+  const grid = "grid grid-cols-1 gap-1.5 sm:grid-cols-2";
   const row = (r: RoleId) => (
     <li key={r} className="flex items-center gap-2 rounded-xl bg-white/5 p-2" title={t(`roles.${r}.desc`)}>
       <span className="min-w-0 flex-1">
@@ -272,9 +272,7 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
       <div className={`rounded-xl p-2 text-sm ${total === n ? "bg-emerald-500/10 text-emerald-300" : "bg-blood/15 text-blood-light"}`}>
         {total === n ? t("host.totalRoles", { roles: total, players: n }) : t("host.mismatch", { roles: total, players: n })}
       </div>
-      <BalanceAlert state={state} owner={owner} />
-      {!owner && (
-      <>
+      <BalanceAlert state={state} owner={false} />
       <div className="border-t border-white/10 pt-3">
         <h3 className="mb-2 font-bold">{t("host.assignment")}</h3>
         <button className="btn-gold w-full" disabled={total !== n || n === 0} onClick={() => act({ type: "assignRandom" })}>
@@ -294,9 +292,141 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
       </button>
       <p className="-mt-2 text-center text-xs text-white/40">{t("owner.playNowDesc")}</p>
       {n < MIN_PLAYERS && <p className="text-center text-xs text-white/40">{t("err.notEnoughPlayers", { min: MIN_PLAYERS })}</p>}
-      </>
-      )}
     </section>
+  );
+}
+
+/** Every role in the game with its count, and whether the counts match the players. */
+export function RoleSummary({ counts, n, className = "" }: { counts: Record<RoleId, number>; n: number; className?: string }) {
+  const t = useT();
+  const total = totalRoles(counts);
+  const inPlay = ROLE_IDS.filter((r) => counts[r] > 0);
+  return (
+    <section className={`flex flex-col gap-2 rounded-xl border border-gold/30 bg-night-900/60 p-2.5 ${className}`}>
+      <h3 className="flex items-center gap-2 text-sm font-bold">
+        <span className="min-w-0 flex-1 truncate">🃏 {t("lobbySetup.inPlay")}</span>
+        <span className={`font-mono ${total === n ? "text-emerald-300" : "text-blood-light"}`}>
+          {total}/{n}
+        </span>
+      </h3>
+      {inPlay.length ? (
+        <ul className="flex flex-col gap-1">
+          {inPlay.map((r) => (
+            <li key={r} className="flex items-center gap-2 text-sm" title={t(`roles.${r}.desc`)}>
+              <span className="min-w-0 flex-1 truncate">
+                <RoleBadge roleId={r} />
+              </span>
+              <b className="font-mono">×{counts[r]}</b>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-white/50">{t("lobbySetup.noRoles")}</p>
+      )}
+      <p className={`rounded-lg p-1.5 text-xs ${total === n ? "bg-emerald-500/10 text-emerald-300" : "bg-blood/15 text-blood-light"}`}>
+        {total === n ? t("host.totalRoles", { roles: total, players: n }) : t("host.mismatch", { roles: total, players: n })}
+      </p>
+    </section>
+  );
+}
+
+type RoleTab = "basic" | "advanced" | "solo";
+const ROLE_TABS: RoleTab[] = ["basic", "advanced", "solo"];
+/** The same groups as the host screen (those lists are defined further down, so read them at render time). */
+const tabRoles = (k: RoleTab) => (k === "basic" ? BASIC_ROLES : k === "advanced" ? ADVANCED_ROLES : SOLO_GROUP);
+
+/**
+ * The room owner's role setup, built to fit the lobby panel without scrolling:
+ * maps in one row (a tap uses them), one group of role counters at a time in
+ * small tiles, and a box beside them listing every role in the game.
+ */
+export function OwnerRoleSetup({ state }: { state: ClientState }) {
+  const t = useT();
+  const act = useHostAction();
+  const counts = state.settings.roleCounts;
+  const n = state.players.length;
+  const [tab, setTab] = useState<RoleTab>("basic");
+  const setCounts = (roleCounts: Record<RoleId, number>) => act({ type: "setRoleCounts", roleCounts });
+  const set = (r: RoleId, v: number) => setCounts({ ...counts, [r]: Math.max(0, v) });
+  const same = (c: Record<RoleId, number>) => ROLE_IDS.every((r) => c[r] === counts[r]);
+  const inTab = (k: RoleTab) => tabRoles(k).reduce((sum, r) => sum + counts[r], 0);
+
+  const tile = (r: RoleId) => (
+    <li key={r} className="flex items-center gap-1 rounded-lg bg-white/5 py-1 pr-1 pl-2" title={`${t(`roles.${r}.name`)}. ${t(`roles.${r}.desc`)}`}>
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: ROLES[r].color }} aria-hidden />
+      <span className="min-w-0 flex-1 truncate text-xs font-semibold">
+        {ROLES[r].emoji} {t(`roles.${r}.name`)}
+      </span>
+      <button className="btn-ghost btn-sm h-7 min-h-7 w-7 px-0" onClick={() => set(r, counts[r] - 1)} disabled={counts[r] <= 0} aria-label="-">
+        −
+      </button>
+      <span className={`w-5 text-center font-mono font-bold ${counts[r] ? "text-moon" : "text-white/35"}`}>{counts[r]}</span>
+      <button
+        className="btn-ghost btn-sm h-7 min-h-7 w-7 px-0"
+        onClick={() => set(r, counts[r] + 1)}
+        disabled={ROLES[r].max !== undefined && counts[r] >= ROLES[r].max!}
+        aria-label="+"
+      >
+        +
+      </button>
+    </li>
+  );
+
+  return (
+    <div className="flex flex-col gap-2 md:h-full md:flex-row">
+      <div className="flex min-w-0 flex-col gap-2 md:flex-1">
+        {n > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-bold text-white/60">{t("presets.title", { count: n })}</span>
+            {PRESET_IDS.map((id) => {
+              const map = presetRoles(id, n, ROLE_IDS).counts;
+              const active = same(map);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className={`btn-sm min-h-7 px-2 py-0.5 text-xs ${active ? "btn-gold" : "btn-ghost"}`}
+                  aria-pressed={active}
+                  title={t(`presets.${id}.desc`)}
+                  onClick={() => !active && setCounts(map)}
+                >
+                  {PRESET_EMOJI[id]} {t(`presets.${id}.name`)}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              className="btn-ghost btn-sm min-h-7 px-2 py-0.5 text-xs"
+              title={t("presets.random")}
+              onClick={() => setCounts(suggestRoles(n, ROLE_IDS, Math.random))}
+            >
+              🎲<span className="sr-only">{t("presets.random")}</span>
+            </button>
+          </div>
+        )}
+        <div className="flex gap-1 border-b border-white/10" role="tablist">
+          {ROLE_TABS.map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="tab"
+              aria-selected={tab === k}
+              className={`-mb-px border-b-2 px-2.5 py-1 text-sm font-bold ${tab === k ? "border-gold text-gold" : "border-transparent text-white/60 hover:text-white"}`}
+              onClick={() => setTab(k)}
+            >
+              {t(`lobbySetup.tab.${k}`)}
+              {inTab(k) > 0 && <span className="ml-1 rounded bg-white/10 px-1 font-mono text-xs">{inTab(k)}</span>}
+            </button>
+          ))}
+        </div>
+        {/* As many columns as the panel has room for, so names never get cut to nothing. */}
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-1.5">{tabRoles(tab).map(tile)}</ul>
+      </div>
+      <div className="flex flex-col gap-2 md:min-h-0 md:w-56 md:shrink-0 md:overflow-y-auto">
+        <RoleSummary counts={counts} n={n} />
+        <BalanceAlert state={state} owner />
+      </div>
+    </div>
   );
 }
 
