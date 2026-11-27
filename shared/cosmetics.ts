@@ -1,9 +1,5 @@
 
-import { SPECIAL_ROLES } from "./freeRoles";
-import { teamOf } from "./roles";
-import type { RoleId } from "./types";
-
-// Profile cosmetics a player can pick: name font, name effect, avatar frame,
+// Profile cosmetics a player can pick, all free for everyone: name font, name effect, avatar frame,
 // chat bubble decoration and profile card background.
 // Ids are whitelisted here; labels live in messages (profile.font.<id> etc.),
 // visuals in src/app/globals.css (.nf-<id>, .ne-<id>, .af-<id>, .cb-<id>, .pc-<id>).
@@ -13,9 +9,9 @@ export const NAME_EFFECTS = ["none", "glow", "blood", "flicker", "shimmer", "gli
 export const AVATAR_FRAMES = [
   "none", "ring", "blood", "double", "moon", "thorns", "pulse", "crown", "frost", "runes", "wolf",
 ] as const;
-/** Decorations laid over a player's chat colour; "plain" (just the colour) is free. */
+/** Decorations laid over a player's chat colour; "plain" is just the colour. */
 export const CHAT_DECOS = ["plain", "stars", "moon", "blood", "frost", "ember", "gold", "paws"] as const;
-/** Backgrounds behind the avatar and name on the profile card; "plain" is free. */
+/** Backgrounds behind the avatar and name on the profile card. */
 export const CARD_BGS = ["plain", "stars", "bloodmoon", "pines", "tarot", "mist", "gold", "village"] as const;
 
 /**
@@ -79,122 +75,4 @@ export function sanitizeAvatarUrl(url: unknown): string | null {
   if (/^\/avatars\/[a-z0-9-]+\.(jpg|png|webp)$/.test(url)) return url;
   if (/^https:\/\/lh\d\.googleusercontent\.com\/[\w\-./=?&%]+$/.test(url) && url.length < 600) return url;
   return null;
-}
-
-// ---------------------------------------------------------------------------
-// Shop: every font, effect, frame, chat decoration and card background except the defaults is sold through payOS.
-// An item id is "<kind>:<value>", e.g. "effect:glow".
-// Special roles: a few are free each day (see freeRoles.ts); a role card
-// ("role:<id>") keeps one open every day, and a bundle ("bundle:<name>") sells
-// a group of role cards at 20% off.
-// ---------------------------------------------------------------------------
-
-export type StyleKind = keyof PlayerStyle;
-export type ItemKind = StyleKind;
-export type ItemId = `${ItemKind | "role" | "bundle"}:${string}`;
-
-/** Price of one item, in VND. */
-export const ITEM_PRICE_VND = 49_000;
-/** Sale price of a decor item (font, effect, frame, card, chat), in VND. Role cards stay at ITEM_PRICE_VND. */
-export const DECOR_PRICE_VND = 29_000;
-/** How much the decor sale takes off ITEM_PRICE_VND, in whole percent (worked out, never typed). */
-export const DECOR_DISCOUNT_PCT = Math.round((1 - DECOR_PRICE_VND / ITEM_PRICE_VND) * 100);
-
-const OPTIONS: Record<ItemKind, readonly string[]> = {
-  font: NAME_FONTS,
-  effect: NAME_EFFECTS,
-  frame: AVATAR_FRAMES,
-  chat: CHAT_DECOS,
-  card: CARD_BGS,
-};
-
-/** What everyone gets for free (the defaults). */
-export const FREE_ITEMS: readonly ItemId[] = ["font:default", "effect:none", "frame:none", "chat:plain", "card:plain"];
-
-export const itemId = (kind: ItemKind, value: string): ItemId => `${kind}:${value}`;
-
-export function isFreeItem(id: string): boolean {
-  return FREE_ITEMS.includes(id as ItemId);
-}
-
-/** Every item that can be bought. */
-export const SHOP_ITEMS: readonly ItemId[] = (Object.keys(OPTIONS) as ItemKind[]).flatMap((kind) =>
-  OPTIONS[kind].map((v) => itemId(kind, v)).filter((id) => !isFreeItem(id)),
-);
-
-export function isShopItem(id: unknown): id is ItemId {
-  return typeof id === "string" && SHOP_ITEMS.includes(id as ItemId);
-}
-
-/** Role cards: one per special role. */
-export const ROLE_ITEMS: readonly ItemId[] = SPECIAL_ROLES.map((r) => `role:${r}` as ItemId);
-export const isRoleItem = (id: unknown): id is ItemId => typeof id === "string" && ROLE_ITEMS.includes(id as ItemId);
-
-/** Bundles take this much off the role cards in them that the buyer does not have yet. */
-export const BUNDLE_DISCOUNT = 0.2;
-export const BUNDLE_NAMES = ["wolves", "village", "solo", "all"] as const;
-export type BundleName = (typeof BUNDLE_NAMES)[number];
-/** The role cards in each bundle. */
-export const BUNDLES: Record<BundleName, readonly RoleId[]> = {
-  wolves: SPECIAL_ROLES.filter((r) => teamOf(r) === "wolves"),
-  village: SPECIAL_ROLES.filter((r) => teamOf(r) === "village"),
-  solo: SPECIAL_ROLES.filter((r) => teamOf(r) === "solo"),
-  all: SPECIAL_ROLES,
-};
-export const BUNDLE_ITEMS: readonly ItemId[] = BUNDLE_NAMES.map((b) => `bundle:${b}` as ItemId);
-export const isBundle = (id: unknown): id is ItemId => typeof id === "string" && BUNDLE_ITEMS.includes(id as ItemId);
-
-/** What a purchase hands over: a bundle's role cards, or the item itself. */
-export function itemsGranted(id: ItemId): ItemId[] {
-  if (!isBundle(id)) return [id];
-  return BUNDLES[id.slice(7) as BundleName].map((r) => `role:${r}` as ItemId);
-}
-
-/** Anything sold for money: cosmetics, role cards and bundles. */
-export const isSellable = (id: unknown): id is ItemId => isShopItem(id) || isRoleItem(id) || isBundle(id);
-
-/**
- * What an item costs this buyer, in VND. A bundle only charges for the role
- * cards the buyer does not have yet, 20% off, rounded to the thousand.
- * 0 means there is nothing left to buy.
- */
-export function itemPrice(id: ItemId, owned: readonly string[] = []): number {
-  if (!isBundle(id)) return owned.includes(id) ? 0 : isRoleItem(id) ? ITEM_PRICE_VND : DECOR_PRICE_VND;
-  const missing = itemsGranted(id).filter((r) => !owned.includes(r)).length;
-  return Math.round((missing * ITEM_PRICE_VND * (1 - BUNDLE_DISCOUNT)) / 1000) * 1000;
-}
-
-/** A bundle's price before the discount, for the role cards still missing. */
-export const bundleListPrice = (id: ItemId, owned: readonly string[] = []) =>
-  itemsGranted(id).filter((r) => !owned.includes(r)).length * ITEM_PRICE_VND;
-
-/** Everything an account can own. */
-export const OWNABLE_ITEMS: readonly ItemId[] = [...SHOP_ITEMS, ...ROLE_ITEMS];
-
-/** Keeps only real, ownable item ids (deduplicated). */
-export function sanitizeOwned(input: unknown): ItemId[] {
-  return Array.isArray(input) ? [...new Set(input.filter((id) => isShopItem(id) || isRoleItem(id)))] : [];
-}
-
-/**
- * Drops every part of a style the player does not own (back to the default).
- * `"all"` is for bots, which show off the whole collection.
- */
-export function limitStyle(style: PlayerStyle, owned: readonly string[] | "all"): PlayerStyle {
-  if (owned === "all") return style;
-  const has = (kind: StyleKind) => isFreeItem(itemId(kind, style[kind])) || owned.includes(itemId(kind, style[kind]));
-  return {
-    font: has("font") ? style.font : DEFAULT_STYLE.font,
-    effect: has("effect") ? style.effect : DEFAULT_STYLE.effect,
-    frame: has("frame") ? style.frame : DEFAULT_STYLE.frame,
-    chat: has("chat") ? style.chat : DEFAULT_STYLE.chat,
-    card: has("card") ? style.card : DEFAULT_STYLE.card,
-  };
-}
-
-/** Equips an item: the style with that one part swapped in. */
-export function equip(style: PlayerStyle, id: ItemId): PlayerStyle {
-  const [kind, value] = id.split(":") as [ItemKind, string];
-  if (!(kind in OPTIONS)) return style;
-  return sanitizeStyle({ ...style, [kind]: value });
 }

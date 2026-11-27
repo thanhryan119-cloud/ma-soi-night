@@ -4,11 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import { describe, expect, it } from "vitest";
-import { SHOP_ITEMS, type ItemId } from "../shared/cosmetics";
 import {
   CHECKIN_GOLD,
   DAILY_BONUS_GOLD,
-  GOLD_PRICES,
   applyGame,
   claimQuest,
   dailyQuests,
@@ -32,13 +30,6 @@ const game = (role: RoleId, outcome: RecentGame["outcome"], survived = true): Re
   players: 8,
   humans: 1,
   counted: false,
-});
-
-describe("gold prices", () => {
-  it("only some shop items sell for gold", () => {
-    for (const id of Object.keys(GOLD_PRICES)) expect(SHOP_ITEMS).toContain(id);
-    expect(Object.keys(GOLD_PRICES).length).toBeLessThan(SHOP_ITEMS.length);
-  });
 });
 
 describe("daily quests", () => {
@@ -139,7 +130,6 @@ function call(handle: (req: IncomingMessage, res: ServerResponse) => Promise<boo
 }
 
 function setup() {
-  const owned: Record<string, ItemId[]> = { u1: [] };
   let now = T0;
   const dir = mkdtempSync(join(tmpdir(), "quests-"));
   const make = () =>
@@ -151,12 +141,9 @@ function setup() {
         userForToken: (t) => (t === "tok1" ? { id: "u1" } : null),
         hasUser: (id) => id === "u1",
         statsOf: () => null,
-        ownedFor: (id) => owned[id] ?? [],
-        grantItem: (id, item) => owned[id].push(item),
-        publicUser: (u) => ({ id: u.id, owned: owned[u.id] }),
       },
     });
-  return { quests: make(), make, owned, setNow: (t: number) => (now = t) };
+  return { quests: make(), make, setNow: (t: number) => (now = t) };
 }
 
 describe("quests server", () => {
@@ -165,8 +152,8 @@ describe("quests server", () => {
     expect((await call(quests.handle, "GET", "/quests")).status).toBe(401);
   });
 
-  it("records games, pays rewards, buys gold items and keeps it all on disk", async () => {
-    const { quests, make, owned } = setup();
+  it("records games, pays rewards and keeps it all on disk", async () => {
+    const { quests, make } = setup();
     quests.recordGame([{ userId: "ghost", game: game("seer", "win") }, ...Array.from({ length: 10 }, () => ({ userId: "u1", game: game("werewolf", "win") }))]);
     let r = await call(quests.handle, "GET", "/quests", undefined, "tok1");
     expect(r.body.quests.goldQuests.find((q: { id: string }) => q.id === "firstWolfWin").progress).toBe(1);
@@ -177,23 +164,11 @@ describe("quests server", () => {
     }
     expect(r.body.quests.gold).toBe(CHECKIN_GOLD + 200 + 300 + 300 + 400);
 
-    // Paid-only items and items beyond the balance are refused.
-    r = await call(quests.handle, "POST", "/quests/buy", { itemId: "effect:blood" }, "tok1");
-    expect(r.body.error).toBe("err.notForGold");
-    r = await call(quests.handle, "POST", "/quests/buy", { itemId: "effect:glow" }, "tok1");
-    expect(r.body.error).toBe("err.notEnoughGold");
-
-    r = await call(quests.handle, "POST", "/quests/buy", { itemId: "chat:stars" }, "tok1");
-    expect(r.status).toBe(200);
-    expect(owned.u1).toEqual(["chat:stars"]);
-    expect(r.body.quests.gold).toBe(1250 - GOLD_PRICES["chat:stars"]!);
-    r = await call(quests.handle, "POST", "/quests/buy", { itemId: "chat:stars" }, "tok1");
-    expect(r.body.error).toBe("err.itemOwned");
 
     // A restart keeps the gold and what was claimed.
     const again = make();
     r = await call(again.handle, "GET", "/quests", undefined, "tok1");
-    expect(r.body.quests.gold).toBe(1250 - GOLD_PRICES["chat:stars"]!);
+    expect(r.body.quests.gold).toBe(1250);
     expect(r.body.quests.checkin.claimed).toBe(true);
   });
 });

@@ -23,7 +23,6 @@ describe("profile cosmetics", () => {
     const p = addPlayer(room, {
       name: "Lan",
       style: { font: "brush", effect: "blood", frame: "thorns", chat: "stars" },
-      owned: ["font:brush", "effect:blood", "frame:thorns", "effect:glow", "chat:stars"],
       avatarUrl: "https://evil.example/x.png",
     }).player!;
     expect(p.avatarUrl).toBeNull();

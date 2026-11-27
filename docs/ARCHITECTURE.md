@@ -91,22 +91,13 @@ Chỉ người chơi đăng nhập Google mới có thống kê (khách và bot 
 
 HTTP công khai: `GET /leaderboard` (mọi tài khoản, kèm số ván/thắng theo phe `teams`; client xếp hạng bằng `rankCategory` theo hạng mục Tổng, Phe Sói, Phe Dân, Phe độc lập, cần `minGamesFor` = 5 ván, riêng Phe độc lập 3 ván; theo tỉ lệ thắng → số ván thắng → số ván), `GET /profiles/:userId`. `GET /me` trả thêm `stats` của chính mình.
 
-### Cửa hàng (`server/shop.ts`, `server/payos.ts`)
+### Miễn phí và ủng hộ
 
-Mỗi font/hiệu ứng/khung trừ mặc định là một món `<loại>:<id>` (ví dụ `effect:glow`), giá `ITEM_PRICE_VND` = 49.000đ. `User.owned` giữ các món đã mua; `limitStyle()` gỡ mọi món chưa sở hữu ở `addPlayer`, `updateProfile`, `PATCH /me`, hồ sơ công khai và bảng xếp hạng. `Player.owned` chỉ nằm trên server (không có trong view).
+Không có gì để bán: `sanitizeStyle()` là bộ lọc duy nhất cho kiểu hồ sơ (chỉ giữ id hợp lệ), mọi người chơi đeo được mọi món. Mọi vai mở cho mọi phòng, không còn khoá vai theo ngày. `RoleDef.advanced` chỉ để gom các vai nâng cao vào nhóm thu gọn trong phần chia vai và để `suggestRoles()` mặc định chỉ dùng vai cơ bản (`CORE_ROLES`). Gợi ý của phòng dùng mọi vai. Vàng từ nhiệm vụ chỉ là điểm thành tích.
 
-**Vai**: mọi vai mở cho tất cả mọi người, không bán. `RoleDef.advanced` chỉ để gom các vai nâng cao vào nhóm thu gọn trong phần chia vai và để `suggestRoles()` mặc định chỉ dùng vai cơ bản (`CORE_ROLES`). Gợi ý của phòng dùng mọi vai.
+Ủng hộ là một ảnh VietQR tĩnh (`src/components/Donate.tsx`, `public/donate-qr.png`), không có route server hay cổng thanh toán nào.
 
-| Route | Ai gọi | Việc |
-|---|---|---|
-| `GET /shop` | công khai | `{ enabled, price, items }` |
-| `POST /shop/checkout` | đã đăng nhập | `{ itemId, returnUrl }` → tạo link payOS (ký HMAC-SHA256), trả `checkoutUrl`; bấm lại thì dùng lại link còn hạn |
-| `GET /shop/orders/:orderCode` | chủ đơn | đơn còn chờ thì hỏi payOS; đã trả thì mở khoá |
-| `POST /payos/webhook` | payOS | kiểm chữ ký, `code = "00"` và đủ tiền thì mở khoá (mỗi đơn đúng một lần) |
-| `GET /shop/codes/:code` | đã đăng nhập | mã còn dùng được không, giá sau khi giảm |
-| `GET/POST /shop/admin/codes`, `PATCH/DELETE /shop/admin/codes/:code` | email trong `ADMIN_EMAILS` | quản lý mã giảm giá (`shared/codes.ts`, lưu `codes.json`) |
-
-Mã giảm giá: `POST /shop/checkout` nhận thêm `code`; giá payOS là giá sau giảm, đơn lưu `code`. Lượt dùng (`uses`, `usedBy`) chỉ cộng khi đơn được trả (`fulfil`), mỗi tài khoản một lần. Giá về 0 thì mở khoá ngay, không tạo link payOS. `User.email` được ghi lại ở mỗi lần đăng nhập Google để nhận ra quản trị viên.
+Trang chủ hiện danh sách phòng (`RoomsCard` trong `src/components/RoomList.tsx`, dùng chung với sảnh) qua `useLobby(profile, { watchOnly: true })`: gửi `lobby:enter` không kèm hồ sơ nên chỉ nhận `lobby:state`, không hiện tên trong danh sách đang ở sảnh. Khách hoặc người chưa có tên bấm Vào thì sang trang mời `/join/<mã>`, trang đó hỏi tên.
 
 ## 4. Luật xử lý đêm (`shared/rules.ts › resolveNight`)
 

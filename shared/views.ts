@@ -3,7 +3,7 @@
 // (wolf teammates, being dead with "dead see roles", or the game is over).
 
 import { DEFAULT_STYLE, type PlayerStyle } from "./cosmetics";
-import { NIGHT_STEP_ROLE, ROLES, ROLE_IDS, isWolf, openRoles, suggestRoles, wakesIn } from "./roles";
+import { NIGHT_STEP_ROLE, ROLES, ROLE_IDS, isWolf, suggestRoles, wakesIn } from "./roles";
 import {
   aliveIds,
   currentStep,
@@ -203,8 +203,6 @@ export interface ClientState {
   lovers: [string, string] | null;
   log?: LogEntry[];
   suggested?: Record<RoleId, number>;
-  /** Special roles this room cannot use today (not free, and the room's creator has no card for them). */
-  lockedRoles?: RoleId[];
   potions?: { heal: boolean; poison: boolean };
   /** The ghosts' bets (shared/prophecy.ts): for the dead, spectators and the host, and everyone at the end. */
   prophecy?: ProphecyView;
@@ -519,18 +517,17 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
     lovers: isHost || room.phase.kind === "gameOver" ? game?.lovers ?? null : null,
   };
 
-  if (room.lockedRoles?.length) state.lockedRoles = room.lockedRoles;
   const prophecyKey = viewer === "player" ? meId : viewer === "spectator" && spectatorId ? SPECTATOR_KEY + spectatorId : null;
   const prophecy = viewer === "screen" && room.phase.kind !== "gameOver" ? undefined : prophecyView(room, { key: prophecyKey, host: isHost });
   if (prophecy) state.prophecy = prophecy;
   // The owner of a machine-host room sets the roles up, so they get the suggestion too.
   if (!isHost && room.machineHost && meId && room.ownerId === meId) {
-    state.suggested = suggestRoles(room.players.length, openRoles(room));
+    state.suggested = suggestRoles(room.players.length, ROLE_IDS);
   }
   if (isHost) {
     state.pendingWin = game?.pendingWin ?? null;
     state.log = room.log;
-    state.suggested = suggestRoles(room.players.length, openRoles(room));
+    state.suggested = suggestRoles(room.players.length, ROLE_IDS);
     state.potions = game?.potions;
   } else if (room.phase.kind === "gameOver") {
     // The game is over, nothing is secret any more: everyone gets the full

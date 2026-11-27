@@ -2,7 +2,6 @@
 
 // Quests: a daily check-in, three daily quests (new every day at midnight,
 // Vietnam time) with a bonus for finishing them all, and one-time gold quests.
-// Gold buys some items in the shop.
 
 import Link from "next/link";
 import { GlobalChat } from "@/components/GlobalChat";
@@ -97,9 +96,6 @@ export default function QuestsPage() {
             </ul>
           </section>
 
-          <Link href="/shop" className="btn-gold w-full py-3 text-center">
-            🛒 {t("quests.spend")}
-          </Link>
           <p className="text-center text-xs text-white/50">{t("quests.earnedTotal", { gold: fmt(q.earned) })}</p>
         </>
       )}

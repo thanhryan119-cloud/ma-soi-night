@@ -169,9 +169,8 @@ function PlayersCard({ state, hideRoles = false }: { state: ClientState; hideRol
             >
               <option value="">{t("host.unassigned")}</option>
               {ROLE_IDS.map((r) => (
-                <option key={r} value={r} disabled={!!state.lockedRoles?.includes(r) && p.assignedRole !== r}>
+                <option key={r} value={r}>
                   {ROLES[r].emoji} {t(`roles.${r}.name`)}
-                  {state.lockedRoles?.includes(r) ? " 🔒" : ""}
                 </option>
               ))}
             </select>
@@ -221,19 +220,12 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
   const [alt, setAlt] = useState<{ n: number; counts: Record<RoleId, number> } | null>(null);
   const suggested = alt?.n === n ? alt.counts : state.suggested;
   const sameAsSuggested = suggested && ROLE_IDS.every((r) => suggested[r] === counts[r]);
-  const locked = state.lockedRoles ?? [];
-  const isLocked = (r: RoleId) => locked.includes(r);
 
   const grid = `grid grid-cols-1 gap-1.5 ${owner ? "" : "sm:grid-cols-2"}`;
   const row = (r: RoleId) => (
     <li key={r} className="flex items-center gap-2 rounded-xl bg-white/5 p-2" title={t(`roles.${r}.desc`)}>
-      <span className={`min-w-0 flex-1 ${isLocked(r) ? "opacity-50" : ""}`}>
+      <span className="min-w-0 flex-1">
         <RoleBadge roleId={r} />
-        {isLocked(r) && (
-          <span className="ml-1" title={t("freeRoles.lockedRole")}>
-            🔒
-          </span>
-        )}
       </span>
       <button className="btn-ghost btn-sm w-8" onClick={() => set(r, counts[r] - 1)} disabled={counts[r] <= 0} aria-label="-">
         −
@@ -242,7 +234,7 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
       <button
         className="btn-ghost btn-sm w-8"
         onClick={() => set(r, counts[r] + 1)}
-        disabled={isLocked(r) || (ROLES[r].max !== undefined && counts[r] >= ROLES[r].max!)}
+        disabled={ROLES[r].max !== undefined && counts[r] >= ROLES[r].max!}
         aria-label="+"
       >
         +
@@ -253,7 +245,7 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
   return (
     <section className="card flex flex-col gap-3">
       <h2 className="text-xl font-bold">{t("host.roleConfig")}</h2>
-      {n > 0 && <RoleMaps n={n} counts={counts} locked={locked} onUse={(c) => act({ type: "setRoleCounts", roleCounts: c })} />}
+      {n > 0 && <RoleMaps n={n} counts={counts} onUse={(c) => act({ type: "setRoleCounts", roleCounts: c })} />}
       {suggested && n > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-sm text-white/60">
           <span>{t("host.suggestedFor", { count: n })}:</span>
@@ -269,7 +261,7 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
           >
             {t("host.useSuggested")}
           </button>
-          <button className="btn-ghost btn-sm" onClick={() => setAlt({ n, counts: suggestRoles(n, ROLE_IDS.filter((r) => !isLocked(r)), Math.random) })}>
+          <button className="btn-ghost btn-sm" onClick={() => setAlt({ n, counts: suggestRoles(n, ROLE_IDS, Math.random) })}>
             🎲 {t("host.otherSuggestion")}
           </button>
         </div>
@@ -277,18 +269,10 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
       <ul className={grid}>{BASIC_ROLES.map(row)}</ul>
       <RoleGroup title={t("host.groupAdvanced")} roles={ADVANCED_ROLES} counts={counts} grid={grid} row={row} />
       <RoleGroup title={t("host.groupSolo")} roles={SOLO_GROUP} counts={counts} grid={grid} row={row} />
-      {locked.length > 0 && (
-        <p className="rounded-xl bg-white/5 p-2 text-xs text-white/60">
-          🔒 {t("freeRoles.lockedHint")}{" "}
-          <Link href="/shop#shop-role" className="font-semibold text-gold hover:underline">
-            {t("freeRoles.toShop")}
-          </Link>
-        </p>
-      )}
       <div className={`rounded-xl p-2 text-sm ${total === n ? "bg-emerald-500/10 text-emerald-300" : "bg-blood/15 text-blood-light"}`}>
         {total === n ? t("host.totalRoles", { roles: total, players: n }) : t("host.mismatch", { roles: total, players: n })}
       </div>
-      <BalanceAlert state={state} owner={owner} locked={locked} />
+      <BalanceAlert state={state} owner={owner} />
       {!owner && (
       <>
       <div className="border-t border-white/10 pt-3">
@@ -320,18 +304,15 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
 function RoleMaps({
   n,
   counts,
-  locked,
   onUse,
 }: {
   n: number;
   counts: Record<RoleId, number>;
-  locked: RoleId[];
   onUse: (counts: Record<RoleId, number>) => void;
 }) {
   const t = useT();
   const [pick, setPick] = useState<PresetId | null>(null);
-  const open = ROLE_IDS.filter((r) => !locked.includes(r));
-  const map = pick ? presetRoles(pick, n, open) : null;
+  const map = pick ? presetRoles(pick, n, ROLE_IDS) : null;
   const same = map && ROLE_IDS.every((r) => map.counts[r] === counts[r]);
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-white/10 p-2">
@@ -425,7 +406,7 @@ const LEVEL_STYLE = ["", "border-gold/40 bg-gold/10 text-gold", "border-orange-4
  * Warns when the setup leans too far to one side, says why, and offers a fix.
  * Uses the roles handed out by hand once everyone has one, the role counts otherwise.
  */
-function BalanceAlert({ state, owner, locked }: { state: ClientState; owner: boolean; locked: RoleId[] }) {
+function BalanceAlert({ state, owner }: { state: ClientState; owner: boolean }) {
   const t = useT();
   const act = useHostAction();
   const n = state.players.length;
@@ -438,8 +419,7 @@ function BalanceAlert({ state, owner, locked }: { state: ClientState; owner: boo
   const b = balanceOf(setup);
   if (!b.leans) return <p className="text-center text-xs text-emerald-300/80">{t("host.balance.fair")}</p>;
 
-  const open = ROLE_IDS.filter((r) => !locked.includes(r));
-  const fix = fixBalance(setup, open);
+  const fix = fixBalance(setup);
   const name = (r: RoleId) => `${ROLES[r].emoji} ${t(`roles.${r}.name`)}`;
   const reason = (r: BalanceReason) => {
     switch (r.key) {
