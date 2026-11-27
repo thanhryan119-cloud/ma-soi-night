@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { AVATARS } from "@shared/engine";
-import { DEFAULT_STYLE, ITEM_PRICE_VND, limitStyle, sanitizeOwned, sanitizeStyle, type ItemId, type PlayerStyle } from "@shared/cosmetics";
+import { DEFAULT_STYLE, sanitizeStyle, type PlayerStyle } from "@shared/cosmetics";
 import type { QuestsView } from "@shared/quests";
 import { socketUrl, storage } from "./socket";
 
@@ -13,9 +13,7 @@ export interface AccountUser {
   name: string;
   avatarUrl: string | null;
   style: PlayerStyle;
-  /** Shop items this account bought. */
-  owned: ItemId[];
-  /** May manage discount codes (/admin/codes). */
+  /** Listed in ADMIN_EMAILS on the server. */
   isAdmin?: boolean;
   /** Google is linked to this account. */
   hasGoogle?: boolean;
@@ -57,7 +55,6 @@ function load() {
   if (loaded || typeof window === "undefined") return;
   loaded = true;
   auth = storage.get<AuthState>(AUTH_KEY);
-  if (auth) auth = { ...auth, user: { ...auth.user, owned: sanitizeOwned(auth.user.owned) } };
 }
 
 // Signing in, out or buying in a window over a room (an iframe) shows in the room too.
@@ -101,8 +98,7 @@ export function loadLocalProfile(): LocalProfile {
   return {
     name: typeof p.name === "string" ? p.name : "",
     avatar: AVATARS.includes(p.avatar ?? "") ? p.avatar! : AVATARS[Math.floor(Math.random() * AVATARS.length)],
-    // Paid items only stay on while the signed-in account owns them.
-    style: limitStyle(sanitizeStyle(p.style ?? DEFAULT_STYLE), getAuth()?.user.owned ?? []),
+    style: sanitizeStyle(p.style ?? DEFAULT_STYLE),
   };
 }
 
@@ -178,120 +174,51 @@ export async function uploadAvatar(file: File): Promise<ApiResult> {
 }
 
 // ---------------------------------------------------------------------------
-// Shop (payOS)
+// Donations (payOS)
 // ---------------------------------------------------------------------------
 
-export interface ShopInfo {
+export interface DonateInfo {
   enabled: boolean;
-  price: number;
+  presets: number[];
+  min: number;
+  max: number;
+  recent: { name: string; amount: number; paidAt: number }[];
 }
 
-export const SHOP_RETURN_KEY = "msn:shopReturn";
+export type DonationStatus = "pending" | "paid" | "cancelled" | "expired";
 
-let shopInfo: Promise<ShopInfo> | null = null;
-/** Is the shop on, and what does an item cost? (asked once per page load) */
-export function fetchShop(): Promise<ShopInfo> {
-  shopInfo ??= api("/shop").then((r) => {
-    const b = r as unknown as Partial<ShopInfo>;
-    if (!r.ok) shopInfo = null; // try again next time
-    return { enabled: !!(r.ok && b.enabled), price: Number(b.price) || ITEM_PRICE_VND };
-  });
-  return shopInfo;
-}
-
-export interface CodeCheck {
-  code: string;
-  kind: "percent" | "amount";
-  value: number;
-  /** Price of the item after the code. */
+export interface DonationView {
+  orderCode: number;
   amount: number;
+  status: DonationStatus;
+  expiresAt: number;
+  checkoutUrl: string | null;
+  qrCode: string | null;
+  bin: string | null;
+  accountNumber: string | null;
+  accountName: string | null;
+  description: string | null;
 }
 
-/** What a discount code does for me right now (price after it), or why it can't be used. */
-export async function checkCode(code: string, itemId?: ItemId): Promise<ApiResult & Partial<CodeCheck>> {
-  const item = itemId ? `?item=${encodeURIComponent(itemId)}` : "";
-  return (await api(`/shop/codes/${encodeURIComponent(code.trim())}${item}`)) as ApiResult & Partial<CodeCheck>;
+/** Are donations on, suggested amounts and the latest supporters. */
+export async function fetchDonateInfo(): Promise<DonateInfo | null> {
+  const r = (await api("/donate")) as ApiResult & Partial<DonateInfo>;
+  if (!r.ok) return null;
+  return { enabled: !!r.enabled, presets: r.presets ?? [], min: r.min ?? 10_000, max: r.max ?? 10_000_000, recent: r.recent ?? [] };
 }
 
-/**
- * Buys one item, with an optional discount code. Usually the browser leaves for
- * payOS; a code that covers the whole price unlocks it right away (`free`).
- */
-export async function buyItem(itemId: ItemId, code?: string): Promise<ApiResult & { free?: boolean }> {
-  const r = (await api("/shop/checkout", {
+/** Opens a donation: payOS makes a payment link and a VietQR code to show on the page. */
+export async function startDonation(amount: number, name: string, message: string): Promise<ApiResult & { donation?: DonationView }> {
+  return (await api("/donate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ itemId, returnUrl: window.location.origin, ...(code ? { code } : {}) }),
-  })) as ApiResult & { checkoutUrl?: string; free?: boolean };
-  if (r.ok && r.free && r.user && auth) setAuth({ ...auth, user: { ...r.user, owned: sanitizeOwned(r.user.owned) } });
-  if (r.ok && r.checkoutUrl) {
-    // payOS brings the buyer back to /profile; remember where they bought from.
-    storage.set(SHOP_RETURN_KEY, window.location.pathname + window.location.search);
-    // In a window over a room, pay in a new tab so the game keeps running here.
-    const tab = window.self !== window.top ? window.open(r.checkoutUrl, "_blank") : null;
-    if (!tab) window.location.assign(r.checkoutUrl);
-  }
-  return r;
+    body: JSON.stringify({ amount, name, message, returnUrl: window.location.origin }),
+  })) as ApiResult & { donation?: DonationView };
 }
 
-export type OrderStatus = "pending" | "paid" | "cancelled" | "expired";
-
-/** After payOS sends the buyer back: did the payment land? Updates the account when it did. */
-export async function checkOrder(orderCode: number): Promise<ApiResult & { order?: { itemId: ItemId; status: OrderStatus } }> {
-  const r = (await api(`/shop/orders/${orderCode}`)) as ApiResult & { order?: { itemId: ItemId; status: OrderStatus } };
-  if (r.ok && r.user && auth) setAuth({ ...auth, user: { ...r.user, owned: sanitizeOwned(r.user.owned) } });
-  return r;
-}
-
-// ---------------------------------------------------------------------------
-// Discount code management (admins only)
-// ---------------------------------------------------------------------------
-
-export interface AdminCode {
-  code: string;
-  kind: "percent" | "amount";
-  value: number;
-  maxUses: number | null;
-  uses: number;
-  expiresAt: number | null;
-  active: boolean;
-  note: string;
-  createdAt: number;
-  /** VND brought in by paid orders that used it. */
-  revenue: number;
-}
-
-type CodesResult = ApiResult & { codes?: AdminCode[] };
-
-export async function listCodes(): Promise<CodesResult> {
-  return (await api("/shop/admin/codes")) as CodesResult;
-}
-
-export async function createCode(input: {
-  code: string;
-  kind: "percent" | "amount";
-  value: number;
-  maxUses: number | null;
-  expiresAt: number | null;
-  note: string;
-}): Promise<CodesResult> {
-  return (await api("/shop/admin/codes", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  })) as CodesResult;
-}
-
-export async function updateCode(code: string, patch: Partial<Pick<AdminCode, "active" | "maxUses" | "expiresAt" | "note">>): Promise<CodesResult> {
-  return (await api(`/shop/admin/codes/${encodeURIComponent(code)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(patch),
-  })) as CodesResult;
-}
-
-export async function deleteCode(code: string): Promise<CodesResult> {
-  return (await api(`/shop/admin/codes/${encodeURIComponent(code)}`, { method: "DELETE" })) as CodesResult;
+/** Did the transfer land? (the server asks payOS while it is pending) */
+export async function checkDonation(orderCode: number): Promise<ApiResult & { donation?: DonationView }> {
+  return (await api(`/donate/${orderCode}`)) as ApiResult & { donation?: DonationView };
 }
 
 // ---------------------------------------------------------------------------
@@ -341,17 +268,6 @@ export async function claimQuestReward(id: string): Promise<ApiResult & { gold?:
   return r;
 }
 
-/** Buys a shop item with gold (only items with a gold price). */
-export async function buyWithGold(itemId: ItemId): Promise<ApiResult> {
-  const r = (await api("/quests/buy", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ itemId }),
-  })) as ApiResult & { quests?: QuestsView };
-  if (r.quests) setQuests(r.quests);
-  if (r.ok && r.user && auth) setAuth({ ...auth, user: { ...r.user, owned: sanitizeOwned(r.user.owned) } });
-  return r;
-}
 
 export async function signOut() {
   await api("/auth/logout", { method: "POST" });

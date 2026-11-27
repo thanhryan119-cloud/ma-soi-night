@@ -2,7 +2,7 @@
 // Every action is checked here (phase, role, alive, valid target, double vote).
 
 import { newGameId } from "./replay";
-import { AVATAR_FRAMES, CARD_BGS, CHAT_DECOS, NAME_EFFECTS, NAME_FONTS, freeChatColor, limitStyle, sanitizeAvatarUrl, sanitizeOwned, sanitizeStyle } from "./cosmetics";
+import { AVATAR_FRAMES, CARD_BGS, CHAT_DECOS, NAME_EFFECTS, NAME_FONTS, freeChatColor, sanitizeAvatarUrl, sanitizeStyle } from "./cosmetics";
 import {
   BOT_SPEEDS,
   NIGHT_STEP_ROLE,
@@ -16,7 +16,6 @@ import {
   stepRoles,
   suggestRoles,
   BASIC_ROLE_IDS,
-  openRoles,
   totalRoles,
   wakesIn,
 } from "./roles";
@@ -163,8 +162,6 @@ export function addPlayer(
     isBot?: boolean;
     avatarUrl?: string | null;
     style?: unknown;
-    /** Shop items the player's account owns; paid styles outside it are dropped. */
-    owned?: readonly string[];
     userId?: string | null;
     deviceId?: unknown;
   },
@@ -182,8 +179,7 @@ export function addPlayer(
     name,
     avatar: AVATARS.includes(input.avatar ?? "") ? input.avatar! : AVATARS[room.players.length % AVATARS.length],
     avatarUrl: sanitizeAvatarUrl(input.avatarUrl),
-    style: limitStyle(sanitizeStyle(input.style), input.isBot ? "all" : sanitizeOwned(input.owned)),
-    owned: sanitizeOwned(input.owned),
+    style: sanitizeStyle(input.style),
     chatColor: freeChatColor(room.players.map((p) => p.chatColor)),
     userId: input.userId ?? null,
     deviceId: typeof input.deviceId === "string" && /^[\w-]{8,64}$/.test(input.deviceId) ? input.deviceId : null,
@@ -213,8 +209,6 @@ const nameOf = (room: Room, id: string | null | undefined) => getPlayer(room, id
 // ---------------------------------------------------------------------------
 // Role assignment
 // ---------------------------------------------------------------------------
-
-const isLocked = (room: Room, r: RoleId) => !!room.lockedRoles?.includes(r);
 
 /** "Play now" fills the table with bots up to this many seats. */
 export const PLAY_NOW_PLAYERS = 8;
@@ -274,7 +268,6 @@ export function startGame(room: Room): ActionResult {
   if (room.players.length < MIN_PLAYERS) return fail("err.notEnoughPlayers", { min: MIN_PLAYERS });
   const missing = room.players.filter((p) => !room.assignment[p.id]);
   if (missing.length) return fail("err.unassigned", { count: missing.length });
-  if (room.players.some((p) => isLocked(room, room.assignment[p.id]))) return fail("err.roleLocked");
   if (!room.players.some((p) => isWolf(room.assignment[p.id]))) return fail("err.noWolves");
   const roles: Record<string, RoleId> = {};
   for (const p of room.players) {
@@ -909,7 +902,7 @@ export function playerAction(room: Room, playerId: string, action: PlayerAction)
       if (room.phase.kind !== "lobby") return ok;
       if (action.avatar && AVATARS.includes(action.avatar)) player.avatar = action.avatar;
       if (action.style)
-        player.style = limitStyle(sanitizeStyle({ ...player.style, ...action.style }), player.isBot ? "all" : player.owned ?? []);
+        player.style = sanitizeStyle({ ...player.style, ...action.style });
       return ok;
     }
     case "night":
@@ -1351,14 +1344,12 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       const counts = { ...emptyRoleCounts(), ...action.roleCounts };
       const err = validateRoleCounts(counts);
       if (err) return fail(err);
-      // A locked role can be taken out but not added (it may be left over from yesterday).
-      if (ROLE_IDS.some((r) => isLocked(room, r) && counts[r] > (room.settings.roleCounts[r] ?? 0))) return fail("err.roleLocked");
       room.settings = { ...room.settings, roleCounts: counts };
       return ok;
     }
     case "useSuggested":
       if (!inLobby) return fail("err.wrongPhase");
-      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, openRoles(room)) };
+      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, ROLE_IDS) };
       return ok;
     case "assignRandom":
       if (!inLobby) return fail("err.wrongPhase");
@@ -1382,7 +1373,6 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       if (!getPlayer(room, action.playerId)) return fail("err.invalidTarget");
       if (action.roleId === null) delete room.assignment[action.playerId];
       else if (!ROLES[action.roleId]) return fail("err.invalidTarget");
-      else if (isLocked(room, action.roleId) && room.assignment[action.playerId] !== action.roleId) return fail("err.roleLocked");
       else room.assignment[action.playerId] = action.roleId;
       return ok;
     }
@@ -1443,7 +1433,7 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
       room.gameNo = (room.gameNo ?? 1) + 1;
       room.assignment = {};
       room.phase = { kind: "lobby", night: 0, day: 0, steps: [], stepIndex: 0, verdictIndex: 0 };
-      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, openRoles(room)) };
+      room.settings = { ...room.settings, roleCounts: suggestRoles(room.players.length, ROLE_IDS) };
       room.log = [];
       resetTimer(room);
       log(room, "log.newGame");

@@ -5,30 +5,13 @@
 //   - three daily quests (picked per player per day, reset at midnight in Vietnam),
 //     plus a bonus for finishing all three,
 //   - one-time gold quests (milestones: first win, 50 games, a wolf win streak…).
-// Gold buys some shop items (GOLD_PRICES); the rest are sold for VND only.
+// Gold is a score to show off; it buys nothing (every cosmetic is free).
 // Every finished game counts (bots at the table included); daily caps and
 // one-time rewards keep the total in check. Leaving a game counts as nothing.
 
 import { teamOf } from "./roles";
-import type { ItemId } from "./cosmetics";
 import type { RoleId } from "./types";
 import type { RecentGame, UserStats } from "./stats";
-
-// ------------------------------------------------------------------ gold --
-
-/** What can be bought with gold, and for how much. Anything not listed is VND only. */
-export const GOLD_PRICES: Partial<Record<ItemId, number>> = {
-  "effect:glow": 1500,
-  "effect:flicker": 1500,
-  "font:serif": 1000,
-  "font:condensed": 1000,
-  "frame:ring": 1200,
-  "frame:double": 1200,
-  "chat:stars": 1000,
-  "chat:moon": 1000,
-};
-
-export const goldPrice = (id: string): number | null => GOLD_PRICES[id as ItemId] ?? null;
 
 // ---------------------------------------------------------------- quests --
 

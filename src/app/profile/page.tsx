@@ -3,14 +3,12 @@
 import Link from "next/link";
 import { GlobalChat } from "@/components/GlobalChat";
 import { LinkGoogle } from "@/components/AuthPanel";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { QuestsLink } from "@/components/Quests";
 import { CollectionLink } from "@/components/RoleCollection";
 import { Avatar, LangSwitch, ProfileCard, StyledName, toast } from "@/components/ui";
 import {
-  SHOP_RETURN_KEY,
-  checkOrder,
   loadLocalProfile,
   refreshAccount,
   saveLocalProfile,
@@ -18,8 +16,7 @@ import {
   useAccount,
   type LocalProfile,
 } from "@/lib/account";
-import { storage } from "@/lib/socket";
-import { useItemName } from "@/components/Checkout";
+import { DonateLink } from "@/components/Donate";
 import { StatsView } from "@/components/Profile";
 import { fetchMyStats } from "@/lib/stats";
 import type { UserStats } from "@shared/stats";
@@ -34,7 +31,6 @@ export default function ProfilePage() {
     setProfile(loadLocalProfile());
     refreshAccount();
   }, []);
-  const backTo = usePaymentReturn(setProfile);
   const account = useAccount();
   // The page shows the card and the stats; every edit option lives in a window
   // opened by the edit button.
@@ -71,15 +67,8 @@ export default function ProfilePage() {
           <QuestsLink />
         </span>
         <CollectionLink />
-        <Link href="/shop" className="btn-ghost btn-sm border-gold/50 text-gold" title={t("shop.open")}>
-          🛒<span className="sr-only">{t("shop.open")}</span>
-        </Link>
+        <DonateLink />
       </div>
-      {backTo && (
-        <Link href={backTo} className="btn-ghost w-full">
-          ← {t("shop.backToRoom")}
-        </Link>
-      )}
       {look && (
         <ProfileCard bg={look.style.card} className="flex items-center gap-4 px-5 py-8">
           <Avatar p={look} size="xl" />
@@ -127,77 +116,9 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-      <AdminLink />
       <LinkGoogle />
       <SignOutButton />
     </main>
-  );
-}
-
-/**
- * payOS sends the buyer back here with ?order=<code>. Ask the server whether the
- * money landed (it double-checks with payOS), wear the item, and tidy the URL.
- * Returns the page the purchase started from, if any.
- */
-function usePaymentReturn(setProfile: React.Dispatch<React.SetStateAction<LocalProfile | null>>) {
-  const t = useT();
-  const itemName = useItemName();
-  const [backTo, setBackTo] = useState<string | null>(null);
-  const started = useRef(false);
-  useEffect(() => {
-    if (started.current) return;
-    const params = new URLSearchParams(window.location.search);
-    const orderCode = parseInt(params.get("order") ?? params.get("orderCode") ?? "", 10);
-    if (!orderCode) return;
-    started.current = true;
-    window.history.replaceState(null, "", window.location.pathname);
-    const from = storage.get<string>(SHOP_RETURN_KEY);
-    storage.remove(SHOP_RETURN_KEY);
-    if (from && from.startsWith("/") && !from.startsWith("/profile")) setBackTo(from);
-
-    let alive = true;
-    (async () => {
-      // The webhook can land a few seconds after the buyer is sent back.
-      for (let i = 0; i < 6 && alive; i++) {
-        const r = await checkOrder(orderCode);
-        if (!r.ok || !r.order) return toast(t(r.error ?? "err.server"));
-        const { status, itemId } = r.order;
-        if (status === "paid") {
-          if (r.user) {
-            const style = r.user.style;
-            setProfile((p) => {
-              if (!p) return p;
-              const next = { ...p, style };
-              saveLocalProfile(next);
-              return next;
-            });
-          }
-          const item = itemName(itemId);
-          return toast(t("shop.paid", { item }), "info");
-        }
-        if (status === "cancelled" || status === "expired" || params.get("cancel") === "true")
-          return toast(t("shop.cancelled"), "info");
-        if (i === 0) toast(t("shop.checking"), "info");
-        await new Promise((res) => setTimeout(res, 3000));
-      }
-      if (alive) toast(t("shop.pending"));
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  return backTo;
-}
-
-/** Admins (ADMIN_EMAILS on the server) get a way into the code management page. */
-function AdminLink() {
-  const t = useT();
-  const account = useAccount();
-  if (!account?.user.isAdmin) return null;
-  return (
-    <Link href="/admin/codes" className="btn-ghost w-full">
-      🏷️ {t("codes.manage")}
-    </Link>
   );
 }
 

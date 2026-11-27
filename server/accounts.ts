@@ -7,17 +7,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileS
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { join } from "node:path";
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import {
-  DEFAULT_STYLE,
-  OWNABLE_ITEMS,
-  itemsGranted,
-  equip,
-  limitStyle,
-  sanitizeOwned,
-  sanitizeStyle,
-  type ItemId,
-  type PlayerStyle,
-} from "../shared/cosmetics";
+import { DEFAULT_STYLE, sanitizeStyle, type PlayerStyle } from "../shared/cosmetics";
 import { bearer, cors as corsFor, json, readBody } from "./http";
 import {
   applyResult,
@@ -42,8 +32,6 @@ export interface User {
   /** "/avatars/<file>" for an uploaded photo, or the Google profile photo URL. */
   avatarUrl: string | null;
   style?: PlayerStyle;
-  /** Shop items bought with payOS. */
-  owned?: string[];
   /** Google account email, refreshed at every sign-in (used to recognise admins). */
   email?: string;
   createdAt: number;
@@ -57,8 +45,8 @@ interface Store {
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ?? "";
 /**
- * Google emails of the game's admins (comma separated): they manage discount
- * codes and own every shop item. Read on use, after .env is loaded.
+ * Google emails of the game's admins (comma separated), e.g. for server chat
+ * moderation. Read on use, after .env is loaded.
  */
 const adminEmails = () =>
   (process.env.ADMIN_EMAILS ?? "")
@@ -183,30 +171,17 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
   }
 
   const isAdmin = (u: User) => !!u.email && adminEmails().includes(u.email.toLowerCase());
-  /** What an account owns. Admins own the whole shop, items added later included. */
-  const ownedOf = (u: User | undefined | null) => (u && isAdmin(u) ? [...OWNABLE_ITEMS] : sanitizeOwned(u?.owned));
-  /** The style others see: anything not (or no longer) owned falls back to the default. */
-  const styleOf = (u: User) => limitStyle(u.style ?? DEFAULT_STYLE, ownedOf(u));
+  /** The style others see (unknown ids fall back to the default). */
+  const styleOf = (u: User) => sanitizeStyle(u.style ?? DEFAULT_STYLE);
   const publicUser = (u: User) => ({
     id: u.id,
     name: u.name,
     avatarUrl: u.avatarUrl,
     style: styleOf(u),
-    owned: ownedOf(u),
     isAdmin: isAdmin(u),
     hasGoogle: !!u.googleSub,
     username: u.username ?? null,
   });
-
-  /** Adds a bought item to the account and equips it. Safe to call twice. */
-  function grantItem(userId: string, item: ItemId) {
-    const u = store.users[userId];
-    if (!u) return null;
-    u.owned = sanitizeOwned([...ownedOf(u), ...itemsGranted(item)]);
-    u.style = equip(styleOf(u), item);
-    save();
-    return publicUser(u);
-  }
 
   // ------------------------------------------------------------------ HTTP --
 
@@ -365,7 +340,7 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
           if (!clean) return json(res, 400, { ok: false, error: "err.nameRequired" }), true;
           user.name = clean;
         }
-        if (patch.style !== undefined) user.style = limitStyle(sanitizeStyle(patch.style), ownedOf(user));
+        if (patch.style !== undefined) user.style = sanitizeStyle(patch.style);
         save();
         return json(res, 200, { ok: true, user: publicUser(user) }), true;
       }
@@ -400,15 +375,12 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
     userForToken,
     recordGame,
     profileOf,
-    grantItem,
     publicUser,
     isAdmin,
     hasUser: (userId: string) => !!store.users[userId],
     /** What anyone may see of an account (null when it does not exist). */
     userById: (userId: string) => (store.users[userId] ? publicUser(store.users[userId]) : null),
     statsOf: (userId: string) => stats[userId] ?? null,
-    /** Shop items a user owns (empty for guests). */
-    ownedFor: (userId: string | null | undefined) => ownedOf(userId ? store.users[userId] : null),
     enabled: !!GOOGLE_CLIENT_ID,
   };
 }

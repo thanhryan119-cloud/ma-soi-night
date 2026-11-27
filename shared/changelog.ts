@@ -12,6 +12,25 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.8.1",
+    date: "2026-11-27",
+    title: { vi: "Mọi nhân vật và hiệu ứng giờ miễn phí", en: "Every role and effect is now free" },
+    items: {
+      vi: [
+        "Cửa hàng đã đóng. Mọi vai đặc biệt mở cho mọi phòng, mỗi ngày, không cần thẻ vai.",
+        "Mọi font, hiệu ứng tên, khung avatar, khung chat và nền thẻ hồ sơ đều dùng được miễn phí, kể cả khi chưa đăng nhập.",
+        "Thêm trang Ủng hộ (nút 💝). Nếu muốn giúp duy trì máy chủ, bạn quét mã QR ngay trên trang để chuyển khoản. Ủng hộ là tự nguyện và không mở khoá gì thêm.",
+        "Vàng từ nhiệm vụ giờ là điểm thành tích để khoe.",
+      ],
+      en: [
+        "The shop is closed. Every special role is open in every room, every day, no role card needed.",
+        "Every font, name effect, avatar frame, chat decoration and card background is free to use, even without signing in.",
+        "New Donate page (the 💝 button). If you want to help keep the servers running, scan the QR code right on the page to send a bank transfer. Donations are voluntary and unlock nothing extra.",
+        "Gold from quests is now a score to show off.",
+      ],
+    },
+  },
+  {
     version: "1.8.0",
     date: "2026-11-27",
     title: { vi: "Hiệu ứng âm thanh cho cả ván chơi", en: "Sound effects for the whole game" },

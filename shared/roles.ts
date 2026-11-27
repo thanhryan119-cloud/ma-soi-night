@@ -510,10 +510,6 @@ export const isSoloKiller = (roleId: RoleId | undefined) => !!roleId && !!ROLES[
 /** The roles that win alone (their id is the winner). */
 export const SOLO_ROLES = ["tanner", "whiteWolf", "serialKiller", "arsonist"] as const;
 
-/** Roles a room may use now (the server locks special roles that are not free today, see freeRoles.ts). */
-export const openRoles = (room: Pick<Room, "lockedRoles">): RoleId[] =>
-  room.lockedRoles?.length ? ROLE_IDS.filter((r) => !room.lockedRoles!.includes(r)) : [...ROLE_IDS];
-
 /** The classic roles (no special or solo roles): what "play now" deals. */
 export const BASIC_ROLE_IDS: RoleId[] = ROLE_IDS.filter((r) => !ROLES[r].advanced);
 

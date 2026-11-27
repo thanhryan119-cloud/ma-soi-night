@@ -30,7 +30,14 @@ export interface PaymentLink {
   checkoutUrl: string;
   paymentLinkId: string;
   orderCode: number;
+  /** VietQR payload: draw it as a QR code for banking apps to scan. */
   qrCode?: string;
+  /** Receiving account: bank BIN, number and holder. */
+  bin?: string;
+  accountNumber?: string;
+  accountName?: string;
+  /** Transfer note the bank must carry (payOS may lengthen ours). */
+  description?: string;
 }
 
 export type PaymentStatus = "PENDING" | "PROCESSING" | "PAID" | "CANCELLED" | "EXPIRED" | "UNDERPAID" | "FAILED";

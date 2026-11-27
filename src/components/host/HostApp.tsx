@@ -45,7 +45,7 @@ export default function HostApp({ code }: { code: string }) {
 
   const { state, connected, offset } = useRoomState(resume);
 
-  // Signing in or out on this page updates the unlocked roles right away.
+  // Signing in or out on this page reconnects with the new account right away.
   const authToken = useAccount()?.token;
   const firstAuth = useRef(true);
   useEffect(() => {
