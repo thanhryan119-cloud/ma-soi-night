@@ -12,6 +12,23 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.1",
+    date: "2026-11-27",
+    title: { vi: "Cảnh báo bộ vai lệch phe", en: "A warning for lopsided setups" },
+    items: {
+      vi: [
+        "Khi tự chọn hoặc tự gán vai làm một phe mạnh hơn hẳn, phần cấu hình vai báo ngay phe nào đang lấn át và mức độ lệch.",
+        "Cảnh báo ghi rõ lý do, ví dụ quá nhiều sói, thiếu Tiên tri hay có vai quá mạnh.",
+        "Kèm gợi ý đổi vài vai để hai phe cân lại, chỉ cần bấm một nút để áp dụng, hoặc dùng luôn bộ vai chuẩn.",
+      ],
+      en: [
+        "When the roles you pick or hand out make one side much stronger, the role setup now says which side leads and by how much.",
+        "The warning explains why, such as too many wolves, no Seer or a role that is too strong.",
+        "It suggests a few role swaps to even the sides that you apply with one button, or you can switch to the standard setup.",
+      ],
+    },
+  },
+  {
     version: "1.7.0",
     date: "2026-11-27",
     title: { vi: "Bạn bè, bộ sưu tập vai và lá bài sói mới", en: "Friends, a role collection and new wolf cards" },
