@@ -12,7 +12,7 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
-    version: "1.9.1",
+    version: "1.9.2",
     date: "2026-11-27",
     title: { vi: "Lá bài lật ra ngay trong ván", en: "Role cards turn over during the game" },
     items: {
@@ -32,6 +32,15 @@ export const CHANGELOG: Release[] = [
         "At the end of the game the whole table turns their cards over one by one.",
         "Tap a role name to see its card along with what it does.",
       ],
+    },
+  },
+  {
+    version: "1.9.1",
+    date: "2026-11-27",
+    title: { vi: "Thẻ cà phê có ảnh đại diện của sốp", en: "The coffee card gets the dev avatar" },
+    items: {
+      vi: ["Thẻ mã QR cà phê giờ có ảnh đại diện của sốp ở mép trên, mã QR vẫn để trống để app ngân hàng quét dễ.", "Bỏ dòng tên chủ tài khoản dưới mã QR cho gọn."],
+      en: ["The coffee QR card now shows the dev avatar on its top edge, leaving the QR code clear so banking apps read it easily.", "The account holder name under the QR is gone for a cleaner card."],
     },
   },
   {
