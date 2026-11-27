@@ -115,6 +115,10 @@ export function useGameSfx(state: ClientState | null, offset: number) {
     // My turn to act (night power, vote or hunter's shot).
     const turn = (s: ClientState) => !!(s.me && ((s.me.turn && !s.me.turn.done) || s.me.canVote || s.me.hunter?.canShoot));
     if (turn(state) && !turn(before)) play("turn", phaseChanged ? 0.9 : 0);
+    // The ghosts' prophecy: a chime when a round I bet on came true.
+    const last = state.prophecy?.last;
+    const lastBefore = before.prophecy?.last;
+    if (last?.myPoints && (last.kind !== lastBefore?.kind || last.n !== lastBefore?.n)) play("bell", phaseChanged ? 2.2 : 0);
     // A night pick accepted by the server.
     const picks = (s: ClientState) => (s.me?.turn?.selected ?? []).join(",");
     if (state.me?.turn && picks(state) !== picks(before) && picks(state)) play("select");

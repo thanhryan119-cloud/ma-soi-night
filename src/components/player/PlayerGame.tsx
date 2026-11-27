@@ -16,6 +16,7 @@ import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown
 import { scriptLines } from "@/components/host/common";
 import { SocialPanel } from "@/components/SocialPanel";
 import { RolesInPlay } from "@/components/RolesInPlay";
+import { ProphecyEnd, ProphecyPanel, prophecyPending } from "@/components/Prophecy";
 import { SfxToggle } from "@/components/Sfx";
 import { play } from "@/lib/sfx";
 import { useSocial } from "@/lib/social";
@@ -68,7 +69,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
   const players = byId(state);
   const self = players.get(me.id)!;
   const kind = state.phase.kind;
-  const [sheet, setSheet] = useState<null | "role" | "roles" | "timeline" | "owner">(null);
+  const [sheet, setSheet] = useState<null | "role" | "roles" | "timeline" | "owner" | "prophecy">(null);
   const mainRef = usePhaseEnter<HTMLElement>(phaseKeyOf(state.phase));
   const wide = useWide();
 
@@ -140,6 +141,12 @@ export function PlayerGame({ state, offset, connected }: Props) {
       {!me.alive && kind !== "gameOver" && (
         <div className="flex shrink-0 items-center gap-2 border-b border-blood/30 bg-blood/10 px-3 py-1.5 text-xs">
           <span className="min-w-0 flex-1 truncate">💀 {t("player.spectator")}</span>
+          {state.prophecy && (
+            <button className="btn-gold btn-sm relative shrink-0" onClick={() => setSheet("prophecy")}>
+              🔮 {t("prophecy.button")}
+              {prophecyPending(state) && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 animate-pulse rounded-full bg-violet-400 ring-2 ring-night-950" />}
+            </button>
+          )}
           {state.log && (
             <button className="btn-ghost btn-sm shrink-0" onClick={() => setSheet("timeline")}>
               📜 {t("screen.timeline")}
@@ -199,6 +206,11 @@ export function PlayerGame({ state, offset, connected }: Props) {
       {sheet === "role" && (
         <Sheet onClose={() => setSheet(null)}>
           <RoleSheet state={state} me={me} players={players} />
+        </Sheet>
+      )}
+      {sheet === "prophecy" && state.prophecy && (
+        <Sheet title={`🔮 ${t("prophecy.title")}`} onClose={() => setSheet(null)}>
+          <ProphecyPanel state={state} />
         </Sheet>
       )}
       {sheet === "roles" && (
@@ -584,7 +596,8 @@ function PhaseBody({
           <div className="shrink-0">
             <WinnerBanner state={state} t={t} />
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-white/10 p-2">
+          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto rounded-lg border border-white/10 p-2">
+            <ProphecyEnd state={state} />
             <RolesGrid state={state} compact />
           </div>
           <OwnerBar state={state} onSettings={onOwnerSettings} />

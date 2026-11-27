@@ -111,6 +111,11 @@ export function GhostLog({
                       <ChatMilestone m={m} />
                     </li>
                   )}
+                  {m.sys ? (
+                    <li className="rounded-md border border-violet-400/25 bg-violet-500/10 px-2 py-1 text-center text-xs font-semibold text-violet-100">
+                      {t(m.sys.key, m.sys.params)}
+                    </li>
+                  ) : (
                   <li className="flex gap-2">
                     {p ? (
                       <Avatar p={p} size="sm" />
@@ -145,6 +150,7 @@ export function GhostLog({
                       </p>
                     </div>
                   </li>
+                  )}
                 </Fragment>
               );
             })}

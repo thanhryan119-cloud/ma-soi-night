@@ -50,6 +50,10 @@
         "title": "Chat của người chết",
         "desc": "Chết rồi vẫn xem tiếp và nói chuyện với các linh hồn khác. Hết ván cả làng mới đọc được."
       },
+      "prophecy": {
+        "title": "Sổ Tiên Tri cho người chết",
+        "desc": "Chết rồi vẫn có việc làm. Bấm 🔮 Tiên tri để đoán ai chết đêm nay, ai lên giá treo và phe nào thắng, đoán trúng được điểm."
+      },
       "watch": {
         "title": "Vào xem ván đang chơi",
         "desc": "Xem một ván đang diễn ra như khán giả, rồi vào chơi ván sau."

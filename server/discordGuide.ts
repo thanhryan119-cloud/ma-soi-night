@@ -276,6 +276,7 @@ const FEATURES: [string, string][] = [
   ["🧠", "bots"],
   ["🎙️", "voice"],
   ["👻", "ghost"],
+  ["🔮", "prophecy"],
   ["👀", "watch"],
   ["📺", "screen"],
   ["🎞️", "replay"],

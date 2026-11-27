@@ -5,6 +5,7 @@
 import { SOLO_ROLES, teamOf } from "./roles";
 import type { PlayerStyle } from "./cosmetics";
 import type { Room, RoleId, Team, Winner } from "./types";
+import { prophecyResult } from "./prophecy";
 
 /** "abandon": left the game (or was away too long) before it ended: a loss. */
 export type Outcome = "win" | "loss" | "draw" | "abandon";
@@ -29,6 +30,26 @@ export interface RecentGame {
   gameId?: string;
   /** false: too few real people, so a casual game (casual totals only, not standard or the leaderboard). */
   counted?: boolean;
+  /** How the player did in the ghosts' prophecy after dying (shared/prophecy.ts). */
+  prophecy?: GameProphecy;
+}
+
+export interface GameProphecy {
+  score: number;
+  hits: number;
+  rounds: number;
+  /** Named the Underworld Fortune Teller of the game. */
+  teller: boolean;
+}
+
+/** The ghosts' prophecy over a career (casual and standard games alike). */
+export interface ProphecyStats {
+  games: number;
+  rounds: number;
+  hits: number;
+  /** Times named the Underworld Fortune Teller. */
+  tellers: number;
+  bestScore: number;
 }
 
 /** Games with fewer than MIN_HUMANS_FOR_STATS real people: their own win rate, apart from standard. */
@@ -69,6 +90,8 @@ export interface UserStats {
   recent: RecentGame[];
   /** Missing on records made before casual games were counted (see casualOf). */
   casual?: CasualStats;
+  /** Missing until the player bets in the ghosts' prophecy. */
+  prophecy?: ProphecyStats;
 }
 
 /** What anyone may see of a player: their look, and their stats when they have an account. */
@@ -173,6 +196,7 @@ export function gameResults(room: Room, t = Date.now()): GameResult[] {
     if (!userId || !role || seen.has(userId)) continue;
     seen.add(userId);
     const lover = lovers.has(p.id);
+    const prophecy = prophecyResult(room, p.id);
     out.push({
       userId,
       game: {
@@ -186,6 +210,7 @@ export function gameResults(room: Room, t = Date.now()): GameResult[] {
         humans,
         counted,
         ...(game.recordId ? { gameId: game.recordId } : {}),
+        ...(prophecy ? { prophecy } : {}),
       },
     });
   }
@@ -252,6 +277,15 @@ export function applyResult(prev: UserStats | undefined, g: RecentGame): UserSta
   s.casual = casualOf(s);
   s.lastPlayed = g.t;
   s.recent = [g, ...s.recent].slice(0, RECENT_GAMES);
+  if (g.prophecy?.rounds) {
+    const pr = s.prophecy ?? { games: 0, rounds: 0, hits: 0, tellers: 0, bestScore: 0 };
+    pr.games++;
+    pr.rounds += g.prophecy.rounds;
+    pr.hits += g.prophecy.hits;
+    if (g.prophecy.teller) pr.tellers++;
+    pr.bestScore = Math.max(pr.bestScore, g.prophecy.score);
+    s.prophecy = pr;
+  }
   // Too few real people: a casual game, kept apart from the standard numbers (and the streak).
   if (g.counted === false) {
     addCasual(s.casual, g);

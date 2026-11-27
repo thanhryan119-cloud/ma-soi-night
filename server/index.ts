@@ -35,9 +35,7 @@ import { ingestChat, newChatIntel, type ChatIntel } from "../shared/botIntel";
 import { createAiBots } from "./aiBots";
 import { createAccounts } from "./accounts";
 import { roleWins, tierReached, type AchievementNews } from "../shared/achievements";
-import { payOSFromEnv } from "./payos";
 import { createQuests } from "./quests";
-import { createDonations } from "./donate";
 import { createDiscordNotifier } from "./discord";
 import { createDiscordGuide } from "./discordGuide";
 import { createSocial } from "./social";
@@ -45,6 +43,7 @@ import { createGlobalChat } from "./globalChat";
 import { BUSY_TALK_CHANCE, tableBusy } from "../shared/social";
 import { gameResults, type PublicProfile } from "../shared/stats";
 import { gameRecord, newGameId } from "../shared/replay";
+import { SPECTATOR_KEY, board as prophecyBoard, botBets, fortuneTeller, placeBet, type BetKind } from "../shared/prophecy";
 import { createGames } from "./games";
 import {
   AWAY_LIMIT_MS,
@@ -148,13 +147,6 @@ function loadRooms() {
 loadRooms();
 const accounts = createAccounts(dirname(DATA_FILE), CORS_ORIGIN);
 if (!accounts.enabled) console.log("[accounts] GOOGLE_CLIENT_ID not set: Google sign-in disabled");
-const donations = createDonations({
-  dataDir: dirname(DATA_FILE),
-  corsOrigin: CORS_ORIGIN,
-  payos: payOSFromEnv(),
-  webUrl: process.env.PUBLIC_WEB_URL || undefined,
-});
-if (!donations.enabled) console.log("[donate] PAYOS_CLIENT_ID / PAYOS_API_KEY / PAYOS_CHECKSUM_KEY not set: donations off");
 const discord = createDiscordNotifier({
   webhookUrl: process.env.DISCORD_WEBHOOK_URL,
   webUrl: process.env.PUBLIC_WEB_URL || undefined,
@@ -190,7 +182,6 @@ function lanAddresses(): string[] {
 const httpServer = createServer(async (req, res) => {
   if (await discordGuide.handle(req, res)) return;
   if (await accounts.handle(req, res)) return;
-  if (await donations.handle(req, res)) return;
   if (await quests.handle(req, res)) return;
   if (await games.handle(req, res)) return;
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -343,7 +334,29 @@ function broadcast(room: Room) {
   for (const id of ids) {
     const s = io.sockets.sockets.get(id) as AppSocket | undefined;
     if (!s?.data.kind) continue;
-    s.emit("state", buildView(room, s.data.kind, s.data.playerId ?? null));
+    s.emit("state", buildView(room, s.data.kind, s.data.playerId ?? null, s.data.spectator?.id ?? null));
+  }
+}
+
+/** Tells the dead players' chat how each prophecy round went, and names the Fortune Teller at the end. */
+function announceProphecy(room: Room) {
+  const p = room.game?.prophecy;
+  if (!p) return;
+  const done = p.rounds.filter((r) => r.status === "done");
+  const nameOf = (key: string) => prophecyBoard(room).find((l) => l.key === key)?.name ?? "?";
+  for (const r of done.slice(p.announced ?? 0)) {
+    const total = Object.keys(r.ballots).length;
+    if (!total) continue;
+    const winners = Object.entries(r.points ?? {}).filter(([, pts]) => pts > 0).sort((a, b) => b[1] - a[1]);
+    social.postGhostSystem(room, `prophecy.sys.${r.kind}`, { n: r.n, hits: winners.length, total });
+    if (winners.length === 1 && total > 1) social.postGhostSystem(room, "prophecy.sys.lone", { name: nameOf(winners[0][0]), points: winners[0][1] });
+    else if (winners.length) social.postGhostSystem(room, "prophecy.sys.top", { name: nameOf(winners[0][0]), points: winners[0][1] });
+  }
+  p.announced = done.length;
+  const teller = fortuneTeller(room);
+  if (teller && !p.tellerTold) {
+    p.tellerTold = true;
+    social.postGhostSystem(room, "prophecy.sys.teller", { name: teller.name, score: teller.score });
   }
 }
 
@@ -419,6 +432,8 @@ function scheduleVotes(room: Room) {
 
 function touch(room: Room) {
   room.lastActivity = Date.now();
+  botBets(room);
+  announceProphecy(room);
   scheduleVotes(room);
   scheduleStandIns(room);
   recordStats(room);
@@ -1262,7 +1277,7 @@ io.on("connection", (raw) => {
       const avatar = AVATARS.includes(String(p.avatar)) ? String(p.avatar) : "👁️";
       attach(socket, room, "spectator");
       socket.data.spectator = { id: randomToken().slice(0, 10), name, avatar };
-      socket.emit("state", buildView(room, "spectator"));
+      socket.emit("state", buildView(room, "spectator", null, socket.data.spectator.id));
       return { ok: true };
     }, ack),
   );
@@ -1402,6 +1417,22 @@ io.on("connection", (raw) => {
       socket.data = {};
       touch(room);
       return { ok: true, abandoned: !!res.abandon || !res.removed };
+    }, ack),
+  );
+
+  // The ghosts' prophecy: a dead player or a spectator bets on the night, the day or the winner.
+  on("prophecy:bet", (p, ack) =>
+    guard(() => {
+      const { code, kind, playerId, spectator } = socket.data;
+      const room = code ? rooms.get(code) : undefined;
+      if (!room) return { ok: false, error: "err.notInRoom" };
+      const key = kind === "player" && playerId ? playerId : kind === "spectator" && spectator ? SPECTATOR_KEY + spectator.id : null;
+      if (!key) return { ok: false, error: "err.ghostsOnly" };
+      const err = placeBet(room, key, { kind: p?.kind as BetKind, pick: String(p?.pick ?? "") }, spectator);
+      if (err) return { ok: false, error: err };
+      broadcast(room);
+      saveSoon();
+      return { ok: true };
     }, ack),
   );
 

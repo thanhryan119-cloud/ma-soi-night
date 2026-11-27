@@ -50,6 +50,10 @@
         "title": "Chat for the dead",
         "desc": "Dead players keep watching and talk with the other ghosts. The village reads it only when the game ends."
       },
+      "prophecy": {
+        "title": "Ghosts' Prophecy",
+        "desc": "Dying is not the end. Tap 🔮 Prophecy to guess who dies tonight, who hangs and which side wins, and score for right guesses."
+      },
       "watch": {
         "title": "Watch a running game",
         "desc": "Watch a game in progress as a spectator, then join the next one."
