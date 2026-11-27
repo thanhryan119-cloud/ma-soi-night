@@ -12,7 +12,7 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
-    version: "1.7.2",
+    version: "1.7.3",
     date: "2026-11-27",
     title: { vi: "Khung avatar vẽ lại và bốn khung mới", en: "Redrawn avatar frames and four new ones" },
     items: {
@@ -29,6 +29,25 @@ export const CHANGELOG: Release[] = [
         "Blood ring drips, Double ring has a turning dial, Crescent moon twinkles with stars, Thorns is a hooked bramble with drops of blood, Heartbeat has a pulse trace running round it.",
         "Four new frames, a jewelled Royal crown, Frost, Ancient runes with a turning ring of runes, and grey-furred Wolf ears.",
         "Frames stay clear at every size, from the player list to the profile card. Frames you already bought are still yours.",
+      ],
+    },
+  },
+  {
+    version: "1.7.2",
+    date: "2026-11-27",
+    title: { vi: "Cửa hàng mới, mỗi món chỉ 49.000đ", en: "A new shop, every item now 49,000 VND" },
+    items: {
+      vi: [
+        "Mỗi món trong cửa hàng giảm từ 50.000đ còn 49.000đ.",
+        "Cửa hàng được làm lại với banner mới, menu theo bạn khi cuộn và lời giới thiệu cho từng mục.",
+        "Bộ thẻ vai liệt kê từng vai kèm một dòng nói vai đó làm gì, cùng số tiền bạn tiết kiệm khi mua theo bộ.",
+        "Đóng được từng cuộc trò chuyện riêng trong khung chat. Khi người đó nhắn mới thì cuộc trò chuyện tự hiện lại.",
+      ],
+      en: [
+        "Every item in the shop drops from 50,000 VND to 49,000 VND.",
+        "The shop is redone with a new banner, a menu that follows you as you scroll and a line about each section.",
+        "Role card bundles list every role with a line about what it does, and how much you save by buying the bundle.",
+        "Private conversations in the chat box can be closed one by one. They come back when that person writes again.",
       ],
     },
   },

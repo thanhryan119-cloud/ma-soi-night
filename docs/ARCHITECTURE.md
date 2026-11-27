@@ -93,7 +93,7 @@ HTTP công khai: `GET /leaderboard` (mọi tài khoản; ai đủ `MIN_RANKED_GA
 
 ### Cửa hàng (`server/shop.ts`, `server/payos.ts`)
 
-Mỗi font/hiệu ứng/khung trừ mặc định là một món `<loại>:<id>` (ví dụ `effect:glow`), giá `ITEM_PRICE_VND` = 50.000đ. `User.owned` giữ các món đã mua; `limitStyle()` gỡ mọi món chưa sở hữu ở `addPlayer`, `updateProfile`, `PATCH /me`, hồ sơ công khai và bảng xếp hạng. `Player.owned` chỉ nằm trên server (không có trong view).
+Mỗi font/hiệu ứng/khung trừ mặc định là một món `<loại>:<id>` (ví dụ `effect:glow`), giá `ITEM_PRICE_VND` = 49.000đ. `User.owned` giữ các món đã mua; `limitStyle()` gỡ mọi món chưa sở hữu ở `addPlayer`, `updateProfile`, `PATCH /me`, hồ sơ công khai và bảng xếp hạng. `Player.owned` chỉ nằm trên server (không có trong view).
 
 **Vai**: mọi vai mở cho tất cả mọi người, không bán. `RoleDef.advanced` chỉ để gom các vai nâng cao vào nhóm thu gọn trong phần chia vai và để `suggestRoles()` mặc định chỉ dùng vai cơ bản (`CORE_ROLES`). Gợi ý của phòng dùng mọi vai.
 

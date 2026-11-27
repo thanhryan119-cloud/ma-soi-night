@@ -707,7 +707,7 @@
     "claimFree": "Claim for free",
     "open": "Shop",
     "rolesTitle": "Special roles",
-    "pageHint": "Everything sold in the game, in one place. Special role cards, name effects, name fonts, avatar frames, chat backgrounds and profile card backgrounds. 50,000 VND each, and role card bundles are 20% off. Buy once, it stays with your Google account on every device.",
+    "pageHint": "Everything sold in the game, in one place. Special role cards, name effects, name fonts, avatar frames, chat backgrounds and profile card backgrounds. Only 49,000 VND each, and role card bundles are 20% off. Buy once, it stays with your Google account on every device.",
     "signInFirst": "Sign in with Google to buy. Items are tied to your account.",
     "ownedCount": "Owned {owned}/{total}",
     "wear": "Wear",
@@ -718,6 +718,22 @@
     "buyGold": "Buy with gold",
     "boughtWithGold": "Bought {item} with gold!",
     "needGold": "{gold} more gold needed",
+    "heroTag": "Werewolf shop",
+    "heroTitle": "Stand out in every game",
+    "heroSub": "Unlock special roles for your rooms and dress up your name, avatar and chat so the whole table remembers you.",
+    "heroFrom": "From",
+    "heroEach": "per item",
+    "perkForever": "Buy once, keep forever",
+    "perkDevices": "Tied to your Google account, on every device",
+    "perkBundle": "Role card bundles are 20% off",
+    "sectionDesc": {
+      "role": "Rooms you create can use that role every day, no waiting for free days.",
+      "effect": "Your name glows, sparkles or shifts color everywhere in the game.",
+      "font": "A typeface of your own, so people spot you at a glance.",
+      "frame": "A border for your avatar that follows you everywhere you appear.",
+      "chat": "Chat bubbles with their own pattern, so your messages stand out.",
+      "card": "A background for the profile card others see when they tap your name."
+    },
     "bundle": {
       "wolves": "Wolf bundle",
       "village": "Village bundle",
@@ -1122,6 +1138,7 @@
   },
   "globalChat": {
     "button": "Chat",
+    "closeDm": "Close the conversation with {name}",
     "title": "Server chat",
     "hint": "Everyone on the site sees this, players in a game too. Don't give roles away, and be kind.",
     "empty": "Nobody has said anything yet. Say hi!",
@@ -1410,7 +1427,37 @@
     "bundleCount": "{count} cards",
     "bundleHave": "You have {have}/{total}, you only pay for the rest",
     "ownedCard": "Card owned, open every day",
-    "freeToday": "Free today"
+    "freeToday": "Free today",
+    "bundleTag": {
+      "wolves": "For hunters who love the dark. More tricks for the pack and more panic in the village.",
+      "village": "For players who love deduction. More tools for the village to find the wolves and turn the game.",
+      "solo": "For lone players. Each role has its own way to win, so no two games play the same.",
+      "all": "Unlock every special role for good. Rooms you create always have every role, no waiting for free days."
+    },
+    "bestValue": "Best value",
+    "perCard": "only {price} per card",
+    "save": "Save {price}",
+    "haveRole": "Owned",
+    "forever": "Buy once, keep forever",
+    "roleHook": {
+      "cursedWolf": "Turns a bitten player into a wolf",
+      "wolfSeer": "A wolf who sees exact roles",
+      "bigBadWolf": "Kills one extra player each night",
+      "minion": "A human spy helping the pack",
+      "silencer": "Silences one player for a whole day",
+      "elder": "Survives the first wolf bite",
+      "idiot": "Survives a hanging by revealing",
+      "lycan": "Wolf blood, but wins with the village",
+      "sister": "Two sisters who know each other",
+      "wildChild": "Turns wolf when their idol dies",
+      "medium": "Asks the dead for their role",
+      "mayor": "Their vote counts twice",
+      "knight": "Bitten to death, a wolf dies next",
+      "tanner": "Wins alone by getting hanged",
+      "whiteWolf": "Betrays the pack to be the last alive",
+      "serialKiller": "Kills nightly, immune to wolf bites",
+      "arsonist": "Douses houses, then burns them all"
+    }
   },
   "room": {
     "signIn": "Sign in",

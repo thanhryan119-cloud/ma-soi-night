@@ -94,7 +94,7 @@ export type ItemKind = StyleKind;
 export type ItemId = `${ItemKind | "role" | "bundle"}:${string}`;
 
 /** Price of one item, in VND. */
-export const ITEM_PRICE_VND = 50_000;
+export const ITEM_PRICE_VND = 49_000;
 
 const OPTIONS: Record<ItemKind, readonly string[]> = {
   font: NAME_FONTS,

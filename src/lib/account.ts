@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { AVATARS } from "@shared/engine";
-import { DEFAULT_STYLE, limitStyle, sanitizeOwned, sanitizeStyle, type ItemId, type PlayerStyle } from "@shared/cosmetics";
+import { DEFAULT_STYLE, ITEM_PRICE_VND, limitStyle, sanitizeOwned, sanitizeStyle, type ItemId, type PlayerStyle } from "@shared/cosmetics";
 import type { QuestsView } from "@shared/quests";
 import { socketUrl, storage } from "./socket";
 
@@ -194,7 +194,7 @@ export function fetchShop(): Promise<ShopInfo> {
   shopInfo ??= api("/shop").then((r) => {
     const b = r as unknown as Partial<ShopInfo>;
     if (!r.ok) shopInfo = null; // try again next time
-    return { enabled: !!(r.ok && b.enabled), price: Number(b.price) || 50_000 };
+    return { enabled: !!(r.ok && b.enabled), price: Number(b.price) || ITEM_PRICE_VND };
   });
   return shopInfo;
 }
