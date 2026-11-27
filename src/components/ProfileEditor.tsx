@@ -74,9 +74,13 @@ export function GoogleButton() {
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || !ref.current) return;
     let cancelled = false;
+    // Each run draws into its own slot, removed on cleanup: Google fills the
+    // button in later, so clearing the box alone could leave an old one (two buttons after a language change).
+    const slot = document.createElement("div");
+    ref.current.replaceChildren(slot);
     loadGsi()
       .then((g) => {
-        if (cancelled || !ref.current) return;
+        if (cancelled) return;
         g.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
           // Signed in to a quick account already: this links Google to it.
@@ -85,8 +89,7 @@ export function GoogleButton() {
             if (showError(r) && r.linked) toast(t("auth.linked"), "info");
           },
         });
-        ref.current.innerHTML = "";
-        g.accounts.id.renderButton(ref.current, {
+        g.accounts.id.renderButton(slot, {
           theme: "filled_black",
           size: "large",
           shape: "rectangular",
@@ -97,6 +100,7 @@ export function GoogleButton() {
       .catch(() => {});
     return () => {
       cancelled = true;
+      slot.remove();
     };
   }, [locale]); // eslint-disable-line react-hooks/exhaustive-deps
   return <div ref={ref} className="min-h-11" />;
