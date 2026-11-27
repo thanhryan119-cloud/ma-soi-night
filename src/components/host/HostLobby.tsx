@@ -5,7 +5,8 @@ import { ShareRoom } from "@/components/ShareRoom";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MIN_PLAYERS } from "@shared/engine";
-import { ROLES, ROLE_IDS, SOLO_ROLES, isAdvancedRole, suggestRoles, totalRoles } from "@shared/roles";
+import { ROLES, ROLE_IDS, SOLO_ROLES, emptyRoleCounts, isAdvancedRole, suggestRoles, totalRoles } from "@shared/roles";
+import { balanceOf, fixBalance, type BalanceReason } from "@shared/balance";
 import { PRESET_EMOJI, PRESET_IDS, presetRoles, type PresetId } from "@shared/presets";
 import { AddBots } from "./AddBots";
 import type { Locale, RoleId } from "@shared/types";
@@ -287,6 +288,7 @@ export function RoleConfig({ state, owner = false }: { state: ClientState; owner
       <div className={`rounded-xl p-2 text-sm ${total === n ? "bg-emerald-500/10 text-emerald-300" : "bg-blood/15 text-blood-light"}`}>
         {total === n ? t("host.totalRoles", { roles: total, players: n }) : t("host.mismatch", { roles: total, players: n })}
       </div>
+      <BalanceAlert state={state} owner={owner} locked={locked} />
       {!owner && (
       <>
       <div className="border-t border-white/10 pt-3">
@@ -413,6 +415,102 @@ function RoleGroup({
           ))}
       </button>
       {open && <ul className={`${grid} px-2 pb-2`}>{roles.map(row)}</ul>}
+    </div>
+  );
+}
+
+const LEVEL_STYLE = ["", "border-gold/40 bg-gold/10 text-gold", "border-orange-400/50 bg-orange-500/10 text-orange-300", "border-blood/60 bg-blood/15 text-blood-light"];
+
+/**
+ * Warns when the setup leans too far to one side, says why, and offers a fix.
+ * Uses the roles handed out by hand once everyone has one, the role counts otherwise.
+ */
+function BalanceAlert({ state, owner, locked }: { state: ClientState; owner: boolean; locked: RoleId[] }) {
+  const t = useT();
+  const act = useHostAction();
+  const n = state.players.length;
+  const counts = state.settings.roleCounts;
+  const dealt = emptyRoleCounts();
+  for (const p of state.players) if (p.assignedRole) dealt[p.assignedRole]++;
+  const byHand = n > 0 && state.players.every((p) => p.assignedRole) && ROLE_IDS.some((r) => dealt[r] !== counts[r]);
+  const setup = byHand ? dealt : counts;
+  if (n === 0 || totalRoles(setup) !== n) return null;
+  const b = balanceOf(setup);
+  if (!b.leans) return <p className="text-center text-xs text-emerald-300/80">{t("host.balance.fair")}</p>;
+
+  const open = ROLE_IDS.filter((r) => !locked.includes(r));
+  const fix = fixBalance(setup, open);
+  const name = (r: RoleId) => `${ROLES[r].emoji} ${t(`roles.${r}.name`)}`;
+  const reason = (r: BalanceReason) => {
+    switch (r.key) {
+      case "noWolves":
+      case "noSeer":
+        return t(`host.balance.${r.key}`);
+      case "packHalf":
+        return t("host.balance.packHalf", { wolves: r.wolves, players: r.players });
+      case "packSize":
+        return t(r.wolves > r.ideal ? "host.balance.packBig" : "host.balance.packSmall", { wolves: r.wolves, players: r.players, ideal: r.ideal });
+      case "strongRoles":
+        return t(r.side === "wolves" ? "host.balance.strongWolves" : "host.balance.strongVillage", { roles: r.roles.map(name).join(", ") });
+      case "solos":
+        return t("host.balance.solos", { count: r.count });
+    }
+  };
+  const apply = async (roleCounts: Record<RoleId, number>) => {
+    await act({ type: "setRoleCounts", roleCounts });
+    // Roles were handed out by hand: deal the new setup so the fix takes effect.
+    if (byHand && !owner) await act({ type: "assignRandom" });
+  };
+  const standard = state.suggested && !ROLE_IDS.every((r) => state.suggested![r] === setup[r]) ? state.suggested : null;
+
+  return (
+    <div role="alert" className={`flex flex-col gap-2 rounded-xl border p-3 text-sm ${LEVEL_STYLE[b.level]}`}>
+      <div className="flex flex-wrap items-center gap-2 font-bold">
+        <span>{b.leans === "wolves" ? "🐺" : "🏘️"} ⚠️ {t(`host.balance.${b.leans}`)}</span>
+        <span className="chip py-0 text-[11px]">{t(`host.balance.level${b.level}`)}</span>
+      </div>
+      {byHand && <p className="text-xs opacity-80">{t("host.balance.fromAssignment")}</p>}
+      <div>
+        <div className="ui-label">{t("host.balance.why")}</div>
+        <ul className="list-disc space-y-0.5 pl-5 text-white/80">
+          {b.reasons.map((r, i) => (
+            <li key={i}>{reason(r)}</li>
+          ))}
+        </ul>
+        <p className="mt-1 text-xs text-white/50">{t("host.balance.score", { score: b.score > 0 ? `+${b.score}` : b.score, limit: b.limit })}</p>
+      </div>
+      {(fix || standard) && (
+        <div className="flex flex-col gap-2 border-t border-white/10 pt-2">
+          <div className="ui-label">{t("host.balance.suggest")}</div>
+          {fix && (
+            <>
+              <p className="text-white/80">{t("host.balance.suggestFix", { count: fix.swaps.length })}</p>
+              <ul className="flex flex-col gap-1">
+                {fix.swaps.map((s, i) => (
+                  <li key={i} className="flex flex-wrap items-center gap-1.5">
+                    <span className="chip line-through opacity-70">{name(s.from)}</span>
+                    <span aria-hidden>→</span>
+                    <span className="chip">{name(s.to)}</span>
+                  </li>
+                ))}
+              </ul>
+              {!fix.fair && <p className="text-xs text-white/50">{t("host.balance.partial")}</p>}
+            </>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {fix && (
+              <button className="btn-gold btn-sm" onClick={() => apply(fix.counts)}>
+                {byHand && !owner ? t("host.balance.applyDeal") : t("host.balance.apply")}
+              </button>
+            )}
+            {standard && (
+              <button className="btn-ghost btn-sm" onClick={() => apply(standard)}>
+                {t("host.balance.useSuggested", { count: n })}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

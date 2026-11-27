@@ -12,7 +12,7 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
-    version: "1.7.3",
+    version: "1.7.4",
     date: "2026-11-27",
     title: { vi: "Khung avatar vẽ lại và bốn khung mới", en: "Redrawn avatar frames and four new ones" },
     items: {
@@ -29,6 +29,23 @@ export const CHANGELOG: Release[] = [
         "Blood ring drips, Double ring has a turning dial, Crescent moon twinkles with stars, Thorns is a hooked bramble with drops of blood, Heartbeat has a pulse trace running round it.",
         "Four new frames, a jewelled Royal crown, Frost, Ancient runes with a turning ring of runes, and grey-furred Wolf ears.",
         "Frames stay clear at every size, from the player list to the profile card. Frames you already bought are still yours.",
+      ],
+    },
+  },
+  {
+    version: "1.7.3",
+    date: "2026-11-27",
+    title: { vi: "Cảnh báo bộ vai lệch phe", en: "A warning for lopsided setups" },
+    items: {
+      vi: [
+        "Khi tự chọn hoặc tự gán vai làm một phe mạnh hơn hẳn, phần cấu hình vai báo ngay phe nào đang lấn át và mức độ lệch.",
+        "Cảnh báo ghi rõ lý do, ví dụ quá nhiều sói, thiếu Tiên tri hay có vai quá mạnh.",
+        "Kèm gợi ý đổi vài vai để hai phe cân lại, chỉ cần bấm một nút để áp dụng, hoặc dùng luôn bộ vai chuẩn.",
+      ],
+      en: [
+        "When the roles you pick or hand out make one side much stronger, the role setup now says which side leads and by how much.",
+        "The warning explains why, such as too many wolves, no Seer or a role that is too strong.",
+        "It suggests a few role swaps to even the sides that you apply with one button, or you can switch to the standard setup.",
       ],
     },
   },
