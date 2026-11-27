@@ -7,6 +7,7 @@ import { formatLog, type T } from "@/lib/i18n";
 import { Avatar, RoleBadge, StyledName } from "./ui";
 import { ProfileLink } from "./Profile";
 import { SceneArt } from "./art/Woodcut";
+import { RevealCard } from "./art/Tarot";
 
 export function WinnerBanner({ state, t, big = false }: { state: ClientState; t: T; big?: boolean }) {
   const w = state.winner;
@@ -25,12 +26,13 @@ export function RolesGrid({ state, compact = false }: { state: ClientState; comp
   const lovers = new Set(state.lovers ?? []);
   return (
     <ul className={`grid gap-2 ${compact ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2 md:grid-cols-3 xl:grid-cols-4"}`}>
-      {state.players.map((p) => (
+      {state.players.map((p, i) => (
         <li
           key={p.id}
           className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-2"
           style={p.roleId ? { borderColor: `${ROLES[p.roleId].color}55` } : undefined}
         >
+          <RevealCard role={p.roleId} delay={0.2 + i * 0.08} className="h-14" />
           <ProfileLink playerId={p.id} className="shrink-0">
             <Avatar p={p} />
           </ProfileLink>

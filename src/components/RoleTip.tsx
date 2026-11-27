@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { ROLES } from "@shared/roles";
 import type { RoleId } from "@shared/types";
 import { useT } from "@/lib/i18n";
+import { RoleArt } from "@/components/art/Tarot";
 
 const TIP_W = 272;
 
@@ -44,7 +45,7 @@ export function useRoleTip(extra?: (role: RoleId) => React.ReactNode) {
     const r = el.getBoundingClientRect();
     const vw = window.innerWidth;
     const half = Math.min(TIP_W, vw - 16) / 2;
-    const above = r.bottom + 180 > window.innerHeight && r.top > 200;
+    const above = r.bottom + 240 > window.innerHeight && r.top > 260;
     setTip({
       role,
       left: Math.max(half + 8, Math.min(vw - half - 8, r.left + r.width / 2)),
@@ -78,12 +79,16 @@ export function useRoleTip(extra?: (role: RoleId) => React.ReactNode) {
           translate: tip.above ? "0 -100%" : undefined,
         }}
       >
-        <div className="flex items-baseline gap-2">
-          <span className="text-xl leading-none">{ROLES[tip.role].emoji}</span>
-          <span className="font-display text-xl font-black text-moon">{t(`roles.${tip.role}.name`)}</span>
-          {extra && <span className="ml-auto font-mono text-sm text-gold">{extra(tip.role)}</span>}
+        <div className="flex gap-3">
+          <RoleArt role={tip.role} className="h-24 w-auto shrink-0" />
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <div className="flex items-baseline gap-2">
+              <span className="font-display text-xl font-black text-moon">{t(`roles.${tip.role}.name`)}</span>
+              {extra && <span className="ml-auto font-mono text-sm text-gold">{extra(tip.role)}</span>}
+            </div>
+            <span className="text-[11px] font-semibold tracking-[0.18em] text-gold uppercase">{t(`teams.${ROLES[tip.role].team}`)}</span>
+          </div>
         </div>
-        <span className="text-[11px] font-semibold tracking-[0.18em] text-gold uppercase">{t(`teams.${ROLES[tip.role].team}`)}</span>
         <p className="text-sm leading-snug text-white/80">{t(`roles.${tip.role}.desc`)}</p>
       </div>,
       document.body,
