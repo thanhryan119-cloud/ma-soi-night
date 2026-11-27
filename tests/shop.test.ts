@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { Readable } from "node:stream";
 import { describe, expect, it } from "vitest";
 import { addPlayer, createRoom, hostAction, playerAction } from "../shared/engine";
-import { DEFAULT_STYLE, ITEM_PRICE_VND, SHOP_ITEMS, limitStyle, sanitizeOwned } from "../shared/cosmetics";
+import { DECOR_DISCOUNT_PCT, DECOR_PRICE_VND, DEFAULT_STYLE, ITEM_PRICE_VND, itemPrice, SHOP_ITEMS, limitStyle, sanitizeOwned } from "../shared/cosmetics";
 import { buildView } from "../shared/views";
 import { createPayOS, signData, signPaymentRequest, verifyWebhook } from "../server/payos";
 import { createShop } from "../server/shop";
@@ -18,6 +18,10 @@ const hmac = (s: string) => createHmac("sha256", KEY).update(s).digest("hex");
 describe("shop catalog", () => {
   it("sells every font, effect and frame except the defaults, 49k each", () => {
     expect(ITEM_PRICE_VND).toBe(49_000);
+    expect(DECOR_PRICE_VND).toBe(29_000);
+    expect(DECOR_DISCOUNT_PCT).toBe(41);
+    expect(itemPrice("frame:moon")).toBe(DECOR_PRICE_VND);
+    expect(itemPrice("role:tanner")).toBe(ITEM_PRICE_VND);
     expect(SHOP_ITEMS).toContain("effect:glow");
     expect(SHOP_ITEMS).toContain("frame:moon");
     expect(SHOP_ITEMS).toContain("frame:crown");
@@ -163,13 +167,13 @@ describe("shop routes", () => {
     expect((await call(shop.handle, "POST", "/shop/checkout", { itemId: "effect:none" }, "tok1")).body.error).toBe("err.itemUnknown");
   });
 
-  it("creates a signed 49k payOS link and reuses it on a second click", async () => {
+  it("creates a signed 29k payOS link and reuses it on a second click", async () => {
     const { shop, created } = setup();
     const r = await call(shop.handle, "POST", "/shop/checkout", { itemId: "frame:moon", returnUrl: "http://localhost:3000" }, "tok1");
     expect(r.body.ok).toBe(true);
     expect(String(r.body.checkoutUrl)).toMatch(/^https:\/\/pay\.payos\.vn\//);
     const req = created[0] as Record<string, string | number>;
-    expect(req.amount).toBe(49000);
+    expect(req.amount).toBe(29000);
     expect(String(req.description).length).toBeLessThanOrEqual(9);
     expect(req.returnUrl).toBe(`http://localhost:3000/profile?order=${req.orderCode}`);
     expect(req.signature).toBe(signPaymentRequest(KEY, req as never));
@@ -182,7 +186,7 @@ describe("shop routes", () => {
     const { shop, grants, users } = setup();
     const r = await call(shop.handle, "POST", "/shop/checkout", { itemId: "effect:glow", returnUrl: "http://localhost:3000" }, "tok1");
     const orderCode = r.body.orderCode as number;
-    const data = { orderCode, amount: 49000, description: "MASOI", code: "00", reference: "FT1" };
+    const data = { orderCode, amount: 29000, description: "MASOI", code: "00", reference: "FT1" };
 
     const forged = await call(shop.handle, "POST", "/payos/webhook", { code: "00", data, signature: "ab".repeat(32) });
     expect(forged.status).toBe(400);
@@ -275,17 +279,17 @@ describe("discount codes in the shop", () => {
     const r = await call(shop.handle, "POST", "/shop/checkout", { itemId: "effect:glow", returnUrl: "http://localhost:3000", code: "sale20" }, "tok1");
     expect(r.body.ok).toBe(true);
     const req = created[0] as Record<string, number>;
-    expect(req.amount).toBe(39200);
+    expect(req.amount).toBe(23200);
     expect(req.signature).toBe(signPaymentRequest(KEY, req as never));
 
     // Not counted while unpaid.
     let list = (await call(shop.handle, "GET", "/shop/admin/codes", undefined, "tokBoss")).body.codes as { uses: number; revenue: number }[];
     expect(list[0].uses).toBe(0);
 
-    const data = { orderCode: r.body.orderCode, amount: 39200, description: "MASOI", code: "00" };
+    const data = { orderCode: r.body.orderCode, amount: 23200, description: "MASOI", code: "00" };
     await call(shop.handle, "POST", "/payos/webhook", { code: "00", data, signature: signData(KEY, data) });
     list = (await call(shop.handle, "GET", "/shop/admin/codes", undefined, "tokBoss")).body.codes as { uses: number; revenue: number }[];
-    expect(list[0]).toMatchObject({ uses: 1, revenue: 39200 });
+    expect(list[0]).toMatchObject({ uses: 1, revenue: 23200 });
 
     // One use per account.
     const again = await call(shop.handle, "POST", "/shop/checkout", { itemId: "frame:moon", code: "SALE20" }, "tok1");

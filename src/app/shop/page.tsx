@@ -2,7 +2,8 @@
 
 // The shop: everything that can be bought, in one place: name effects, name
 // fonts, avatar frames, chat decorations, and special role cards (a few roles
-// are free each day, a card keeps one open; bundles are 20% off). 49.000đ each, bought once per Google
+// are free each day, a card keeps one open; bundles are 20% off). Role cards 49.000đ, decor on sale
+// at DECOR_PRICE_VND, bought once per Google
 // account through payOS (the buyer comes back to /profile, which confirms it).
 // Some items can also be bought with gold earned from quests (GOLD_PRICES).
 
@@ -13,6 +14,8 @@ import {
   BUNDLES,
   BUNDLE_DISCOUNT,
   BUNDLE_ITEMS,
+  DECOR_DISCOUNT_PCT,
+  DECOR_PRICE_VND,
   DEFAULT_STYLE,
   ITEM_PRICE_VND,
   ROLE_ITEMS,
@@ -123,7 +126,11 @@ export default function ShopPage() {
           </div>
           <div className="flex shrink-0 flex-row flex-wrap items-baseline gap-x-2 self-start rounded-lg border border-gold/40 bg-night-950/60 px-4 py-3 sm:flex-col sm:items-end sm:self-auto">
             <span className="text-xs text-white/60">{t("shop.heroFrom")}</span>
-            <span className="text-3xl font-black text-gold">{price(shop?.price ?? ITEM_PRICE_VND)}</span>
+            <span className="flex items-baseline gap-2">
+              <s className="text-sm text-white/40">{price(ITEM_PRICE_VND)}</s>
+              <span className="text-3xl font-black text-gold">{price(DECOR_PRICE_VND)}</span>
+              <span className="chip border-emerald-500/50 py-0 font-bold text-emerald-300">-{DECOR_DISCOUNT_PCT}%</span>
+            </span>
             <span className="text-xs text-white/60">{t("shop.heroEach")}</span>
           </div>
         </div>
@@ -470,7 +477,7 @@ function ShopItem({
   const fmtGold = useGoldFormat();
   const gold = goldPrice(id);
   const [kind, value] = split(id);
-  const cost = price(shop?.price ?? ITEM_PRICE_VND);
+  const cost = price(DECOR_PRICE_VND);
   const title = t(`profile.${kind}.${value}`);
   const base: PlayerStyle = profile?.style ?? DEFAULT_STYLE;
   const preview = { name, avatar: profile?.avatar ?? "🐺", avatarUrl, style: equip(base, id), alive: true };
@@ -512,7 +519,11 @@ function ShopItem({
         {owned ? (
           <span className="text-xs font-bold text-emerald-300">✓ {t("shop.owned")}</span>
         ) : (
-          <span className="text-base font-black text-gold">{cost}</span>
+          <span className="flex flex-wrap items-baseline gap-x-1.5">
+            <span className="text-base font-black text-gold">{cost}</span>
+            <s className="text-xs text-white/40">{price(ITEM_PRICE_VND)}</s>
+            <span className="text-xs font-bold text-emerald-300">-{DECOR_DISCOUNT_PCT}%</span>
+          </span>
         )}
         {owned ? (
           (wearing ? (

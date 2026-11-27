@@ -7,7 +7,7 @@ import {
   CARD_BGS,
   CHAT_DECOS,
   DEFAULT_STYLE,
-  ITEM_PRICE_VND,
+  DECOR_PRICE_VND,
   NAME_EFFECTS,
   NAME_FONTS,
   equip,
@@ -241,7 +241,7 @@ export function ProfileEditor({
   };
   const [tryKind, tryValue] = trying ? (trying.split(":") as [ItemKind, string]) : [null, null];
   const shown = trying ? equip(value.style, trying) : value.style;
-  const priceLabel = price(shop?.price ?? ITEM_PRICE_VND);
+  const priceLabel = price(DECOR_PRICE_VND);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];

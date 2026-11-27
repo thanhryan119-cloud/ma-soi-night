@@ -12,6 +12,23 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.7",
+    date: "2026-11-27",
+    title: { vi: "Đồ trang trí giảm còn 29.000đ", en: "Decor on sale at 29,000 VND" },
+    items: {
+      vi: [
+        "Mọi món trang trí trong cửa hàng giờ chỉ còn 29.000đ thay vì 49.000đ, giảm 41%. Gồm font tên, hiệu ứng tên, khung avatar, nền chat và nền thẻ hồ sơ.",
+        "Mã giảm giá vẫn dùng được và được trừ tiếp trên giá mới.",
+        "Thẻ vai đặc biệt vẫn giữ giá 49.000đ, mua theo bộ vẫn được giảm 20%.",
+      ],
+      en: [
+        "Every decor item in the shop is now 29,000 VND instead of 49,000 VND, 41% off. That covers name fonts, name effects, avatar frames, chat backgrounds and profile card backgrounds.",
+        "Discount codes still work and come off the new price.",
+        "Special role cards stay at 49,000 VND, and bundles are still 20% off.",
+      ],
+    },
+  },
+  {
     version: "1.7.6",
     date: "2026-11-27",
     title: { vi: "Chơi mượt hơn trên Safari và iPhone", en: "Smoother on Safari and iPhone" },

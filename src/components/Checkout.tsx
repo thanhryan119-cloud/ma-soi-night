@@ -5,7 +5,7 @@
 // button. Inline on the profile page, or as a dialog (CheckoutDialog).
 
 import { useEffect, useState } from "react";
-import { ITEM_PRICE_VND, bundleListPrice, isBundle, itemPrice, type ItemId } from "@shared/cosmetics";
+import { DECOR_PRICE_VND, ITEM_PRICE_VND, bundleListPrice, isBundle, isRoleItem, itemPrice, type ItemId } from "@shared/cosmetics";
 import { buyItem, checkCode, fetchShop, useAccount, type CodeCheck, type ShopInfo } from "@/lib/account";
 import { useLocale, useT } from "@/lib/i18n";
 import { toast, useErrorToast } from "./ui";
@@ -69,8 +69,10 @@ export function CheckoutPanel({
   const owned = user?.owned ?? [];
   // A bundle costs 20% less than its missing role cards one by one.
   const bundle = isBundle(itemId);
-  const listPrice = bundle ? itemPrice(itemId, owned) : (shop?.price ?? ITEM_PRICE_VND);
-  const wasPrice = applied ? listPrice : bundle ? bundleListPrice(itemId, owned) : null;
+  // Decor items are on sale: show the full price struck through.
+  const decor = !bundle && !isRoleItem(itemId);
+  const listPrice = bundle ? itemPrice(itemId, owned) : decor ? DECOR_PRICE_VND : (shop?.price ?? ITEM_PRICE_VND);
+  const wasPrice = applied ? listPrice : bundle ? bundleListPrice(itemId, owned) : decor ? ITEM_PRICE_VND : null;
   const free = !!applied && applied.amount === 0;
   const cost = price(applied ? applied.amount : listPrice);
 
