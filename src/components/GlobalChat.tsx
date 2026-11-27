@@ -28,6 +28,8 @@ const NO_FRIENDS: Friends = { friends: [], incoming: [], outgoing: [] };
 
 const SEEN_KEY = "msn:globalChatSeen";
 const DM_SEEN_KEY = "msn:dmSeen";
+/** Private conversations closed by this player: peer id → newest message time when closed. */
+const DM_HIDDEN_KEY = "msn:dmHidden";
 const OPEN_KEY = "msn:globalChatOpen";
 /** How many components listen: the channel is only left when the last one goes. */
 let listeners = 0;
@@ -63,11 +65,13 @@ export function useGlobalChat(visible: boolean) {
   const [peers, setPeers] = useState<Record<string, OnlineUser>>({});
   const [seen, setSeen] = useState(0);
   const [dmSeen, setDmSeen] = useState<Record<string, number>>({});
+  const [dmHidden, setDmHidden] = useState<Record<string, number>>({});
   const [view, setView] = useState<ChatView>("global");
 
   useEffect(() => {
     setSeen(storage.get<number>(SEEN_KEY) ?? 0);
     setDmSeen(storage.get<Record<string, number>>(DM_SEEN_KEY) ?? {});
+    setDmHidden(storage.get<Record<string, number>>(DM_HIDDEN_KEY) ?? {});
   }, []);
 
   // Join (again whenever the account changes, so the server knows who this is).
@@ -159,9 +163,11 @@ export function useGlobalChat(visible: boolean) {
   const unreadGlobal = visible && view === "global" ? 0 : messages.filter((m) => m.t > seen && m.userId !== me?.id).length;
   const unreadDm = (peer: string) =>
     !me || (visible && openPeer === peer) ? 0 : dms.filter((m) => m.from === peer && m.to === me.id && m.t > (dmSeen[peer] ?? 0)).length;
-  // Conversations, the most recent first.
+  /** The time of the newest line with `peer`, 0 when there is none. */
+  const lastDm = (peer: string) => (me ? (dms.filter((m) => dmPeer(m, me.id) === peer).at(-1)?.t ?? 0) : 0);
+  // Conversations, the most recent first. A closed one comes back when a new line arrives.
   const conversations = me
-    ? [...new Set(dms.map((m) => dmPeer(m, me.id)).reverse())].filter((id) => peers[id])
+    ? [...new Set(dms.map((m) => dmPeer(m, me.id)).reverse())].filter((id) => peers[id] && !(lastDm(id) <= (dmHidden[id] ?? -1)))
     : [];
   const unreadDms = conversations.reduce((n, id) => n + unreadDm(id), 0);
 
@@ -169,6 +175,22 @@ export function useGlobalChat(visible: boolean) {
   const openDm = (u: OnlineUser) => {
     setPeers((ps) => ({ ...ps, [u.id]: ps[u.id] ?? u }));
     setView({ dm: u.id });
+  };
+
+  /** Closes a private conversation tab (marks it read; it reopens on the next message). */
+  const closeDm = (peer: string) => {
+    const at = lastDm(peer);
+    setDmHidden((h) => {
+      const next = { ...h, [peer]: at };
+      storage.set(DM_HIDDEN_KEY, next);
+      return next;
+    });
+    setDmSeen((d) => {
+      const next = { ...d, [peer]: Math.max(d[peer] ?? 0, at) };
+      storage.set(DM_SEEN_KEY, next);
+      return next;
+    });
+    setView((v) => (typeof v === "object" && v.dm === peer ? "global" : v));
   };
 
   /** Where `id` stands with me: friends, a request either way, or nothing. */
@@ -224,6 +246,7 @@ export function useGlobalChat(visible: boolean) {
     view,
     setView,
     openDm,
+    closeDm,
     conversations,
     unreadDm,
     unreadGlobal,
@@ -280,9 +303,20 @@ export function ServerChat({ chat, canInvite = false, className = "" }: { chat: 
           const p = peers[id];
           if (!p) return null;
           return (
-            <button key={id} role="tab" aria-selected={openPeer === id} className={tab(openPeer === id)} onClick={() => setView({ dm: id })}>
-              ✉️ <span className="max-w-24 truncate">{p.name}</span> <Badge n={chat.unreadDm(id)} />
-            </button>
+            <span key={id} className={`${tab(openPeer === id)} pr-1`}>
+              <button role="tab" aria-selected={openPeer === id} className="flex items-center gap-1" onClick={() => setView({ dm: id })}>
+                ✉️ <span className="max-w-24 truncate">{p.name}</span> <Badge n={chat.unreadDm(id)} />
+              </button>
+              <button
+                type="button"
+                className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[10px] leading-none text-white/50 hover:bg-white/15 hover:text-white"
+                onClick={() => chat.closeDm(id)}
+                aria-label={t("globalChat.closeDm", { name: p.name })}
+                title={t("globalChat.closeDm", { name: p.name })}
+              >
+                ✕
+              </button>
+            </span>
           );
         })}
       </div>
