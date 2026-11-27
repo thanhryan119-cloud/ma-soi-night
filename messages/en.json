@@ -69,7 +69,7 @@
     "feature2Title": "The machine hosts",
     "feature2Desc": "It deals roles, runs the night and counts votes",
     "feature3Title": "{n} roles",
-    "feature3Desc": "Special roles open free on a daily rotation",
+    "feature3Desc": "Every special role is free to play",
     "feature4Title": "Voice and chat",
     "feature4Desc": "Argue it out live, right in the game",
     "finalTitle": "Who's the wolf tonight?",
@@ -1420,7 +1420,7 @@
     "rolesTitle": "The basic roles",
     "tipsTitle": "Tips for your first game",
     "tip1": "Dying isn't the end. The dead get their own chat and can watch the rest of the game.",
-    "tip2": "A few special roles are free every day. Try them in your room.",
+    "tip2": "Every special role is free. Try them in your room.",
     "tip3": "Winning with a role unlocks its card in your collection.",
     "tip4": "Don't leave mid-game. The village needs your vote."
   },

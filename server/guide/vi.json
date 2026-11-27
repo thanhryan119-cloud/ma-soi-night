@@ -1,0 +1,291 @@
+{
+  "roles": {
+    "title": "Cách chơi từng nhân vật",
+    "desc": "{n} vai chia theo phe. Bấm vào một vai để xem vai đó làm gì, khi nào được gọi và mẹo chơi.",
+    "starter": "Nên học trước",
+    "advanced": "Nâng cao",
+    "wakeTitle": "Ban đêm",
+    "wake": {
+      "every": "Thức dậy mỗi đêm",
+      "firstNight": "Chỉ thức đêm đầu tiên",
+      "otherNight": "Thức cách một đêm",
+      "afterDeath": "Thức từ khi đã có người chết",
+      "withPack": "Thức dậy cùng bầy Sói",
+      "never": "Không thức ban đêm"
+    },
+    "packToo": "Đi cắn cùng bầy Sói",
+    "seerTitle": "Tiên tri soi thấy",
+    "seerWolf": "Là Sói",
+    "seerVillage": "Không phải Sói",
+    "actionTitle": "Việc cần làm",
+    "tipsTitle": "Mẹo chơi",
+    "goalTitle": "Mục tiêu",
+    "goal": {
+      "village": "Cùng cả làng tìm và loại hết Sói, cùng mọi kẻ giết người độc lập.",
+      "wolves": "Giúp bầy Sói sống sót tới khi đông bằng số người còn lại.",
+      "solo": "Không theo phe nào. Thắng một mình theo cách riêng của vai."
+    }
+  },
+  "features": {
+    "title": "Chức năng hay có thể bạn chưa biết",
+    "desc": "Không chỉ chia vai và đếm phiếu. Đây là những thứ làm mỗi ván vui hơn.",
+    "items": {
+      "quick": {
+        "title": "Vào chơi ngay",
+        "desc": "Một nút là vào phòng đang chờ người. Không có phòng thì tạo phòng rồi bấm Chơi liền với bot."
+      },
+      "machine": {
+        "title": "Máy làm quản trò",
+        "desc": "Máy chia vai, gọi từng vai ban đêm và đếm phiếu. Ai cũng được chơi, không ai phải ngồi dẫn."
+      },
+      "bots": {
+        "title": "Bot biết tán gẫu",
+        "desc": "Bot lấp chỗ trống, biết bỏ phiếu, biết nghi ngờ và còn cãi nhau trong chat như người thật."
+      },
+      "voice": {
+        "title": "Voice và chat",
+        "desc": "Bật mic để cãi nhau trực tiếp, hoặc chỉ nghe và gõ chat."
+      },
+      "ghost": {
+        "title": "Chat của người chết",
+        "desc": "Chết rồi vẫn xem tiếp và nói chuyện với các linh hồn khác. Hết ván cả làng mới đọc được."
+      },
+      "prophecy": {
+        "title": "Sổ Tiên Tri cho người chết",
+        "desc": "Chết rồi vẫn có việc làm. Bấm 🔮 Tiên tri để đoán ai chết đêm nay, ai lên giá treo và phe nào thắng, đoán trúng được điểm."
+      },
+      "watch": {
+        "title": "Vào xem ván đang chơi",
+        "desc": "Xem một ván đang diễn ra như khán giả, rồi vào chơi ván sau."
+      },
+      "screen": {
+        "title": "Màn hình trình chiếu",
+        "desc": "Ngồi chung một chỗ thì mở màn hình trình chiếu lên TV hoặc máy chiếu cho cả nhóm cùng xem."
+      },
+      "replay": {
+        "title": "Xem lại ván đấu",
+        "desc": "Hết ván, xem lại từng đêm và từng lượt vote để biết ai đã lừa ai."
+      },
+      "collection": {
+        "title": "Bộ sưu tập lá bài",
+        "desc": "Thắng bằng một vai để mở lá bài vai đó, rồi lên đồng, bạc, vàng và cầu vồng."
+      },
+      "quests": {
+        "title": "Nhiệm vụ hằng ngày",
+        "desc": "Điểm danh, làm nhiệm vụ nhỏ mỗi ngày để nhận vàng khoe với bạn bè."
+      },
+      "friends": {
+        "title": "Bạn bè và người online",
+        "desc": "Kết bạn, xem ai đang online và vào cùng phòng bạn bè đang chơi."
+      },
+      "leaderboard": {
+        "title": "Bảng xếp hạng",
+        "desc": "Ván có từ {min} người thật trở lên được tính vào bảng xếp hạng."
+      },
+      "password": {
+        "title": "Phòng có mật khẩu",
+        "desc": "Bật mật khẩu khi tạo phòng để chỉ người quen vào được."
+      },
+      "style": {
+        "title": "Trang trí hồ sơ miễn phí",
+        "desc": "Font, hiệu ứng tên, khung avatar, khung chat và nền thẻ, dùng thoải mái."
+      },
+      "sfx": {
+        "title": "Hiệu ứng âm thanh",
+        "desc": "Sói hú lúc đêm xuống, chuông lúc trời sáng, búa gõ khi vote. Bật tắt ở nút loa."
+      },
+      "install": {
+        "title": "Cài như app",
+        "desc": "Thêm vào màn hình chính để mở toàn màn hình như một app thật."
+      }
+    }
+  },
+  "faq": {
+    "empty": "Chưa có câu trả lời cho điều này. Hỏi mọi người trong nhóm nhé.",
+    "cat": {
+      "all": "Tất cả",
+      "start": "Bắt đầu",
+      "game": "Trong ván",
+      "roles": "Vai",
+      "account": "Tài khoản",
+      "tech": "Kỹ thuật"
+    },
+    "items": {
+      "install": {
+        "q": "Có cần cài app không?",
+        "a": "Không cần. Mở web bằng trình duyệt trên điện thoại là chơi được. Nếu hay chơi, bấm Cài app để thêm vào màn hình chính và mở toàn màn hình."
+      },
+      "free": {
+        "q": "Chơi có mất tiền không?",
+        "a": "Không. Mọi vai, mọi trang trí và mọi chức năng đều miễn phí. Nếu muốn giúp duy trì máy chủ, bạn có thể ủng hộ tự nguyện trên web, ủng hộ không mở khoá gì thêm."
+      },
+      "players": {
+        "q": "Cần bao nhiêu người?",
+        "a": "Ít nhất {min} người và nhiều nhất {max} người một phòng. Thiếu người thì thêm bot. Ván có từ {stats} người thật trở lên mới tính Standard và lên bảng xếp hạng."
+      },
+      "signIn": {
+        "q": "Có bắt buộc đăng nhập không?",
+        "a": "Vào chơi thì không. Người tạo phòng cần đăng nhập Google. Đăng nhập để lưu lịch sử chơi, tỉ lệ thắng, bộ sưu tập lá bài và nhiệm vụ."
+      },
+      "narrator": {
+        "q": "Nên chọn Máy làm quản trò hay Tôi làm quản trò?",
+        "a": "Mọi người chơi online ở nhiều nơi thì chọn Máy làm quản trò, máy tự dẫn và bạn được chơi cùng. Cả nhóm ngồi chung một chỗ và muốn có người dẫn thì chọn Tôi làm quản trò, rồi mở màn hình trình chiếu lên TV."
+      },
+      "seeRole": {
+        "q": "Xem vai của mình ở đâu?",
+        "a": "Nhấn giữ vào lá bài trên điện thoại để xem, thả tay ra là ẩn. Chưa biết làm gì thì bấm 💡 Gợi ý chơi vai này. Đừng để ai nhìn màn hình của bạn."
+      },
+      "noPower": {
+        "q": "Ban đêm vai của tôi không có việc thì làm gì?",
+        "a": "Cứ chờ. Tới lượt vai nào thì chỉ người giữ vai đó thấy nút để chọn. Ban ngày hãy nói chuyện tự nhiên, đừng để lộ là đêm qua bạn không làm gì."
+      },
+      "vote": {
+        "q": "Bỏ phiếu diễn ra thế nào?",
+        "a": "Ban ngày cả làng chọn người bị nghi để đưa lên dàn. Người đó được bào chữa, rồi cả làng chọn treo cổ hay tha. Hoà phiếu thì vote lại giữa những người hoà. Lá phiếu của {mayor} tính gấp đôi."
+      },
+      "dead": {
+        "q": "Chết rồi thì làm gì?",
+        "a": "Bạn vẫn xem tiếp cả ván và nói chuyện trong Chat người chết. Người còn sống không đọc được kênh này, hết ván cả làng mới thấy. Đừng mách gì cho người còn sống nhé."
+      },
+      "leave": {
+        "q": "Lỡ thoát hoặc mất mạng giữa ván thì sao?",
+        "a": "Mở lại link phòng và chọn đúng tên để vào lại ghế cũ, vai giữ nguyên. Vắng hơn 1 phút thì bot chơi hộ, chạm vào màn hình là tự chơi tiếp. Vắng quá 5 phút thì bạn bị loại và bot chơi thay tới hết ván."
+      },
+      "win": {
+        "q": "Phe nào thắng?",
+        "a": "Phe Dân thắng khi loại hết Sói. Phe Sói thắng khi số Sói còn sống bằng hoặc nhiều hơn số người còn lại. Vai độc lập có cách thắng riêng, và khi còn một kẻ giết người độc lập sống thì chưa phe nào thắng."
+      },
+      "firstRole": {
+        "q": "Người mới nên chơi vai nào?",
+        "a": "{villager} là dễ nhất, chỉ cần nghe, hỏi và bỏ phiếu. {bodyguard} và {hunter} cũng dễ. {seer} và {witch} quan trọng nên cần giữ bí mật khéo. Làm {werewolf} lần đầu hơi run, cứ nói chuyện như dân thường là được."
+      },
+      "seer": {
+        "q": "Tiên tri soi thấy gì?",
+        "a": "Tiên tri thấy người được soi có phải Sói hay không, không thấy tên vai. Cẩn thận vì vài vai làm Tiên tri thấy sai, đó là {roles}."
+      },
+      "roleSet": {
+        "q": "Chọn bộ vai thế nào cho cân?",
+        "a": "Trong Cài đặt phòng bấm Dùng gợi ý, máy chia bộ vai cân bằng theo số người. Muốn tự chỉnh thì tổng số vai phải đúng bằng số người chơi. Bảng bộ vai tiêu chuẩn có ở mục Cách chơi trên trang chủ."
+      },
+      "solo": {
+        "q": "Vai độc lập là gì?",
+        "a": "Vai độc lập không theo Dân cũng không theo Sói. Mỗi vai thắng theo cách riêng, ví dụ {tanner} muốn bị treo cổ, còn {arsonist} phải là người cuối cùng còn sống."
+      },
+      "collection": {
+        "q": "Mở lá bài trong bộ sưu tập thế nào?",
+        "a": "Thắng một ván bằng vai nào là mở lá bài vai đó. Thắng {bronze} lần được đồng, {silver} lần được bạc, {gold} lần được vàng và {rainbow} lần được cầu vồng. Mọi ván thắng đều được tính."
+      },
+      "quests": {
+        "q": "Nhiệm vụ và vàng dùng làm gì?",
+        "a": "Mở 📜 Nhiệm vụ để điểm danh và làm các nhiệm vụ nhỏ mỗi ngày. Làm xong nhận vàng. Vàng là điểm thành tích để khoe, không dùng để mua gì."
+      },
+      "friends": {
+        "q": "Kết bạn thế nào?",
+        "a": "Bấm vào một người để xem hồ sơ rồi bấm Kết bạn. Lời mời nằm trong Chat, mục Bạn bè. Bạn bè đang ở phòng nào sẽ hiện ra để bạn vào cùng hoặc vào xem."
+      },
+      "voice": {
+        "q": "Không nói hoặc không nghe được voice?",
+        "a": "Bấm Bật mic để nói hoặc Nghe mọi người để chỉ nghe, và cho phép trình duyệt dùng micro. Không nghe thấy gì thì bấm Bấm để nghe. Mạng 4G đôi khi chặn voice, lúc đó dùng chat vẫn chơi bình thường."
+      },
+      "inApp": {
+        "q": "Mở link trong Zalo, Messenger hay Facebook bị lỗi?",
+        "a": "Trình duyệt bên trong các app này hay chặn micro và rớt kết nối. Bấm ⋯ hoặc ⋮ ở góc màn hình rồi chọn Mở bằng trình duyệt, hoặc chép link dán vào Chrome hay Safari."
+      },
+      "language": {
+        "q": "Đổi ngôn ngữ ở đâu?",
+        "a": "Bấm nút ngôn ngữ ở góc trên bên trái. Mỗi người chọn ngôn ngữ của mình, người nói tiếng Việt và tiếng Anh vẫn chơi chung một phòng được."
+      },
+      "screen": {
+        "q": "Có màn hình chung để chiếu lên TV không?",
+        "a": "Có. Trong phòng do bạn làm quản trò, bấm Mở màn hình trình chiếu rồi mở trang đó trên TV, laptop hoặc máy chiếu cho cả nhóm cùng nhìn."
+      }
+    }
+  },
+  "onboard": {
+    "next": "Tiếp",
+    "prev": "Quay lại",
+    "stepOf": "Bước {n}/{total}",
+    "ask": {
+      "title": "Chào mừng tới Ma Sói Online 🐺",
+      "desc": "Mình dẫn bạn đi một vòng ngắn để ván đầu tiên thật suôn sẻ. Bạn đã biết chơi Ma Sói chưa?",
+      "new": {
+        "title": "Mình mới hoàn toàn",
+        "desc": "Giải thích luật từ đầu, chừng một phút"
+      },
+      "know": {
+        "title": "Biết luật rồi",
+        "desc": "Chỉ cần biết web này dùng thế nào"
+      },
+      "skip": {
+        "title": "Cho mình vào chơi luôn",
+        "desc": "Mở lại hướng dẫn bất cứ lúc nào bằng lệnh /huongdan"
+      }
+    },
+    "rules": {
+      "title": "Luật trong 30 giây",
+      "desc": "Mỗi người nhận một vai bí mật. Dân làng phải tìm ra Sói, còn bầy Sói âm thầm ăn thịt dân làng mỗi đêm."
+    },
+    "roles": {
+      "title": "Vai đầu tiên nên học",
+      "desc": "Ván đầu thường chỉ có 6 vai này."
+    },
+    "phone": {
+      "title": "Điện thoại là lá bài của bạn",
+      "tip1": "Nhấn giữ lá bài để xem vai, thả tay ra là ẩn. Đừng để ai nhìn màn hình.",
+      "tip2": "Bấm 💡 Gợi ý chơi vai này nếu chưa biết làm gì.",
+      "tip3": "Tới lượt vai của bạn ban đêm, điện thoại hiện nút để chọn người.",
+      "tip4": "Ban ngày nói chuyện bằng chat hoặc bật mic, rồi bỏ phiếu ngay trên máy."
+    },
+    "manners": {
+      "title": "Chơi đẹp để ai cũng vui",
+      "tip1": "Không khoe vai ra ngoài ván, không chụp màn hình gửi người khác.",
+      "tip2": "Chết rồi thì nói trong Chat người chết, đừng mách người còn sống.",
+      "tip3": "Đừng thoát giữa ván. Vắng hơn 1 phút bot chơi hộ, vắng quá 5 phút là bị loại.",
+      "tip4": "Nghi ngờ thì cứ nghi, nhưng cãi vui thôi, đừng nặng lời với nhau."
+    },
+    "start": {
+      "title": "Bạn muốn chơi thế nào?",
+      "desc": "Chọn một cách để bắt đầu. Gõ /huongdan để mở lại hướng dẫn này bất cứ lúc nào.",
+      "quick": {
+        "title": "Vào chơi ngay",
+        "desc": "Máy tìm phòng đang chờ người cho bạn"
+      },
+      "lobby": {
+        "title": "Vào sảnh",
+        "desc": "Xem các phòng đang mở hoặc tạo phòng cho nhóm"
+      },
+      "guide": {
+        "title": "Xem cách chơi từng vai",
+        "desc": "Mục tiêu, khi nào thức dậy và mẹo chơi của từng vai"
+      }
+    }
+  },
+  "discord": {
+    "panel": {
+      "title": "📖 Hướng dẫn Ma Sói Online",
+      "desc": "Mới vào nhóm? Bấm một nút bên dưới. Câu trả lời chỉ mình bạn thấy, cứ bấm thoải mái.\n\n🌱 **Hướng dẫn người mới** dẫn bạn đi từng bước tới ván đầu tiên\n🎭 **Cách chơi từng vai** chọn vai để xem mục tiêu, khi nào thức dậy và mẹo chơi\n✨ **Chức năng hay** những thứ có thể bạn chưa biết\n❓ **Hỏi đáp** chọn câu hỏi bạn đang thắc mắc",
+      "new": "Hướng dẫn người mới",
+      "roles": "Cách chơi từng vai",
+      "features": "Chức năng hay",
+      "faq": "Hỏi đáp",
+      "play": "Vào chơi"
+    },
+    "rolesTitle": "🎭 Cách chơi từng vai",
+    "rolesDesc": "Có {n} vai chia theo phe. Chọn một vai trong menu bên dưới để xem cách chơi.",
+    "rolesPick": "Chọn một vai…",
+    "faqDesc": "Chọn một câu hỏi trong menu bên dưới.",
+    "faqPick": "Chọn câu hỏi…",
+    "features": "Chức năng hay",
+    "posted": "Đã đăng bảng hướng dẫn vào kênh này.",
+    "unknown": "Mình chưa hiểu yêu cầu này. Gõ /huongdan để mở hướng dẫn.",
+    "roleSelf": "Vai này",
+    "cmd": {
+      "guide": "Hướng dẫn người mới chơi Ma Sói Online",
+      "role": "Xem cách chơi một vai",
+      "roleOption": "Tên vai",
+      "faq": "Câu hỏi thường gặp",
+      "features": "Chức năng hay của Ma Sói Online",
+      "panel": "Đăng bảng hướng dẫn có nút bấm vào kênh này"
+    }
+  }
+}

@@ -36,6 +36,8 @@ import { createAiBots } from "./aiBots";
 import { createAccounts } from "./accounts";
 import { roleWins, tierReached, type AchievementNews } from "../shared/achievements";
 import { createQuests } from "./quests";
+import { createDiscordNotifier } from "./discord";
+import { createDiscordGuide } from "./discordGuide";
 import { createSocial } from "./social";
 import { createGlobalChat } from "./globalChat";
 import { BUSY_TALK_CHANCE, tableBusy } from "../shared/social";
@@ -157,6 +159,16 @@ function loadRooms() {
 loadRooms();
 const accounts = createAccounts(dirname(DATA_FILE), CORS_ORIGIN);
 if (!accounts.enabled) console.log("[accounts] GOOGLE_CLIENT_ID not set: Google sign-in disabled");
+const discord = createDiscordNotifier({
+  webhookUrl: process.env.DISCORD_WEBHOOK_URL,
+  webUrl: process.env.PUBLIC_WEB_URL || undefined,
+});
+if (!discord.enabled) console.log("[discord] DISCORD_WEBHOOK_URL not set: new rooms are not posted to Discord");
+const discordGuide = createDiscordGuide({
+  publicKey: process.env.DISCORD_PUBLIC_KEY,
+  webUrl: process.env.PUBLIC_WEB_URL || undefined,
+});
+if (!discordGuide.enabled) console.log("[discord] DISCORD_PUBLIC_KEY not set: the Discord guide bot is off");
 const quests = createQuests({ dataDir: dirname(DATA_FILE), corsOrigin: CORS_ORIGIN, accounts });
 const games = createGames(dirname(DATA_FILE), CORS_ORIGIN);
 
@@ -180,6 +192,7 @@ function lanAddresses(): string[] {
 }
 
 const httpServer = createServer(async (req, res) => {
+  if (await discordGuide.handle(req, res)) return;
   if (await accounts.handle(req, res)) return;
   if (await quests.handle(req, res)) return;
   if (await games.handle(req, res)) return;
@@ -1178,6 +1191,7 @@ io.on("connection", (raw) => {
         attach(socket, room, "host");
         touch(room);
         console.log(`[room ${room.code}] created from the lobby (human host)`);
+        discord.roomCreated(room);
         return { ok: true, code: room.code, hostToken: room.hostToken };
       }
       const other = otherSeat(p, user?.id, room.code);
@@ -1199,6 +1213,7 @@ io.on("connection", (raw) => {
       attach(socket, room, "player", res.player.id);
       touch(room);
       console.log(`[room ${room.code}] created from the lobby (machine host)`);
+      discord.roomCreated(room);
       return { ok: true, code: room.code, playerId: res.player.id, token: res.player.token };
     }, ack),
   );
@@ -1245,6 +1260,7 @@ io.on("connection", (raw) => {
       attach(socket, room, "host");
       touch(room);
       console.log(`[room ${room.code}] created`);
+      discord.roomCreated(room);
       return { ok: true, code: room.code, hostToken: room.hostToken };
     }, ack),
   );
