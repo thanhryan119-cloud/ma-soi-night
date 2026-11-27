@@ -120,7 +120,7 @@ export function OnlinePeople({ chat, className = "" }: { chat: Chat; className?:
         {tabBtn("online", `🟢 ${t("people.tabOnline")}`, String(online.users.length + online.guests))}
         {tabBtn("friends", `🤝 ${t("people.tabFriends")}`, me ? `${friendsOnline}/${friendRows.length}` : "0", friends.incoming.length)}
       </div>
-      <div className="max-h-96 min-h-48 overflow-y-auto">
+      <div className="max-h-96 min-h-48 overflow-y-auto lg:max-h-none lg:min-h-0 lg:flex-1">
         {tab === "online" ? (
           <>
             {!onlineRows.length ? (
