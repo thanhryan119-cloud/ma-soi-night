@@ -11,8 +11,13 @@ import { toast } from "./ui";
 /** The account behind the QR image, for people who type the transfer in by hand. */
 const DONATE_BANK = "Techcombank";
 const DONATE_ACCOUNT = "7816555555";
-const DONATE_HOLDER = "NGUYEN TUAN THANH";
 const QR_SRC = "/donate-qr.png";
+/**
+ * The owner's round avatar, sitting on the top edge of the QR card. It stays
+ * off the code itself: the bank's QR uses the lowest error correction (L), so
+ * covering its middle could stop banking apps from reading it.
+ */
+const AVATAR_SRC = "/donate-avatar.png";
 
 const grouped = (n: string) => n.replace(/^(\d{4})(\d{4})(\d+)$/, "$1 $2 $3");
 
@@ -27,16 +32,21 @@ export function DonateCard({ onDone }: { onDone?: () => void }) {
   return (
     <div className="flex flex-col items-center gap-4 text-center">
       <p className="max-w-xs text-lg leading-snug font-semibold text-white/90">{t("donate.title")}</p>
-      <div className="w-full max-w-[260px] rounded-3xl border-4 border-pink-300/90 bg-white p-3 shadow-[0_0_32px_rgba(249,168,212,0.25)]">
+      <div className="relative mt-9 w-full max-w-[260px] rounded-3xl border-4 border-pink-300/90 bg-white px-3 pt-10 pb-3 shadow-[0_0_32px_rgba(249,168,212,0.25)]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={AVATAR_SRC}
+          alt=""
+          width={127}
+          height={127}
+          className="absolute top-0 left-1/2 h-[76px] w-[76px] -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-pink-300/90 bg-white shadow-lg"
+        />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={QR_SRC} alt={t("donate.qrAlt")} width={630} height={760} className="h-auto w-full" />
       </div>
-      <div className="flex flex-col items-center gap-0.5 text-sm">
-        <span className="font-bold tracking-wide text-white/90">{DONATE_HOLDER}</span>
-        <button type="button" onClick={copy} className="font-mono text-white/70 hover:text-gold" title={t("donate.copy")}>
-          {DONATE_BANK} · {grouped(DONATE_ACCOUNT)} ⧉
-        </button>
-      </div>
+      <button type="button" onClick={copy} className="font-mono text-sm text-white/70 hover:text-gold" title={t("donate.copy")}>
+        {DONATE_BANK} · {grouped(DONATE_ACCOUNT)} ⧉
+      </button>
       <a href={QR_SRC} download="ma-soi-qr.png" className="btn-ghost btn-sm px-4">
         ⬇ {t("donate.download")}
       </a>
