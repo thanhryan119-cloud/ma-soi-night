@@ -52,8 +52,6 @@ body {
   animation: nb-lurk 12s ease-in-out infinite;
 }
 .nb-blink {
-  transform-box: fill-box;
-  transform-origin: center;
   animation: nb-blink 12s ease-in-out infinite;
 }
 @keyframes nb-blink {
