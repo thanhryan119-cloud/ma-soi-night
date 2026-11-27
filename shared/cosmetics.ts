@@ -9,14 +9,14 @@ import type { RoleId } from "./types";
 // visuals in src/app/globals.css (.nf-<id>, .ne-<id>, .af-<id>, .cb-<id>, .pc-<id>).
 
 export const NAME_FONTS = ["default", "serif", "script", "condensed", "mono", "brush"] as const;
-export const NAME_EFFECTS = ["none", "glow", "blood", "flicker", "shimmer", "glitch"] as const;
+export const NAME_EFFECTS = ["none", "glow", "blood", "flicker", "shimmer", "glitch", "fire", "gold"] as const;
 export const AVATAR_FRAMES = [
   "none", "ring", "blood", "double", "moon", "thorns", "pulse", "crown", "frost", "runes", "wolf",
 ] as const;
 /** Decorations laid over a player's chat colour; "plain" (just the colour) is free. */
-export const CHAT_DECOS = ["plain", "stars", "moon", "blood", "frost", "ember", "gold"] as const;
+export const CHAT_DECOS = ["plain", "stars", "moon", "blood", "frost", "ember", "gold", "paws"] as const;
 /** Backgrounds behind the avatar and name on the profile card; "plain" is free. */
-export const CARD_BGS = ["plain", "stars", "bloodmoon", "pines", "tarot", "mist", "gold"] as const;
+export const CARD_BGS = ["plain", "stars", "bloodmoon", "pines", "tarot", "mist", "gold", "village"] as const;
 
 /**
  * Basic chat colours. Each player in a room gets one nobody else has (see

@@ -30,7 +30,7 @@ describe("shop catalog", () => {
     expect(SHOP_ITEMS).not.toContain("chat:plain");
     expect(SHOP_ITEMS).toContain("card:bloodmoon");
     expect(SHOP_ITEMS).not.toContain("card:plain");
-    expect(SHOP_ITEMS).toHaveLength(32);
+    expect(SHOP_ITEMS).toHaveLength(36);
   });
 
   it("strips paid parts of a style the player does not own", () => {
