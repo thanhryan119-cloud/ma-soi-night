@@ -12,6 +12,23 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.6",
+    date: "2026-11-27",
+    title: { vi: "Chơi mượt hơn trên Safari và iPhone", en: "Smoother on Safari and iPhone" },
+    items: {
+      vi: [
+        "Nền trời đêm được vẽ lại theo cách nhẹ hơn, nên trên Safari và iPhone game không còn giật khi sao nhấp nháy hay mắt sói hiện ra.",
+        "Trời sao, mặt trăng và những cặp mắt sói vẫn y như cũ.",
+        "Lúc biện hộ và bỏ phiếu treo cổ trên điện thoại, khung chat luôn chiếm ít nhất nửa màn hình nên không còn bị che mất trên iPhone. Ảnh người bị đề cử nhỏ lại một chút cho gọn.",
+      ],
+      en: [
+        "The night sky backdrop is drawn in a lighter way, so the game no longer stutters on Safari and iPhone while stars twinkle and wolf eyes appear.",
+        "The stars, the moon and the wolf eyes look exactly as before.",
+        "During the defense and the verdict vote on phones, the chat always keeps at least half the screen, so it no longer disappears on iPhone. Nominee pictures are a little smaller to make room.",
+      ],
+    },
+  },
+  {
     version: "1.7.5",
     date: "2026-11-27",
     title: { vi: "Nền thẻ, nền chat và hiệu ứng tên vẽ lại", en: "Redrawn card backgrounds, chat decorations and name effects" },

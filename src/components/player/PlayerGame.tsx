@@ -603,8 +603,10 @@ function Defense({ state, me, players, offset }: Ctx & { offset: number }) {
   const wide = useWideLayout();
   const act = usePlayerAction();
   const done = !!me.defenseDone;
+  // Phones: the page scrolls and the chat keeps at least half the screen, so a
+  // short screen (Safari's bars, several nominees) can never squeeze it away.
   return (
-    <Fill>
+    <Fill scroll={!wide}>
       <div className="flex shrink-0 items-center gap-3">
         <h2 className="shrink-0 text-lg font-bold">⚖️ {t("player.defenseTitle")}</h2>
         <div className="min-w-0 flex-1">
@@ -612,10 +614,10 @@ function Defense({ state, me, players, offset }: Ctx & { offset: number }) {
         </div>
       </div>
       <div className="shrink-0">
-        <Nominees state={state} players={players} />
+        <Nominees state={state} players={players} compact={!wide} />
       </div>
       {me.onStand && <p className="shrink-0 rounded-lg bg-gold/20 px-3 py-1.5 text-center text-sm font-bold text-gold">{t("player.onStandYou")}</p>}
-      {wide ? <div className="flex-1" /> : <SocialPanel state={state} viewer={me.id} className="min-h-0 flex-1" />}
+      {wide ? <div className="flex-1" /> : <SocialPanel state={state} viewer={me.id} className="min-h-[50dvh] flex-1" />}
       {me.onStand && me.alive && (
         <button className="btn-primary shrink-0 py-3" disabled={done} onClick={() => act({ type: "endDefense" })}>
           {done ? t("player.defenseEnded") : t("player.endDefense")}
@@ -1360,19 +1362,19 @@ function Nominate({ state, me, players }: Ctx) {
   );
 }
 
-function Nominees({ state, players }: { state: ClientState; players: Map<string, PlayerView> }) {
+function Nominees({ state, players, compact = false }: { state: ClientState; players: Map<string, PlayerView>; compact?: boolean }) {
   const t = useT();
   if (!state.nominees.length) return <p className="text-white/60">{t("player.noNominees")}</p>;
   return (
-    <div className="flex flex-wrap justify-center gap-4">
+    <div className={`flex flex-wrap justify-center ${compact ? "gap-3" : "gap-4"}`}>
       {state.nominees.map((id) => {
         const p = players.get(id);
         return p ? (
           <div key={id} className="flex flex-col items-center gap-1">
             <ProfileLink playerId={p.id}>
-              <Avatar p={p} size="lg" />
+              <Avatar p={p} size={compact ? "md" : "lg"} />
             </ProfileLink>
-            <ProfileLink playerId={p.id} className="font-bold">
+            <ProfileLink playerId={p.id} className={compact ? "text-sm font-bold" : "font-bold"}>
               <StyledName p={p} />
             </ProfileLink>
             {state.nomination && <span className="text-xs text-white/50">{state.nomination.counts[id] ?? 0} 🗳️</span>}
@@ -1392,7 +1394,7 @@ function Verdict({ state, me, players }: Ctx) {
   const wide = useWideLayout();
   const chat = !wide;
   return (
-    <Fill>
+    <Fill scroll={chat}>
       {nominee && (
         <div className={`flex shrink-0 items-center gap-2 text-center ${chat ? "justify-center" : "flex-col"}`}>
           <Avatar p={nominee} size={chat ? "lg" : "xl"} />
@@ -1426,7 +1428,7 @@ function Verdict({ state, me, players }: Ctx) {
         !chat && <div className="flex-1" />
       )}
       <VoteProgress state={state} />
-      {chat && <SocialPanel state={state} viewer={me.id} className="min-h-0 flex-1" />}
+      {chat && <SocialPanel state={state} viewer={me.id} className="min-h-[50dvh] flex-1" />}
     </Fill>
   );
 }

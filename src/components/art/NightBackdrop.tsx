@@ -107,25 +107,69 @@ function build() {
 // Left eye, outer corner raised, inner corner dipping toward the nose.
 const EYE = "M-94 -6 C-84 -23 -54 -25 -36 4 L-29 13 C-48 8 -77 11 -94 -6 Z";
 
+// Each wolf's art box in its own coordinates (fur reaches about 200 out to the
+// sides, 95 up and 75 down), and where its origin and eyes sit in that box.
+const WV = { x: -200, y: -95, w: 400, h: 170 };
+const ORIGIN_Y = (-WV.y / WV.h) * 100;
+const EYES_Y = ((-6 - WV.y) / WV.h) * 100;
+const VIEW = `${WV.x} ${WV.y} ${WV.w} ${WV.h}`;
+const pct = (v: number) => `${v.toFixed(3)}%`;
+
+/*
+ * Only static art is drawn in the big SVG. Everything that moves (stars,
+ * wolves) is its own small HTML layer animating opacity or transform, which the
+ * browser runs on the GPU. Animating shapes inside one big SVG made Safari
+ * repaint the whole screen-sized drawing (thousands of fur strokes) every frame.
+ *
+ * The moving layers sit in a square box sized like the SVG's 1000x1000 viewBox
+ * with "slice", so x/10 and y/10 are percentages of that box.
+ */
 export function NightBackdrop() {
   const [scene, setScene] = useState<ReturnType<typeof build> | null>(null);
   useEffect(() => setScene(build()), []);
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#050409]">
-      <svg className="h-full w-full" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
         <defs>
           <radialGradient id="nb-moon-glow">
             <stop offset="0%" stopColor={W} stopOpacity="0.22" />
             <stop offset="100%" stopColor={W} stopOpacity="0" />
           </radialGradient>
-          {scene && (
-            <>
+        </defs>
+
+        {/* Moon */}
+        <circle cx="820" cy="150" r="190" fill="url(#nb-moon-glow)" />
+        <circle cx="820" cy="150" r="70" fill={W} />
+        <circle cx="846" cy="132" r="64" fill="#050409" />
+
+        {/* Far hills and forest */}
+        <path d="M0 720 Q150 640 300 700 Q460 760 600 690 Q760 620 1000 700 V1000 H0 Z" fill="#0b0a12" />
+        <path d="M0 720 Q150 640 300 700 Q460 760 600 690 Q760 620 1000 700" fill="none" stroke={W} strokeOpacity="0.16" strokeWidth="2" />
+        {Array.from({ length: 34 }, (_, i) => {
+          const x = i * 31 - 10;
+          const h = 70 + ((i * 37) % 90);
+          const base = 800 + ((i * 13) % 40);
+          return <path key={i} d={`M${x} ${base} L${x - 22} ${base} L${x} ${base - h} L${x + 22} ${base} Z`} fill="#07060f" stroke={W} strokeOpacity="0.1" strokeWidth="1.5" />;
+        })}
+        <rect x="0" y="830" width="1000" height="170" fill="#050409" />
+      </svg>
+
+      {scene && (
+        <>
+          {/* Shared wolf art, drawn by reference from each wolf's own small SVG. */}
+          <svg width="0" height="0" className="absolute">
+            <defs>
               <clipPath id="nb-eye-clip">
                 <path d={EYE} />
               </clipPath>
               <g id="nb-fur-half">
                 {scene.fur.side.map((h, i) => (
+                  <path key={i} d={h.d} fill={h.c} />
+                ))}
+              </g>
+              <g id="nb-fur-centre">
+                {scene.fur.centre.map((h, i) => (
                   <path key={i} d={h.d} fill={h.c} />
                 ))}
               </g>
@@ -143,48 +187,55 @@ export function NightBackdrop() {
                 <path d={hair(-35, 6, 0.95, 16, 2.4, 1)} fill={W} />
                 <path d={hair(-94, -6, 3.5, 12, 2, -1)} fill={W} />
               </g>
-            </>
-          )}
-        </defs>
+            </defs>
+          </svg>
 
-        {/* Moon */}
-        <circle cx="820" cy="150" r="190" fill="url(#nb-moon-glow)" />
-        <circle cx="820" cy="150" r="70" fill={W} />
-        <circle cx="846" cy="132" r="64" fill="#050409" />
+          <div className="absolute left-1/2 top-1/2 aspect-square w-[max(100vw,100vh)] -translate-x-1/2 -translate-y-1/2">
+            {/* Stars */}
+            {scene.stars.map((s, i) => (
+              <span
+                key={i}
+                className="nb-star absolute aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{ left: pct(s.x / 10), top: pct(s.y / 10), width: pct(s.r / 5), background: W, animationDelay: `${s.delay}s` }}
+              />
+            ))}
 
-        {/* Stars */}
-        {scene?.stars.map((s, i) => (
-          <circle key={i} className="nb-star" cx={s.x} cy={s.y} r={s.r} fill={W} style={{ animationDelay: `${s.delay}s` }} />
-        ))}
-
-        {/* Far hills and forest */}
-        <path d="M0 720 Q150 640 300 700 Q460 760 600 690 Q760 620 1000 700 V1000 H0 Z" fill="#0b0a12" />
-        <path d="M0 720 Q150 640 300 700 Q460 760 600 690 Q760 620 1000 700" fill="none" stroke={W} strokeOpacity="0.16" strokeWidth="2" />
-        {Array.from({ length: 34 }, (_, i) => {
-          const x = i * 31 - 10;
-          const h = 70 + ((i * 37) % 90);
-          const base = 800 + ((i * 13) % 40);
-          return <path key={i} d={`M${x} ${base} L${x - 22} ${base} L${x} ${base - h} L${x + 22} ${base} Z`} fill="#07060f" stroke={W} strokeOpacity="0.1" strokeWidth="1.5" />;
-        })}
-        <rect x="0" y="830" width="1000" height="170" fill="#050409" />
-
-        {/* Wolves' eyes lurking in the dark */}
-        {scene?.watchers.map((w, i) => (
-          <g key={i} transform={`translate(${w.x.toFixed(1)} ${w.y.toFixed(1)}) rotate(${w.tilt.toFixed(1)}) scale(${w.s.toFixed(3)})`} opacity="0.7">
-            <g className="nb-eyes" style={{ animationDelay: `${w.delay}s`, animationDuration: `${w.dur}s` }}>
-              <use href="#nb-fur-half" transform="translate(-26 0)" />
-              <use href="#nb-fur-half" transform="scale(-1 1) translate(-26 0)" />
-              {scene.fur.centre.map((h, j) => (
-                <path key={j} d={h.d} fill={h.c} />
-              ))}
-              <g className="nb-blink" style={{ animationDelay: `${w.delay}s`, animationDuration: `${w.dur}s` }}>
-                <use href="#nb-eye-left" transform="translate(-26 0)" />
-                <use href="#nb-eye-left" transform="scale(-1 1) translate(-26 0)" />
-              </g>
-            </g>
-          </g>
-        ))}
-      </svg>
+            {/* Wolves' eyes lurking in the dark */}
+            {scene.watchers.map((w, i) => (
+              <div
+                key={i}
+                className="absolute"
+                style={{
+                  left: pct(w.x / 10),
+                  top: pct(w.y / 10),
+                  width: pct((WV.w * w.s) / 10),
+                  aspectRatio: `${WV.w} / ${WV.h}`,
+                  transformOrigin: `50% ${pct(ORIGIN_Y)}`,
+                  transform: `translate(-50%, -${pct(ORIGIN_Y)}) rotate(${w.tilt.toFixed(1)}deg)`,
+                  opacity: 0.7,
+                }}
+              >
+                <div className="nb-eyes absolute inset-0" style={{ animationDelay: `${w.delay}s`, animationDuration: `${w.dur}s` }}>
+                  <svg className="absolute inset-0 h-full w-full" viewBox={VIEW}>
+                    <use href="#nb-fur-half" transform="translate(-26 0)" />
+                    <use href="#nb-fur-half" transform="scale(-1 1) translate(-26 0)" />
+                    <use href="#nb-fur-centre" />
+                  </svg>
+                  <div
+                    className="nb-blink absolute inset-0"
+                    style={{ transformOrigin: `50% ${pct(EYES_Y)}`, animationDelay: `${w.delay}s`, animationDuration: `${w.dur}s` }}
+                  >
+                    <svg className="absolute inset-0 h-full w-full" viewBox={VIEW}>
+                      <use href="#nb-eye-left" transform="translate(-26 0)" />
+                      <use href="#nb-eye-left" transform="scale(-1 1) translate(-26 0)" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.65)_100%)]" />
     </div>
   );
