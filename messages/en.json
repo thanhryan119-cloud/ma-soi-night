@@ -1259,12 +1259,20 @@
   "leaderboard": {
     "title": "Leaderboard",
     "accounts": "{count} accounts",
-    "player": "Player",
-    "wolf": "Wolf",
+    "category": "Category",
+    "categories": {
+      "all": "Overall",
+      "wolves": "Werewolves",
+      "village": "Village",
+      "solo": "Solo"
+    },
+    "minGames": "At least {min} games in this category to be ranked.",
+    "noneRanked": "Nobody has {min} games in this category yet.",
+    "youNeed": "{n} more games and you show up in this category.",
+    "record": "{wins} wins / {games} games",
     "you": "You",
     "empty": "No accounts yet. Sign in with Google on the Profile page to be the first.",
     "unavailable": "Couldn't load the leaderboard.",
-    "unranked": "Fewer than {min} games, newest accounts first",
     "mode": "Mode",
     "showMore": "Show top {n}",
     "showLess": "Show less"

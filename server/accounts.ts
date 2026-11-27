@@ -160,9 +160,10 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
           wins: s?.wins ?? 0,
           winRate: s ? winRate(s) : 0,
           wolfGames: s?.byRole.werewolf?.games ?? 0,
+          teams: s?.byTeam ?? {},
           casual: (() => {
             const c = casualOf(s);
-            return { games: c.games, wins: c.wins, winRate: winRate(c), wolfGames: c.byRole.werewolf?.games ?? 0 };
+            return { games: c.games, wins: c.wins, winRate: winRate(c), wolfGames: c.byRole.werewolf?.games ?? 0, teams: c.byTeam ?? {} };
           })(),
           createdAt: u.createdAt ?? 0,
         };

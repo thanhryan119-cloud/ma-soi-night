@@ -10,6 +10,7 @@ import {
   MIN_HUMANS_FOR_STATS,
   MIN_RANKED_GAMES,
   rankLeaderboard,
+  rankCategory,
   winRate,
   RECENT_GAMES,
   type LeaderboardRow,
@@ -114,7 +115,7 @@ describe("career stats", () => {
     expect(s.byTeam.village.games).toBe(0);
     expect(s.recent[0]).toMatchObject({ role: "seer", counted: false });
     expect(winRate(s)).toBe(1);
-    expect(s.casual).toEqual({ games: 2, wins: 1, losses: 1, draws: 0, abandons: 0, byRole: { seer: { games: 2, wins: 1 } } });
+    expect(s.casual).toEqual({ games: 2, wins: 1, losses: 1, draws: 0, abandons: 0, byRole: { seer: { games: 2, wins: 1 } }, byTeam: { village: { games: 2, wins: 1 } } });
     expect(winRate(casualOf(s))).toBe(0.5);
   });
 
@@ -126,7 +127,7 @@ describe("career stats", () => {
       ...old.recent,
     ];
     delete old.casual;
-    expect(casualOf(old)).toEqual({ games: 2, wins: 1, losses: 1, draws: 0, abandons: 1, byRole: { seer: { games: 2, wins: 1 } } });
+    expect(casualOf(old)).toEqual({ games: 2, wins: 1, losses: 1, draws: 0, abandons: 1, byRole: { seer: { games: 2, wins: 1 } }, byTeam: { village: { games: 2, wins: 1 } } });
     const next = applyResult(old, game({ role: "witch", humans: 3, counted: false }));
     expect(next.casual).toMatchObject({ games: 3, wins: 2 });
     expect(next.games).toBe(1);
@@ -184,5 +185,17 @@ describe("leaderboard", () => {
     expect(byCasual.map((r) => r.name)).toEqual(["botfan", "mixed", "oldServer", "pro"]);
     expect(byCasual.map((r) => isRanked(lineOf(r, "casual")))).toEqual([true, true, false, false]);
     expect(lineOf(rows[3], "casual")).toEqual({ games: 0, wins: 0, winRate: 0, wolfGames: 0 });
+  });
+
+  it("ranks a faction by its own win rate, only players with enough games in it", () => {
+    const teamRow = (name: string, wolves: [number, number], village: [number, number]): LeaderboardRow => ({
+      ...row(name, wolves[0] + village[0], wolves[1] + village[1]),
+      teams: { wolves: { games: wolves[0], wins: wolves[1] }, village: { games: village[0], wins: village[1] } },
+    });
+    const rows = [teamRow("alpha", [6, 5], [10, 3]), teamRow("farmer", [2, 2], [8, 7]), teamRow("both", [5, 3], [5, 3]), row("old", 9, 9)];
+    expect(rankCategory(rows, "standard", "wolves").map((r) => r.name)).toEqual(["alpha", "both"]);
+    expect(rankCategory(rows, "standard", "village").map((r) => r.name)).toEqual(["farmer", "both", "alpha"]);
+    expect(rankCategory(rows, "standard", "solo")).toEqual([]);
+    expect(rankCategory(rows, "standard", "all").map((r) => r.name)).toEqual(["old", "farmer", "both", "alpha"]);
   });
 });

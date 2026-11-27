@@ -39,6 +39,8 @@ export interface CasualStats {
   draws: number;
   abandons: number;
   byRole: Partial<Record<RoleId, WinCount>>;
+  /** Missing on casual records made before teams were counted. */
+  byTeam?: Partial<Record<Team, WinCount>>;
 }
 
 /**
@@ -87,6 +89,8 @@ export interface LeaderboardLine {
   wins: number;
   winRate: number;
   wolfGames: number;
+  /** Games and wins per faction. Missing from older servers. */
+  teams?: Partial<Record<Team, WinCount>>;
 }
 
 export type StatsMode = "casual" | "standard";
@@ -227,6 +231,8 @@ function addCasual(c: CasualStats, g: RecentGame) {
   else c.losses++;
   if (g.outcome === "abandon") c.abandons++;
   c.byRole[g.role] = bump(c.byRole[g.role], won);
+  const team: Team = g.lover ? "solo" : teamOf(g.role);
+  c.byTeam = { ...c.byTeam, [team]: bump(c.byTeam?.[team], won) };
 }
 
 /**
@@ -288,4 +294,32 @@ export function rankLeaderboard(rows: LeaderboardRow[], mode: StatsMode = "stand
     if (!isRanked(a)) return rb.createdAt - ra.createdAt || ra.name.localeCompare(rb.name);
     return b.winRate - a.winRate || b.wins - a.wins || b.games - a.games || ra.name.localeCompare(rb.name);
   });
+}
+
+/** What a leaderboard ranks by: the overall win rate, or the win rate in one faction. */
+export type LeaderboardCategory = "all" | Team;
+export const LEADERBOARD_CATEGORIES: readonly LeaderboardCategory[] = ["all", "wolves", "village", "solo"];
+
+/** Games needed in a category before a player is ranked in it (solo roles come up far less often). */
+export const minGamesFor = (cat: LeaderboardCategory) => (cat === "solo" ? 3 : MIN_RANKED_GAMES);
+
+/** A row's games, wins and win rate in one mode and category. */
+export function categoryLine(r: LeaderboardRow, mode: StatsMode, cat: LeaderboardCategory): WinCount & { winRate: number } {
+  const line = lineOf(r, mode);
+  if (cat === "all") return { games: line.games, wins: line.wins, winRate: line.winRate };
+  const c = line.teams?.[cat] ?? { games: 0, wins: 0 };
+  return { games: c.games, wins: c.wins, winRate: winRate(c) };
+}
+
+/**
+ * Only the players with enough games in that category, best win rate first;
+ * on a tie, more wins, then more games, then name.
+ */
+export function rankCategory(rows: LeaderboardRow[], mode: StatsMode, cat: LeaderboardCategory): LeaderboardRow[] {
+  const min = minGamesFor(cat);
+  return rows
+    .map((r) => ({ r, l: categoryLine(r, mode, cat) }))
+    .filter(({ l }) => l.games >= min)
+    .sort((a, b) => b.l.winRate - a.l.winRate || b.l.wins - a.l.wins || b.l.games - a.l.games || a.r.name.localeCompare(b.r.name))
+    .map(({ r }) => r);
 }

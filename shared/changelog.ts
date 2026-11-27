@@ -12,6 +12,23 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.9",
+    date: "2026-11-27",
+    title: { vi: "Bảng xếp hạng mới, xếp riêng theo từng phe", en: "New leaderboard, ranked by faction too" },
+    items: {
+      vi: [
+        "Bảng xếp hạng có giao diện mới, ba người dẫn đầu đứng trên bục, người hạng nhất ở giữa.",
+        "Thêm các hạng mục xếp theo tỉ lệ thắng khi chơi Phe Sói, Phe Dân và Phe độc lập, bên cạnh hạng mục Tổng.",
+        "Cần ít nhất 5 ván ở Phe Sói hoặc Phe Dân, hoặc 3 ván ở Phe độc lập, để có tên trong hạng mục đó. Cặp đôi của Thần Tình Yêu tính vào Phe độc lập.",
+      ],
+      en: [
+        "The leaderboard has a new look, with the top three on a podium and first place in the middle.",
+        "New categories rank players by their win rate on the Werewolf team, the Village team and Solo roles, next to the Overall ranking.",
+        "You need at least 5 games on the Werewolf or Village team, or 3 Solo games, to show up in that category. Cupid's lovers count as Solo.",
+      ],
+    },
+  },
+  {
     version: "1.7.8",
     date: "2026-11-27",
     title: { vi: "Nền thẻ hồ sơ hiện ở danh sách online và bảng xếp hạng", en: "Profile card backgrounds in the online list and leaderboard" },
