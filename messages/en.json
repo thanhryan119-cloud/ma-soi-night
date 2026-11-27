@@ -419,6 +419,7 @@
     "resultIdiot": "{name} revealed the Village Idiot — lives, loses the vote"
   },
   "presets": {
+    "random": "Deal a random set of roles for this many players",
     "title": "Role maps for {count} players",
     "partial": "Some roles of this map are locked, so plain Werewolves or Villagers take their place",
     "basic": { "name": "Basic", "desc": "Only the basic roles. Easy to play and good for new players." },
@@ -1182,6 +1183,8 @@
     "hide": "Hide"
   },
   "lobbySetup": {
+    "inPlay": "Roles in play",
+    "tab": { "basic": "Basic", "advanced": "Advanced", "solo": "Third party" },
     "bots": "Bots in the room: {count}",
     "noRoles": "No roles picked yet.",
     "toggle": "Bots and roles in the room"
