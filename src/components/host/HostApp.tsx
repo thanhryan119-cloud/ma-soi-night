@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ConnectionDot, LangSwitch, Spinner, toast } from "@/components/ui";
 import { Ambient } from "@/lib/ambient";
+import { SfxToggle } from "@/components/Sfx";
 import { useLocale, useT } from "@/lib/i18n";
 import { hasVoiceFor, speak, stopSpeaking, useTtsSupported, whenVoicesReady } from "@/lib/tts";
 import { scriptLines } from "./common";
@@ -199,6 +200,7 @@ export default function HostApp({ code }: { code: string }) {
               ))}
             </select>
           </label>
+          <SfxToggle className="btn-ghost btn-sm" withLabel />
           <button className={`btn-sm btn ${sound ? "bg-gold text-night-950" : "btn-ghost"}`} onClick={toggleSound} aria-pressed={sound}>
             {sound ? "🔊" : "🔈"} {t("host.sound")}
           </button>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ClientState } from "@shared/views";
 import { getSocket } from "./socket";
+import { useGameSfx } from "./useGameSfx";
 
 /**
  * Subscribes to the room state pushed by the server. `onConnect` runs on every
@@ -36,6 +37,8 @@ export function useRoomState(onConnect: () => void) {
       s.off("disconnect", handleDisconnect);
     };
   }, []);
+
+  useGameSfx(state, offset);
 
   return { state, setState, connected, offset };
 }

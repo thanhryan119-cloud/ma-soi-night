@@ -12,6 +12,29 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.8.0",
+    date: "2026-11-27",
+    title: { vi: "Hiệu ứng âm thanh cho cả ván chơi", en: "Sound effects for the whole game" },
+    items: {
+      vi: [
+        "Sói hú khi màn đêm buông xuống, chuông và chim hót lúc trời sáng, tiếng kêu thất thanh khi có người bị giết trong đêm.",
+        "Tiếng búa gõ khi mở vote, tiếng đóng dấu khi bạn bỏ phiếu, tiếng gõ nhẹ mỗi khi người khác vote.",
+        "Trống dồn và tiếng sập cửa khi treo cổ, tiếng súng của thợ săn, tiếng tích tắc 5 giây cuối và kèn chiến thắng hay nhạc buồn lúc hết ván.",
+        "Mỗi nút bấm có tiếng click nhẹ, và điện thoại reo khẽ khi tới lượt bạn bỏ phiếu hay bắn súng.",
+        "Ban đêm điện thoại người chơi im lặng hoàn toàn, không click, không rung, không báo lượt, không tiếng chọn mục tiêu, để ngồi chung bàn cũng không ai đoán được ai có chức năng đêm.",
+        "Bấm nút 🔔 ở góc trên để tắt hoặc bật hiệu ứng, máy sẽ nhớ lựa chọn của bạn.",
+      ],
+      en: [
+        "Wolves howl as night falls, a bell and birdsong greet the dawn, and a scream rings out when someone was killed in the night.",
+        "A gavel opens each vote, a stamp lands when you cast yours, and a soft tap sounds as others vote.",
+        "A drum roll and trapdoor for the hanging, the hunter's gunshot, ticking in the last 5 seconds and a fanfare or a dirge when the game ends.",
+        "Every button gives a soft click, and your phone chimes when it is your turn to vote or shoot.",
+        "At night players' phones stay fully silent, with no clicks, no vibration, no turn chime and no sound for picking a target, so nobody at the same table can tell who has a night role.",
+        "Tap the 🔔 button at the top to mute or unmute the effects, and your device remembers the choice.",
+      ],
+    },
+  },
+  {
     version: "1.7.8",
     date: "2026-11-27",
     title: { vi: "Nền thẻ hồ sơ hiện ở danh sách online và bảng xếp hạng", en: "Profile card backgrounds in the online list and leaderboard" },

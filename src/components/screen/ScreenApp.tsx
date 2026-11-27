@@ -16,6 +16,7 @@ import { emitAck, storage, watchPasswordKey } from "@/lib/socket";
 import { getAuth, loadLocalProfile } from "@/lib/account";
 import { SocialPanel } from "@/components/SocialPanel";
 import { useRoomState } from "@/lib/useRoom";
+import { SfxToggle } from "@/components/Sfx";
 
 /** Renders a message in the screen language, plus the other language when bilingual. */
 function Bi({
@@ -105,6 +106,11 @@ export default function ScreenApp({ code, spectate = false }: { code: string; sp
     <BilingualCtx.Provider value={!spectate && !!state?.settings.bilingualScreen}>
     <div className="flex min-h-dvh flex-col">
       {(!state || state.phase.kind === "lobby") && <LangSwitch />}
+      {!spectate && (
+        <div className="fixed top-3 right-3 z-40">
+          <SfxToggle className="btn-ghost btn-sm bg-night-900/80 px-2" />
+        </div>
+      )}
       <div className={`fixed top-3 z-40 font-display text-lg font-black text-moon/70 ${!state || state.phase.kind === "lobby" ? "left-28" : "left-4"}`}>
         {t("app.name")} · <span className="font-mono text-gold">{code}</span>
       </div>
@@ -136,6 +142,7 @@ function Spectating({ state, code, screen }: { state: ClientState | null; code: 
       <div className="relative min-w-0 lg:flex-1 lg:overflow-y-auto">
         <div className="fixed top-14 right-3 z-40 flex items-center gap-2 sm:top-3 lg:absolute">
           <span className="chip bg-night-900/80 text-sky-200">👁️ {t("watch.badge")}</span>
+          <SfxToggle className="btn-ghost btn-sm bg-night-900/80 px-2" />
           <a className="btn-ghost btn-sm bg-night-900/80" href="/lobby">
             {t("watch.leave")}
           </a>
