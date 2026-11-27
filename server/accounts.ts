@@ -2,7 +2,7 @@
 // Users and sessions are stored in a JSON file next to the rooms snapshot,
 // avatar images in an `avatars/` folder on the same (persistent) volume.
 
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { join } from "node:path";
@@ -32,7 +32,12 @@ import {
 
 export interface User {
   id: string;
-  googleSub: string;
+  /** Set once Google is linked (absent on a name-and-password account until then). */
+  googleSub?: string;
+  /** Login name of a quick account, lowercase. */
+  username?: string;
+  /** "scrypt:<salt hex>:<hash hex>" for a quick account. */
+  passwordHash?: string;
   name: string;
   /** "/avatars/<file>" for an uploaded photo, or the Google profile photo URL. */
   avatarUrl: string | null;
@@ -63,6 +68,27 @@ const adminEmails = () =>
 const MAX_AVATAR_BYTES = 1024 * 1024; // the client resizes to 256px, so this is generous
 const SESSION_TTL_MS = 180 * 24 * 60 * 60 * 1000;
 const googleKeys = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
+
+/** Quick accounts: a login name and a password, no email needed. */
+export const USERNAME_RE = /^[a-z0-9_.]{3,20}$/;
+export const PASSWORD_MIN = 6;
+const PASSWORD_MAX = 72;
+/** Wrong passwords in a row before a login name is paused, and for how long. */
+const LOGIN_TRIES = 5;
+const LOGIN_PAUSE_MS = 60_000;
+
+export function hashPassword(password: string): string {
+  const salt = randomBytes(16);
+  return `scrypt:${salt.toString("hex")}:${scryptSync(password, salt, 32).toString("hex")}`;
+}
+
+export function checkPassword(password: string, stored: string | undefined): boolean {
+  const [kind, salt, hash] = (stored ?? "").split(":");
+  if (kind !== "scrypt" || !salt || !hash) return false;
+  const want = Buffer.from(hash, "hex");
+  const got = scryptSync(password, Buffer.from(salt, "hex"), want.length);
+  return got.length === want.length && timingSafeEqual(got, want);
+}
 
 export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
   const file = join(dataDir, "users.json");
@@ -167,6 +193,8 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
     style: styleOf(u),
     owned: ownedOf(u),
     isAdmin: isAdmin(u),
+    hasGoogle: !!u.googleSub,
+    username: u.username ?? null,
   });
 
   /** Adds a bought item to the account and equips it. Safe to call twice. */
@@ -182,6 +210,8 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
   // ------------------------------------------------------------------ HTTP --
 
   const cors = (req: IncomingMessage, res: ServerResponse) => corsFor(req, res, corsOrigin);
+  /** Wrong passwords per login name: how many in a row, and when the last one was. */
+  const loginFails = new Map<string, { n: number; t: number }>();
 
   function imageExt(buf: Buffer): "jpg" | "png" | "webp" | null {
     if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "jpg";
@@ -225,7 +255,48 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
       return profile ? json(res, 200, { ok: true, profile }) : json(res, 404, { ok: false, error: "err.profileNotFound" }), true;
     }
 
+    /** A new session for `user`, answered with its token. */
+    const signIn = (user: User) => {
+      const token = randomBytes(32).toString("hex");
+      store.sessions[token] = { userId: user.id, createdAt: Date.now() };
+      save();
+      return json(res, 200, { ok: true, token, user: publicUser(user) }), true;
+    };
+
     try {
+      // Quick account: pick a login name and a password.
+      if (path === "/auth/register" && req.method === "POST") {
+        const body = await readBody(req, 4 * 1024);
+        const p = body ? (JSON.parse(body.toString()) as { username?: unknown; password?: unknown }) : {};
+        const username = String(p.username ?? "").trim().toLowerCase();
+        const password = String(p.password ?? "");
+        if (!USERNAME_RE.test(username)) return json(res, 400, { ok: false, error: "err.usernameInvalid" }), true;
+        if (password.length < PASSWORD_MIN || password.length > PASSWORD_MAX)
+          return json(res, 400, { ok: false, error: "err.passwordWeak", params: { min: PASSWORD_MIN } }), true;
+        if (Object.values(store.users).some((u) => u.username === username))
+          return json(res, 409, { ok: false, error: "err.usernameTaken" }), true;
+        const user: User = { id: randomUUID(), username, passwordHash: hashPassword(password), name: username, avatarUrl: null, createdAt: Date.now() };
+        store.users[user.id] = user;
+        return signIn(user);
+      }
+
+      if (path === "/auth/login" && req.method === "POST") {
+        const body = await readBody(req, 4 * 1024);
+        const p = body ? (JSON.parse(body.toString()) as { username?: unknown; password?: unknown }) : {};
+        const username = String(p.username ?? "").trim().toLowerCase();
+        const fails = loginFails.get(username);
+        if (fails && fails.n >= LOGIN_TRIES && Date.now() - fails.t < LOGIN_PAUSE_MS)
+          return json(res, 429, { ok: false, error: "err.loginPaused", params: { seconds: Math.ceil((fails.t + LOGIN_PAUSE_MS - Date.now()) / 1000) } }), true;
+        const user = Object.values(store.users).find((u) => u.username === username);
+        if (!user || !checkPassword(String(p.password ?? "").slice(0, PASSWORD_MAX), user.passwordHash)) {
+          const n = fails && Date.now() - fails.t < LOGIN_PAUSE_MS ? fails.n + 1 : 1;
+          loginFails.set(username, { n, t: Date.now() });
+          return json(res, 400, { ok: false, error: "err.loginWrong" }), true;
+        }
+        loginFails.delete(username);
+        return signIn(user);
+      }
+
       if (path === "/auth/google" && req.method === "POST") {
         if (!GOOGLE_CLIENT_ID) return json(res, 503, { ok: false, error: "err.authDisabled" }), true;
         const body = await readBody(req, 16 * 1024);
@@ -236,7 +307,18 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
           issuer: ["https://accounts.google.com", "accounts.google.com"],
         });
         const sub = String(payload.sub);
-        let user = Object.values(store.users).find((u) => u.googleSub === sub);
+        const owner = Object.values(store.users).find((u) => u.googleSub === sub);
+        // Already signed in (a quick account): Google gets linked to it.
+        const current = userForToken(bearer(req));
+        if (current && !current.googleSub) {
+          if (owner && owner.id !== current.id) return json(res, 409, { ok: false, error: "err.googleTaken" }), true;
+          current.googleSub = sub;
+          if (typeof payload.email === "string" && payload.email_verified !== false) current.email = payload.email.toLowerCase();
+          if (!current.avatarUrl && typeof payload.picture === "string") current.avatarUrl = payload.picture;
+          save();
+          return json(res, 200, { ok: true, token: bearer(req), user: publicUser(current), linked: true }), true;
+        }
+        let user = owner;
         if (!user) {
           user = {
             id: randomUUID(),
@@ -249,10 +331,7 @@ export function createAccounts(dataDir: string, corsOrigin: string[] | "*") {
         }
         // Only a verified Google email can make someone an admin.
         if (typeof payload.email === "string" && payload.email_verified !== false) user.email = payload.email.toLowerCase();
-        const token = randomBytes(32).toString("hex");
-        store.sessions[token] = { userId: user.id, createdAt: Date.now() };
-        save();
-        return json(res, 200, { ok: true, token, user: publicUser(user) }), true;
+        return signIn(user);
       }
 
       if (path === "/auth/logout" && req.method === "POST") {

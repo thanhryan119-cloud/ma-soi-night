@@ -244,10 +244,19 @@ const globalChat = createGlobalChat(io, {
     return false;
   },
   // Invites go into the room the inviter is in, while it still waits for players.
-  inviteRoom: (socket, to) => {
+  // A room named by code works too when this account made it or sits in it.
+  inviteRoom: (socket, to, fromUserId, named) => {
     const { code, kind } = (socket as AppSocket).data;
-    const room = code ? rooms.get(code) : undefined;
-    if (!room || (kind !== "player" && kind !== "host")) return { error: "err.inviteNoRoom" };
+    let room: Room | undefined;
+    if (named) {
+      const r = rooms.get(named.toUpperCase());
+      const mine = r && (r.creatorId === fromUserId || r.players.some((p) => !p.isBot && p.userId === fromUserId && !r.abandoned?.includes(p.id)));
+      if (!mine) return { error: "err.inviteNoRoom" };
+      room = r;
+    } else {
+      room = code ? rooms.get(code) : undefined;
+      if (!room || (kind !== "player" && kind !== "host")) return { error: "err.inviteNoRoom" };
+    }
     if (room.phase.kind !== "lobby") return { error: "err.inviteStarted" };
     if (room.players.length >= MAX_PLAYERS) return { error: "err.inviteFull" };
     if (room.players.some((p) => !p.isBot && p.userId === to && !room.abandoned?.includes(p.id))) return { error: "err.inviteAlreadyIn" };
@@ -1066,12 +1075,11 @@ function closeRoom(code: string) {
 }
 
 /**
- * Who may make a room: a signed-in Google account without another open room.
- * `replace` leaves that other room first (the next player takes it over). Without Google sign-in set up on the
- * server (local play), anyone may.
+ * Who may make a room: a signed-in account (Google or a quick one) without another open room.
+ * `replace` leaves that other room first (the next player takes it over).
  */
 function creatorFor(p: Record<string, unknown>): { ok: true; userId: string | null } | { ok: false; error: string; params?: Record<string, string> } {
-  if (!accounts.enabled) return { ok: true, userId: null };
+  // Quick accounts (name and password) always work, so making a room needs one.
   const user = accounts.userForToken(p.authToken);
   if (!user) return { ok: false, error: "err.signInToCreate" };
   const old = roomOfCreator(user.id);

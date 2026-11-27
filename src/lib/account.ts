@@ -17,7 +17,15 @@ export interface AccountUser {
   owned: ItemId[];
   /** May manage discount codes (/admin/codes). */
   isAdmin?: boolean;
+  /** Google is linked to this account. */
+  hasGoogle?: boolean;
+  /** Login name of a quick (name and password) account. */
+  username?: string | null;
 }
+
+/** Same rules as the server: 3 to 20 lowercase letters, digits, "_" or ".". */
+export const USERNAME_RE = /^[a-z0-9_.]{3,20}$/;
+export const PASSWORD_MIN = 6;
 
 export interface LocalProfile {
   name: string;
@@ -123,11 +131,23 @@ async function api(path: string, init: RequestInit = {}): Promise<ApiResult> {
   }
 }
 
-export async function signInWithGoogle(credential: string): Promise<ApiResult> {
-  const r = await api("/auth/google", {
+/** Signs in with Google, or links Google to the quick account already signed in (`linked`). */
+export async function signInWithGoogle(credential: string): Promise<ApiResult & { linked?: boolean }> {
+  const r = (await api("/auth/google", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ credential }),
+  })) as ApiResult & { linked?: boolean };
+  if (r.ok && r.token && r.user) setAuth({ token: r.token, user: r.user });
+  return r;
+}
+
+/** Makes a quick account (`register`) or signs into one with its login name and password. */
+export async function passwordAuth(kind: "register" | "login", username: string, password: string): Promise<ApiResult> {
+  const r = await api(`/auth/${kind}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: username.trim().toLowerCase(), password }),
   });
   if (r.ok && r.token && r.user) setAuth({ token: r.token, user: r.user });
   return r;

@@ -891,7 +891,14 @@
     "inviteStarted": "Ván đã bắt đầu, chỉ mời được khi phòng còn đang chờ.",
     "inviteFull": "Phòng đã đầy.",
     "inviteAlreadyIn": "Người này đã ở trong phòng của bạn.",
-    "inviteSlow": "Bạn vừa mời người này. Thử lại sau {seconds} giây."
+    "inviteSlow": "Bạn vừa mời người này. Thử lại sau {seconds} giây.",
+    "askNoRoom": "Người này không còn ở phòng đang chờ nữa.",
+    "usernameInvalid": "Tên đăng nhập cần 3 đến 20 ký tự gồm chữ thường không dấu, số, dấu _ hoặc dấu chấm.",
+    "passwordWeak": "Mật khẩu cần ít nhất {min} ký tự.",
+    "usernameTaken": "Tên đăng nhập này đã có người dùng.",
+    "loginWrong": "Sai tên đăng nhập hoặc mật khẩu.",
+    "loginPaused": "Sai quá nhiều lần. Thử lại sau {seconds} giây.",
+    "googleTaken": "Tài khoản Google này đã gắn với một nick khác."
   },
   "log": {
     "standIn": "{name} vắng mặt, bot chơi hộ cho tới khi quay lại.",
@@ -1154,7 +1161,10 @@
     "inviteSent": "Đã mời {name} vào phòng.",
     "inviteCard": "{name} mời bạn vào phòng {code}.",
     "inviteJoin": "Vào phòng",
-    "inviteLater": "Để sau"
+    "inviteLater": "Để sau",
+    "askSent": "Đã nhờ {name} cho bạn vào phòng.",
+    "askCard": "{name} xin vào phòng của bạn.",
+    "askLetIn": "Cho vào"
   },
   "mail": {
     "button": "Thư",
@@ -1239,7 +1249,12 @@
     "over": "Vừa xong ván",
     "full": "Đã đầy",
     "join": "Vào",
-    "enter": "Vào phòng"
+    "enter": "Vào phòng",
+    "askJoin": "Xin vào",
+    "askJoinHint": "Nhờ {name} cho bạn vào phòng đang chờ",
+    "playWith": "Rủ chơi",
+    "playWithHint": "Tạo phòng mới và mời {name} vào",
+    "signInForPeople": "Đăng nhập Google để kết bạn, xin vào phòng hoặc rủ người khác chơi."
   },
   "owner": {
     "machineHosts": "Máy làm quản trò",
@@ -1468,5 +1483,23 @@
     "copy": "Sao chép link",
     "copied": "Đã chép link, dán vào Chrome hoặc Safari nhé",
     "close": "Đóng"
+  },
+  "auth": {
+    "title": "Đăng nhập để chơi",
+    "subtitle": "Đăng nhập bằng Google, hoặc tạo nick nhanh bằng tên đăng nhập và mật khẩu. Có thể liên kết Google sau trong Hồ sơ.",
+    "googleHint": "Đã có nick nhanh và đang đăng nhập thì bấm nút này sẽ liên kết Google vào nick đó.",
+    "or": "hoặc",
+    "register": "Tạo nick nhanh",
+    "login": "Đã có nick",
+    "username": "Tên đăng nhập",
+    "usernamePlaceholder": "vd: soi_gia",
+    "usernameHint": "3 đến 20 ký tự gồm chữ thường không dấu, số, dấu _ hoặc dấu chấm.",
+    "password": "Mật khẩu",
+    "passwordPlaceholder": "Ít nhất {min} ký tự",
+    "registerButton": "Tạo nick và vào chơi",
+    "loginButton": "Đăng nhập",
+    "linkTitle": "Liên kết Google",
+    "linkHint": "Liên kết để đăng nhập bằng Google từ nay về sau và giữ nick trên mọi thiết bị.",
+    "linked": "Đã liên kết Google với nick của bạn."
   }
 }

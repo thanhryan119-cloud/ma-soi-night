@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { CHAT_MAX_LEN, dmPeer, type DirectMessage, type GlobalMessage, type OnlineList, type OnlineUser } from "@shared/social";
-import type { FriendRelation, FriendsState, RoomInvite } from "@shared/friends";
+import type { FriendRelation, FriendsState, JoinAsk, RoomInvite } from "@shared/friends";
 import { Avatar, StyledName, toast, useErrorToast } from "@/components/ui";
 import { ProfileLink } from "@/components/Profile";
 import { useOtherRoom } from "@/components/CreateRoomGate";
@@ -23,6 +23,7 @@ import { WhereChip } from "@/components/Friends";
 
 type Friends = FriendsState<OnlineUser>;
 type Invite = RoomInvite<OnlineUser>;
+type Ask = JoinAsk<OnlineUser>;
 const NO_FRIENDS: Friends = { friends: [], incoming: [], outgoing: [] };
 
 const SEEN_KEY = "msn:globalChatSeen";
@@ -55,6 +56,7 @@ export function useGlobalChat(visible: boolean) {
   const me = account?.user ?? null;
   const [friends, setFriends] = useState<Friends>(NO_FRIENDS);
   const [invites, setInvites] = useState<Invite[]>([]);
+  const [asks, setAsks] = useState<Ask[]>([]);
   const [messages, setMessages] = useState<GlobalMessage[]>([]);
   const [online, setOnline] = useState<OnlineList>({ users: [], guests: 0 });
   const [dms, setDms] = useState<DirectMessage[]>([]);
@@ -109,6 +111,7 @@ export function useGlobalChat(visible: boolean) {
     const accepted = (e: { user: OnlineUser }) => toast(tRef.current("friends.acceptedToast", { name: e.user.name }), "info");
     const invited = (i: Invite) => setInvites((xs) => [...xs.filter((x) => x.id !== i.id && x.from.id !== i.from.id), i]);
     const inviteGone = (e: { id: string }) => setInvites((xs) => xs.filter((x) => x.id !== e.id));
+    const askedIn = (a: Ask) => setAsks((xs) => [...xs.filter((x) => x.from.id !== a.from.id), a]);
     listeners++;
     s.on("global:new", added);
     s.on("global:deleted", deleted);
@@ -119,6 +122,7 @@ export function useGlobalChat(visible: boolean) {
     s.on("friends:accepted", accepted);
     s.on("invite:new", invited);
     s.on("invite:gone", inviteGone);
+    s.on("invite:asked", askedIn);
     return () => {
       s.off("global:new", added);
       s.off("global:deleted", deleted);
@@ -129,6 +133,7 @@ export function useGlobalChat(visible: boolean) {
       s.off("friends:accepted", accepted);
       s.off("invite:new", invited);
       s.off("invite:gone", inviteGone);
+      s.off("invite:asked", askedIn);
       if (--listeners === 0) emitAck("global:leave");
     };
   }, []);
@@ -187,10 +192,22 @@ export function useGlobalChat(visible: boolean) {
   };
   const answerFriend = (u: OnlineUser, accept: boolean) => friendCall("friend:answer", { id: u.id, accept });
   const removeFriend = (u: OnlineUser) => friendCall("friend:remove", { id: u.id });
-  /** Asks someone online into the room this player is in. */
-  const invite = async (u: OnlineUser) => {
-    const res = await emitAck("invite:send", { to: u.id, authToken: getAuth()?.token });
+  /** Asks someone online into the room this player is in (or room `code`, one this account made or sits in). */
+  const invite = async (u: OnlineUser, code?: string) => {
+    const res = await emitAck("invite:send", { to: u.id, code, authToken: getAuth()?.token });
     if (showError(res)) toast(t("friends.inviteSent", { name: u.name }), "info");
+    return res.ok;
+  };
+  /** Asks someone waiting in a room to let me in. */
+  const askToJoin = async (u: OnlineUser) => {
+    const res = await emitAck("invite:ask", { to: u.id, authToken: getAuth()?.token });
+    if (showError(res)) toast(t("friends.askSent", { name: u.name }), "info");
+  };
+  const dropAsk = (a: Ask) => setAsks((xs) => xs.filter((x) => x.id !== a.id));
+  /** Lets in someone who asked: they get an ordinary invite to my room. */
+  const letIn = async (a: Ask) => {
+    dropAsk(a);
+    await invite(a.from);
   };
   const declineInvite = (i: Invite) => {
     setInvites((xs) => xs.filter((x) => x.id !== i.id));
@@ -219,6 +236,10 @@ export function useGlobalChat(visible: boolean) {
     invite,
     declineInvite,
     dropInvite,
+    asks,
+    askToJoin,
+    letIn,
+    dropAsk,
     unread: unreadGlobal + unreadDms + friends.incoming.length,
   };
 }
@@ -580,7 +601,7 @@ export function InviteCards({ chat }: { chat: Global }) {
     router.push(`/join/${i.code}`);
   }
 
-  if (!chat.invites.length && !other.dialog) return null;
+  if (!chat.invites.length && !chat.asks.length && !other.dialog) return null;
   return (
     <>
       {other.dialog}
@@ -607,6 +628,23 @@ export function InviteCards({ chat }: { chat: Global }) {
             </div>
           );
         })}
+        {chat.asks.slice(-3).map((a) => (
+          <div
+            key={a.id}
+            className="rise pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-lg border border-sky-300/60 bg-night-800/95 p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur"
+          >
+            <Avatar p={lookOf(a.from)} size="sm" />
+            <p className="min-w-0 flex-1 text-sm leading-snug text-white/90">{t("friends.askCard", { name: a.from.name })}</p>
+            <div className="flex shrink-0 flex-col gap-1">
+              <button className="btn-primary btn-sm px-3 text-xs" onClick={() => chat.letIn(a)}>
+                {t("friends.askLetIn")}
+              </button>
+              <button className="btn-ghost btn-sm px-3 text-xs" onClick={() => chat.dropAsk(a)}>
+                {t("friends.inviteLater")}
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </>
   );

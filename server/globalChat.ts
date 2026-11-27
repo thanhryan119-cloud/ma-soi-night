@@ -32,6 +32,7 @@ import {
   friendBook,
   liveInvites,
   type FriendsState,
+  type JoinAsk,
   type RoomInvite,
 } from "../shared/friends";
 
@@ -60,8 +61,10 @@ export function createGlobalChat(
     /**
      * The room this socket can invite `to` into: its code, or why not (not in a
      * room, the game started, the room is full, they are in it already).
+     * `code`: a room this account sits in or made, named instead of the socket's
+     * (the lobby makes a room and invites someone in one go).
      */
-    inviteRoom: (socket: Socket, to: string) => { code: string } | { error: string };
+    inviteRoom: (socket: Socket, to: string, fromUserId: string, code?: string) => { code: string } | { error: string };
     /** Where the person on this socket is (null: outside any room). */
     whereIs?: (socketId: string) => Whereabouts | null;
     /**
@@ -173,6 +176,8 @@ export function createGlobalChat(
     t: number;
   }
   let invites: Invite[] = [];
+  /** When each account last asked another to let them in ("from>to"). */
+  const lastAsk = new Map<string, number>();
   const invitesFor = (userId: string): RoomInvite<OnlineUser>[] => {
     invites = liveInvites(invites, Date.now());
     return invites
@@ -327,7 +332,7 @@ export function createGlobalChat(
       const to = typeof p.to === "string" ? p.to : "";
       if (!to || to === user.id || !opts.userById(to)) return ack({ ok: false, error: "err.dmNoUser" });
       if (!socketsOf(to).length) return ack({ ok: false, error: "err.inviteOffline" });
-      const room = opts.inviteRoom(socket, to);
+      const room = opts.inviteRoom(socket, to, user.id, typeof p.code === "string" ? p.code : undefined);
       if ("error" in room) return ack({ ok: false, error: room.error });
       const now = Date.now();
       invites = liveInvites(invites, now);
@@ -339,6 +344,25 @@ export function createGlobalChat(
       invites.push(invite);
       const out: RoomInvite<OnlineUser> = { id: invite.id, from: pub(user), code: invite.code, t: now };
       for (const sid of socketsOf(to)) io.to(sid).emit("invite:new", out);
+      ack({ ok: true });
+    });
+
+    // Asking to come into the room someone waits in: they get a card, and
+    // letting you in sends you an ordinary invite (past the room password).
+    on("invite:ask", (p, ack) => {
+      const user = opts.accountFor(p.authToken);
+      if (!user) return ack({ ok: false, error: "err.signInToInvite" });
+      const to = typeof p.to === "string" ? p.to : "";
+      if (!to || to === user.id || !opts.userById(to)) return ack({ ok: false, error: "err.dmNoUser" });
+      const waiting = (opts.roomAccounts?.() ?? []).filter((r) => r.userId === to && opts.whereIs?.(r.sid)?.status === "waiting");
+      if (!waiting.length) return ack({ ok: false, error: "err.askNoRoom" });
+      const now = Date.now();
+      const key = `${user.id}>${to}`;
+      const wait = (lastAsk.get(key) ?? 0) + INVITE_WAIT_MS - now;
+      if (wait > 0) return ack({ ok: false, error: "err.inviteSlow", params: { seconds: Math.ceil(wait / 1000) } });
+      lastAsk.set(key, now);
+      const out: JoinAsk<OnlineUser> = { id: newId(now), from: pub(user), t: now };
+      for (const { sid } of waiting) io.to(sid).emit("invite:asked", out);
       ack({ ok: true });
     });
 

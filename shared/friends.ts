@@ -45,6 +45,13 @@ export interface RoomInvite<U> {
   t: number;
 }
 
+/** Someone asking to be let into the room you wait in. */
+export interface JoinAsk<U> {
+  id: string;
+  from: U;
+  t: number;
+}
+
 export const emptyFriendData = (): FriendData => ({ friends: {}, requests: [] });
 
 /** Reads what was on disk, dropping anything malformed. */

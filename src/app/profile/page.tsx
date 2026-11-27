@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { GlobalChat } from "@/components/GlobalChat";
+import { LinkGoogle } from "@/components/AuthPanel";
 import { useEffect, useRef, useState } from "react";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { QuestsLink } from "@/components/Quests";
@@ -13,6 +14,7 @@ import {
   loadLocalProfile,
   refreshAccount,
   saveLocalProfile,
+  signOut,
   useAccount,
   type LocalProfile,
 } from "@/lib/account";
@@ -126,6 +128,8 @@ export default function ProfilePage() {
         </div>
       )}
       <AdminLink />
+      <LinkGoogle />
+      <SignOutButton />
     </main>
   );
 }
@@ -225,5 +229,28 @@ function MyStats() {
         </>
       )}
     </section>
+  );
+}
+
+/** At the very bottom of your own profile: leave this account on this device. */
+function SignOutButton() {
+  const t = useT();
+  const account = useAccount();
+  const [busy, setBusy] = useState(false);
+  if (!account) return null;
+  return (
+    <button
+      type="button"
+      className="btn-ghost w-full border-blood/50 text-red-300"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        await signOut();
+        setBusy(false);
+        toast(t("profile.signOut"), "info");
+      }}
+    >
+      🚪 {t("profile.signOut")}
+    </button>
   );
 }

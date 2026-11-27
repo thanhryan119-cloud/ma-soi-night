@@ -891,7 +891,14 @@
     "inviteStarted": "The game has started. You can only invite while the room is waiting.",
     "inviteFull": "The room is full.",
     "inviteAlreadyIn": "This player is already in your room.",
-    "inviteSlow": "You just invited this player. Try again in {seconds} s."
+    "inviteSlow": "You just invited this player. Try again in {seconds} s.",
+    "askNoRoom": "This player is no longer in a waiting room.",
+    "usernameInvalid": "A login name needs 3 to 20 lowercase letters, digits, _ or dots.",
+    "passwordWeak": "The password needs at least {min} characters.",
+    "usernameTaken": "This login name is taken.",
+    "loginWrong": "Wrong login name or password.",
+    "loginPaused": "Too many tries. Try again in {seconds} s.",
+    "googleTaken": "This Google account is already linked to another account."
   },
   "log": {
     "standIn": "{name} is away, a bot plays for them until they are back.",
@@ -1154,7 +1161,10 @@
     "inviteSent": "Invited {name} to the room.",
     "inviteCard": "{name} invites you to room {code}.",
     "inviteJoin": "Join",
-    "inviteLater": "Later"
+    "inviteLater": "Later",
+    "askSent": "Asked {name} to let you in.",
+    "askCard": "{name} asks to join your room.",
+    "askLetIn": "Let in"
   },
   "mail": {
     "button": "Mail",
@@ -1239,7 +1249,12 @@
     "over": "Game just ended",
     "full": "Full",
     "join": "Join",
-    "enter": "Join room"
+    "enter": "Join room",
+    "askJoin": "Ask to join",
+    "askJoinHint": "Ask {name} to let you into their waiting room",
+    "playWith": "Play together",
+    "playWithHint": "Make a new room and invite {name}",
+    "signInForPeople": "Sign in with Google to add friends, ask to join rooms or invite people to play."
   },
   "owner": {
     "machineHosts": "Machine host",
@@ -1468,5 +1483,23 @@
     "copy": "Copy link",
     "copied": "Link copied, paste it into Chrome or Safari",
     "close": "Close"
+  },
+  "auth": {
+    "title": "Sign in to play",
+    "subtitle": "Sign in with Google, or make a quick account with a login name and a password. You can link Google later in your profile.",
+    "googleHint": "Signed in to a quick account already? This button links Google to it.",
+    "or": "or",
+    "register": "Quick account",
+    "login": "I have one",
+    "username": "Login name",
+    "usernamePlaceholder": "e.g. old_wolf",
+    "usernameHint": "3 to 20 lowercase letters, digits, _ or dots.",
+    "password": "Password",
+    "passwordPlaceholder": "At least {min} characters",
+    "registerButton": "Create and play",
+    "loginButton": "Sign in",
+    "linkTitle": "Link Google",
+    "linkHint": "Link it to sign in with Google from now on and keep your account on any device.",
+    "linked": "Google is now linked to your account."
   }
 }
