@@ -39,6 +39,7 @@
     "ios3": "Tap \"Add\" and you’re done"
   },
   "home": {
+    "liveWaiting": "{n} people waiting for a game, join now",
     "signInToCreate": "Sign in with Google to make a room. Players joining a room don't need to sign in.",
     "oneRoomTitle": "You already have a room",
     "oneRoomDesc": "Your room {code} is still open. Each account can run one room at a time. If you make a new one, the next player takes over the old room and the machine runs it.",
@@ -774,6 +775,8 @@
     }
   },
   "err": {
+    "leaderHere": "The room owner is still here",
+    "nudgeWait": "Someone just asked, give it a moment",
     "spectatorReadOnly": "Spectators can only chat with the dead.",
     "notPlayingYet": "This room has not started a game yet. Join it to play.",
     "ghostsOnly": "Only dead players can chat here.",
@@ -1207,6 +1210,7 @@
     "showLess": "Show less"
   },
   "lobby": {
+    "quickMade": "No room was waiting, so we opened a new one for you. Anyone who taps Play now lands here with you",
     "watch": "Watch",
     "watchHint": "Watch the game and chat with the dead",
     "title": "Online lobby",
@@ -1478,5 +1482,21 @@
     "label": "Effects",
     "mute": "Mute sound effects",
     "unmute": "Turn on sound effects"
+  },
+  "lobbyHelp": {
+    "autoStart": "The game starts by itself in {n}s",
+    "autoStartDesc": "Enough people are here. Bots fill any empty seats",
+    "hold": "Wait longer",
+    "youAway": "Everyone is waiting for you to start",
+    "imHere": "I'm here",
+    "ownerAway": "The room owner is away",
+    "hostAway": "The host is away",
+    "claim": "Take over the room",
+    "fewPeople": "Only {n} here, a game needs at least {min}",
+    "botsOwner": "Add bots to fill the seats and start right away",
+    "botsOther": "Ask the owner to add bots so everyone can start now",
+    "nudge": "Ask the owner for bots",
+    "nudgeSent": "The owner got your request",
+    "nudged": "{name} wants to add bots and start now"
   }
 }

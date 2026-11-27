@@ -46,13 +46,20 @@ import { gameRecord, newGameId } from "../shared/replay";
 import { createGames } from "./games";
 import {
   AWAY_LIMIT_MS,
+  LEADER_TAKEOVER_MS,
+  autoStart,
+  claimError,
   cleanPassword,
   gameRunning,
   isOwner,
+  leaderAway,
+  leaderIdleMs,
   leaveRoom,
   makeMachineRoom,
   nextOwner,
   ownerAction,
+  setOwner,
+  stepAutoStart,
   type LeaveResult,
 } from "../shared/multiplayer";
 import { checkPassword, createLobby, hashPassword } from "./lobby";
@@ -135,7 +142,12 @@ function loadRooms() {
     const now = Date.now();
     for (const room of list) {
       if (now - room.lastActivity > ROOM_TTL_MS) continue;
-      for (const p of room.players) p.connected = p.isBot;
+      for (const p of room.players) {
+        p.connected = p.isBot;
+        // Everyone gets the full grace time to come back after a restart.
+        if (!p.isBot) p.offlineSince = now;
+      }
+      if (room.hostActiveAt) room.hostActiveAt = now;
       rooms.set(room.code, room);
     }
     console.log(`[persist] restored ${rooms.size} room(s)`);
@@ -283,13 +295,18 @@ const globalChat = createGlobalChat(io, {
   roomCounts: () => {
     let open = 0;
     let playing = 0;
+    // People sitting in an open lobby, waiting for a game.
+    let waiting = 0;
     for (const room of rooms.values()) {
       if (!roomAlive(room)) continue;
       const kind = room.phase.kind;
       if (kind !== "lobby" && kind !== "gameOver") playing++;
-      else if (room.listed && kind === "lobby") open++;
+      else if (room.listed && kind === "lobby") {
+        open++;
+        waiting += room.players.filter((p) => !p.isBot && p.connected).length;
+      }
     }
-    return { open, playing };
+    return { open, playing, waiting };
   },
 });
 const social = createSocial(io, (code) => rooms.get(code), channel, (room, fromId, text) => {
@@ -773,6 +790,17 @@ function setConnected(room: Room, playerId: string) {
   const p = getPlayer(room, playerId);
   if (p && !p.isBot && p.connected !== online) {
     p.connected = online;
+    if (online) {
+      delete p.offlineSince;
+      p.activeAt = Date.now();
+    } else p.offlineSince = Date.now();
+    // The owner went away while nobody else was here: whoever comes back first runs the room.
+    const owner = room.machineHost ? getPlayer(room, room.ownerId ?? "") : undefined;
+    const ownerGone = !owner || (!owner.connected && !!owner.offlineSince && Date.now() - owner.offlineSince >= OWNER_GRACE_MS);
+    if (online && room.machineHost && p.id !== room.ownerId && ownerGone) {
+      setOwner(room, p.id);
+      saveSoon();
+    }
     broadcast(room);
     lobby.changed();
     if (!online && isOwner(room, p.id)) scheduleOwnerHandover(room, p.id);
@@ -876,10 +904,10 @@ function scheduleOwnerHandover(room: Room, ownerId: string) {
   setTimeout(() => {
     if (rooms.get(room.code) !== room || room.ownerId !== ownerId) return;
     if (getPlayer(room, ownerId)?.connected) return;
+    // Nobody else online: the first person to come back takes over (setConnected).
     const next = nextOwner(room);
     if (!next) return;
-    room.ownerId = next;
-    log(room, "log.ownerChanged", { name: getPlayer(room, next)!.name });
+    setOwner(room, next);
     touch(room);
   }, OWNER_GRACE_MS).unref();
 }
@@ -900,6 +928,14 @@ function attach(socket: AppSocket, room: Room, kind: Viewer, playerId?: string) 
   if (socket.data.code && socket.data.code !== room.code) socket.leave(channel(socket.data.code));
   socket.data = { code: room.code, kind, playerId };
   socket.join(channel(room.code));
+  markActive(room, kind, playerId);
+}
+
+/** The person behind this socket just touched the page (the lobby's idle check for whoever runs the room). */
+function markActive(room: Room, kind: Viewer | undefined, playerId?: string) {
+  if (kind === "host") room.hostActiveAt = Date.now();
+  const p = kind === "player" && playerId ? getPlayer(room, playerId) : undefined;
+  if (p && !p.isBot) p.activeAt = Date.now();
 }
 
 // --- Rejoining a running game ------------------------------------------------
@@ -943,9 +979,9 @@ function roomOfCreator(userId: string): Room | undefined {
  * player as its owner. The old host view stops working. False when nobody is
  * left to take it over.
  */
-function hostHandOver(room: Room): boolean {
+function hostHandOver(room: Room, to?: string): boolean {
   if (room.machineHost) return false;
-  const next = nextOwner(room);
+  const next = to ?? nextOwner(room);
   if (!next) return false;
   const owner = getPlayer(room, next)!;
   makeMachineRoom(room, next);
@@ -1159,6 +1195,7 @@ io.on("connection", (raw) => {
       const room = code ? rooms.get(code) : undefined;
       if (!room || kind !== "player" || !playerId) return { ok: false, error: "err.notInRoom" };
       const action = p as unknown as OwnerAction;
+      markActive(room, kind, playerId);
       const res = ownerAction(room, playerId, action);
       if (res.ok && action.type === "kick") kickSockets(room, action.playerId);
       if (res.ok && action.type === "newGame") social.clearForNewGame(room.code);
@@ -1451,12 +1488,58 @@ io.on("connection", (raw) => {
       const room = code ? rooms.get(code) : undefined;
       if (!room || kind !== "host") return { ok: false, error: "err.notHost" };
       const action = p as unknown as HostAction;
+      markActive(room, kind);
       const kickedId = action.type === "kick" ? action.playerId : null;
       const res = hostAction(room, action);
       if (res.ok && kickedId) kickSockets(room, kickedId);
       if (res.ok && action.type === "newGame") social.clearForNewGame(room.code);
       if (res.ok) touch(room);
       return res as ActionResult & Record<string, unknown>;
+    }, ack),
+  );
+
+  // The page was touched (sent at most every few seconds): whoever runs the lobby is still there.
+  socket.on("room:active", () => {
+    const { code, kind, playerId } = socket.data;
+    const room = code ? rooms.get(code) : undefined;
+    if (!room) return;
+    const wasAway = leaderAway(room);
+    markActive(room, kind, playerId);
+    if (wasAway && !leaderAway(room)) broadcast(room);
+  });
+
+  // The room's leader has been away for a while: someone waiting takes the room over.
+  on("room:claim", (_p, ack) =>
+    guard(() => {
+      const { code, kind, playerId } = socket.data;
+      const room = code ? rooms.get(code) : undefined;
+      if (!room || kind !== "player" || !playerId) return { ok: false, error: "err.notInRoom" };
+      const err = claimError(room, playerId);
+      if (err) return { ok: false, error: err };
+      if (room.machineHost) setOwner(room, playerId);
+      else if (!hostHandOver(room, playerId)) return { ok: false, error: "err.server" };
+      console.log(`[room ${room.code}] ${getPlayer(room, playerId)?.name} took over from an away leader`);
+      touch(room);
+      return { ok: true };
+    }, ack),
+  );
+
+  // "Add bots so we can play": a waiting player taps the owner (or human host) on the shoulder.
+  on("room:nudge", (_p, ack) =>
+    guard(() => {
+      const { code, kind, playerId } = socket.data;
+      const room = code ? rooms.get(code) : undefined;
+      const me = room && playerId ? getPlayer(room, playerId) : undefined;
+      if (!room || kind !== "player" || !me) return { ok: false, error: "err.notInRoom" };
+      if (room.phase.kind !== "lobby") return { ok: false, error: "err.wrongPhase" };
+      const last = nudgedAt.get(room.code) ?? 0;
+      if (Date.now() - last < NUDGE_GAP_MS) return { ok: false, error: "err.nudgeWait" };
+      nudgedAt.set(room.code, Date.now());
+      for (const s of roomSockets(room.code)) {
+        const leader = room.machineHost ? s.data.kind === "player" && s.data.playerId === room.ownerId : s.data.kind === "host";
+        if (leader) s.emit("room:nudged", { name: me.name });
+      }
+      return { ok: true };
     }, ack),
   );
 
@@ -1490,6 +1573,50 @@ setInterval(() => {
     console.log(`[room ${code}] closed: ${over ? "the game ended a while ago" : "everyone left"}`);
   }
 }, Number(process.env.SWEEP_MS) || 15_000).unref();
+
+/** One "add bots" nudge per room this often. */
+const NUDGE_GAP_MS = 30_000;
+const nudgedAt = new Map<string, number>();
+/** Whether each lobby's leader looked away at the last check (to redraw the phones when it flips). */
+const awayShown = new Map<string, boolean>();
+
+/**
+ * Lobbies never wait on one person: the countdown starts the game once enough
+ * people are here, and a leader away too long hands the room on by itself.
+ */
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, room] of rooms) {
+    if (room.phase.kind !== "lobby") {
+      awayShown.delete(code);
+      if (room.autoStartAt != null) room.autoStartAt = null;
+      continue;
+    }
+    if (leaderIdleMs(room, now) >= LEADER_TAKEOVER_MS) {
+      const next = nextOwner(room);
+      if (next) {
+        const name = getPlayer(room, next)?.name;
+        if (room.machineHost) setOwner(room, next);
+        else hostHandOver(room, next);
+        console.log(`[room ${code}] the leader was away too long: ${name} runs the room now`);
+        touch(room);
+      }
+    }
+    const step = stepAutoStart(room, now);
+    if (step === "start") {
+      const res = autoStart(room);
+      console.log(`[room ${code}] started by itself${res.ok ? "" : ` (failed: ${res.error})`}`);
+      touch(room);
+      continue;
+    }
+    const away = leaderAway(room, now);
+    if (step === "changed" || away !== (awayShown.get(code) ?? false)) {
+      awayShown.set(code, away);
+      broadcast(room);
+      saveSoon();
+    }
+  }
+}, Number(process.env.LOBBY_SWEEP_MS) || 2_000).unref();
 
 // Rooms self-destruct after 12 hours of inactivity.
 setInterval(() => {

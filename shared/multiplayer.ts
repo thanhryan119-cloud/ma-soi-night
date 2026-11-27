@@ -2,7 +2,7 @@
 // machine-host rooms where the machine narrates and a player (the room owner)
 // sets the room up without ever seeing anyone's role.
 
-import { MAX_PLAYERS, PLAY_NOW_PLAYERS, assignRandom, getPlayer, hostAction, log, randomToken, sanitizeName } from "./engine";
+import { MAX_PLAYERS, MIN_PLAYERS, PLAY_NOW_PLAYERS, assignRandom, getPlayer, hostAction, log, randomToken, sanitizeName } from "./engine";
 import { abandonResult, type GameResult } from "./stats";
 import { totalRoles } from "./roles";
 import type { ActionResult, Locale, OwnerAction, PhaseKind, Room, Settings } from "./types";
@@ -74,6 +74,113 @@ export function nextOwner(room: Room): string | null {
   return humans[0]?.id ?? null;
 }
 
+/** Makes `playerId` the owner. The room now counts as theirs: one-room-per-account and their role cards. */
+export function setOwner(room: Room, playerId: string) {
+  const next = getPlayer(room, playerId);
+  if (!next) return;
+  room.ownerId = next.id;
+  room.creatorId = next.userId ?? null;
+  // A fresh start: the new owner is here right now.
+  next.activeAt = Date.now();
+  log(room, "log.ownerChanged", { name: next.name });
+}
+
+// ---------------------------------------------------------------------------
+// The room's leader away from the lobby, and the lobby starting by itself
+// ---------------------------------------------------------------------------
+
+/** The owner (or human host) has not touched the page for this long: others may take the room over. */
+export const LEADER_IDLE_MS = 90_000;
+/** After this long the room passes to the next person by itself. */
+export const LEADER_TAKEOVER_MS = 3 * 60_000;
+/** Enough people are here: the game starts by itself after this countdown. */
+export const AUTO_START_MS = 45_000;
+/** Someone new joins during the countdown: they get at least this long to look around. */
+export const AUTO_START_MIN_LEFT_MS = 15_000;
+
+/** People (not bots) online in the room. */
+export const onlineHumans = (room: Room) => room.players.filter((p) => !p.isBot && p.connected);
+
+/**
+ * How long whoever runs the lobby (the owner of a machine-host room, or the
+ * human host) has been away: offline, or online without touching the page.
+ * 0 outside the lobby, or when we know nothing yet (an older phone that never reports).
+ */
+export function leaderIdleMs(room: Room, now = Date.now()): number {
+  if (room.phase.kind !== "lobby") return 0;
+  if (!room.machineHost) return room.hostActiveAt ? Math.max(0, now - room.hostActiveAt) : 0;
+  const owner = getPlayer(room, room.ownerId ?? "");
+  if (!owner) return Infinity;
+  if (!owner.connected) return owner.offlineSince ? Math.max(0, now - owner.offlineSince) : Infinity;
+  return owner.activeAt ? Math.max(0, now - owner.activeAt) : 0;
+}
+
+/** Someone else is waiting while the leader is away: they may take the room. */
+export function leaderAway(room: Room, now = Date.now()): boolean {
+  if (leaderIdleMs(room, now) < LEADER_IDLE_MS) return false;
+  return onlineHumans(room).some((p) => p.id !== room.ownerId);
+}
+
+/** Null when `playerId` may take the room over now, else the error. */
+export function claimError(room: Room, playerId: string, now = Date.now()): string | null {
+  const p = getPlayer(room, playerId);
+  if (!p || p.isBot || !p.connected) return "err.notInRoom";
+  if (room.phase.kind !== "lobby") return "err.wrongPhase";
+  if (room.machineHost && room.ownerId === p.id) return "err.invalidTarget";
+  if (!leaderAway(room, now)) return "err.leaderHere";
+  return null;
+}
+
+/**
+ * Machine-host lobbies start by themselves once MIN_PLAYERS people are online:
+ * a countdown everyone sees, more time when someone new joins, and the owner
+ * may stop it (until someone new comes). Updates the room and tells the
+ * caller what to do: "start" the game now, "changed" (send the new state), or null.
+ */
+export function stepAutoStart(room: Room, now = Date.now()): "start" | "changed" | null {
+  const count = onlineHumans(room).length;
+  const hold = room.autoStartHold ?? null;
+  if (hold !== null && count > hold) room.autoStartHold = null;
+  const eligible = !!room.machineHost && room.phase.kind === "lobby" && count >= MIN_PLAYERS && room.autoStartHold == null;
+  if (!eligible) {
+    // Fewer people than the hold: the next one to come starts the countdown again.
+    if (hold !== null && count < hold) room.autoStartHold = count;
+    if (room.autoStartAt == null) return null;
+    room.autoStartAt = null;
+    return "changed";
+  }
+  if (room.autoStartAt == null) {
+    room.autoStartAt = now + AUTO_START_MS;
+    room.autoStartCount = count;
+    return "changed";
+  }
+  if (now >= room.autoStartAt) return "start";
+  if (count > (room.autoStartCount ?? 0)) {
+    room.autoStartCount = count;
+    if (room.autoStartAt - now < AUTO_START_MIN_LEFT_MS) {
+      room.autoStartAt = now + AUTO_START_MIN_LEFT_MS;
+      return "changed";
+    }
+  }
+  room.autoStartCount = count;
+  return null;
+}
+
+/** The countdown ran out: the owner's roles when they fit, else bots and the basic roles (as "play now"). */
+export function autoStart(room: Room): ActionResult {
+  room.autoStartAt = null;
+  room.autoStartHold = null;
+  const n = room.players.length;
+  if (n >= MIN_PLAYERS && totalRoles(room.settings.roleCounts) === n) {
+    const dealt = assignRandom(room);
+    if (dealt.ok) {
+      const res = hostAction(room, { type: "start" });
+      if (res.ok) return res;
+    }
+  }
+  return hostAction(room, { type: "playNow" });
+}
+
 /**
  * What the room owner may do. Everything that would show roles (manual
  * assignment, the host's overrides, acting for others) stays with the machine.
@@ -96,12 +203,14 @@ export function ownerAction(room: Room, ownerId: string, action: OwnerAction): A
       // Hand the room to another person seated here (not a bot, and online).
       const next = getPlayer(room, action.playerId);
       if (!next || next.id === ownerId || next.isBot || !next.connected) return { ok: false, error: "err.invalidTarget" };
-      room.ownerId = next.id;
-      // The room now counts as theirs: one-room-per-account and their role cards.
-      room.creatorId = next.userId ?? null;
-      log(room, "log.ownerChanged", { name: next.name });
+      setOwner(room, next.id);
       return { ok: true };
     }
+    case "holdAutoStart":
+      if (room.phase.kind !== "lobby") return { ok: false, error: "err.wrongPhase" };
+      room.autoStartAt = null;
+      room.autoStartHold = onlineHumans(room).length;
+      return { ok: true };
     case "kick":
       if (action.playerId === ownerId) return { ok: false, error: "err.invalidTarget" };
       return hostAction(room, action);

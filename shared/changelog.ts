@@ -12,6 +12,27 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.9.0",
+    date: "2026-11-27",
+    title: { vi: "Vào trận nhanh hơn, không còn chờ chủ phòng", en: "Faster games, no more waiting on the owner" },
+    items: {
+      vi: [
+        "Đủ 4 người là phòng tự đếm ngược 45 giây rồi bắt đầu, thiếu ghế thì bot vào cho đủ. Chủ phòng vẫn có thể bấm Đợi thêm.",
+        "Chủ phòng bỏ đi mà không bấm gì quá 90 giây thì người khác được bấm Nhận làm chủ phòng. Sau 3 phút phòng tự chuyển cho người chờ lâu nhất.",
+        "Phòng ít người lâu thì hiện gợi ý thêm bot. Người chơi có thể nhắc chủ phòng thêm bot chỉ bằng một nút.",
+        "Bấm Chơi ngay khi chưa có phòng nào đang chờ sẽ mở phòng mới cho bạn, người đến sau vào chung. Ghép nhanh luôn ưu tiên phòng đông người nhất.",
+        "Trang chủ hiện số người đang chờ ván, bấm vào là vào ngay.",
+      ],
+      en: [
+        "Once 4 people are in, the room counts down 45 seconds and starts, with bots in any empty seats. The owner can still tap Wait longer.",
+        "If the owner walks away for 90 seconds, others can tap Take over the room. After 3 minutes the room passes to whoever has waited longest.",
+        "A room that stays small suggests adding bots, and players can ask the owner for bots with one tap.",
+        "Tapping Play now when no room is waiting opens a new one for you, and the next people join you there. Quick join always picks the fullest room.",
+        "The home page shows how many people are waiting for a game, tap it to join.",
+      ],
+    },
+  },
+  {
     version: "1.8.1",
     date: "2026-11-27",
     title: { vi: "Mọi nhân vật và hiệu ứng giờ miễn phí", en: "Every role and effect is now free" },

@@ -74,10 +74,14 @@ function Lobby({ chat }: { chat: Chat }) {
   async function quickJoin(leaveOther = false) {
     if (!profile?.name.trim()) return showError({ ok: false, error: "err.nameRequired" });
     const open = (state?.rooms ?? []).filter((r) => r.status === "waiting" && r.players < r.max && !r.locked);
-    // Random order, rooms in your language first.
-    const picks = shuffle(open).sort((a, b) => Number(b.locale === locale) - Number(a.locale === locale));
-    if (!picks.length) return toast(t("lobby.quickNone"), "info");
+    // Rooms in your language first, then the fullest (people gather in one room instead
+    // of waiting alone in several), ties in random order.
+    const people = (r: RoomSummary) => r.players - r.bots;
+    const picks = shuffle(open).sort(
+      (a, b) => Number(b.locale === locale) - Number(a.locale === locale) || people(b) - people(a),
+    );
     setQuickBusy(true);
+    if (!picks.length) return quickCreate(leaveOther);
     for (const room of picks) {
       const res = await emitAck<{ playerId: string; token: string }>("player:join", {
         code: room.code,
@@ -98,8 +102,33 @@ function Lobby({ chat }: { chat: Chat }) {
       }
     }
     // Every room filled up or started meanwhile.
-    setQuickBusy(false);
-    toast(t("lobby.quickNone"), "info");
+    return quickCreate(leaveOther);
+  }
+
+  /**
+   * No open room: make one in the room list and go in, so the next person who
+   * taps "Play" lands with you (the game starts by itself once enough are here).
+   */
+  async function quickCreate(leaveOther: boolean) {
+    if (!profile) return setQuickBusy(false);
+    const res = await emitAck<{ code: string; playerId?: string; token?: string }>("lobby:createRoom", {
+      machine: true,
+      locale,
+      profile: { name: profile.name, avatar: profile.avatar, style: profile.style },
+      authToken: getAuth()?.token,
+      deviceId: getDeviceId(),
+      leaveOther,
+    });
+    if (quickOther.caught(res, () => quickJoin(true))) return setQuickBusy(false);
+    // This account already runs a room: back to it.
+    if (!res.ok && res.error === "err.oneRoom" && res.params?.code) return router.push(`/join/${res.params.code}`);
+    if (!res.ok || !res.code || !res.playerId || !res.token) {
+      setQuickBusy(false);
+      return showError(res);
+    }
+    storage.set(playerKey(res.code), { playerId: res.playerId, token: res.token });
+    toast(t("lobby.quickMade"), "info");
+    router.push(`/join/${res.code}`);
   }
 
   useEffect(() => {
