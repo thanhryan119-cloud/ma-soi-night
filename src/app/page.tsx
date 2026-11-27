@@ -79,12 +79,15 @@ function HomePage({ chat }: { chat: Chat }) {
 
       <HomeRooms />
 
-      <Features />
-
-      <div className="mt-10 grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <OnlinePeople chat={chat} />
+      {/* The online board takes the leaderboard's height: out of the flow on wide screens (important: .card sets position), it scrolls inside. */}
+      <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <div className="relative lg:min-h-[28rem]">
+          <OnlinePeople chat={chat} className="lg:absolute! lg:inset-0" />
+        </div>
         <Leaderboard className="" />
       </div>
+
+      <Features />
 
       <HowToPlay />
 

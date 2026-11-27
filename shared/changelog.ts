@@ -12,6 +12,23 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.10.4",
+    date: "2026-11-27",
+    title: { vi: "Trang chủ gọn hơn", en: "A tidier home page" },
+    items: {
+      vi: [
+        "Bảng người online và bảng xếp hạng lên trước, bốn ô giới thiệu chuyển xuống bên dưới.",
+        "Trên máy tính, bảng người online cao bằng bảng xếp hạng, đông người thì cuộn bên trong.",
+        "Ô giới thiệu đầu tiên đổi thành Chơi ngay trên web, muốn thì cài lên màn hình chính.",
+      ],
+      en: [
+        "The online list and the leaderboard come first, the four intro boxes moved below them.",
+        "On a computer the online list is as tall as the leaderboard and scrolls inside when it is busy.",
+        "The first intro box now says Play in the browser, and you can still add it to your home screen.",
+      ],
+    },
+  },
+  {
     version: "1.10.3",
     date: "2026-11-27",
     title: { vi: "Chỉnh vai không cần cuộn", en: "Set up roles without scrolling" },
