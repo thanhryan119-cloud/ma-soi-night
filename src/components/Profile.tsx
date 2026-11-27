@@ -136,7 +136,7 @@ function ProfileBody({ profile }: { profile: PublicProfile }) {
   const look = { ...profile, avatar: profile.avatar || "👤", alive: true, style: profile.style ?? undefined };
   return (
     <div className="flex flex-col gap-5">
-      <ProfileCard bg={profile.style?.card} className="flex items-center gap-4 p-4">
+      <ProfileCard bg={profile.style?.card} className="flex items-center gap-4 px-5 py-8">
         <Avatar p={look} size="xl" />
         <div className="min-w-0">
           <StyledName p={look} className="block truncate text-2xl font-black" />

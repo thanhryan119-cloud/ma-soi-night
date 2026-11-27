@@ -81,7 +81,7 @@ export default function ProfilePage() {
         </Link>
       )}
       {look && (
-        <ProfileCard bg={look.style.card} className="flex items-center gap-4 p-4">
+        <ProfileCard bg={look.style.card} className="flex items-center gap-4 px-5 py-8">
           <Avatar p={look} size="xl" />
           <div className="min-w-0 flex-1">
             <StyledName p={look} className="block truncate text-3xl font-black" />

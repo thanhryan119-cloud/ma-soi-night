@@ -12,6 +12,27 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.2",
+    date: "2026-11-27",
+    title: { vi: "Khung avatar vẽ lại và bốn khung mới", en: "Redrawn avatar frames and four new ones" },
+    items: {
+      vi: [
+        "Mọi khung avatar trong cửa hàng được vẽ lại nhiều lớp và chi tiết hơn, mỗi khung có hiệu ứng chuyển động nhẹ riêng.",
+        "Viền trắng thành Viền bạc đánh bóng có đinh tán và vệt sáng chạy quanh.",
+        "Viền máu nhỏ giọt, Viền kép có mặt số xoay, Trăng khuyết lấp lánh sao, Gai thành bụi gai móc có giọt máu, Nhịp tim có đường điện tim chạy quanh.",
+        "Bốn khung mới là Vương miện vàng nạm ngọc, Băng giá, Ấn cổ với vòng chữ rune xoay và Tai sói lông xám.",
+        "Khung vẫn rõ ở mọi cỡ, từ danh sách người chơi tới thẻ hồ sơ. Ai đã mua khung cũ vẫn giữ nguyên.",
+      ],
+      en: [
+        "Every avatar frame in the shop is redrawn with more layers and detail, and each one has its own gentle motion.",
+        "White ring is now a polished Silver bezel with studs and a glint that runs round it.",
+        "Blood ring drips, Double ring has a turning dial, Crescent moon twinkles with stars, Thorns is a hooked bramble with drops of blood, Heartbeat has a pulse trace running round it.",
+        "Four new frames, a jewelled Royal crown, Frost, Ancient runes with a turning ring of runes, and grey-furred Wolf ears.",
+        "Frames stay clear at every size, from the player list to the profile card. Frames you already bought are still yours.",
+      ],
+    },
+  },
+  {
     version: "1.7.1",
     date: "2026-11-27",
     title: { vi: "Nick nhanh và rủ nhau chơi từ sảnh chờ", en: "Quick accounts and getting a game going from the lobby" },

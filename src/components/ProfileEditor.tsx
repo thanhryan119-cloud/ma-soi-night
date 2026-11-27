@@ -262,7 +262,7 @@ export function ProfileEditor({
 
   return (
     <div className="flex flex-col gap-5">
-      <ProfileCard bg={shown.card} className="flex items-center gap-4 p-4">
+      <ProfileCard bg={shown.card} className="flex items-center gap-4 px-5 py-8">
         <Avatar p={preview} size="xl" />
         <div className="min-w-0 flex-1">
           <div className="ui-label">{t("profile.preview")}</div>

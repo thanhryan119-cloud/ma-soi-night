@@ -20,6 +20,7 @@ describe("shop catalog", () => {
     expect(ITEM_PRICE_VND).toBe(50_000);
     expect(SHOP_ITEMS).toContain("effect:glow");
     expect(SHOP_ITEMS).toContain("frame:moon");
+    expect(SHOP_ITEMS).toContain("frame:crown");
     expect(SHOP_ITEMS).toContain("font:script");
     expect(SHOP_ITEMS).not.toContain("effect:none");
     expect(SHOP_ITEMS).not.toContain("frame:none");
@@ -29,7 +30,7 @@ describe("shop catalog", () => {
     expect(SHOP_ITEMS).not.toContain("chat:plain");
     expect(SHOP_ITEMS).toContain("card:bloodmoon");
     expect(SHOP_ITEMS).not.toContain("card:plain");
-    expect(SHOP_ITEMS).toHaveLength(28);
+    expect(SHOP_ITEMS).toHaveLength(32);
   });
 
   it("strips paid parts of a style the player does not own", () => {
