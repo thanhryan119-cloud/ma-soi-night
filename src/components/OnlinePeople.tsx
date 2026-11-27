@@ -11,7 +11,7 @@ import type { useGlobalChat } from "./GlobalChat";
 import { useT } from "@/lib/i18n";
 import { WhereChip, sortByPresence } from "./Friends";
 import { ProfileLink } from "./Profile";
-import { Avatar, StyledName } from "./ui";
+import { Avatar, CardBackdrop, StyledName } from "./ui";
 
 type Chat = ReturnType<typeof useGlobalChat>;
 type Tab = "online" | "friends";
@@ -62,7 +62,8 @@ export function OnlinePeople({ chat, className = "" }: { chat: Chat; className?:
   const row = (u: Row, action?: React.ReactNode) => {
     const look = lookOf(u);
     return (
-      <li key={u.id} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/5 ${u.online === false ? "opacity-55" : ""}`}>
+      <li key={u.id} className={`relative isolate flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/5 ${u.online === false ? "opacity-55" : ""}`}>
+        <CardBackdrop card={u.style?.card} />
         <ProfileLink userId={u.id} className="shrink-0">
           <span className="relative">
             <Avatar p={look} size="sm" />

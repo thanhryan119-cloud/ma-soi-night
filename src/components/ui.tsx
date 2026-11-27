@@ -156,6 +156,17 @@ export function ProfileCard({
   return <div className={`profile-card pc-${bg} rounded-lg ${className}`}>{children}</div>;
 }
 
+/**
+ * A player's profile card background laid behind a list row (online list,
+ * leaderboard). The row needs `relative isolate`; nothing is drawn for the
+ * plain card. It sits behind the row instead of wrapping it, so avatar frames
+ * that reach past the row are not clipped.
+ */
+export function CardBackdrop({ card, className = "", style }: { card?: CardBg | null; className?: string; style?: React.CSSProperties }) {
+  if (!card || card === "plain") return null;
+  return <span aria-hidden className={`profile-card card-backdrop pc-${card} ${className}`} style={style} />;
+}
+
 export function StyledName({
   p,
   className = "",

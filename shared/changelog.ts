@@ -12,6 +12,23 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.8",
+    date: "2026-11-27",
+    title: { vi: "Nền thẻ hồ sơ hiện ở danh sách online và bảng xếp hạng", en: "Profile card backgrounds in the online list and leaderboard" },
+    items: {
+      vi: [
+        "Mỗi người trong danh sách đang online, ở trang chủ, sảnh chờ và khung chat máy chủ, giờ hiện nền thẻ hồ sơ của họ phía sau dòng tên.",
+        "Bảng xếp hạng cũng hiện nền thẻ hồ sơ trên cả dòng của từng người.",
+        "Cột tên trong bảng xếp hạng rộng hơn nên tên không còn bị cắt chỉ còn vài chữ.",
+      ],
+      en: [
+        "Everyone in the online list, on the home page, in the lobby and in the server chat, now shows their profile card background behind their row.",
+        "The leaderboard shows each player's card background across their whole row too.",
+        "The name column in the leaderboard is wider, so names are no longer cut down to a few letters.",
+      ],
+    },
+  },
+  {
     version: "1.7.7",
     date: "2026-11-27",
     title: { vi: "Đồ trang trí giảm còn 29.000đ", en: "Decor on sale at 29,000 VND" },

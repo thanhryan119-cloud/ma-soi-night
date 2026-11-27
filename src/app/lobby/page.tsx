@@ -16,7 +16,7 @@ import type { Locale } from "@shared/types";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { ProfileLink } from "@/components/Profile";
 import { PasswordField } from "@/components/PasswordField";
-import { Avatar, ConnectionDot, LangSwitch, Spinner, StyledName, toast, useErrorToast } from "@/components/ui";
+import { Avatar, CardBackdrop, ConnectionDot, LangSwitch, Spinner, StyledName, toast, useErrorToast } from "@/components/ui";
 import { shuffle } from "@shared/engine";
 import { getAuth, loadLocalProfile, saveLocalProfile, type LocalProfile } from "@/lib/account";
 import { ExistingRoomDialog, SignInToCreate, useEnterRoom, useNeedsSignInToCreate, useOtherRoom } from "@/components/CreateRoomGate";
@@ -168,7 +168,8 @@ function OnlineCard({ chat, creator }: { chat: Chat; creator: Creator }) {
       ) : (
         <ul className="flex max-h-[28rem] flex-col gap-1.5 overflow-y-auto">
           {rows.map((u) => (
-            <li key={u.id} className="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg bg-white/5 px-2 py-1.5">
+            <li key={u.id} className="relative isolate flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg bg-white/5 px-2 py-1.5">
+              <CardBackdrop card={u.style?.card} />
               <ProfileLink userId={u.id} className="min-w-0 flex-1 basis-44 gap-2">
                 <Avatar p={lookOf(u)} size="sm" />
                 <span className="flex min-w-0 flex-col items-start">
