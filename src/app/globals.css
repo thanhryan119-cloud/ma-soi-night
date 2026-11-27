@@ -350,27 +350,107 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   .cb-ember { animation: none; }
 }
-.af-ring { box-shadow: 0 0 0 2px #f2f2f2; }
-.af-blood { box-shadow: 0 0 0 2px #e5383b, 0 0 14px rgba(229, 56, 59, 0.65); }
-.af-double { box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px #f2f2f2, 0 0 0 6px #0a0a0a, 0 0 0 7px #e5383b; }
-.af-thorns { outline: 2px dashed #e5383b; outline-offset: 3px; }
-.af-pulse { animation: frame-pulse 1.6s ease-out infinite; }
-.af-moon { box-shadow: 0 0 0 2px #cfcfcf; }
-.af-moon::before {
+/* Avatar frames (.af .af-<id>, see AVATAR_FRAMES). The art is SVG in
+   public/frames, drawn by scripts/avatar-frames.mjs. ::before holds the frame,
+   ::after the part that moves. Both reach 16% past the avatar on every side
+   (crown and wolf reach further up, blood further down for the drips), so the
+   art scales with the avatar from sm to xl and never takes up layout space. */
+.af::before, .af::after {
   content: "";
   position: absolute;
-  top: -8%;
-  right: -8%;
-  width: 38%;
-  height: 38%;
-  border-radius: 9999px;
-  background: #f2f2f2;
-  box-shadow: inset -4px -2px 0 0 #bdbdbd;
-  z-index: 2;
+  inset: -16%;
+  z-index: 1;
+  pointer-events: none;
+  background: no-repeat center / 100% 100%;
 }
-@keyframes frame-pulse {
-  0% { box-shadow: 0 0 0 2px #e5383b, 0 0 0 2px rgba(229, 56, 59, 0.6); }
-  100% { box-shadow: 0 0 0 2px #e5383b, 0 0 0 12px rgba(229, 56, 59, 0); }
+.af::after { z-index: 2; }
+.af-crown::before, .af-crown::after, .af-wolf::before, .af-wolf::after { top: -34%; }
+.af-blood::before, .af-blood::after { bottom: -27.9%; }
+
+.af-ring { box-shadow: 0 0 0.5em rgba(255, 255, 255, 0.22); }
+.af-ring::before { background-image: url(/frames/ring.svg); }
+.af-ring::after { background-image: url(/frames/ring-shine.svg); animation: af-spin 5s linear infinite; }
+
+.af-blood { animation: af-glow-blood 2.6s ease-in-out infinite; }
+.af-blood::before { background-image: url(/frames/blood.svg); }
+.af-blood::after {
+  background-image: url(/frames/blood-drop.svg);
+  transform-origin: 74% 90%;
+  animation: af-drip 2.8s ease-in infinite;
+}
+
+.af-double { box-shadow: 0 0 0.45em rgba(200, 50, 59, 0.35); }
+.af-double::before { background-image: url(/frames/double.svg); }
+.af-double::after { background-image: url(/frames/double-dial.svg); z-index: 0; animation: af-spin 40s linear infinite; }
+
+.af-moon { box-shadow: 0 0 0.6em rgba(170, 190, 255, 0.35); }
+.af-moon::before { background-image: url(/frames/moon.svg); }
+.af-moon::after { background-image: url(/frames/moon-twinkle.svg); animation: af-twinkle 3.2s ease-in-out infinite; }
+
+.af-thorns::before { background-image: url(/frames/thorns.svg); }
+.af-thorns::after { background-image: url(/frames/thorns-glow.svg); z-index: 0; animation: af-twinkle 2.6s ease-in-out infinite; }
+
+.af-pulse::before { background-image: url(/frames/pulse.svg); animation: af-beat 1.6s ease-out infinite; }
+.af-pulse::after { background-image: url(/frames/pulse-wave.svg); z-index: 0; animation: af-wave 1.6s ease-out infinite; }
+
+.af-crown { box-shadow: 0 0 0.6em rgba(232, 180, 90, 0.45); }
+.af-crown::before { background-image: url(/frames/crown.svg); }
+.af-crown::after { background-image: url(/frames/crown-glint.svg); animation: af-glint 2.8s ease-in-out infinite; }
+
+.af-frost { box-shadow: 0 0 0.6em rgba(150, 215, 255, 0.45); }
+.af-frost::before { background-image: url(/frames/frost.svg); }
+.af-frost::after { background-image: url(/frames/frost-shine.svg); animation: af-spin 14s linear infinite, af-twinkle 2.2s ease-in-out infinite; }
+
+.af-runes { animation: af-glow-runes 3s ease-in-out infinite; }
+.af-runes::before { background-image: url(/frames/runes.svg); }
+.af-runes::after { background-image: url(/frames/runes-spin.svg); z-index: 1; animation: af-spin 24s linear infinite; }
+
+.af-wolf { box-shadow: 0 0 0.4em rgba(0, 0, 0, 0.6); }
+.af-wolf::before { background-image: url(/frames/wolf.svg); }
+.af-wolf::after { background-image: url(/frames/wolf-ears.svg); z-index: 0; transform-origin: 50% 30%; animation: af-ears 6s ease-in-out infinite; }
+
+@keyframes af-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes af-twinkle {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+@keyframes af-glint {
+  0%, 100% { opacity: 0; }
+  20%, 45% { opacity: 1; }
+  65% { opacity: 0; }
+}
+@keyframes af-drip {
+  0% { transform: translateY(-3%) scaleY(0.5); opacity: 0; }
+  30% { transform: translateY(0) scaleY(1); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateY(9%) scaleY(1.15); opacity: 0; }
+}
+@keyframes af-beat {
+  0%, 40%, 100% { transform: scale(1); }
+  8% { transform: scale(1.05); }
+  16% { transform: scale(1); }
+  24% { transform: scale(1.03); }
+}
+@keyframes af-wave {
+  0% { transform: scale(0.95); opacity: 0.9; }
+  100% { transform: scale(1.22); opacity: 0; }
+}
+@keyframes af-ears {
+  0%, 84%, 90%, 96%, 100% { transform: none; }
+  87%, 93% { transform: translateY(-2%) scaleY(1.04); }
+}
+@keyframes af-glow-blood {
+  0%, 100% { box-shadow: 0 0 0.4em rgba(229, 56, 59, 0.35); }
+  50% { box-shadow: 0 0 0.9em rgba(229, 56, 59, 0.7); }
+}
+@keyframes af-glow-runes {
+  0%, 100% { box-shadow: 0 0 0.4em rgba(170, 120, 255, 0.35); }
+  50% { box-shadow: 0 0 0.9em rgba(120, 230, 220, 0.6); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .af, .af::before, .af::after { animation: none; }
 }
 
 /* Profile card backgrounds: the box behind the avatar and name on the profile

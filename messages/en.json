@@ -671,12 +671,16 @@
     },
     "frame": {
       "none": "None",
-      "ring": "White ring",
+      "ring": "Silver bezel",
       "blood": "Blood ring",
       "double": "Double ring",
       "moon": "Crescent moon",
       "thorns": "Thorns",
-      "pulse": "Heartbeat"
+      "pulse": "Heartbeat",
+      "crown": "Royal crown",
+      "frost": "Frost",
+      "runes": "Ancient runes",
+      "wolf": "Wolf ears"
     },
     "chatDeco": "Chat background",
     "chatSample": "Who's the wolf?",

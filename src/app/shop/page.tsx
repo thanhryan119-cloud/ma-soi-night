@@ -490,9 +490,12 @@ function ShopItem({
     >
       <div className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-md bg-[radial-gradient(ellipse_at_top,rgba(232,180,90,0.12),transparent_70%)] bg-night-900 p-3">
           {kind === "frame" ? (
-            <Avatar p={preview} size="lg" />
+            // Room for the parts of a frame that reach past the avatar (crown, ears, drips).
+            <span className="py-3">
+              <Avatar p={preview} size="lg" />
+            </span>
           ) : kind === "card" ? (
-            <ProfileCard bg={value as CardBg} className="flex w-full items-center gap-2 p-2">
+            <ProfileCard bg={value as CardBg} className="flex w-full items-center gap-2 px-2.5 py-4">
               <Avatar p={preview} size="md" />
               <StyledName p={preview} className="block min-w-0 truncate text-base font-black" />
             </ProfileCard>

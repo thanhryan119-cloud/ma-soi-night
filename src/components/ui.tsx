@@ -120,7 +120,7 @@ type AvatarLike = Pick<PlayerView, "avatar" | "alive"> & Partial<Pick<PlayerView
 export function Avatar({ p, size = "md" }: { p: AvatarLike; size?: "sm" | "md" | "lg" | "xl" }) {
   const cls = { sm: "h-7 w-7 text-base", md: "h-10 w-10 text-2xl", lg: "h-14 w-14 text-3xl", xl: "h-24 w-24 text-6xl" }[size];
   const photo = resolveAvatarUrl(p.avatarUrl);
-  const frame = p.style?.frame && p.style.frame !== "none" ? `af-${p.style.frame}` : "";
+  const frame = p.style?.frame && p.style.frame !== "none" ? `af af-${p.style.frame}` : "";
   return (
     <span className={`${cls} ${frame} relative inline-flex shrink-0 items-center justify-center rounded-full bg-night-700`}>
       <span

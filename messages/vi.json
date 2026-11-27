@@ -671,12 +671,16 @@
     },
     "frame": {
       "none": "Không",
-      "ring": "Viền trắng",
+      "ring": "Viền bạc",
       "blood": "Viền máu",
       "double": "Viền kép",
       "moon": "Trăng khuyết",
       "thorns": "Gai",
-      "pulse": "Nhịp tim"
+      "pulse": "Nhịp tim",
+      "crown": "Vương miện",
+      "frost": "Băng giá",
+      "runes": "Ấn cổ",
+      "wolf": "Tai sói"
     },
     "chatDeco": "Nền chat",
     "chatSample": "Ai là sói?",
