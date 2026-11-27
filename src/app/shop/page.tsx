@@ -2,7 +2,7 @@
 
 // The shop: everything that can be bought, in one place: name effects, name
 // fonts, avatar frames, chat decorations, and special role cards (a few roles
-// are free each day, a card keeps one open; bundles are 20% off). 50.000đ each, bought once per Google
+// are free each day, a card keeps one open; bundles are 20% off). 49.000đ each, bought once per Google
 // account through payOS (the buyer comes back to /profile, which confirms it).
 // Some items can also be bought with gold earned from quests (GOLD_PRICES).
 
@@ -93,6 +93,7 @@ export default function ShopPage() {
     if (user) updateAccount({ style });
   };
 
+  const price = usePrice();
   const total = SHOP_ITEMS.length;
   const mine = SHOP_ITEMS.filter((id) => owned.includes(id)).length;
 
@@ -111,8 +112,32 @@ export default function ShopPage() {
         <GoldChip />
       </div>
 
+      <section className="relative overflow-hidden rounded-xl border border-gold/50 bg-gradient-to-br from-night-800 via-night-900 to-[#2a1640] p-5 shadow-[0_0_40px_rgba(232,180,90,0.10)] sm:p-7">
+        <div aria-hidden className="pointer-events-none absolute -top-24 -right-20 h-64 w-64 rounded-full bg-gold/20 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-16 h-56 w-56 rounded-full bg-violet-500/20 blur-3xl" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex max-w-xl flex-col gap-2">
+            <span className="text-xs font-semibold tracking-[0.2em] text-gold/80 uppercase">🌕 {t("shop.heroTag")}</span>
+            <h2 className="font-display text-3xl leading-tight font-black text-moon sm:text-4xl">{t("shop.heroTitle")}</h2>
+            <p className="text-sm leading-relaxed text-white/75 sm:text-base">{t("shop.heroSub")}</p>
+          </div>
+          <div className="flex shrink-0 flex-row flex-wrap items-baseline gap-x-2 self-start rounded-lg border border-gold/40 bg-night-950/60 px-4 py-3 sm:flex-col sm:items-end sm:self-auto">
+            <span className="text-xs text-white/60">{t("shop.heroFrom")}</span>
+            <span className="text-3xl font-black text-gold">{price(shop?.price ?? ITEM_PRICE_VND)}</span>
+            <span className="text-xs text-white/60">{t("shop.heroEach")}</span>
+          </div>
+        </div>
+        <ul className="relative mt-5 grid gap-2 sm:grid-cols-3">
+          {(["perkForever", "perkDevices", "perkBundle"] as const).map((k, i) => (
+            <li key={k} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white/85">
+              <span className="text-lg">{["♾️", "☁️", "🎁"][i]}</span>
+              {t(`shop.${k}`)}
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section className="card flex flex-col gap-3">
-        <p className="text-white/80">{t("shop.pageHint")}</p>
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-gold/30 bg-gold/[0.05] p-3">
           <p className="min-w-0 flex-1 text-sm text-gold">🪙 {t("shop.goldHint")}</p>
           <QuestsLink />
@@ -132,17 +157,25 @@ export default function ShopPage() {
             {GOOGLE_CLIENT_ID ? <GoogleButton /> : <p className="text-xs text-white/50">{t("profile.authUnavailable")}</p>}
           </div>
         )}
-        <nav className="flex flex-wrap gap-2" aria-label={t("shop.title")}>
-          <a href="#shop-role" className="chip hover:border-gold/60">
-            🃏 {t("shop.rolesTitle")}
-          </a>
-          {SECTIONS.map((s) => (
-            <a key={s.kind} href={`#shop-${s.kind}`} className="chip hover:border-gold/60">
-              {s.icon} {t(s.title)}
-            </a>
-          ))}
-        </nav>
       </section>
+
+      <nav
+        className={`sticky top-0 z-20 -mx-4 flex gap-2 overflow-x-auto border-b border-gold/20 bg-night-950/85 py-2 pr-4 backdrop-blur ${embedded ? "pl-4" : "pl-28 xl:pl-4"}`}
+        aria-label={t("shop.title")}
+      >
+        <a href="#shop-role" className="shrink-0 rounded-full border border-gold/60 bg-gold/15 px-3 py-1 text-sm font-bold whitespace-nowrap text-gold hover:bg-gold/25">
+          🃏 {t("shop.rolesTitle")}
+        </a>
+        {SECTIONS.map((s) => (
+          <a
+            key={s.kind}
+            href={`#shop-${s.kind}`}
+            className="shrink-0 rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-sm whitespace-nowrap text-white/80 hover:border-gold/60 hover:text-gold"
+          >
+            {s.icon} {t(s.title)}
+          </a>
+        ))}
+      </nav>
 
       <RoleShop owned={owned} signedIn={!!user} shop={shop} />
 
@@ -157,6 +190,7 @@ export default function ShopPage() {
               </h2>
               {user && <span className="text-xs text-white/50">{t("shop.ownedCount", { owned: have, total: items.length })}</span>}
             </div>
+            <p className="-mt-1 text-sm text-white/65">{t(`shop.sectionDesc.${s.kind}`)}</p>
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {items.map((id) => (
                 <ShopItem
@@ -205,6 +239,7 @@ function RoleShop({ owned, signedIn, shop }: { owned: string[]; signedIn: boolea
           </span>
         )}
       </div>
+      <p className="-mt-2 text-sm text-white/65">{t("shop.sectionDesc.role")}</p>
       <p className="text-sm text-white/70">{t("freeRoles.hint", { sizes: FREE_BATCH_SIZES.join(", "), total: SPECIAL_ROLES.length })}</p>
 
       <div className="flex flex-col gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/[0.05] p-3">
@@ -226,10 +261,11 @@ function RoleShop({ owned, signedIn, shop }: { owned: string[]; signedIn: boolea
           📦 {t("freeRoles.bundles")}
           <span className="chip border-emerald-500/50 py-0 font-bold text-emerald-300">-{Math.round(BUNDLE_DISCOUNT * 100)}%</span>
         </h3>
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {BUNDLE_ITEMS.map((id) => (
+        <ul className="grid gap-3 md:grid-cols-3">
+          {BUNDLE_ITEMS.filter((id) => id !== "bundle:all").map((id) => (
             <BundleCard key={id} id={id} owned={owned} signedIn={signedIn} shop={shop} />
           ))}
+          <BundleCard id="bundle:all" owned={owned} signedIn={signedIn} shop={shop} />
         </ul>
       </div>
 
@@ -245,43 +281,120 @@ function RoleShop({ owned, signedIn, shop }: { owned: string[]; signedIn: boolea
   );
 }
 
+/** Accent per team, for the bundle cards. */
+const TEAM_TINT: Record<"wolves" | "village" | "solo", { text: string; border: string; bg: string }> = {
+  wolves: { text: "text-red-300", border: "border-red-400/40", bg: "bg-red-500/[0.05]" },
+  village: { text: "text-sky-300", border: "border-sky-400/40", bg: "bg-sky-500/[0.05]" },
+  solo: { text: "text-violet-300", border: "border-violet-400/40", bg: "bg-violet-500/[0.05]" },
+};
+const TEAM_ICON = { wolves: "🐺", village: "🏡", solo: "🎭" } as const;
+
+/** One role in a bundle: emoji, name, and a one-line hook of what it does. */
+function BundleRole({ role: r, have }: { role: RoleId; have: boolean }) {
+  const t = useT();
+  return (
+    <li className={`flex items-start gap-2.5 py-1.5 ${have ? "opacity-50" : ""}`} title={t(`roles.${r}.desc`)}>
+      <span className="w-6 shrink-0 text-center text-lg leading-tight">{ROLES[r].emoji}</span>
+      <span className="flex min-w-0 flex-col">
+        <span className="flex flex-wrap items-baseline gap-x-2 text-sm font-bold leading-tight">
+          {t(`roles.${r}.name`)}
+          {have && <span className="text-[11px] font-bold text-emerald-300">✓ {t("freeRoles.haveRole")}</span>}
+        </span>
+        <span className="text-xs leading-snug text-white/60">{t(`freeRoles.roleHook.${r}`)}</span>
+      </span>
+    </li>
+  );
+}
+
 function BundleCard({ id, owned, signedIn, shop }: { id: ItemId; owned: string[]; signedIn: boolean; shop: ShopInfo | null }) {
   const t = useT();
   const price = usePrice();
   const itemName = useItemName();
   const [checkout, setCheckout] = useState(false);
-  const roles = BUNDLES[id.slice(7) as BundleName];
+  const name = id.slice(7) as BundleName;
+  const roles = BUNDLES[name];
+  const hero = name === "all";
   const cost = itemPrice(id, owned);
-  const have = roles.filter((r) => owned.includes(`role:${r}`)).length;
+  const list = bundleListPrice(id, owned);
+  const has = (r: RoleId) => owned.includes(`role:${r}`);
+  const have = roles.filter(has).length;
+  const missing = roles.length - have;
   const done = cost === 0;
   const title = itemName(id);
+  const tint = hero ? null : TEAM_TINT[name as keyof typeof TEAM_TINT];
+  const frame = done
+    ? "border-emerald-500/40 bg-emerald-500/[0.04]"
+    : hero
+      ? "border-gold/60 bg-gold/[0.06] shadow-[0_0_24px_rgba(232,180,90,0.12)]"
+      : `${tint!.border} ${tint!.bg}`;
+  const teams = (["wolves", "village", "solo"] as const).map((team) => ({ team, roles: BUNDLES[team] }));
+
   return (
-    <li className={`flex flex-col gap-2 rounded-lg border p-3 ${done ? "border-emerald-500/40 bg-emerald-500/[0.04]" : "border-gold/40 bg-gold/[0.04]"}`}>
-      <div className="flex flex-wrap items-baseline gap-2">
-        <span className="font-bold">{title}</span>
-        <span className="text-xs text-white/50">{t("freeRoles.bundleCount", { count: roles.length })}</span>
+    <li className={`relative flex flex-col gap-3 rounded-lg border p-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(232,180,90,0.12)] ${frame} ${hero ? "md:col-span-3" : ""}`}>
+      {hero && !done && (
+        <span className="absolute -top-2.5 right-4 rounded-full border border-gold bg-gold px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-night-950 uppercase">
+          ⭐ {t("freeRoles.bestValue")}
+        </span>
+      )}
+      <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <h4 className={`text-lg font-bold ${hero ? "text-gold" : tint!.text}`}>
+            {hero ? "👑" : TEAM_ICON[name as keyof typeof TEAM_ICON]} {title}
+          </h4>
+          <span className="text-xs text-white/50">{t("freeRoles.bundleCount", { count: roles.length })}</span>
+        </div>
+        <p className="text-sm leading-snug text-white/75">{t(`freeRoles.bundleTag.${name}`)}</p>
       </div>
-      <p className="text-lg leading-none" title={roles.map((r) => t(`roles.${r}.name`)).join(", ")}>
-        {roles.map((r) => (
-          <span key={r} className={owned.includes(`role:${r}`) ? "opacity-40" : ""}>
-            {ROLES[r].emoji}
-          </span>
-        ))}
-      </p>
+
+      {hero ? (
+        <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+          {teams.map(({ team, roles: rs }) => (
+            <div key={team} className="flex flex-col">
+              <span className={`border-b border-white/10 pb-1 text-[11px] font-semibold tracking-wider uppercase ${TEAM_TINT[team].text}`}>
+                {TEAM_ICON[team]} {t(`teams.${team}`)} · {rs.length}
+              </span>
+              <ul className="flex flex-col">
+                {rs.map((r) => (
+                  <BundleRole key={r} role={r} have={has(r)} />
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <ul className="flex flex-col divide-y divide-white/5">
+          {roles.map((r) => (
+            <BundleRole key={r} role={r} have={has(r)} />
+          ))}
+        </ul>
+      )}
+
       {have > 0 && !done && <p className="text-xs text-white/50">{t("freeRoles.bundleHave", { have, total: roles.length })}</p>}
-      <div className="mt-auto flex items-center justify-between gap-2">
+
+      <div className="mt-auto flex flex-col gap-2 border-t border-white/10 pt-3">
         {done ? (
-          <span className="text-xs font-bold text-emerald-300">✓ {t("shop.owned")}</span>
+          <span className="text-sm font-bold text-emerald-300">✓ {t("shop.owned")}</span>
         ) : (
-          <span className="flex items-baseline gap-2">
-            <s className="text-xs text-white/40">{price(bundleListPrice(id, owned))}</s>
-            <span className="text-sm font-bold text-gold">{price(cost)}</span>
-          </span>
-        )}
-        {!done && signedIn && shop?.enabled && (
-          <button className="btn-gold btn-sm" onClick={() => setCheckout(true)}>
-            {t("shop.buyShort")}
-          </button>
+          <>
+            <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
+              <span className="flex flex-col">
+                <span className="flex items-baseline gap-2">
+                  <span className={`font-bold text-gold ${hero ? "text-2xl" : "text-xl"}`}>{price(cost)}</span>
+                  <s className="text-sm text-white/40">{price(list)}</s>
+                </span>
+                <span className="text-xs text-white/55">{t("freeRoles.perCard", { price: price(Math.round(cost / missing / 100) * 100) })}</span>
+              </span>
+              <span className="rounded border border-emerald-500/50 bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-300">
+                {t("freeRoles.save", { price: price(list - cost) })}
+              </span>
+            </div>
+            {signedIn && shop?.enabled && (
+              <button className="btn-gold btn-sm w-full" onClick={() => setCheckout(true)}>
+                {t("shop.buyShort")} {title}
+              </button>
+            )}
+            <span className="text-center text-[11px] text-white/45">{t("freeRoles.forever")}</span>
+          </>
         )}
       </div>
       {checkout && <CheckoutDialog itemId={id} title={title} itemName={title} onClose={() => setCheckout(false)} />}
@@ -297,7 +410,7 @@ function RoleCard({ role: r, now, owned, signedIn, shop }: { role: RoleId; now: 
   const name = t(`roles.${r}.name`);
   return (
     <li
-      className={`flex flex-col gap-2 rounded-lg border p-3 ${owned ? "bg-emerald-500/[0.04]" : ""}`}
+      className={`flex flex-col gap-2 rounded-lg border p-3 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(232,180,90,0.12)] ${owned ? "bg-emerald-500/[0.04]" : "bg-white/[0.02]"}`}
       style={{ borderColor: owned ? "rgb(16 185 129 / 0.4)" : `${ROLES[r].color}66` }}
     >
       <div className="flex gap-3">
@@ -315,7 +428,7 @@ function RoleCard({ role: r, now, owned, signedIn, shop }: { role: RoleId; now: 
           <span className="text-xs font-bold text-emerald-300">✓ {t("freeRoles.ownedCard")}</span>
         ) : (
           <span className="flex flex-col">
-            <span className="text-sm font-bold text-gold">{price(shop?.price ?? ITEM_PRICE_VND)}</span>
+            <span className="text-base font-black text-gold">{price(shop?.price ?? ITEM_PRICE_VND)}</span>
             {days === 0 && <span className="text-xs font-bold text-emerald-300">{t("freeRoles.freeToday")}</span>}
           </span>
         )}
@@ -373,9 +486,9 @@ function ShopItem({
 
   return (
     <li
-      className={`flex flex-col gap-2 rounded-lg border p-3 ${owned ? "border-emerald-500/40 bg-emerald-500/[0.04]" : "border-white/10 bg-white/[0.03]"}`}
+      className={`flex flex-col gap-2 rounded-lg border p-3 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(232,180,90,0.12)] ${owned ? "border-emerald-500/40 bg-emerald-500/[0.04]" : "border-white/10 bg-white/[0.03] hover:border-gold/50"}`}
     >
-      <div className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-md bg-night-900 p-2">
+      <div className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-md bg-[radial-gradient(ellipse_at_top,rgba(232,180,90,0.12),transparent_70%)] bg-night-900 p-3">
           {kind === "frame" ? (
             <Avatar p={preview} size="lg" />
           ) : kind === "card" ? (
@@ -396,7 +509,7 @@ function ShopItem({
         {owned ? (
           <span className="text-xs font-bold text-emerald-300">✓ {t("shop.owned")}</span>
         ) : (
-          <span className="text-sm font-bold text-gold">{cost}</span>
+          <span className="text-base font-black text-gold">{cost}</span>
         )}
         {owned ? (
           (wearing ? (

@@ -71,10 +71,10 @@ describe("role cards and bundles", () => {
   });
 
   it("prices a bundle 20% off its missing cards", () => {
-    expect(itemPrice("bundle:all")).toBe(17 * ITEM_PRICE_VND * 0.8);
-    expect(itemPrice("bundle:solo")).toBe(BUNDLES.solo.length * ITEM_PRICE_VND * 0.8);
+    expect(itemPrice("bundle:all")).toBe(Math.round(17 * ITEM_PRICE_VND * 0.8 / 1000) * 1000);
+    expect(itemPrice("bundle:solo")).toBe(Math.round(BUNDLES.solo.length * ITEM_PRICE_VND * 0.8 / 1000) * 1000);
     const one = `role:${BUNDLES.solo[0]}`;
-    expect(itemPrice("bundle:solo", [one])).toBe((BUNDLES.solo.length - 1) * ITEM_PRICE_VND * 0.8);
+    expect(itemPrice("bundle:solo", [one])).toBe(Math.round((BUNDLES.solo.length - 1) * ITEM_PRICE_VND * 0.8 / 1000) * 1000);
     expect(itemPrice("bundle:solo", itemsGranted("bundle:solo"))).toBe(0);
     expect(itemPrice("role:tanner")).toBe(ITEM_PRICE_VND);
     expect(itemPrice("role:tanner", ["role:tanner"])).toBe(0);

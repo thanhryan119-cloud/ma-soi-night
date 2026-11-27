@@ -10,7 +10,7 @@ import { buyItem, checkCode, fetchShop, useAccount, type CodeCheck, type ShopInf
 import { useLocale, useT } from "@/lib/i18n";
 import { toast, useErrorToast } from "./ui";
 
-/** "50.000đ" / "50,000 VND" */
+/** "49.000đ" / "49,000 VND" */
 export function usePrice() {
   const t = useT();
   const { locale } = useLocale();
