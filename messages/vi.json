@@ -667,7 +667,9 @@
       "blood": "Máu",
       "flicker": "Chập chờn",
       "shimmer": "Ánh bạc",
-      "glitch": "Nhiễu sóng"
+      "glitch": "Nhiễu sóng",
+      "fire": "Lửa cháy",
+      "gold": "Dát vàng"
     },
     "frame": {
       "none": "Không",
@@ -692,7 +694,8 @@
       "blood": "Vệt máu",
       "frost": "Băng giá",
       "ember": "Than hồng",
-      "gold": "Viền vàng"
+      "gold": "Viền vàng",
+      "paws": "Dấu chân sói"
     },
     "cardBg": "Nền thẻ hồ sơ",
     "card": {
@@ -702,7 +705,8 @@
       "pines": "Rừng thông",
       "tarot": "Hoa văn tarot",
       "mist": "Sương mù",
-      "gold": "Viền vàng"
+      "gold": "Viền vàng",
+      "village": "Làng đêm"
     }
   },
   "shop": {

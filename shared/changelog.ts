@@ -12,6 +12,27 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.5",
+    date: "2026-11-27",
+    title: { vi: "Nền thẻ, nền chat và hiệu ứng tên vẽ lại", en: "Redrawn card backgrounds, chat decorations and name effects" },
+    items: {
+      vi: [
+        "Mỗi nền thẻ hồ sơ giờ là một bức tranh có chuyển động nhẹ. Trời sao có chòm sao sói và sao băng, Trăng máu có sói tru trên vách đá, Rừng thông có mắt sói lấp ló và đom đóm, Sương mù là nghĩa địa trong sương trôi.",
+        "Hoa văn tarot có biểu tượng mặt trời và trăng với tia sáng xoay chậm, Viền vàng có góc chạm hoa văn nạm ngọc và vệt sáng lướt qua.",
+        "Nền chat có thêm chi tiết riêng. Bầu sao lấp lánh, Trăng khuyết treo ở góc, Vệt máu nhỏ giọt, Băng giá có cột băng rủ, Than hồng có lửa và tàn lửa bay, Viền vàng có góc chạm hoa văn.",
+        "Hiệu ứng tên đậm nét hơn. Máu có giọt rỉ xuống, Chập chờn như ánh nến, Ánh bạc và Nhiễu sóng sắc hơn.",
+        "Món mới là hiệu ứng tên Lửa cháy và Dát vàng, nền chat Dấu chân sói, nền thẻ Làng đêm với cửa sổ sáng đèn và khói bếp.",
+      ],
+      en: [
+        "Every profile card background is now a small moving picture. Starry sky has a wolf constellation and a shooting star, Blood moon a wolf howling on a cliff, Pine forest wolf eyes and fireflies in the dark, Mist a graveyard in drifting fog.",
+        "Tarot pattern has a sun and moon emblem with slowly turning rays, Gold trim has jewelled corners and a glint that sweeps across.",
+        "Chat backgrounds have their own details. Starry sky twinkles, Crescent moon hangs off the corner, Blood streaks drip, Frost grows icicles, Embers have flames and rising sparks, Gold trim has carved corners.",
+        "Name effects are bolder. Blood drips, Flicker burns like a candle, Silver shimmer and Glitch are sharper.",
+        "New items are the Fire and Gold leaf name effects, the Wolf tracks chat background and the Night village card with lit windows and chimney smoke.",
+      ],
+    },
+  },
+  {
     version: "1.7.4",
     date: "2026-11-27",
     title: { vi: "Khung avatar vẽ lại và bốn khung mới", en: "Redrawn avatar frames and four new ones" },

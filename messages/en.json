@@ -667,7 +667,9 @@
       "blood": "Blood",
       "flicker": "Flicker",
       "shimmer": "Silver shimmer",
-      "glitch": "Glitch"
+      "glitch": "Glitch",
+      "fire": "Fire",
+      "gold": "Gold leaf"
     },
     "frame": {
       "none": "None",
@@ -692,7 +694,8 @@
       "blood": "Blood streaks",
       "frost": "Frost",
       "ember": "Embers",
-      "gold": "Gold trim"
+      "gold": "Gold trim",
+      "paws": "Wolf tracks"
     },
     "cardBg": "Profile card background",
     "card": {
@@ -702,7 +705,8 @@
       "pines": "Pine forest",
       "tarot": "Tarot pattern",
       "mist": "Mist",
-      "gold": "Gold trim"
+      "gold": "Gold trim",
+      "village": "Night village"
     }
   },
   "shop": {

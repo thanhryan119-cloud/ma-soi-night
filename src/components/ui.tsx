@@ -166,7 +166,12 @@ export function StyledName({
   const s = p.style;
   const font = s && s.font !== "default" ? `nf-${s.font}` : "";
   const effect = s && s.effect !== "none" && p.alive !== false ? `ne-${s.effect}` : "";
-  return <span className={`${font} ${effect} ${className}`}>{p.name}</span>;
+  // data-text feeds the glitch effect, which redraws the name in slices.
+  return (
+    <span className={`${font} ${effect} ${className}`} data-text={p.name}>
+      {p.name}
+    </span>
+  );
 }
 
 /** True on a computer-sized screen (1024 px and wider), where the game gets its desktop layout. */
