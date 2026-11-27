@@ -2,6 +2,7 @@
 // Every action is checked here (phase, role, alive, valid target, double vote).
 
 import { newGameId } from "./replay";
+import { finishProphecy, hangedToday, lockRound, openRound, resolveRound } from "./prophecy";
 import { AVATAR_FRAMES, CARD_BGS, CHAT_DECOS, NAME_EFFECTS, NAME_FONTS, freeChatColor, limitStyle, sanitizeAvatarUrl, sanitizeOwned, sanitizeStyle } from "./cosmetics";
 import {
   BOT_SPEEDS,
@@ -359,6 +360,8 @@ export function validTargets(room: Room, actor: Player, step: NightStepId): stri
 function startNight(room: Room) {
   const game = room.game!;
   const night = room.phase.night + 1;
+  // The ghosts' bets on today's hanging are settled before the day is cleared.
+  if (room.phase.kind !== "roleReveal") resolveRound(room, "day", hangedToday(game));
   game.nightState = newNightState();
   game.vote = null;
   game.nominees = [];
@@ -374,6 +377,7 @@ function startNight(room: Room) {
     verdictIndex: 0,
   };
   resetTimer(room);
+  openRound(room, "night", night);
   log(room, "log.nightStart", { n: night }, true);
   // The first role called tonight (later ones are logged when the host moves on).
   if (room.phase.steps.length) log(room, "log.step", { step: room.phase.steps[0] });
@@ -382,6 +386,8 @@ function startNight(room: Room) {
 function leaveStep(room: Room, step: NightStepId | null) {
   const game = room.game!;
   const ns = game.nightState;
+  // Once the pack has chosen, the ghosts can no longer bet on tonight.
+  if (step === "werewolf") lockRound(room, "night");
   if (step === "werewolf" && !ns.wolfFinalized) {
     const c = wolfConsensus(ns.wolfVotes);
     ns.wolfTarget = c.target;
@@ -450,6 +456,7 @@ function resolveDawn(room: Room) {
   game.bodyguardLast = ns.protectId;
   applyDeaths(room, outcome.deaths);
   game.lastDeaths = outcome.deaths;
+  resolveRound(room, "night", outcome.deaths.map((d) => d.playerId));
   if (!outcome.deaths.length) log(room, "log.noDeath", {}, true);
   game.silenced = null;
   if (ns.silenceId && getPlayer(room, ns.silenceId)?.alive) {
@@ -459,6 +466,7 @@ function resolveDawn(room: Room) {
   game.pendingHunters = [...outcome.hunters];
   game.hunterReturn = "discussion";
   room.phase = { ...room.phase, kind: "dawn", day: room.phase.night };
+  openRound(room, "day", room.phase.day);
   resetTimer(room);
   log(room, "log.dayStart", { n: room.phase.day }, true);
   evaluateWin(room);
@@ -557,6 +565,9 @@ function closeNomination(room: Room): "defense" | "revote" | "none" {
   const game = room.game!;
   const vote = game.vote!;
   vote.closed = true;
+  // Nominations are in: the day's bets close, tomorrow night's open.
+  lockRound(room, "day");
+  openRound(room, "night", room.phase.day + 1);
   const rules = room.settings.nomination;
   const isRevote = !!vote.candidates;
   const tally = tallyNomination(
@@ -1456,6 +1467,7 @@ export function hostAction(room: Room, action: HostAction): ActionResult {
 function endGame(room: Room, winner: Winner): ActionResult {
   const game = room.game!;
   game.winner = winner;
+  finishProphecy(room, winner);
   game.pendingWin = null;
   game.vote = null;
   room.phase = { ...room.phase, kind: "gameOver" };

@@ -268,6 +268,16 @@ export function StatsView({ stats }: { stats: UserStats | null }) {
         <ModeCard icon="🏆" label={t("stats.standard")} rule={t("stats.standardRule", { min: MIN_HUMANS_FOR_STATS })} c={stats} />
         <ModeCard icon="🎲" label={t("stats.casual")} rule={t("stats.casualRule", { min: MIN_HUMANS_FOR_STATS })} c={casual} />
       </div>
+      {!!stats.prophecy?.rounds && (
+        <section>
+          <h4 className="mb-2 text-sm font-bold text-violet-200">🔮 {t("stats.prophecy")}</h4>
+          <div className="grid grid-cols-3 gap-2">
+            <Tile label={t("stats.prophecyAccuracy")} value={`${Math.round((stats.prophecy.hits / stats.prophecy.rounds) * 100)}%`} accent />
+            <Tile label={t("stats.prophecyTellers")} value={stats.prophecy.tellers} />
+            <Tile label={t("stats.prophecyBest")} value={stats.prophecy.bestScore} />
+          </div>
+        </section>
+      )}
       <h4 className="-mb-2 text-sm font-bold text-gold">🏆 {t("stats.standard")}</h4>
       {stats.games ? (
       <>
