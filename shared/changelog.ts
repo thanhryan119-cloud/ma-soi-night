@@ -12,6 +12,25 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.2",
+    date: "2026-11-27",
+    title: { vi: "Cửa hàng mới, mỗi món chỉ 49.000đ", en: "A new shop, every item now 49,000 VND" },
+    items: {
+      vi: [
+        "Mỗi món trong cửa hàng giảm từ 50.000đ còn 49.000đ.",
+        "Cửa hàng được làm lại với banner mới, menu theo bạn khi cuộn và lời giới thiệu cho từng mục.",
+        "Bộ thẻ vai liệt kê từng vai kèm một dòng nói vai đó làm gì, cùng số tiền bạn tiết kiệm khi mua theo bộ.",
+        "Đóng được từng cuộc trò chuyện riêng trong khung chat. Khi người đó nhắn mới thì cuộc trò chuyện tự hiện lại.",
+      ],
+      en: [
+        "Every item in the shop drops from 50,000 VND to 49,000 VND.",
+        "The shop is redone with a new banner, a menu that follows you as you scroll and a line about each section.",
+        "Role card bundles list every role with a line about what it does, and how much you save by buying the bundle.",
+        "Private conversations in the chat box can be closed one by one. They come back when that person writes again.",
+      ],
+    },
+  },
+  {
     version: "1.7.1",
     date: "2026-11-27",
     title: { vi: "Nick nhanh và rủ nhau chơi từ sảnh chờ", en: "Quick accounts and getting a game going from the lobby" },
