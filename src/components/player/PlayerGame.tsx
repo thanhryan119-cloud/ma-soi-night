@@ -16,6 +16,8 @@ import { VoteBreakdown, nominationOutcomeLine } from "@/components/VoteBreakdown
 import { scriptLines } from "@/components/host/common";
 import { SocialPanel } from "@/components/SocialPanel";
 import { RolesInPlay } from "@/components/RolesInPlay";
+import { SfxToggle } from "@/components/Sfx";
+import { play } from "@/lib/sfx";
 import { useSocial } from "@/lib/social";
 import { ShareRoom } from "@/components/ShareRoom";
 import { SceneArt } from "@/components/art/Woodcut";
@@ -70,13 +72,14 @@ export function PlayerGame({ state, offset, connected }: Props) {
   const mainRef = usePhaseEnter<HTMLElement>(phaseKeyOf(state.phase));
   const wide = useWide();
 
-  // Vibrate when it becomes my turn to do something.
+  // Vibrate when it becomes my turn to do something, but never at night: a
+  // phone buzzing on the table would show everyone who has a night role.
   const myTurn = !!(me.turn && !me.turn.done) || me.canVote || !!me.hunter?.canShoot;
   const prevTurn = useRef(false);
   useEffect(() => {
-    if (myTurn && !prevTurn.current) navigator.vibrate?.([120, 60, 120]);
+    if (myTurn && !prevTurn.current && kind !== "night") navigator.vibrate?.([120, 60, 120]);
     prevTurn.current = myTurn;
-  }, [myTurn]);
+  }, [myTurn, kind]);
 
   // A bot is playing for me: coming back to the tab or touching anything takes the seat back.
   const standIn = !!self.standIn && kind !== "gameOver";
@@ -116,6 +119,7 @@ export function PlayerGame({ state, offset, connected }: Props) {
         </div>
         {!connected && <ConnectionDot connected={false} />}
         {!wide && !INLINE_CHAT.has(kind) && <PhoneChatButton state={state} viewer={me.id} />}
+        <SfxToggle />
         <RoomWindows state={state} />
         <LeaveButton state={state} />
       </header>
@@ -699,7 +703,7 @@ function AliveStrip({ state }: { state: ClientState }) {
  * shrinks to the free height; while it is held, the role card opens over the
  * whole screen (big enough to read at arm's length on a phone).
  */
-function HoldCard({ me, players }: Ctx) {
+function HoldCard({ state, me, players }: Ctx) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const [tips, setTips] = useState(false);
@@ -716,7 +720,9 @@ function HoldCard({ me, players }: Ctx) {
       // The pointer is already gone; releasing it still hides the card.
     }
     setOpen(true);
-    navigator.vibrate?.(20);
+    // Silent at night (see the turn buzz above).
+    if (state.phase.kind !== "night") navigator.vibrate?.(20);
+    play("reveal");
   };
   const hide = () => setOpen(false);
   return (
@@ -1349,11 +1355,11 @@ function Nominate({ state, me, players }: Ctx) {
       <TargetGrid players={players} ids={ids} selected={sel ? [sel] : []} onPick={setSel} />
       <Actions>
         {!state.settings.mandatoryVote && (
-          <button className="btn-ghost flex-1" onClick={() => act({ type: "vote", choice: "skip" })}>
+          <button data-sfx="vote" className="btn-ghost flex-1" onClick={() => act({ type: "vote", choice: "skip" })}>
             {t("player.skip")}
           </button>
         )}
-        <button className="btn-primary flex-1 py-3" disabled={!sel} onClick={() => sel && act({ type: "vote", choice: sel })}>
+        <button data-sfx="vote" className="btn-primary flex-1 py-3" disabled={!sel} onClick={() => sel && act({ type: "vote", choice: sel })}>
           {t("player.confirm")}
         </button>
       </Actions>
@@ -1411,11 +1417,11 @@ function Verdict({ state, me, players }: Ctx) {
         </div>
       ) : me.canVote ? (
         <div className={`grid min-h-0 grid-cols-2 gap-3 ${chat ? "shrink-0" : "flex-1"}`} style={{ maxHeight: chat ? 120 : 220, height: chat ? 120 : undefined }}>
-          <button className="btn h-full flex-col bg-blood text-2xl font-black text-white" onClick={() => act({ type: "vote", choice: "execute" })}>
+          <button data-sfx="vote" className="btn h-full flex-col bg-blood text-2xl font-black text-white" onClick={() => act({ type: "vote", choice: "execute" })}>
             <span className="text-4xl">🪢</span>
             {t("player.execute")}
           </button>
-          <button className="btn h-full flex-col bg-emerald-500 text-2xl font-black text-night-950" onClick={() => act({ type: "vote", choice: "spare" })}>
+          <button data-sfx="vote" className="btn h-full flex-col bg-emerald-500 text-2xl font-black text-night-950" onClick={() => act({ type: "vote", choice: "spare" })}>
             <span className="text-4xl">🕊️</span>
             {t("player.spare")}
           </button>

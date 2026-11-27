@@ -6,6 +6,7 @@ import { ProfileHost } from "@/components/Profile";
 import { GameReplayHost } from "@/components/GameReplay";
 import { NightBackdrop } from "@/components/art/NightBackdrop";
 import { OpenInBrowser } from "@/components/OpenInBrowser";
+import { SfxHost } from "@/components/Sfx";
 import { OPEN_IN_BROWSER_SCRIPT } from "@/lib/inAppBrowser";
 import "./globals.css";
 
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <GameReplayHost />
           <ToastHost />
           <OpenInBrowser />
+          <SfxHost />
         </I18nProvider>
       </body>
     </html>

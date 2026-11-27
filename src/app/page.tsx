@@ -1,5 +1,6 @@
 "use client";
 
+import { SfxToggle } from "@/components/Sfx";
 import Link from "next/link";
 import { CollectionLink } from "@/components/RoleCollection";
 import { DonateLink } from "@/components/Donate";
@@ -36,6 +37,7 @@ function HomePage({ chat }: { chat: Chat }) {
       <LangSwitch />
       <InstallPrompt />
       <div className="fixed top-3 right-3 z-50 flex gap-2">
+        <SfxToggle />
         <Mailbox />
         <QuestsLink />
         <CollectionLink />

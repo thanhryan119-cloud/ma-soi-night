@@ -4,6 +4,7 @@
 // under them (add a friend, ask to join their room, or make a room and invite
 // them). Beside them (below on a phone) your name and making a room.
 
+import { SfxToggle } from "@/components/Sfx";
 import Link from "next/link";
 import { CollectionLink } from "@/components/RoleCollection";
 import { DonateLink } from "@/components/Donate";
@@ -112,6 +113,7 @@ function Lobby({ chat }: { chat: Chat }) {
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col gap-4 px-4 pt-16 pb-10">
       <LangSwitch />
       <div className="fixed top-3 right-3 z-50 flex gap-2">
+        <SfxToggle />
         <Mailbox />
         <QuestsLink />
         <CollectionLink />
