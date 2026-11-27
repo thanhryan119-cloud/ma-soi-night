@@ -95,6 +95,10 @@ export type ItemId = `${ItemKind | "role" | "bundle"}:${string}`;
 
 /** Price of one item, in VND. */
 export const ITEM_PRICE_VND = 49_000;
+/** Sale price of a decor item (font, effect, frame, card, chat), in VND. Role cards stay at ITEM_PRICE_VND. */
+export const DECOR_PRICE_VND = 29_000;
+/** How much the decor sale takes off ITEM_PRICE_VND, in whole percent (worked out, never typed). */
+export const DECOR_DISCOUNT_PCT = Math.round((1 - DECOR_PRICE_VND / ITEM_PRICE_VND) * 100);
 
 const OPTIONS: Record<ItemKind, readonly string[]> = {
   font: NAME_FONTS,
@@ -155,7 +159,7 @@ export const isSellable = (id: unknown): id is ItemId => isShopItem(id) || isRol
  * 0 means there is nothing left to buy.
  */
 export function itemPrice(id: ItemId, owned: readonly string[] = []): number {
-  if (!isBundle(id)) return owned.includes(id) ? 0 : ITEM_PRICE_VND;
+  if (!isBundle(id)) return owned.includes(id) ? 0 : isRoleItem(id) ? ITEM_PRICE_VND : DECOR_PRICE_VND;
   const missing = itemsGranted(id).filter((r) => !owned.includes(r)).length;
   return Math.round((missing * ITEM_PRICE_VND * (1 - BUNDLE_DISCOUNT)) / 1000) * 1000;
 }

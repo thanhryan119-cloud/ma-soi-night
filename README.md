@@ -89,7 +89,7 @@ npm run deploy:server
 
 ## Cửa hàng (payOS)
 
-Font tên, hiệu ứng tên và khung avatar (trừ mặc định) được bán qua [payOS](https://payos.vn), **49.000đ mỗi món** (`ITEM_PRICE_VND` trong `shared/cosmetics.ts`). Mua một lần, món đồ gắn với tài khoản Google và tự đeo ngay. Khách chưa đăng nhập vẫn thử xem trước được nhưng phải đăng nhập mới mua.
+Font tên, hiệu ứng tên và khung avatar (trừ mặc định) được bán qua [payOS](https://payos.vn), **đang giảm còn 29.000đ mỗi món** (`DECOR_PRICE_VND`, giá gốc `ITEM_PRICE_VND` = 49.000đ trong `shared/cosmetics.ts`, % giảm tự tính ở `DECOR_DISCOUNT_PCT`). Mua một lần, món đồ gắn với tài khoản Google và tự đeo ngay. Khách chưa đăng nhập vẫn thử xem trước được nhưng phải đăng nhập mới mua.
 
 1. Tạo kênh thanh toán trên https://my.payos.vn, lấy *Client ID*, *API Key*, *Checksum Key* và đặt vào biến môi trường của socket server.
 2. Trong kênh thanh toán, đặt **Webhook URL** = `https://<socket-server>/payos/webhook` (payOS gửi thử một đơn mẫu, server trả 200).
