@@ -32,7 +32,7 @@ import { useMyStats } from "@/lib/stats";
 import { roleTier } from "@shared/achievements";
 import { useRouter } from "next/navigation";
 import { speak, stopSpeaking, ttsHeard, unlockTts, useTtsSupported } from "@/lib/tts";
-import { LobbyHelp, LobbySetup, OwnerBar, OwnerSettings } from "./OwnerPanel";
+import { LobbyHelp, LobbySetup, OwnerBar, OwnerSettings, OwnerTools } from "./OwnerPanel";
 
 type Props = { state: ClientState; offset: number; connected: boolean };
 type Ctx = { state: ClientState; me: MeView; players: Map<string, PlayerView> };
@@ -457,8 +457,8 @@ function NarrationBanner({ state }: { state: ClientState }) {
     });
     return () => stopSpeaking();
   }, [voice, linesKey, locale, rate]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Before the game: just the speaker, so it can be turned on in advance.
-  if (!lines.length && !(lobby && canTts)) return null;
+  // Nothing to read (the lobby, game over): no box, so the room setup gets the space.
+  if (!lines.length) return null;
   const toggle = () => {
     const next = !voice;
     storage.set("msn:phoneVoice", next);
@@ -503,7 +503,7 @@ function NarrationBanner({ state }: { state: ClientState }) {
           </select>
         )}
         <span className="mr-1 font-bold text-gold">📜 {t("player.narration")}:</span>
-        {lines.length ? lines.join(" ") : <span className="text-white/50">{t("player.narrationSoon")}</span>}
+        {lines.join(" ")}
       </div>
     </div>
   );
@@ -659,16 +659,18 @@ function Lobby({ state, offset, onOwnerSettings }: { state: ClientState; offset:
       {/* The owner gets a slim header so the bots and roles below have the room. */}
       <div className={`flex shrink-0 items-center ${iOwn ? "gap-2" : "gap-3"}`}>
         <SceneArt scene="night" className={`${iOwn ? "h-8" : "h-12"} w-auto shrink-0`} />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h2 className="truncate font-bold">{iOwn ? `👑 ${t("owner.setUp")}` : state.machineHost ? t("owner.waitingOwner") : t("player.waitingHost")}</h2>
           <p className="text-xs text-white/60">{t("player.inLobby", { count: state.players.length })}</p>
         </div>
+        {iOwn && <OwnerTools state={state} onSettings={onOwnerSettings} />}
       </div>
       <OwnerBar state={state} onSettings={onOwnerSettings} />
       <LobbyHelp state={state} offset={offset} />
       {wide ? (
         <>
-          <ShareRoom code={state.code} className="shrink-0" compact={!!iOwn} />
+          {/* The owner's share buttons sit in their toolbar. */}
+          {!iOwn && <ShareRoom code={state.code} className="shrink-0" />}
           <div className="min-h-0 flex-1 overflow-y-auto">
             <LobbySetup state={state} />
           </div>
@@ -686,7 +688,7 @@ function Lobby({ state, offset, onOwnerSettings }: { state: ClientState; offset:
           </button>
           {setupOpen && (
             <>
-              <ShareRoom code={state.code} className="shrink-0" compact={!!iOwn} />
+              {!iOwn && <ShareRoom code={state.code} className="shrink-0" />}
               <div className={`${iOwn ? "max-h-[72dvh]" : "max-h-[38dvh]"} shrink-0 overflow-y-auto`}>
                 <LobbySetup state={state} />
               </div>

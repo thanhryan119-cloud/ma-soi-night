@@ -12,6 +12,25 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.10.2",
+    date: "2026-11-27",
+    title: { vi: "Chủ phòng chuẩn bị ván gọn hơn", en: "A tidier setup for the room owner" },
+    items: {
+      vi: [
+        "Nút Bắt đầu và Chơi liền với bot nhỏ lại, nằm chung một hàng.",
+        "Chia sẻ link và Cài đặt phòng chuyển lên cạnh tiêu đề, phần bot và vai có nhiều chỗ hơn.",
+        "Chạm vào một map gợi ý là dùng luôn, không cần bấm thêm nút.",
+        "Trong phòng chờ không còn ô lời dẫn của quản trò, ô này hiện ra khi ván bắt đầu.",
+      ],
+      en: [
+        "The Start and Play now with bots buttons are smaller and sit on one row.",
+        "Share link and room settings moved up next to the title, so bots and roles get more room.",
+        "Tap a suggested map to use it right away, no extra button.",
+        "The narrator box no longer shows in the waiting room, it appears once the game starts.",
+      ],
+    },
+  },
+  {
     version: "1.10.1",
     date: "2026-11-27",
     title: { vi: "Lá bài lật ra ngay trong ván", en: "Role cards turn over during the game" },

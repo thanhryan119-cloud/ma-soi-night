@@ -56,8 +56,8 @@ async function copy(text: string): Promise<boolean> {
   }
 }
 
-/** `compact`: one short row, the hint moves into the button's tooltip. */
-export function ShareRoom({ code, className = "", compact = false }: { code: string; className?: string; compact?: boolean }) {
+/** `toolbar`: two small buttons for the owner's lobby toolbar, the hint moves into the tooltip. */
+export function ShareRoom({ code, className = "", toolbar = false }: { code: string; className?: string; toolbar?: boolean }) {
   const t = useT();
   const url = useInviteUrl(code);
   const text = t("share.text", { code });
@@ -79,13 +79,14 @@ export function ShareRoom({ code, className = "", compact = false }: { code: str
     await onCopy();
   }
 
-  if (compact)
+  if (toolbar)
     return (
       <div className={`flex gap-1.5 ${className}`}>
-        <button type="button" className="btn-primary btn-sm flex-1" disabled={!url} onClick={onShare} title={t("share.hint")}>
-          📤 {t("share.button")}
+        <button type="button" className="btn-ghost btn-sm gap-1.5 whitespace-nowrap" disabled={!url} onClick={onShare} title={t("share.hint")}>
+          {/* Phones keep the header short: icon only. */}
+          📤<span className="max-sm:sr-only">{t("share.button")}</span>
         </button>
-        <button type="button" className="btn-ghost btn-sm shrink-0 px-3" disabled={!url} onClick={onCopy} title={t("share.copy")}>
+        <button type="button" className="btn-ghost btn-sm shrink-0" disabled={!url} onClick={onCopy} title={t("share.copy")}>
           📋<span className="sr-only">{t("share.copy")}</span>
         </button>
       </div>

@@ -420,8 +420,6 @@
   },
   "presets": {
     "title": "Role maps for {count} players",
-    "use": "Use this map",
-    "inUse": "Using this map",
     "partial": "Some roles of this map are locked, so plain Werewolves or Villagers take their place",
     "basic": { "name": "Basic", "desc": "Only the basic roles. Easy to play and good for new players." },
     "advanced": { "name": "Advanced", "desc": "Every kind of role, with special wolves and solo roles on bigger tables." },
@@ -505,7 +503,6 @@
   "player": {
     "standInYou": "You were away for over a minute, so a bot is playing for you. Tap anywhere to play again.",
     "standInBadge": "A bot is playing for them",
-    "narrationSoon": "The narrator's words show here once the game starts. Tap 🔇 to hear them read aloud.",
     "rename": "Change name",
     "otherRoomTitle": "You're playing in room {code}",
     "otherRoomDesc": "You can be in one room at a time. Leaving a running game counts as a loss, and a bot plays on in your seat.",
@@ -1467,7 +1464,6 @@
     "hostAway": "The host is away",
     "claim": "Take over the room",
     "fewPeople": "Only {n} here, a game needs at least {min}",
-    "botsOwner": "Add bots to fill the seats and start right away",
     "botsOther": "Ask the owner to add bots so everyone can start now",
     "nudge": "Ask the owner for bots",
     "nudgeSent": "The owner got your request",
