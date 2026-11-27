@@ -12,7 +12,7 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
-    version: "1.9.0",
+    version: "1.10.0",
     date: "2026-11-27",
     title: { vi: "Vào trận nhanh hơn, không còn chờ chủ phòng", en: "Faster games, no more waiting on the owner" },
     items: {
@@ -29,6 +29,46 @@ export const CHANGELOG: Release[] = [
         "A room that stays small suggests adding bots, and players can ask the owner for bots with one tap.",
         "Tapping Play now when no room is waiting opens a new one for you, and the next people join you there. Quick join always picks the fullest room.",
         "The home page shows how many people are waiting for a game, tap it to join.",
+      ],
+    },
+  },
+  {
+    version: "1.9.0",
+    date: "2026-11-27",
+    title: { vi: "Sổ Tiên Tri cho người đã chết", en: "The Ghosts' Prophecy for dead players" },
+    items: {
+      vi: [
+        "Chết rồi vẫn có việc để làm. Bấm 🔮 Tiên tri để đoán đêm nay ai nằm xuống, hôm nay ai lên giá treo và phe nào sẽ thắng.",
+        "Đoán trúng điều ít hồn ma khác chọn thì càng nhiều điểm, trúng 3 lần liên tiếp được thêm một nửa. Chọn phe thắng càng sớm càng được nhân nhiều.",
+        "Vòng đêm khoá khi bầy Sói chọn xong mồi, vòng ngày khoá khi có kết quả đề cử, nên không ai đoán ăn gian được.",
+        "Sau mỗi vòng, Chat người chết báo bao nhiêu hồn ma đoán trúng và ai ăn đậm nhất.",
+        "Cuối ván, hồn ma nhiều điểm nhất được trao danh hiệu Thầy Bói Âm Phủ trên màn kết thúc cho cả bàn cùng xem.",
+        "Người xem ván cũng chơi được. Tỉ lệ đoán trúng và số lần làm Thầy Bói được lưu vào hồ sơ, kèm nhiệm vụ mới để nhận vàng.",
+      ],
+      en: [
+        "Dying no longer means sitting idle. Tap 🔮 Prophecy to guess who dies tonight, who hangs today and which side will win.",
+        "A right guess few other ghosts made scores more, and three right in a row earn half again. The earlier you pick the winning side, the bigger the multiplier.",
+        "Night bets close once the wolves pick their prey and day bets close when the nominations are in, so nobody can peek.",
+        "After each round the dead players' chat says how many ghosts guessed right and who scored the most.",
+        "At the end of the game the top ghost is crowned the Underworld Fortune Teller on the results screen for the whole table.",
+        "Spectators can play too. Your accuracy and Fortune Teller titles are saved to your profile, with new quests that pay gold.",
+      ],
+    },
+  },
+  {
+    version: "1.8.2",
+    date: "2026-11-27",
+    title: { vi: "Danh sách phòng ngay trang chủ, mời sốp ly cà phê", en: "Rooms on the home page, buy the dev a coffee" },
+    items: {
+      vi: [
+        "Trang chủ hiện luôn danh sách phòng đang mở và đang chơi, bấm Vào là ngồi ngay hoặc Xem nếu ván đã bắt đầu.",
+        "Nút ☕ Mời sốp ly cà phê nằm ngay dưới nút Vào chơi ngay. Bấm vào là có mã QR để quét bằng app ngân hàng, có cả nút tải ảnh QR và chép số tài khoản.",
+        "Mọi vai và mọi món trang trí vẫn miễn phí cho tất cả mọi người.",
+      ],
+      en: [
+        "The home page now lists the open rooms and the games in progress. Tap Join to take a seat, or Watch once a game has started.",
+        "A ☕ Buy the dev a coffee button sits right under Play now. It shows a QR code to scan with your banking app, with buttons to download the QR and copy the account number.",
+        "Every role and every cosmetic is still free for everyone.",
       ],
     },
   },

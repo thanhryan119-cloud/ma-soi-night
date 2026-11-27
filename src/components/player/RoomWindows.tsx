@@ -55,7 +55,7 @@ export function RoomWindows({ state }: { state: ClientState }) {
   return (
     <>
       {account ? button("profile", "👤", titles.profile) : button("signIn", "🔐", titles.signIn, "border-gold/50 text-gold")}
-      {button("donate", "💝", titles.donate, "border-gold/50 text-gold")}
+      {button("donate", "☕", titles.donate, "border-pink-300/50 text-pink-200")}
       {button("collection", "🃏", titles.collection)}
       {open && (
         <div

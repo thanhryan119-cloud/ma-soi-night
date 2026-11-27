@@ -1,4 +1,5 @@
 import type { PlayerStyle } from "./cosmetics";
+import type { ProphecyState } from "./prophecy";
 
 // Shared domain types for Ma Sói Online (server is the single source of truth).
 
@@ -315,6 +316,8 @@ export interface Game {
   recordId?: string;
   /** Seats of players who left after they died: seat id to their account, still counted at the end. */
   leftDead?: Record<string, string>;
+  /** The dead players' and spectators' bets on the game (shared/prophecy.ts). */
+  prophecy?: ProphecyState;
 }
 
 export interface Phase {

@@ -3,7 +3,10 @@
 import { SfxToggle } from "@/components/Sfx";
 import Link from "next/link";
 import { CollectionLink } from "@/components/RoleCollection";
-import { DonateLink } from "@/components/Donate";
+import { DonateButton, DonateLink } from "@/components/Donate";
+import { RoomsCard } from "@/components/RoomList";
+import { useLobby } from "@/lib/lobby";
+import { loadLocalProfile, type LocalProfile } from "@/lib/account";
 import { QuestsLink } from "@/components/Quests";
 import { TarotSpread } from "@/components/art/TarotSpread";
 import { useEffect, useState } from "react";
@@ -59,6 +62,7 @@ function HomePage({ chat }: { chat: Chat }) {
           <span className="font-display text-3xl font-black tracking-wide uppercase sm:text-4xl">⚡ {t("home.ctaPlay")}</span>
           <span className="text-sm font-semibold opacity-80 sm:text-base">{t("home.ctaPlaySub")}</span>
         </Link>
+        <DonateButton className="mt-3 w-full max-w-xl" />
         <div className="mt-4 flex w-full max-w-xl flex-col gap-2 sm:flex-row">
           <Link href="/lobby" className="btn-ghost flex-1 py-3 text-base">
             🌐 {t("home.ctaLobby")}
@@ -72,6 +76,8 @@ function HomePage({ chat }: { chat: Chat }) {
           <SignInToSave />
         </div>
       </header>
+
+      <HomeRooms />
 
       <Features />
 
@@ -100,6 +106,18 @@ function HomePage({ chat }: { chat: Chat }) {
         </Link>
       </footer>
     </main>
+  );
+}
+
+/** The open rooms, live, right on the home page (watching only: nobody shows up in the lobby). */
+function HomeRooms() {
+  const [profile, setProfile] = useState<LocalProfile | null>(null);
+  useEffect(() => setProfile(loadLocalProfile()), []);
+  const { state } = useLobby(profile, { watchOnly: true });
+  return (
+    <div className="mt-10">
+      <RoomsCard rooms={state?.rooms ?? null} profile={profile} />
+    </div>
   );
 }
 

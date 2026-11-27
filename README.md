@@ -71,8 +71,6 @@ App gồm 2 phần deploy riêng:
   - `PORT` — Railway/Render tự cấp.
   - `CORS_ORIGIN` — domain web, ví dụ `https://ma-soi.vercel.app` (nhiều domain cách nhau bằng dấu phẩy).
   - `DATA_FILE` *(tùy chọn)* — đường dẫn file snapshot, ví dụ `/data/rooms.json` nếu gắn Volume, để phòng sống sót qua lần redeploy.
-  - `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY` *(tùy chọn)* — bật trang ủng hộ (xem mục Ủng hộ bên dưới).
-  - `PUBLIC_WEB_URL` *(tùy chọn)* — domain web để payOS đưa người ủng hộ quay về `/donate`, ví dụ `https://ma-soi.vercel.app`.
   - `ADMIN_EMAILS` *(tùy chọn)* — email Google có quyền quản trị (kiểm duyệt chat máy chủ), nhiều email cách nhau bằng dấu phẩy.
 - Kiểm tra: `https://<server>/health` trả `{"ok":true}`.
 
@@ -87,17 +85,9 @@ npm run deploy:server
 - Import repo, framework **Next.js** (mặc định).
 - Biến môi trường: `NEXT_PUBLIC_SOCKET_URL=https://<socket-server-của-bạn>`.
 
-## Ủng hộ (payOS)
+## Ủng hộ
 
-Không bán gì cả: mọi vai, font, hiệu ứng tên, khung avatar, khung chat và nền thẻ hồ sơ đều miễn phí cho mọi người, kể cả khách chưa đăng nhập. Trang **`/donate`** (nút 💝) cho phép ủng hộ tự nguyện qua [payOS](https://payos.vn). Ủng hộ không mở khoá gì trong game.
-
-Người ủng hộ chọn số tiền (10.000đ đến 10.000.000đ), tên hiển thị và lời nhắn (đều không bắt buộc). Trang hiện ngay mã VietQR, ngân hàng, số tài khoản, số tiền và nội dung chuyển khoản giống trang thanh toán của payOS, rồi tự kiểm tra trạng thái mỗi 3 giây. Lời nhắn chỉ lưu trên server, không hiện cho ai. Trang có danh sách 12 người ủng hộ gần nhất (tên hoặc "Ẩn danh").
-
-1. Tạo kênh thanh toán trên https://my.payos.vn, lấy *Client ID*, *API Key*, *Checksum Key* và đặt vào biến môi trường của socket server.
-2. Trong kênh thanh toán, đặt **Webhook URL** = `https://<socket-server>/payos/webhook` (payOS gửi thử một đơn mẫu, server trả 200).
-3. Khi chạy local, webhook không tới được máy bạn: trang `/donate` tự hỏi server, server hỏi payOS trạng thái, nên vẫn ghi nhận được.
-
-Các lần ủng hộ lưu ở `donations.json` (cùng thư mục `DATA_FILE`). `orders.json` và `codes.json` của cửa hàng cũ không còn được dùng.
+Không bán gì cả: mọi vai và mọi món trang trí đều miễn phí cho mọi người, kể cả khách. Nút ☕ "Mời sốp ly cà phê" (dưới nút Vào chơi ngay ở trang chủ, ở thanh trên cùng và trong phòng chơi) mở thẻ có mã VietQR Techcombank của chủ game (`public/donate-qr.png`), số tài khoản để chép và nút tải ảnh QR. Người chơi tự quét bằng app ngân hàng, game không xử lý thanh toán nào. Đổi tài khoản thì thay ảnh và các hằng số ở đầu `src/components/Donate.tsx`.
 
 ## Cấu trúc thư mục
 

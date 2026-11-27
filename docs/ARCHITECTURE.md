@@ -91,16 +91,13 @@ Chỉ người chơi đăng nhập Google mới có thống kê (khách và bot 
 
 HTTP công khai: `GET /leaderboard` (mọi tài khoản, kèm số ván/thắng theo phe `teams`; client xếp hạng bằng `rankCategory` theo hạng mục Tổng, Phe Sói, Phe Dân, Phe độc lập, cần `minGamesFor` = 5 ván, riêng Phe độc lập 3 ván; theo tỉ lệ thắng → số ván thắng → số ván), `GET /profiles/:userId`. `GET /me` trả thêm `stats` của chính mình.
 
-### Ủng hộ (`server/donate.ts`, `server/payos.ts`, `shared/donate.ts`)
+### Miễn phí và ủng hộ
 
 Không có gì để bán: `sanitizeStyle()` là bộ lọc duy nhất cho kiểu hồ sơ (chỉ giữ id hợp lệ), mọi người chơi đeo được mọi món. Mọi vai mở cho mọi phòng, không còn khoá vai theo ngày. `RoleDef.advanced` chỉ để gom các vai nâng cao vào nhóm thu gọn trong phần chia vai và để `suggestRoles()` mặc định chỉ dùng vai cơ bản (`CORE_ROLES`). Gợi ý của phòng dùng mọi vai. Vàng từ nhiệm vụ chỉ là điểm thành tích.
 
-| Route | Ai gọi | Việc |
-|---|---|---|
-| `GET /donate` | công khai | `{ enabled, presets, min, max, recent }` (`recent`: tên và số tiền, không có lời nhắn) |
-| `POST /donate` | công khai | `{ amount, name?, message?, returnUrl? }` → tạo link payOS (ký HMAC-SHA256), trả `qrCode` VietQR, `bin`, `accountNumber`, `accountName`, `description`, `checkoutUrl`. Tối đa `DONATE_RATE_LIMIT` link mỗi IP trong 15 phút |
-| `GET /donate/:orderCode` | công khai | còn chờ thì hỏi payOS, trả trạng thái |
-| `POST /payos/webhook` | payOS | kiểm chữ ký, `code = "00"` và đủ tiền thì ghi nhận đã nhận |
+Ủng hộ là một ảnh VietQR tĩnh (`src/components/Donate.tsx`, `public/donate-qr.png`), không có route server hay cổng thanh toán nào.
+
+Trang chủ hiện danh sách phòng (`RoomsCard` trong `src/components/RoomList.tsx`, dùng chung với sảnh) qua `useLobby(profile, { watchOnly: true })`: gửi `lobby:enter` không kèm hồ sơ nên chỉ nhận `lobby:state`, không hiện tên trong danh sách đang ở sảnh. Khách hoặc người chưa có tên bấm Vào thì sang trang mời `/join/<mã>`, trang đó hỏi tên.
 
 ## 4. Luật xử lý đêm (`shared/rules.ts › resolveNight`)
 

@@ -24,7 +24,6 @@ export default function PrivacyPage() {
         <p className="text-white/80">{t("privacy.p1")}</p>
         <p className="text-white/80">{t("privacy.p2")}</p>
         <p className="text-white/80">{t("privacy.p3")}</p>
-        <p className="text-white/80">{t("privacy.pDonate")}</p>
       </section>
       <section className="flex flex-col gap-2">
         <h2 className="text-xl font-bold">{t("privacy.h2")}</h2>
