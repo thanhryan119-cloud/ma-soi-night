@@ -774,6 +774,8 @@
     }
   },
   "err": {
+    "prophecyPlaced": "You already picked the winning side.",
+    "prophecyClosed": "This round is closed.",
     "spectatorReadOnly": "Spectators can only chat with the dead.",
     "notPlayingYet": "This room has not started a game yet. Join it to play.",
     "ghostsOnly": "Only dead players can chat here.",
@@ -1044,6 +1046,10 @@
     "host": "Host intervention"
   },
   "stats": {
+    "prophecy": "Ghosts' Prophecy",
+    "prophecyAccuracy": "Right guesses",
+    "prophecyTellers": "Fortune Teller titles",
+    "prophecyBest": "Best score",
     "title": "Player profile",
     "viewProfile": "View profile",
     "member": "Account",
@@ -1283,6 +1289,9 @@
     "gotGold": "+{gold} gold!",
     "earnedTotal": "Gold earned in total: {gold}",
     "q": {
+      "prophecy3": "Guess right {goal} times in the Ghosts' Prophecy",
+      "firstTeller": "Become the Underworld Fortune Teller",
+      "tellers5": "Be the Underworld Fortune Teller {goal} times",
       "play3": "Play {goal} games",
       "play5": "Play {goal} games",
       "win1": "Win {goal} game",
@@ -1443,5 +1452,49 @@
     "label": "Effects",
     "mute": "Mute sound effects",
     "unmute": "Turn on sound effects"
+  },
+  "prophecy": {
+    "title": "Ghosts' Prophecy",
+    "button": "Prophecy",
+    "intro": "Guess what the living will do. A right guess few other ghosts made scores more, and three right in a row earn half again.",
+    "nightQ": "Who will be found dead after night {n}?",
+    "dayQ": "Day {n}, who goes to the gallows?",
+    "winnerQ": "Which side will win?",
+    "winnerHint": "You can only pick once. Pick now for {mult} times the points.",
+    "winnerMine": "You bet on {pick}, times {mult}",
+    "noneNight": "A quiet night, nobody dies",
+    "noneDay": "Nobody is hanged",
+    "closesNight": "Closes once the wolves pick their prey",
+    "closesDay": "Closes when the nominations are in",
+    "locked": "Closed, waiting for the result",
+    "count": "{count} ghosts have guessed",
+    "waiting": "No round is open yet, hang on.",
+    "lastNight": "Night {n} result",
+    "lastDay": "Day {n} result",
+    "hit": "Right! +{points}",
+    "miss": "Missed",
+    "skipped": "You sat this round out",
+    "answer": "Answer {names}",
+    "me": "{score} pts · {hits}/{played} right",
+    "streak": "🔥 Streak {n}",
+    "board": "Ghost board",
+    "emptyBoard": "No ghost has guessed yet.",
+    "teller": "Underworld Fortune Teller",
+    "tellerLine": "{hits} right guesses, {score} points",
+    "noTeller": "No ghost guessed right this game.",
+    "points": "{points} pts",
+    "newRound": "New round",
+    "pick": {
+      "village": "Village",
+      "wolves": "Wolves",
+      "other": "Another side"
+    },
+    "sys": {
+      "night": "🔮 Night {n}, {hits} of {total} ghosts guessed right.",
+      "day": "🔮 Day {n}, {hits} of {total} ghosts guessed right.",
+      "lone": "{name} was the only one to guess right, +{points} points!",
+      "top": "{name} scored the most, +{points} points.",
+      "teller": "🔮 {name} is this game's Underworld Fortune Teller with {score} points!"
+    }
   }
 }

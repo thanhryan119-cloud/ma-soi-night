@@ -14,6 +14,7 @@ import { SocialPanel } from "@/components/SocialPanel";
 import { RolesInPlay } from "@/components/RolesInPlay";
 import { nameOf, scriptLines, useHostAction } from "./common";
 import { RulesCard } from "./RulesCard";
+import { ProphecyEnd } from "@/components/Prophecy";
 
 type Props = { state: ClientState; offset: number; hideRoles: boolean };
 
@@ -27,6 +28,7 @@ export function HostGame({ state, offset, hideRoles }: Props) {
       <main className="mx-auto grid max-w-6xl gap-4 p-4 lg:grid-cols-[1.3fr_1fr] xl:h-full xl:min-h-0">
         <section className="card flex flex-col gap-6 py-8 xl:min-h-0 xl:overflow-y-auto">
           <WinnerBanner state={state} t={t} />
+          <ProphecyEnd state={state} />
           <RolesGrid state={state} />
           <button
             className="btn-primary mx-auto px-8 py-4 text-lg"

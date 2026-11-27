@@ -17,6 +17,7 @@ import {
   voteEligible,
 } from "./engine";
 import { SKIP } from "./rules";
+import { SPECTATOR_KEY, prophecyView, type ProphecyView } from "./prophecy";
 
 /** How long a rejoin request waits for the host. */
 export const REJOIN_TTL_MS = 2 * 60 * 1000;
@@ -203,6 +204,8 @@ export interface ClientState {
   log?: LogEntry[];
   suggested?: Record<RoleId, number>;
   potions?: { heal: boolean; poison: boolean };
+  /** The ghosts' bets (shared/prophecy.ts): for the dead, spectators and the host, and everyone at the end. */
+  prophecy?: ProphecyView;
 }
 
 function canSeeAllRoles(room: Room, viewer: Viewer, meId: string | null): boolean {
@@ -365,7 +368,8 @@ function buildMe(room: Room, meId: string): MeView | null {
   return view;
 }
 
-export function buildView(room: Room, viewer: Viewer, meId: string | null = null): ClientState {
+/** `spectatorId`: a spectator's own id, so they see their own bets. */
+export function buildView(room: Room, viewer: Viewer, meId: string | null = null, spectatorId: string | null = null): ClientState {
   const game = room.game;
   const isHost = viewer === "host";
   const allRoles = canSeeAllRoles(room, viewer, meId);
@@ -513,6 +517,9 @@ export function buildView(room: Room, viewer: Viewer, meId: string | null = null
     lovers: isHost || room.phase.kind === "gameOver" ? game?.lovers ?? null : null,
   };
 
+  const prophecyKey = viewer === "player" ? meId : viewer === "spectator" && spectatorId ? SPECTATOR_KEY + spectatorId : null;
+  const prophecy = viewer === "screen" && room.phase.kind !== "gameOver" ? undefined : prophecyView(room, { key: prophecyKey, host: isHost });
+  if (prophecy) state.prophecy = prophecy;
   // The owner of a machine-host room sets the roles up, so they get the suggestion too.
   if (!isHost && room.machineHost && meId && room.ownerId === meId) {
     state.suggested = suggestRoles(room.players.length, ROLE_IDS);

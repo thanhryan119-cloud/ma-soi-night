@@ -141,15 +141,7 @@ export function createSocial(
       c.s.lastChat.set(key, [...sent, now]);
       const msg: ChatMessage = { id: randomId(10), from: fromKey(c.who), text, t: now, ...chatStage(c.room) };
       if (c.who.kind === "spectator") Object.assign(msg, { name: c.who.name, avatar: c.who.avatar });
-      c.s.ghost.push(msg);
-      changed();
-      if (c.s.ghost.length > CHAT_HISTORY) c.s.ghost.splice(0, c.s.ghost.length - CHAT_HISTORY);
-      // Only to the sockets allowed to read it (never to the living).
-      for (const id of io.sockets.adapter.rooms.get(channel(c.room.code)) ?? []) {
-        const sock = io.sockets.sockets.get(id);
-        const who = sock && speakerOf(sock.data as Data);
-        if (sock && who && canReadGhosts(c.room, who)) sock.emit("ghost:new", msg);
-      }
+      pushGhost(c.room, msg);
       ack({ ok: true });
     });
 
@@ -253,6 +245,24 @@ export function createSocial(
   }
 
   /** Posts a chat line on behalf of a bot (server-side, no socket). */
+  /** Adds a line to the dead players' chat and sends it to whoever may read it (never to the living). */
+  function pushGhost(room: Room, msg: ChatMessage) {
+    const s = of(room.code);
+    s.ghost.push(msg);
+    changed();
+    if (s.ghost.length > CHAT_HISTORY) s.ghost.splice(0, s.ghost.length - CHAT_HISTORY);
+    for (const id of io.sockets.adapter.rooms.get(channel(room.code)) ?? []) {
+      const sock = io.sockets.sockets.get(id);
+      const who = sock && speakerOf(sock.data as Data);
+      if (sock && who && canReadGhosts(room, who)) sock.emit("ghost:new", msg);
+    }
+  }
+
+  /** A line from the game in the dead players' chat (the prophecy results), translated by each reader. */
+  function postGhostSystem(room: Room, key: string, params: Record<string, string | number> = {}) {
+    pushGhost(room, { id: randomId(10), from: "system", text: "", t: Date.now(), ...chatStage(room), sys: { key, params } });
+  }
+
   function postAs(room: Room, playerId: string, raw: string) {
     const text = sanitizeChat(raw);
     if (!text) return;
@@ -305,5 +315,5 @@ export function createSocial(
     return n;
   }
 
-  return { register, afterChange, dispose, postAs, typing, recentChat, clearForNewGame, snapshot, restore };
+  return { register, afterChange, dispose, postAs, postGhostSystem, typing, recentChat, clearForNewGame, snapshot, restore };
 }

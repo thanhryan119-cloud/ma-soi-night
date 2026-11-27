@@ -44,6 +44,8 @@ export interface ChatMessage {
   n?: number;
   /** Which game in the room it was said in (the chat keeps every game's talk, marked by game). */
   g?: number;
+  /** A line from the game itself (from "system"): an i18n key and its params, translated by each reader. */
+  sys?: { key: string; params: Record<string, string | number> };
 }
 
 export type ChatStage = "lobby" | "night" | "day" | "over";

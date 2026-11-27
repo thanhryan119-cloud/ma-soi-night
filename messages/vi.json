@@ -774,6 +774,8 @@
     }
   },
   "err": {
+    "prophecyPlaced": "Bạn đã chọn phe thắng rồi.",
+    "prophecyClosed": "Vòng này đã khoá.",
     "spectatorReadOnly": "Người xem chỉ chat được với người đã chết.",
     "notPlayingYet": "Phòng này chưa vào ván, hãy vào phòng để chơi cùng.",
     "ghostsOnly": "Chỉ người đã chết mới chat được ở đây.",
@@ -1044,6 +1046,10 @@
     "host": "Quản trò can thiệp"
   },
   "stats": {
+    "prophecy": "Sổ Tiên Tri",
+    "prophecyAccuracy": "Đoán trúng",
+    "prophecyTellers": "Lần làm Thầy Bói",
+    "prophecyBest": "Điểm cao nhất",
     "title": "Hồ sơ người chơi",
     "viewProfile": "Xem hồ sơ",
     "member": "Có tài khoản",
@@ -1283,6 +1289,9 @@
     "gotGold": "+{gold} vàng!",
     "earnedTotal": "Tổng vàng đã kiếm: {gold}",
     "q": {
+      "prophecy3": "Đoán trúng {goal} lần trong Sổ Tiên Tri",
+      "firstTeller": "Lần đầu làm Thầy Bói Âm Phủ",
+      "tellers5": "Làm Thầy Bói Âm Phủ {goal} lần",
       "play3": "Chơi {goal} ván",
       "play5": "Chơi {goal} ván",
       "win1": "Thắng {goal} ván",
@@ -1443,5 +1452,49 @@
     "label": "Hiệu ứng",
     "mute": "Tắt hiệu ứng âm thanh",
     "unmute": "Bật hiệu ứng âm thanh"
+  },
+  "prophecy": {
+    "title": "Sổ Tiên Tri",
+    "button": "Tiên tri",
+    "intro": "Đoán xem người sống sẽ làm gì. Đoán trúng điều ít hồn ma khác chọn thì càng nhiều điểm, trúng 3 lần liên tiếp được thêm một nửa.",
+    "nightQ": "Sáng mai ai nằm xuống sau đêm {n}?",
+    "dayQ": "Ngày {n}, ai lên giá treo?",
+    "winnerQ": "Phe nào sẽ thắng?",
+    "winnerHint": "Chỉ chọn được một lần. Chọn ngay bây giờ được nhân {mult} điểm.",
+    "winnerMine": "Bạn đoán {pick} thắng, nhân {mult}",
+    "noneNight": "Bình yên, không ai chết",
+    "noneDay": "Không ai bị treo",
+    "closesNight": "Khoá khi bầy Sói chọn xong mồi",
+    "closesDay": "Khoá khi có kết quả đề cử",
+    "locked": "Đã khoá, chờ kết quả",
+    "count": "{count} hồn ma đã đoán",
+    "waiting": "Chưa có vòng nào mở, chờ chút nhé.",
+    "lastNight": "Kết quả đêm {n}",
+    "lastDay": "Kết quả ngày {n}",
+    "hit": "Trúng! +{points}",
+    "miss": "Trượt rồi",
+    "skipped": "Bạn không đoán vòng này",
+    "answer": "Đáp án {names}",
+    "me": "{score} điểm · trúng {hits}/{played}",
+    "streak": "🔥 Chuỗi {n}",
+    "board": "Bảng hồn ma",
+    "emptyBoard": "Chưa có hồn ma nào đoán.",
+    "teller": "Thầy Bói Âm Phủ",
+    "tellerLine": "Đoán trúng {hits} lần, {score} điểm",
+    "noTeller": "Ván này chưa có hồn ma nào đoán trúng.",
+    "points": "{points} điểm",
+    "newRound": "Vòng mới",
+    "pick": {
+      "village": "Dân làng",
+      "wolves": "Sói",
+      "other": "Phe khác"
+    },
+    "sys": {
+      "night": "🔮 Đêm {n}, {hits} trên {total} hồn ma đoán trúng.",
+      "day": "🔮 Ngày {n}, {hits} trên {total} hồn ma đoán trúng.",
+      "lone": "{name} là người duy nhất đoán trúng, cộng {points} điểm!",
+      "top": "{name} ăn đậm nhất, cộng {points} điểm.",
+      "teller": "🔮 {name} là Thầy Bói Âm Phủ của ván này với {score} điểm!"
+    }
   }
 }
