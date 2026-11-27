@@ -1259,12 +1259,20 @@
   "leaderboard": {
     "title": "Bảng xếp hạng",
     "accounts": "{count} tài khoản",
-    "player": "Người chơi",
-    "wolf": "Sói",
+    "category": "Hạng mục",
+    "categories": {
+      "all": "Tổng",
+      "wolves": "Phe Sói",
+      "village": "Phe Dân",
+      "solo": "Phe độc lập"
+    },
+    "minGames": "Cần ít nhất {min} ván ở hạng mục này để có tên.",
+    "noneRanked": "Chưa ai đủ {min} ván ở hạng mục này.",
+    "youNeed": "Bạn còn thiếu {n} ván để có tên ở hạng mục này.",
+    "record": "{wins} thắng / {games} ván",
     "you": "Bạn",
     "empty": "Chưa có tài khoản nào. Đăng nhập Google ở trang Hồ sơ để là người đầu tiên.",
     "unavailable": "Không tải được bảng xếp hạng.",
-    "unranked": "Chưa đủ {min} ván, tài khoản mới nhất ở trên",
     "mode": "Chế độ",
     "showMore": "Xem top {n}",
     "showLess": "Thu gọn"
