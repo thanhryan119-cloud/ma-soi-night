@@ -12,7 +12,8 @@
     "server": "tsx server/index.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "deploy:server": "npx -y @railway/cli@latest up --detach"
+    "deploy:server": "npx -y @railway/cli@latest up --detach",
+    "discord:register": "tsx scripts/discord-register.ts"
   },
   "dependencies": {
     "jose": "^6.2.17",

@@ -766,11 +766,6 @@ function HoldCard({ state, me, players }: Ctx) {
                 .map((tip) => (
                   <li key={tip}>{tip}</li>
                 ))}
-              <li className="list-none pt-1">
-                <a href={`/guide?role=${role.id}#roles`} target="_blank" rel="noopener" className="text-xs font-semibold text-gold underline">
-                  📖 {t("guide.open")}
-                </a>
-              </li>
             </ul>
           )}
         </div>

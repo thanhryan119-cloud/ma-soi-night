@@ -17,7 +17,6 @@ type Chat = ReturnType<typeof useGlobalChat>;
 import { Mailbox } from "@/components/Mailbox";
 import { OnlinePeople } from "@/components/OnlinePeople";
 import { HowToPlay } from "@/components/HowToPlay";
-import { Onboarding } from "@/components/Onboarding";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { APP_VERSION } from "@shared/changelog";
 import { useT } from "@/lib/i18n";
@@ -37,11 +36,7 @@ function HomePage({ chat }: { chat: Chat }) {
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 pt-14 pb-28 sm:pt-16">
       <LangSwitch />
       <InstallPrompt />
-      <Onboarding auto />
       <div className="fixed top-3 right-3 z-50 flex gap-2">
-        <Link href="/guide" className="btn-ghost btn-sm border-gold/50 text-gold" title={t("guide.open")}>
-          📖 <span className="sr-only">{t("guide.open")}</span>
-        </Link>
         <SfxToggle />
         <Mailbox />
         <QuestsLink />
@@ -69,9 +64,9 @@ function HomePage({ chat }: { chat: Chat }) {
             🌐 {t("home.ctaLobby")}
           </Link>
           <ShareButton />
-          <Link href="/guide" className="btn-ghost flex-1 py-3 text-base">
+          <a href="#cach-choi" className="btn-ghost flex-1 py-3 text-base">
             📖 {t("home.ctaHow")}
-          </Link>
+          </a>
         </div>
         <div className="mt-4 w-full max-w-xl">
           <SignInToSave />

@@ -39,6 +39,7 @@ import { payOSFromEnv } from "./payos";
 import { createQuests } from "./quests";
 import { createDonations } from "./donate";
 import { createDiscordNotifier } from "./discord";
+import { createDiscordGuide } from "./discordGuide";
 import { createSocial } from "./social";
 import { createGlobalChat } from "./globalChat";
 import { BUSY_TALK_CHANCE, tableBusy } from "../shared/social";
@@ -159,6 +160,11 @@ const discord = createDiscordNotifier({
   webUrl: process.env.PUBLIC_WEB_URL || undefined,
 });
 if (!discord.enabled) console.log("[discord] DISCORD_WEBHOOK_URL not set: new rooms are not posted to Discord");
+const discordGuide = createDiscordGuide({
+  publicKey: process.env.DISCORD_PUBLIC_KEY,
+  webUrl: process.env.PUBLIC_WEB_URL || undefined,
+});
+if (!discordGuide.enabled) console.log("[discord] DISCORD_PUBLIC_KEY not set: the Discord guide bot is off");
 const quests = createQuests({ dataDir: dirname(DATA_FILE), corsOrigin: CORS_ORIGIN, accounts });
 const games = createGames(dirname(DATA_FILE), CORS_ORIGIN);
 
@@ -182,6 +188,7 @@ function lanAddresses(): string[] {
 }
 
 const httpServer = createServer(async (req, res) => {
+  if (await discordGuide.handle(req, res)) return;
   if (await accounts.handle(req, res)) return;
   if (await donations.handle(req, res)) return;
   if (await quests.handle(req, res)) return;

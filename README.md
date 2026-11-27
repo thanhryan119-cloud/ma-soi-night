@@ -74,6 +74,7 @@ App gồm 2 phần deploy riêng:
   - `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY` *(tùy chọn)* — bật trang ủng hộ (xem mục Ủng hộ bên dưới).
   - `PUBLIC_WEB_URL` *(tùy chọn)* — domain web để payOS đưa người ủng hộ quay về `/donate`, ví dụ `https://ma-soi.vercel.app`.
   - `DISCORD_WEBHOOK_URL` *(tùy chọn)* — webhook của kênh Discord (Cài đặt máy chủ → Tích hợp → Webhook). Mỗi phòng mới tạo sẽ được gửi lên kênh đó, kèm link vào phòng nếu có `PUBLIC_WEB_URL`.
+  - `DISCORD_PUBLIC_KEY` *(tùy chọn)* — bật bot hướng dẫn trên Discord (xem mục Discord bên dưới).
   - `ADMIN_EMAILS` *(tùy chọn)* — email Google có quyền quản trị (kiểm duyệt chat máy chủ), nhiều email cách nhau bằng dấu phẩy.
 - Kiểm tra: `https://<server>/health` trả `{"ok":true}`.
 
@@ -87,6 +88,34 @@ npm run deploy:server
 
 - Import repo, framework **Next.js** (mặc định).
 - Biến môi trường: `NEXT_PUBLIC_SOCKET_URL=https://<socket-server-của-bạn>`.
+
+## Discord
+
+### Báo phòng mới
+
+Đặt `DISCORD_WEBHOOK_URL` trên socket server (xem mục Deploy). Mỗi phòng mới tạo sẽ được gửi lên kênh đó.
+
+### Bot hướng dẫn người mới
+
+Bot trả lời ngay trong nhóm Discord: hướng dẫn người mới từng bước, cách chơi từng vai, chức năng hay và hỏi đáp. Câu trả lời chỉ người bấm thấy, nên kênh không bị loạn. Bot chạy luôn trên socket server qua địa chỉ `/discord/interactions`, không cần máy riêng.
+
+1. Vào https://discord.com/developers/applications, bấm **New Application**, đặt tên (ví dụ Ma Sói Online).
+2. Trang **General Information**: chép *Application ID* và *Public Key*.
+3. Trang **Bot**: bấm **Reset Token** để lấy *bot token*. Giữ bí mật, không gửi ai.
+4. Trên Railway, thêm biến `DISCORD_PUBLIC_KEY` = Public Key, rồi deploy lại server.
+5. Quay lại **General Information**, ô **Interactions Endpoint URL** điền `https://<socket-server>/discord/interactions` rồi lưu. Discord gửi thử một yêu cầu, lưu được là server đã nhận.
+6. Trang **Installation** (hoặc OAuth2 → URL Generator): chọn scope `applications.commands` và `bot`, mở link và thêm bot vào nhóm Discord.
+7. Trên máy, đặt `DISCORD_APP_ID`, `DISCORD_BOT_TOKEN` và (nên có) `DISCORD_GUILD_ID` = ID nhóm Discord trong `.env`, rồi chạy:
+
+   ```powershell
+   npm run discord:register
+   ```
+
+8. Trong kênh hướng dẫn (ví dụ `#bắt-đầu`), gõ `/bang-huongdan` để đăng bảng có nút bấm. Lệnh này chỉ người có quyền quản lý nhóm thấy.
+
+Lệnh cho mọi người: `/huongdan`, `/vai`, `/hoidap`, `/chucnang` (người dùng Discord tiếng Anh thấy `/guide`, `/role`, `/faq`, `/features`). Muốn người mới vào là thấy bảng ngay, bật **Onboarding** của Discord (Cài đặt nhóm → Onboarding) và đặt `#bắt-đầu` làm kênh mặc định.
+
+Nội dung bot nằm ở `server/guide/vi.json` và `server/guide/en.json`, tên và mẹo của từng vai lấy từ `messages/*.json`.
 
 ## Ủng hộ (payOS)
 

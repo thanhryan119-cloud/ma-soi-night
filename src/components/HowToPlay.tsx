@@ -22,17 +22,6 @@ export function HowToPlay() {
       <div className="mb-6 text-center">
         <h2 className="font-display text-4xl font-black text-moon sm:text-5xl">📖 {t("tutorial.title")}</h2>
         <p className="mx-auto mt-2 max-w-2xl text-white/70">{t("tutorial.subtitle")}</p>
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
-          <Link href="/guide#roles" className="btn-ghost btn-sm">
-            🎭 {t("guide.nav.roles")}
-          </Link>
-          <Link href="/guide#features" className="btn-ghost btn-sm">
-            ✨ {t("guide.nav.features")}
-          </Link>
-          <Link href="/guide#faq" className="btn-ghost btn-sm">
-            ❓ {t("guide.nav.faq")}
-          </Link>
-        </div>
       </div>
 
       <div className="mb-6 flex flex-col items-start gap-3 rounded-xl border border-emerald-400/40 bg-emerald-400/[0.07] p-4 sm:flex-row sm:items-center">
